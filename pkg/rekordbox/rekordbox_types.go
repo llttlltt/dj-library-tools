@@ -1,0 +1,140 @@
+package rekordbox
+
+import (
+	"encoding/xml"
+)
+
+// These structs represent the XML structure of a Rekordbox library.
+// The definitions are based on the Rekordbox developer documentation:
+// https://rekordbox.com/en/support/developer
+
+type RekordboxLibraryXML struct {
+	XMLName    xml.Name   `xml:"DJ_PLAYLISTS"`
+	Version    string     `xml:"Version,attr"`
+	Product    Product    `xml:"PRODUCT"`
+	Collection Collection `xml:"COLLECTION"`
+	Playlists  Playlists  `xml:"PLAYLISTS"`
+}
+
+type Product struct {
+	XMLName xml.Name `xml:"PRODUCT"`
+	Name    string   `xml:"Name,attr"`
+	Version string   `xml:"Version,attr"`
+	Company string   `xml:"Company,attr"`
+}
+
+type Collection struct {
+	XMLName xml.Name `xml:"COLLECTION"`
+	Entries int32    `xml:"Entries,attr"`
+	TRACK   []Track  `xml:"TRACK"`
+}
+
+type Track struct {
+	XMLName      xml.Name `xml:"TRACK"`
+	TrackID      int      `xml:"TrackID,attr"`
+	Name         string   `xml:"Name,attr"`
+	Artist       string   `xml:"Artist,attr"`
+	Composer     string   `xml:"Composer,attr"`
+	Album        string   `xml:"Album,attr"`
+	Grouping     string   `xml:"Grouping,attr"`
+	Genre        string   `xml:"Genre,attr"`
+	Kind         string   `xml:"Kind,attr"`
+	Size         int64    `xml:"Size,attr"`
+	TotalTime    float64  `xml:"TotalTime,attr"`
+	DiscNumber   int32    `xml:"DiscNumber,attr"`
+	TrackNumber  int32    `xml:"TrackNumber,attr"`
+	Year         int32    `xml:"Year,attr"`
+	AverageBpm   float64  `xml:"AverageBpm,attr"`
+	DateModified string   `xml:"DateModified,attr"`
+	DateAdded    string   `xml:"DateAdded,attr"`
+	BitRate      int32    `xml:"BitRate,attr"`
+	SampleRate   float64  `xml:"SampleRate,attr"`
+	Comments     string   `xml:"Comments,attr"`
+	PlayCount    int32    `xml:"PlayCount,attr"`
+	LastPlayed   string   `xml:"LastPlayed,attr"`
+	// 0 star = "0"
+	// 1 star = "51"
+	// 2 stars = "102"
+	// 3 stars = "153"
+	// 4 stars = "204"
+	// 5 stars = "255"
+	Rating       int32        `xml:"Rating,attr"`
+	Location     string       `xml:"Location,attr"`
+	Remixer      string       `xml:"Remixer,attr"`
+	Tonality     string       `xml:"Tonality,attr"`
+	Label        string       `xml:"Label,attr"`
+	Mix          string       `xml:"Mix,attr"`
+	Colour       string       `xml:"Colour,attr"`
+	Tempo        []Tempo      `xml:"TEMPO"`
+	PositionMark PositionMark `xml:"POSITION_MARK"`
+}
+
+type Tempo struct {
+	XMLName xml.Name `xml:"TEMPO"`
+	Inizio  float64  `xml:"Inizio,attr"`
+	Bpm     float64  `xml:"Bpm,attr"`
+	Metro   string   `xml:"Metro,attr"`
+	Battito int32    `xml:"Battito,attr"`
+}
+
+type PositionMark struct {
+	XMLName xml.Name `xml:"POSITION_MARK"`
+	Name    string   `xml:"Name,attr"`
+	Type    int32    `xml:"Type,attr"`
+	Start   float64  `xml:"Start,attr"`
+	End     float64  `xml:"End,attr"`
+	Num     int32    `xml:"Num,attr"`
+}
+
+type Playlists struct {
+	XMLName xml.Name `xml:"PLAYLISTS"`
+	Node    RootNode `xml:"NODE"`
+}
+
+type BaseNode struct {
+	XMLName xml.Name `xml:"NODE"`
+	Type    int32    `xml:"Type,attr"`
+	Name    string   `xml:"Name,attr"`
+}
+
+type RootNode struct {
+	// Type = "0" (FOLDER)
+	// Name = "ROOT"
+	BaseNode
+	XMLName xml.Name `xml:"NODE"`
+	Count   int32    `xml:"Count,attr"` // Number of NODE in the NODE
+	Node    []Node   `xml:"NODE"`
+}
+
+// Combined Folder and Playlist Node
+type Node struct {
+	BaseNode
+	// Type = "0" (FOLDER) | "1" (PLAYLIST)
+	XMLName xml.Name `xml:"NODE"`
+	Count   int32    `xml:"Count,attr"`
+	Node    []Node   `xml:"NODE"`
+	Entries int32    `xml:"Entries,attr"` // Number of TRACK in PLAYLIST
+	KeyType int32    `xml:"KeyType,attr"` // Kind of identification - "0" (Track ID) | "1" (Location)
+	TRACK   []struct {
+		Key string `xml:"Key,attr"` // Identification of track - "Track ID" or "Location" in "COLLECTION"
+	} `xml:"TRACK"`
+}
+
+type FolderNode struct {
+	// Type = "0" (FOLDER)
+	BaseNode
+	XMLName xml.Name `xml:"NODE"`
+	Count   int32    `xml:"Count,attr"`
+	Node    []Node   `xml:"NODE"`
+}
+
+type PlaylistNode struct {
+	// Type = "1" (PLAYLIST)
+	BaseNode
+	XMLName xml.Name `xml:"NODE"`
+	Entries int32    `xml:"Entries,attr"` // Number of TRACK in PLAYLIST
+	KeyType int32    `xml:"KeyType,attr"` // Kind of identification - "0" (Track ID) | "1" (Location)
+	TRACK   []struct {
+		Key string `xml:"Key,attr"` // Identification of track - "Track ID" or "Location" in "COLLECTION"
+	} `xml:"TRACK"`
+}
