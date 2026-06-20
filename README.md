@@ -11,63 +11,43 @@ Currently, the recommended way to install `djlt` is via `go install`.
 go install github.com/llttlltt/dj-library-tools/cmd/djlt@latest
 ```
 
-## 🚀 Usage
+## 🚀 Getting Started
 
-`djlt` provides specialized commands for different library management tasks. All library commands require a path to your Rekordbox XML via the global `-x, --xml` flag.
+`djlt` uses a persistent configuration stored in `~/.config/djlt/config.json`. Initialize your setup:
 
-### 🔍 Library Exploration & Analysis
-
-The core of `djlt` is a powerful **Selection Engine** that allows you to filter your library using a natural syntax.
-
-#### List Tracks (`ls`)
-Search and display tracks matching specific criteria:
 ```bash
-djlt ls "artist:Four Tet bpm:120..128" --xml library.xml
-```
+# Authenticate with Plex
+djlt auth plex
 
-#### Library Statistics (`stat`)
-Generate a summarized report of your library or a filtered selection:
-```bash
-djlt stat "genre:House" --xml library.xml
-```
-Provides: Total tracks, Average BPM, and Top 5 Artists/Genres/Keys.
+# Configure your server (optional if using auto-discovery)
+djlt config plex --host 10.0.10.151 --port 32400
 
----
+# Map remote Plex paths to local mount points
+djlt config plex --map "/media/Music/Master:/Volumes/Media/Music/Master"
 
-### 🎵 Playlist Hygiene
-
-The `playlist fix` command is a powerful tool to migrate, repair, and enrich M3U/M3U8 playlists.
-
-**Common Workflows:**
-
-#### Smart Priority Search & Pruning
-Search for files in a priority order (e.g., prefer MP3, fallback to FLAC). If neither is found, the track is automatically pruned to ensure zero "File Not Found" errors in Rekordbox:
-```bash
-djlt playlist fix my_playlist.m3u --ext mp3,flac --m3u8 -v
-```
-
-#### Batch Processing & Dry Run
-Process multiple playlists at once and preview the results safely:
-```bash
-djlt playlist fix ./Playlists/*.m3u --ext mp3 --m3u8 --dry-run
+# Set your master Rekordbox XML path
+djlt config rekordbox --xml "/path/to/rekordbox.xml"
 ```
 
 ---
 
-### 📂 Metadata Operations
+## 🔍 Discovery & Querying
 
-#### Move Metadata (Legacy Sync)
-Matches tracks between two Rekordbox XML files and synchronizes `Tempo` fields.
+`djlt` uses a **Location-based URI** syntax: `provider/resource:query`.
+
+### Listing Items (`list`)
 ```bash
-djlt metadata move --source source.xml --destination target.xml --output merged.xml
+# List Plex playlists
+djlt list plex
+
+# List Plex tracks matching a query
+djlt list plex/tracks:9102
+
+# List Rekordbox tracks matching a query
+djlt list rb:bpm:120..128
 ```
 
----
-
-## 🎯 Selection Syntax
-
-Most commands support a query string as an argument.
-
+### Selection Syntax
 | Operator | Type | Example |
 | :--- | :--- | :--- |
 | `:` | Substring | `artist:Four` |
@@ -76,7 +56,35 @@ Most commands support a query string as an argument.
 | `..` | Range | `bpm:124..128` |
 | `!` | Negation | `!genre:Techno` |
 
-**Supported Fields:** `name`, `artist`, `album`, `genre`, `bpm`, `key`, `label`, `rating`, `playcount`, `added`, `kind`, `size`.
+---
+
+## 🔄 Synchronization & Export
+
+The `sync` command orchestrates data and media movement between providers.
+
+### Sync Plex to Rekordbox (With Transcoding)
+Automatically matches Plex tracks to Rekordbox metadata, transcodes files via FFmpeg, and updates the Rekordbox XML.
+
+```bash
+djlt sync plex:MyPlaylistName rb \
+  --dest ./ExportFolder \
+  --format mp3
+```
+
+- **Matching**: Uses fuzzy logic to pair tracks.
+- **Transcoding**: Inherits settings from Beets (320k MP3, ID3v2.3).
+- **XML Injection**: Creates a "Plex Sync" folder in Rekordbox with your playlist.
+
+---
+
+## 🎵 Playlist Hygiene
+
+The `playlist fix` command repairs and enriches local M3U/M3U8 playlists.
+
+```bash
+# Fix extensions and upgrade to M3U8 with metadata
+djlt playlist fix my_playlist.m3u --ext mp3,flac --m3u8
+```
 
 ---
 
