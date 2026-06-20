@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -19,7 +20,7 @@ var plexAuthCmd = &cobra.Command{
 	Short: "Authenticate with Plex using PIN flow",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client := plex.NewClient("")
-		pin, err := client.RequestPin()
+		pin, err := client.RequestPin(context.Background())
 		if err != nil {
 			return fmt.Errorf("failed to request pin: %w", err)
 		}
@@ -37,7 +38,7 @@ var plexAuthCmd = &cobra.Command{
 			case <-timeout:
 				return fmt.Errorf("authentication timed out")
 			case <-ticker.C:
-				status, err := client.CheckPin(pin.ID)
+				status, err := client.CheckPin(context.Background(), pin.ID)
 				if err != nil {
 					return fmt.Errorf("failed to check pin status: %w", err)
 				}

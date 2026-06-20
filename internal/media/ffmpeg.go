@@ -15,6 +15,9 @@ func NewTranscoder(cfg *Config) *Transcoder {
 }
 
 func (t *Transcoder) Transcode(source, dest string) error {
+	// Apply path mappings to source
+	source = t.ApplyPathMap(source)
+
 	cmdStr, ok := t.Config.Formats[t.Config.Format]
 	if !ok {
 		return fmt.Errorf("unsupported format: %s", t.Config.Format)
