@@ -39,11 +39,18 @@ Upgrade a simple list of paths to a formal `.m3u8` with Artist and Title metadat
 djlt playlist fix paths.m3u --m3u8 -o clean_library.m3u8
 ```
 
+#### Batch Processing & Dry Run
+Process multiple playlists at once and preview the results safely:
+```bash
+djlt playlist fix ./Playlists/*.m3u --ext mp3,flac --m3u8 --dry-run
+```
+
 **Flags:**
 - `-e, --ext strings`: Priority list of extensions to search for (e.g., `mp3,flac,wav`).
 - `--m3u8`: Enrich output with `#EXTINF` metadata (Artist - Title).
-- `-o, --output string`: Specific path for the output file.
+- `-o, --output string`: Specific path for the output file (single file mode only).
 - `-r, --remove-original`: Prompt to remove the source file after successful processing.
+- `--dry-run`: Show what would be done without modifying any files.
 - `-v, --verbose`: Enable granular logging of every resolved path.
 - `-f, --force`: Overwrite output file if it already exists.
 

@@ -16,6 +16,7 @@ type FixOptions struct {
 	Force          bool
 	OutputPath     string
 	Verbose        bool
+	DryRun         bool
 }
 
 // FixResult holds the outcome of the fix operation, including any missing files found.
@@ -44,7 +45,7 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 		}
 	}
 
-	if outputPath != inputPath {
+	if !opts.DryRun && outputPath != inputPath {
 		if _, err := os.Stat(outputPath); err == nil && !opts.Force {
 			return nil, fmt.Errorf("output file '%s' already exists. Use --force to overwrite", outputPath)
 		}
@@ -56,20 +57,27 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 	}
 	defer inputFile.Close()
 
-	outputDir := filepath.Dir(outputPath)
-	tmpFile, err := os.CreateTemp(outputDir, "djlt-playlist-*")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create temp file in %s: %w", outputDir, err)
+	var tmpFile *os.File
+	if !opts.DryRun {
+		outputDir := filepath.Dir(outputPath)
+		tmpFile, err = os.CreateTemp(outputDir, "djlt-playlist-*")
+		if err != nil {
+			return nil, fmt.Errorf("failed to create temp file in %s: %w", outputDir, err)
+		}
+		defer os.Remove(tmpFile.Name())
 	}
-	defer os.Remove(tmpFile.Name())
 
 	fileDir := filepath.Dir(inputPath)
 
 	if opts.Verbose {
-		fmt.Printf("Starting playlist fix for: %s\n", inputPath)
+		if opts.DryRun {
+			fmt.Printf("Dry run: Analyzing playlist: %s\n", inputPath)
+		} else {
+			fmt.Printf("Starting playlist fix for: %s\n", inputPath)
+		}
 	}
 
-	if opts.M3U8 {
+	if opts.M3U8 && !opts.DryRun {
 		if err := WriteM3U8Header(tmpFile); err != nil {
 			return nil, fmt.Errorf("failed to write M3U8 header: %w", err)
 		}
@@ -83,8 +91,10 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 			if opts.M3U8 && strings.HasPrefix(line, "#EXTM3U") {
 				continue
 			}
-			if _, err := fmt.Fprintln(tmpFile, line); err != nil {
-				return nil, fmt.Errorf("failed to write line: %w", err)
+			if !opts.DryRun {
+				if _, err := fmt.Fprintln(tmpFile, line); err != nil {
+					return nil, fmt.Errorf("failed to write line: %w", err)
+				}
 			}
 			continue
 		}
@@ -153,23 +163,34 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 				if opts.Verbose {
 					fmt.Printf("  ⚠️  Metadata error for %s: %v\n", foundPath, err)
 				}
-				if _, err := fmt.Fprintln(tmpFile, resolvedPath); err != nil {
-					return nil, err
+				if !opts.DryRun {
+					if _, err := fmt.Fprintln(tmpFile, resolvedPath); err != nil {
+						return nil, err
+					}
 				}
 			} else {
-				if err := WriteM3U8Entry(tmpFile, meta, resolvedPath, meta.Duration); err != nil {
-					return nil, fmt.Errorf("failed to write M3U8 entry: %w", err)
+				if !opts.DryRun {
+					if err := WriteM3U8Entry(tmpFile, meta, resolvedPath, meta.Duration); err != nil {
+						return nil, fmt.Errorf("failed to write M3U8 entry: %w", err)
+					}
 				}
 			}
 		} else {
-			if _, err := fmt.Fprintln(tmpFile, resolvedPath); err != nil {
-				return nil, fmt.Errorf("failed to write line: %w", err)
+			if !opts.DryRun {
+				if _, err := fmt.Fprintln(tmpFile, resolvedPath); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("error reading input: %w", err)
+	}
+
+	if opts.DryRun {
+		result.OutputPath = outputPath
+		return result, nil
 	}
 
 	tmpFile.Close()
