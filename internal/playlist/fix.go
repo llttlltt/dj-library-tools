@@ -14,6 +14,7 @@ type FixOptions struct {
 	M3U8           bool
 	RemoveOriginal bool
 	Force          bool
+	OutputPath     string
 }
 
 // FixResult holds the outcome of the fix operation, including any missing files found.
@@ -31,7 +32,9 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 	}
 
 	outputPath := inputPath
-	if opts.M3U8 {
+	if opts.OutputPath != "" {
+		outputPath = opts.OutputPath
+	} else if opts.M3U8 {
 		ext := filepath.Ext(inputPath)
 		if ext == ".m3u" {
 			outputPath = strings.TrimSuffix(inputPath, ".m3u") + ".m3u8"

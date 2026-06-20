@@ -12,6 +12,7 @@ var (
 	m3u8Flag          bool
 	removeOriginal    bool
 	forceOverwrite    bool
+	outputFileFlag    string
 )
 
 var playlistCmd = &cobra.Command{
@@ -30,6 +31,7 @@ var fixCmd = &cobra.Command{
 			M3U8:           m3u8Flag,
 			RemoveOriginal: removeOriginal,
 			Force:          forceOverwrite,
+			OutputPath:     outputFileFlag,
 		}
 		result, err := playlist.FixPlaylist(inputPath, opts)
 		if err != nil {
@@ -53,6 +55,7 @@ func init() {
 	fixCmd.Flags().BoolVar(&m3u8Flag, "m3u8", false, "Enrich playlist with M3U8 #EXTINF tags")
 	fixCmd.Flags().BoolVarP(&removeOriginal, "remove-original", "r", false, "Remove the original playlist file after processing")
 	fixCmd.Flags().BoolVarP(&forceOverwrite, "force", "f", false, "Force overwrite if output file exists")
+	fixCmd.Flags().StringVarP(&outputFileFlag, "output", "o", "", "Specific path for the output file (optional)")
 
 	playlistCmd.AddCommand(fixCmd)
 	rootCmd.AddCommand(playlistCmd)
