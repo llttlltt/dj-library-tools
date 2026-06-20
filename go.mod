@@ -1,4 +1,4 @@
-module github.com/elliott-liu/dj-library-tools
+module github.com/llttlltt/dj-library-tools
 
 go 1.25.4
 
