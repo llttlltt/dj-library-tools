@@ -53,7 +53,7 @@ var loginCmd = &cobra.Command{
 	},
 }
 
-var lsCmd = &cobra.Command{
+var plexLsCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "List Plex playlists",
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -100,6 +100,6 @@ var lsCmd = &cobra.Command{
 
 func init() {
 	plexCmd.AddCommand(loginCmd)
-	plexCmd.AddCommand(lsCmd)
+	plexCmd.AddCommand(plexLsCmd)
 	rootCmd.AddCommand(plexCmd)
 }
