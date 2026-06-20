@@ -157,8 +157,7 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 					return nil, err
 				}
 			} else {
-				duration := 0.0
-				if err := WriteM3U8Entry(tmpFile, meta, resolvedPath, duration); err != nil {
+				if err := WriteM3U8Entry(tmpFile, meta, resolvedPath, meta.Duration); err != nil {
 					return nil, fmt.Errorf("failed to write M3U8 entry: %w", err)
 				}
 			}
