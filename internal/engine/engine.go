@@ -34,6 +34,9 @@ type StatResult struct {
 	Count      int
 	AvgBPM     float64
 	Genres     map[string]int
+	Labels     map[string]int
+	Keys       map[string]int
+	Artists    map[string]int
 	TotalTempo float64
 }
 
@@ -45,8 +48,11 @@ func (e *Engine) Stat(queryString string) (*StatResult, error) {
 	}
 
 	res := &StatResult{
-		Count:  len(tracks),
-		Genres: make(map[string]int),
+		Count:   len(tracks),
+		Genres:  make(map[string]int),
+		Labels:  make(map[string]int),
+		Keys:    make(map[string]int),
+		Artists: make(map[string]int),
 	}
 
 	if len(tracks) == 0 {
@@ -54,9 +60,20 @@ func (e *Engine) Stat(queryString string) (*StatResult, error) {
 	}
 
 	for _, t := range tracks {
-		res.Genres[t.Genre]++
+		if t.Genre != "" {
+			res.Genres[t.Genre]++
+		}
+		if t.Label != "" {
+			res.Labels[t.Label]++
+		}
+		if t.Tonality != "" {
+			res.Keys[t.Tonality]++
+		}
+		if t.Artist != "" {
+			res.Artists[t.Artist]++
+		}
 		if len(t.Tempo) > 0 {
-			res.TotalTempo += t.Tempo[0].Inizio
+			res.TotalTempo += t.Tempo[0].Bpm
 		}
 	}
 	res.AvgBPM = res.TotalTempo / float64(len(tracks))
