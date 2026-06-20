@@ -15,6 +15,8 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/playlist"
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 	"github.com/spf13/cobra"
+	"github.com/vbauerster/mpb/v8"
+	"github.com/vbauerster/mpb/v8/decor"
 )
 
 var (
@@ -26,9 +28,6 @@ var (
 var syncCmd = &cobra.Command{
 	Use:   "sync [source-location] [target-location]",
 	Short: "Sync items between a source and target",
-	Long: `Sync items between providers.
-Locations follow the format provider/resource:query.
-Example: djlt sync plex:Techno rb --dest ./Music`,
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		src := utils.ParseLocation(args[0])
@@ -132,57 +131,145 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 	matcher := sync.NewMatcher(rbXML.Collection.TRACK)
 	var rbTrackIDs []string
 
+	type transcodeJob struct {
+		track plex.Track
+		rb    *rekordbox.Track
+	}
+	jobs := make(chan transcodeJob, len(tracks))
+	results := make(chan string, len(tracks))
+	errors := make(chan error, len(tracks))
+
+	// Progress bar setup
+	p := mpb.New(mpb.WithWidth(64))
+	totalBar := p.AddBar(int64(len(tracks)),
+		mpb.PrependDecorators(
+			decor.Name("Overall Sync", decor.WCSyncSpaceR),
+			decor.CountersNoUnit("%d / %d", decor.WCSyncSpace),
+		),
+		mpb.AppendDecorators(
+			decor.Percentage(decor.WCSyncSpace),
+			decor.OnComplete(decor.EwmaETA(decor.ET_STYLE_GO, 60), "done!"),
+		),
+	)
+
+	// Start workers
+	numWorkers := 4 
+	for w := 1; w <= numWorkers; w++ {
+		go func() {
+			for job := range jobs {
+				track := job.track
+				rbTrack := job.rb
+				
+				// Multi-bar support: create a temporary bar for this track
+				// We limit track name length for display
+				displayName := track.Title
+				if len(displayName) > 20 {
+					displayName = displayName[:17] + "..."
+				}
+				trackBar := p.AddBar(1, 
+					mpb.BarRemoveOnComplete(),
+					mpb.PrependDecorators(
+						decor.Name(fmt.Sprintf("  -> %s", displayName), decor.WCSyncSpaceR),
+					),
+				)
+
+				if transcoder == nil {
+					trackBar.Increment()
+					if rbTrack != nil {
+						results <- fmt.Sprintf("%d", rbTrack.TrackID)
+					} else {
+						results <- ""
+					}
+					totalBar.Increment()
+					continue
+				}
+
+				destPath, err := transcoder.GetDestinationPath(media.PathMetadata{
+					Artist: track.Artist,
+					Album:  track.Album,
+					Title:  track.Title,
+				})
+				if err != nil {
+					trackBar.Abort(false)
+					errors <- fmt.Errorf("path error for %s: %v", track.Title, err)
+					results <- ""
+					totalBar.Increment()
+					continue
+				}
+
+				sourceFile := track.Media[0].Part[0].File
+				if _, err := os.Stat(transcoder.ApplyPathMap(sourceFile)); err != nil {
+					trackBar.Abort(false)
+					errors <- fmt.Errorf("source not found for %s: %s", track.Title, sourceFile)
+					results <- ""
+					totalBar.Increment()
+					continue
+				}
+
+				if dryRun {
+					trackBar.Increment()
+					if rbTrack != nil {
+						rbTrack.Location = "file://localhost" + destPath
+					}
+				} else {
+					if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+						trackBar.Abort(false)
+						errors <- fmt.Errorf("mkdir error for %s: %v", track.Title, err)
+						results <- ""
+						totalBar.Increment()
+						continue
+					}
+					if err := transcoder.Transcode(sourceFile, destPath); err != nil {
+						trackBar.Abort(false)
+						errors <- fmt.Errorf("transcode error for %s: %v", track.Title, err)
+						results <- ""
+						totalBar.Increment()
+						continue
+					}
+					trackBar.Increment()
+					if rbTrack != nil {
+						rbTrack.Location = "file://localhost" + destPath
+					}
+				}
+
+				if rbTrack != nil {
+					results <- fmt.Sprintf("%d", rbTrack.TrackID)
+				} else {
+					results <- ""
+				}
+				totalBar.Increment()
+			}
+		}()
+	}
+
+	// Feed jobs
 	for _, track := range tracks {
 		match := matcher.Match(track)
 		var rbTrack *rekordbox.Track
 
 		if match.RBTrack != nil && match.Confidence >= 0.8 {
 			rbTrack = match.RBTrack
-			fmt.Printf("  Matched: %s - %s (Confidence: %.2f)\n", track.Artist, track.Title, match.Confidence)
-		} else if transcoder != nil {
-			fmt.Printf("  Exporting (No Match): %s - %s\n", track.Artist, track.Title)
 		}
+		
+		jobs <- transcodeJob{track: track, rb: rbTrack}
+	}
+	close(jobs)
 
-		if transcoder != nil {
-			destPath, err := transcoder.GetDestinationPath(media.PathMetadata{
-				Artist: track.Artist,
-				Album:  track.Album,
-				Title:  track.Title,
-			})
-			if err != nil {
-				fmt.Printf("    Path error: %v\n", err)
-				continue
-			}
+	// Wait for progress bars to complete
+	p.Wait()
 
-			sourceFile := track.Media[0].Part[0].File
-			if _, err := os.Stat(sourceFile); err != nil {
-				fmt.Printf("    Source file not found: %s\n", sourceFile)
-				continue
-			}
-
-			if dryRun {
-				fmt.Printf("    [Dry Run] Would transcode: %s -> %s\n", sourceFile, destPath)
-				if rbTrack != nil {
-					rbTrack.Location = "file://localhost" + destPath
-				}
-			} else {
-				if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
-					fmt.Printf("    Dir error: %v\n", err)
-					continue
-				}
-				if err := transcoder.Transcode(sourceFile, destPath); err != nil {
-					fmt.Printf("    Transcode error: %v\n", err)
-					continue
-				}
-				if rbTrack != nil {
-					rbTrack.Location = "file://localhost" + destPath
-				}
-			}
+	// Collect results
+	for i := 0; i < len(tracks); i++ {
+		res := <-results
+		if res != "" {
+			rbTrackIDs = append(rbTrackIDs, res)
 		}
+	}
 
-		if rbTrack != nil {
-			rbTrackIDs = append(rbTrackIDs, fmt.Sprintf("%d", rbTrack.TrackID))
-		}
+	// Report errors
+	close(errors)
+	for err := range errors {
+		fmt.Printf("  Error: %v\n", err)
 	}
 
 	if dryRun {
@@ -249,6 +336,8 @@ func syncPlexToM3U8(src, tgt utils.Location) error {
 	if targetPlaylist.RatingKey == "" {
 		return fmt.Errorf("plex playlist matching '%s' not found", src.Query)
 	}
+
+	fmt.Printf("Syncing Plex playlist: %s (%d tracks)...\n", targetPlaylist.Title, targetPlaylist.LeafCount)
 
 	tracks, err := serverClient.GetPlaylistTracks(context.Background(), probe.BaseURL, targetPlaylist.Key)
 	if err != nil {
