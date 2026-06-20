@@ -40,12 +40,14 @@ Example: djlt ls "artist:Four Tet bpm:120..128"`,
 			return nil
 		}
 
+		fmt.Printf("  BPM    ARTIST - TITLE\n")
+		fmt.Printf("-------  ------------------------------------------------------------\n")
 		for _, t := range tracks {
 			bpm := 0.0
 			if len(t.Tempo) > 0 {
 				bpm = t.Tempo[0].Bpm
 			}
-			fmt.Printf("[%6.2f] %s - %s\n", bpm, t.Artist, t.Name)
+			fmt.Printf("%7.2f  %s - %s\n", bpm, t.Artist, t.Name)
 		}
 
 		fmt.Printf("\nMatched %d tracks.\n", len(tracks))
