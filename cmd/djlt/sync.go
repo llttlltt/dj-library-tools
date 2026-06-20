@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/media"
 	"github.com/llttlltt/dj-library-tools/internal/plex"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
@@ -37,7 +38,11 @@ var syncCmd = &cobra.Command{
 func syncPlexToRekordbox(src, tgt utils.Location) error {
 	token := os.Getenv("PLEX_TOKEN")
 	if token == "" {
-		return fmt.Errorf("PLEX_TOKEN environment variable not set")
+		cfg, _ := config.LoadAppConfig()
+		token = cfg.PlexToken
+	}
+	if token == "" {
+		return fmt.Errorf("Plex token not found. Run 'djlt auth plex' or set PLEX_TOKEN env var")
 	}
 
 	if xmlPath == "" {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/plex"
 	"github.com/spf13/cobra"
 )
@@ -43,8 +44,16 @@ var plexAuthCmd = &cobra.Command{
 
 				if status.AuthToken != "" {
 					fmt.Printf("Successfully authenticated!\n")
-					fmt.Printf("Your Plex Token: %s\n", status.AuthToken)
-					fmt.Printf("Save this token in your environment as PLEX_TOKEN or use it in subsequent commands.\n")
+					
+					// Save to local config
+					cfg, _ := config.LoadAppConfig()
+					cfg.PlexToken = status.AuthToken
+					if err := config.SaveAppConfig(cfg); err != nil {
+						fmt.Printf("Warning: failed to save token to config: %v\n", err)
+					} else {
+						fmt.Printf("Token saved to ~/.config/djlt/config.json\n")
+					}
+
 					return nil
 				}
 			}
