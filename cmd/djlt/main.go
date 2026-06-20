@@ -6,7 +6,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/elliott-liu/dj-library-tools/pkg/rekordbox"
+	"github.com/llttlltt/dj-library-tools/internal/utils"
+	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 	"github.com/urfave/cli/v3"
 )
 
@@ -86,8 +87,8 @@ func main() {
 							"is found. A new merged library is created with the updated tracks. " +
 							"Tracks are matched using strict metadata equality (Name, Artist, Album, etc.).",
 						Action: func(ctx context.Context, cmd *cli.Command) error {
-							finalOutputPath := EnforceExtension(outputLibraryPath, outputFileExtension)
-							if err := CheckFileOverwrite(finalOutputPath, forceOverwrite); err != nil {
+							finalOutputPath := utils.EnforceExtension(outputLibraryPath, outputFileExtension)
+							if err := utils.CheckFileOverwrite(finalOutputPath, forceOverwrite); err != nil {
 								return fmt.Errorf("output file validation failed: %w", err)
 							}
 
