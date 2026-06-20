@@ -10,7 +10,7 @@ import (
 
 // FixOptions holds the configuration for the playlist fix operation.
 type FixOptions struct {
-	Ext            string
+	Exts           []string
 	M3U8           bool
 	RemoveOriginal bool
 	Force          bool
@@ -21,7 +21,7 @@ type FixOptions struct {
 // FixResult holds the outcome of the fix operation, including any missing files found.
 type FixResult struct {
 	TotalTracks   int
-	MissingTracks []string
+	SkippedTracks []string
 	OutputPath    string
 }
 
@@ -56,8 +56,6 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 	}
 	defer inputFile.Close()
 
-	// Create temporary file for output in the same directory as the output path
-	// to avoid "cross-device link" errors when renaming.
 	outputDir := filepath.Dir(outputPath)
 	tmpFile, err := os.CreateTemp(outputDir, "djlt-playlist-*")
 	if err != nil {
@@ -91,51 +89,81 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 			continue
 		}
 
-		targetPath := line
-		result.TotalTracks++
 		trackCount++
+		result.TotalTracks++
+
+		foundPath := ""
+		resolvedPath := ""
+
+		// Resolution logic
+		if len(opts.Exts) == 0 {
+			absPath := line
+			if !filepath.IsAbs(line) {
+				absPath = filepath.Join(fileDir, line)
+			}
+			if _, err := os.Stat(absPath); err == nil {
+				foundPath = absPath
+				resolvedPath = line
+			}
+		} else {
+			for _, ext := range opts.Exts {
+				testPath := FormatPath(line, ext)
+				absTestPath := testPath
+				if !filepath.IsAbs(testPath) {
+					absTestPath = filepath.Join(fileDir, testPath)
+				}
+				if _, err := os.Stat(absTestPath); err == nil {
+					foundPath = absTestPath
+					resolvedPath = testPath
+					break
+				}
+			}
+		}
+
+		// Fallback to original
+		if foundPath == "" {
+			absPath := line
+			if !filepath.IsAbs(line) {
+				absPath = filepath.Join(fileDir, line)
+			}
+			if _, err := os.Stat(absPath); err == nil {
+				foundPath = absPath
+				resolvedPath = line
+			}
+		}
+
+		// Skip if not found
+		if foundPath == "" {
+			result.SkippedTracks = append(result.SkippedTracks, line)
+			if opts.Verbose {
+				fmt.Printf("[%d] ❌ Skipping (Not found): %s\n", trackCount, line)
+			}
+			continue
+		}
 
 		if opts.Verbose {
-			fmt.Printf("[%d] Processing: %s\n", trackCount, line)
+			fmt.Printf("[%d] ✔ Resolved: %s\n", trackCount, resolvedPath)
 		} else if trackCount%50 == 0 {
 			fmt.Printf("Processing tracks... (%d done)\n", trackCount)
 		}
 
-		if opts.Ext != "" {
-			targetPath = FormatPath(line, opts.Ext)
-		}
-
-		absTargetPath := targetPath
-		if !filepath.IsAbs(targetPath) {
-			absTargetPath = filepath.Join(fileDir, targetPath)
-		}
-
-		// Check for existence
-		if _, err := os.Stat(absTargetPath); os.IsNotExist(err) {
-			result.MissingTracks = append(result.MissingTracks, absTargetPath)
-		}
-
 		if opts.M3U8 {
-			if _, err := os.Stat(absTargetPath); os.IsNotExist(err) {
-				if _, err := fmt.Fprintln(tmpFile, targetPath); err != nil {
+			meta, err := ExtractMetadata(foundPath)
+			if err != nil {
+				if opts.Verbose {
+					fmt.Printf("  ⚠️  Metadata error for %s: %v\n", foundPath, err)
+				}
+				if _, err := fmt.Fprintln(tmpFile, resolvedPath); err != nil {
 					return nil, err
 				}
 			} else {
-				meta, err := ExtractMetadata(absTargetPath)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Warning: Could not read metadata for %s: %v\n", absTargetPath, err)
-					if _, err := fmt.Fprintln(tmpFile, targetPath); err != nil {
-						return nil, err
-					}
-				} else {
-					duration := 0.0 // Placeholder for now
-					if err := WriteM3U8Entry(tmpFile, meta, targetPath, duration); err != nil {
-						return nil, fmt.Errorf("failed to write M3U8 entry: %w", err)
-					}
+				duration := 0.0
+				if err := WriteM3U8Entry(tmpFile, meta, resolvedPath, duration); err != nil {
+					return nil, fmt.Errorf("failed to write M3U8 entry: %w", err)
 				}
 			}
 		} else {
-			if _, err := fmt.Fprintln(tmpFile, targetPath); err != nil {
+			if _, err := fmt.Fprintln(tmpFile, resolvedPath); err != nil {
 				return nil, fmt.Errorf("failed to write line: %w", err)
 			}
 		}
