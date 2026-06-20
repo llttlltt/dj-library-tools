@@ -13,6 +13,7 @@ var (
 	removeOriginal    bool
 	forceOverwrite    bool
 	outputFileFlag    string
+	verboseFlag       bool
 )
 
 var playlistCmd = &cobra.Command{
@@ -32,6 +33,7 @@ var fixCmd = &cobra.Command{
 			RemoveOriginal: removeOriginal,
 			Force:          forceOverwrite,
 			OutputPath:     outputFileFlag,
+			Verbose:        verboseFlag,
 		}
 		result, err := playlist.FixPlaylist(inputPath, opts)
 		if err != nil {
@@ -56,6 +58,7 @@ func init() {
 	fixCmd.Flags().BoolVarP(&removeOriginal, "remove-original", "r", false, "Remove the original playlist file after processing")
 	fixCmd.Flags().BoolVarP(&forceOverwrite, "force", "f", false, "Force overwrite if output file exists")
 	fixCmd.Flags().StringVarP(&outputFileFlag, "output", "o", "", "Specific path for the output file (optional)")
+	fixCmd.Flags().BoolVarP(&verboseFlag, "verbose", "v", false, "Enable verbose logging")
 
 	playlistCmd.AddCommand(fixCmd)
 	rootCmd.AddCommand(playlistCmd)
