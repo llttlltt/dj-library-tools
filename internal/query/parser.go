@@ -22,7 +22,7 @@ func (p *Parser) Parse(input string) Query {
 
 	// If the input contains a colon but no spaces before it,
 	// it might be a single multi-word criterion (like shell passed artist:MJ Cole)
-	if strings.Contains(input, ":") && !strings.Contains(input[:strings.Index(input, ":")], " ") {
+	if strings.Contains(input, ":") && !strings.Contains(input[:strings.Index(input, ":")], " ") && !strings.Contains(input, " ") {
 		if crit, ok := p.parsePart(input); ok {
 			q.Criteria = append(q.Criteria, crit)
 			return q
