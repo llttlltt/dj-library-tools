@@ -31,9 +31,9 @@ To achieve full parity with the Beets `convert` plugin, `djlt` requires a transc
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-001 | Create `internal/media/ffmpeg.go` to handle FFmpeg execution. | | |
-| TASK-002 | Implement transcode profiles (e.g., "mp3-320"). | | |
-| TASK-003 | Add metadata transfer logic using FFmpeg `-map_metadata`. | | |
+| TASK-001 | Create `internal/media/config.go` for Beets-compatible configuration. | ✅ | 2026-06-22 |
+| TASK-002 | Create `internal/media/ffmpeg.go` to handle FFmpeg execution. | ✅ | 2026-06-22 |
+| TASK-003 | Implement `internal/media/path.go` for templated file naming. | ✅ | 2026-06-22 |
 
 ### Phase 2: Path Formatting & Export
 
