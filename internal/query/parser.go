@@ -20,6 +20,15 @@ func (p *Parser) Parse(input string) Query {
 		input = strings.TrimPrefix(input, "!")
 	}
 
+	// If the input contains a colon but no spaces before it,
+	// it might be a single multi-word criterion (like shell passed artist:MJ Cole)
+	if strings.Contains(input, ":") && !strings.Contains(input[:strings.Index(input, ":")], " ") {
+		if crit, ok := p.parsePart(input); ok {
+			q.Criteria = append(q.Criteria, crit)
+			return q
+		}
+	}
+
 	parts := p.splitInput(input)
 	for _, part := range parts {
 		if criterion, ok := p.parsePart(part); ok {
