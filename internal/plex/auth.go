@@ -26,6 +26,21 @@ func (c *Client) RequestPin() (*PinResponse, error) {
 	return &pin, nil
 }
 
+func (c *Client) CheckPin(id int) (*PinResponse, error) {
+	url := fmt.Sprintf("%s/pins/%d", PlexTvBaseURL, id)
+	req, err := c.newRequest(http.MethodGet, url)
+	if err != nil {
+		return nil, err
+	}
+
+	var pin PinResponse
+	if err := c.do(req, &pin); err != nil {
+		return nil, err
+	}
+
+	return &pin, nil
+}
+
 func (c *Client) GetResources() ([]Resource, error) {
 	url := fmt.Sprintf("%s/resources", PlexTvBaseURL)
 	req, err := c.newRequest(http.MethodGet, url)
