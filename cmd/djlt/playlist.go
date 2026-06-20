@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 
 	"github.com/llttlltt/dj-library-tools/internal/playlist"
 	"github.com/spf13/cobra"
@@ -30,8 +31,18 @@ var fixCmd = &cobra.Command{
 			RemoveOriginal: removeOriginal,
 			Force:          forceOverwrite,
 		}
-		if err := playlist.FixPlaylist(inputPath, opts); err != nil {
+		result, err := playlist.FixPlaylist(inputPath, opts)
+		if err != nil {
 			return err
+		}
+
+		fmt.Printf("Successfully processed '%s' -> '%s'\n", inputPath, result.OutputPath)
+		fmt.Printf("Total tracks: %d\n", result.TotalTracks)
+		if len(result.MissingTracks) > 0 {
+			fmt.Printf("⚠️ Missing tracks: %d\n", len(result.MissingTracks))
+			for _, path := range result.MissingTracks {
+				fmt.Printf("  - %s\n", path)
+			}
 		}
 		return nil
 	},
