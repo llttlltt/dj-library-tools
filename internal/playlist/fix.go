@@ -55,9 +55,12 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 	}
 	defer inputFile.Close()
 
-	tmpFile, err := os.CreateTemp("", "djlt-playlist-*")
+	// Create temporary file for output in the same directory as the output path
+	// to avoid "cross-device link" errors when renaming.
+	outputDir := filepath.Dir(outputPath)
+	tmpFile, err := os.CreateTemp(outputDir, "djlt-playlist-*")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create temp file: %w", err)
+		return nil, fmt.Errorf("failed to create temp file in %s: %w", outputDir, err)
 	}
 	defer os.Remove(tmpFile.Name())
 
