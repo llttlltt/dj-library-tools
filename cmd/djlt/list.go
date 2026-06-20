@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/engine"
 	"github.com/llttlltt/dj-library-tools/internal/plex"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
@@ -91,7 +92,11 @@ func listRekordbox(loc utils.Location) error {
 func listPlex(loc utils.Location) error {
 	token := os.Getenv("PLEX_TOKEN")
 	if token == "" {
-		return fmt.Errorf("PLEX_TOKEN environment variable not set")
+		cfg, _ := config.LoadAppConfig()
+		token = cfg.PlexToken
+	}
+	if token == "" {
+		return fmt.Errorf("Plex token not found. Run 'djlt auth plex' or set PLEX_TOKEN env var")
 	}
 
 	client := plex.NewClient(token)
