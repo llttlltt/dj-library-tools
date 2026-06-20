@@ -8,6 +8,7 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/media"
 	"github.com/llttlltt/dj-library-tools/internal/plex"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
+	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 	"github.com/spf13/cobra"
 )
@@ -18,26 +19,22 @@ var (
 )
 
 var syncCmd = &cobra.Command{
-	Use:   "sync [source] [target] [query]",
+	Use:   "sync [source-location] [target-location]",
 	Short: "Sync items between a source and target",
-	Args:  cobra.MinimumNArgs(2),
+	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		source := args[0]
-		target := args[1]
-		queryStr := ""
-		if len(args) > 2 {
-			queryStr = args[2]
+		src := utils.ParseLocation(args[0])
+		tgt := utils.ParseLocation(args[1])
+
+		if src.Provider == "plex" && tgt.Provider == "rb" {
+			return syncPlexToRekordbox(src, tgt)
 		}
 
-		if source == "plex" && target == "rekordbox" {
-			return syncPlexToRekordbox(queryStr)
-		}
-
-		return fmt.Errorf("unsupported sync direction: %s to %s", source, target)
+		return fmt.Errorf("unsupported sync direction: %s to %s", src.Provider, tgt.Provider)
 	},
 }
 
-func syncPlexToRekordbox(queryStr string) error {
+func syncPlexToRekordbox(src, tgt utils.Location) error {
 	token := os.Getenv("PLEX_TOKEN")
 	if token == "" {
 		return fmt.Errorf("PLEX_TOKEN environment variable not set")
@@ -84,14 +81,14 @@ func syncPlexToRekordbox(queryStr string) error {
 	var targetPlaylist plex.Playlist
 	for _, pl := range playlists {
 		// Matching query as a playlist name for now
-		if pl.Title == queryStr || pl.RatingKey == queryStr {
+		if pl.Title == src.Query || pl.RatingKey == src.Query {
 			targetPlaylist = pl
 			break
 		}
 	}
 
 	if targetPlaylist.RatingKey == "" {
-		return fmt.Errorf("plex playlist matching '%s' not found", queryStr)
+		return fmt.Errorf("plex playlist matching '%s' not found", src.Query)
 	}
 
 	fmt.Printf("Syncing Plex playlist: %s (%d tracks)...\n", targetPlaylist.Title, targetPlaylist.LeafCount)
@@ -124,8 +121,6 @@ func syncPlexToRekordbox(queryStr string) error {
 			rbTrack = match.RBTrack
 			fmt.Printf("  Matched: %s - %s (Confidence: %.2f)\n", track.Artist, track.Title, match.Confidence)
 		} else if transcoder != nil {
-			// If not matched but we are exporting, we could potentially "create" it in the XML later.
-			// For now, let's focus on the file export part.
 			fmt.Printf("  Exporting (No Match): %s - %s\n", track.Artist, track.Title)
 		}
 
@@ -146,8 +141,6 @@ func syncPlexToRekordbox(queryStr string) error {
 				continue
 			}
 
-			// Transcode (for now we assume track.Media[0].Part[0].File is reachable if running locally or we need a path mapping)
-			// This is a risk: Plex paths might not be local.
 			sourceFile := track.Media[0].Part[0].File
 			if _, err := os.Stat(sourceFile); err != nil {
 				fmt.Printf("    Source file not found: %s\n", sourceFile)
@@ -159,9 +152,7 @@ func syncPlexToRekordbox(queryStr string) error {
 				continue
 			}
 			
-			// If we matched a track, we should update its location in the XML to the exported path
 			if rbTrack != nil {
-				// Convert to file:// URL or just absolute path depending on RB requirement
 				rbTrack.Location = "file://localhost" + destPath
 			}
 		}
@@ -171,7 +162,6 @@ func syncPlexToRekordbox(queryStr string) error {
 		}
 	}
 
-	// Inject into XML
 	if err := injectPlaylist(rbXML, targetPlaylist.Title, rbTrackIDs); err != nil {
 		return fmt.Errorf("failed to inject playlist: %w", err)
 	}
