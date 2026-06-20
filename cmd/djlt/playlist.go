@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/llttlltt/dj-library-tools/internal/playlist"
 	"github.com/spf13/cobra"
@@ -44,10 +45,30 @@ var fixCmd = &cobra.Command{
 		fmt.Printf("Total tracks: %d\n", result.TotalTracks)
 		if len(result.MissingTracks) > 0 {
 			fmt.Printf("⚠️ Missing tracks: %d\n", len(result.MissingTracks))
-			for _, path := range result.MissingTracks {
-				fmt.Printf("  - %s\n", path)
+			if verboseFlag {
+				for _, path := range result.MissingTracks {
+					fmt.Printf("  - %s\n", path)
+				}
+			} else {
+				fmt.Println("  (Use -v to see full list of missing tracks)")
 			}
 		}
+
+		// Prompt for removal if requested and output is different
+		if removeOriginal && inputPath != result.OutputPath {
+			fmt.Printf("\nRemove original file '%s'? (y/N): ", inputPath)
+			var response string
+			fmt.Scanln(&response)
+			if response == "y" || response == "Y" {
+				if err := os.Remove(inputPath); err != nil {
+					return fmt.Errorf("failed to remove original file: %w", err)
+				}
+				fmt.Println("Original file removed.")
+			} else {
+				fmt.Println("Original file retained.")
+			}
+		}
+
 		return nil
 	},
 }

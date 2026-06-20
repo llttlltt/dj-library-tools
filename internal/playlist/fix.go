@@ -151,12 +151,6 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 		return nil, fmt.Errorf("failed to save output file: %w", err)
 	}
 
-	if opts.RemoveOriginal && inputPath != outputPath {
-		if err := os.Remove(inputPath); err != nil {
-			return nil, fmt.Errorf("failed to remove original file: %w", err)
-		}
-	}
-
 	result.OutputPath = outputPath
 	return result, nil
 }
