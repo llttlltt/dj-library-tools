@@ -30,8 +30,8 @@ The Sync Engine is the bridge between Plex metadata and the Rekordbox XML librar
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-001 | Create `internal/sync/matcher.go` with track matching logic. | | |
-| TASK-002 | Implement scoring/fuzzy matching for Artist/Title. | | |
+| TASK-001 | Create `internal/sync/matcher.go` with track matching logic. | ✅ | 2026-06-22 |
+| TASK-002 | Implement scoring/fuzzy matching for Artist/Title. | ✅ | 2026-06-22 |
 
 ### Phase 2: Reconciliation & Export
 
@@ -39,9 +39,9 @@ The Sync Engine is the bridge between Plex metadata and the Rekordbox XML librar
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-003 | Create `internal/sync/engine.go` to orchestrate the sync process. | | |
+| TASK-003 | Create `internal/sync/engine.go` to orchestrate the sync process. | ✅ | 2026-06-22 |
 | TASK-004 | Implement path mapping logic (e.g., prefix replacement for Plex-to-Local). | | |
-| TASK-005 | Implement `UpdateXML` to inject new playlists into a `rekordbox.XML` object. | | |
+| TASK-005 | Implement `UpdateXML` to inject new playlists into a `rekordbox.XML` object. | ✅ | 2026-06-22 |
 
 ### Phase 3: CLI Integration
 
@@ -49,7 +49,7 @@ The Sync Engine is the bridge between Plex metadata and the Rekordbox XML librar
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-006 | Create `cmd/djlt/sync.go` with `sync plex` command. | | |
+| TASK-006 | Create `cmd/djlt/sync.go` with `sync plex` command. | ✅ | 2026-06-22 |
 
 ## 3. Alternatives
 
