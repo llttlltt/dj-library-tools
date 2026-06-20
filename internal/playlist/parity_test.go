@@ -38,8 +38,13 @@ func TestParityWithLegacyScripts(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		// Create dummy files so Go doesn't skip them
+		os.MkdirAll(filepath.Join(tmpDir, "music"), 0755)
+		os.WriteFile(filepath.Join(tmpDir, "music/track1.mp3"), []byte{}, 0644)
+		os.WriteFile(filepath.Join(tmpDir, "music/track2.mp3"), []byte{}, 0644)
+
 		// Run Go implementation
-		opts := FixOptions{Ext: ".mp3"}
+		opts := FixOptions{Exts: []string{".mp3"}}
 		if _, err := FixPlaylist(m3uPath, opts); err != nil {
 			t.Fatalf("Go FixPlaylist failed: %v", err)
 		}
