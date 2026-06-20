@@ -18,6 +18,7 @@ type Config struct {
 	NeverConvertLossy     bool              `json:"never_convert_lossy"`
 	CopyAlbumArt          bool              `json:"copy_album_art"`
 	AlbumArtMaxWidth      int               `json:"album_art_maxwidth"`
+	PathMaps              map[string]string `json:"path_maps"`
 }
 
 func DefaultConfig() *Config {

@@ -7,8 +7,11 @@ import (
 )
 
 type AppConfig struct {
-	PlexToken string `json:"plex_token"`
-	XMLPath   string `json:"xml_path"`
+	PlexToken        string            `json:"plex_token"`
+	PlexHost         string            `json:"plex_host"`
+	PlexPort         int               `json:"plex_port"`
+	RekordboxXMLPath string            `json:"rekordbox_xml_path"`
+	PathMaps         map[string]string `json:"path_maps"`
 }
 
 func GetConfigDir() (string, error) {

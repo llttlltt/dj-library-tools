@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -33,11 +34,16 @@ var listCmd = &cobra.Command{
 }
 
 func listRekordbox(loc utils.Location) error {
-	if xmlPath == "" {
-		return fmt.Errorf("XML path must be provided via --xml or -x")
+	cfg, _ := config.LoadAppConfig()
+	path := utils.ExpandPath(xmlPath)
+	if path == "" {
+		path = utils.ExpandPath(cfg.RekordboxXMLPath)
+	}
+	if path == "" {
+		return fmt.Errorf("Rekordbox XML path not found. Use --xml or run 'djlt config rekordbox --xml PATH'")
 	}
 
-	lib, err := rekordbox.ReadRekordboxLibrary(xmlPath)
+	lib, err := rekordbox.ReadRekordboxLibrary(path)
 	if err != nil {
 		return fmt.Errorf("failed to read XML: %w", err)
 	}
@@ -45,7 +51,6 @@ func listRekordbox(loc utils.Location) error {
 	eng := engine.NewEngine(lib)
 	
 	if loc.Resource == "playlists" {
-		// Logic to list RB playlists
 		for _, node := range lib.Playlists.Node.Node {
 			if loc.Query == "" || strings.Contains(strings.ToLower(node.Name), strings.ToLower(loc.Query)) {
 				fmt.Printf("Playlist: %s (%d entries)\n", node.Name, node.Entries)
@@ -90,9 +95,9 @@ func listRekordbox(loc utils.Location) error {
 }
 
 func listPlex(loc utils.Location) error {
+	cfg, _ := config.LoadAppConfig()
 	token := os.Getenv("PLEX_TOKEN")
 	if token == "" {
-		cfg, _ := config.LoadAppConfig()
 		token = cfg.PlexToken
 	}
 	if token == "" {
@@ -100,7 +105,7 @@ func listPlex(loc utils.Location) error {
 	}
 
 	client := plex.NewClient(token)
-	resources, err := client.GetResources()
+	resources, err := client.GetResources(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to get resources: %w", err)
 	}
@@ -110,30 +115,85 @@ func listPlex(loc utils.Location) error {
 			continue
 		}
 
-		fmt.Printf("Server: %s\n", res.Name)
-		if len(res.Connections) == 0 {
-			continue
-		}
-
-		baseURL := res.Connections[0].URI
+		fmt.Printf("Server: %s [%s]\n", res.Name, res.ClientIdentifier)
 		serverClient := plex.NewClient(res.AccessToken)
 
 		if loc.Resource == "playlists" {
-			playlists, err := serverClient.GetPlaylists(baseURL)
-			if err != nil {
-				fmt.Printf("  Failed to get playlists: %v\n", err)
+			var probe *plex.ConnectionResult
+			var lastErr error
+
+			if cfg.PlexHost != "" {
+				port := cfg.PlexPort
+				if port == 0 {
+					port = 32400
+				}
+				baseURL := fmt.Sprintf("http://%s:%d", cfg.PlexHost, port)
+				playlists, err := serverClient.GetPlaylists(context.Background(), baseURL)
+				if err == nil {
+					probe = &plex.ConnectionResult{BaseURL: baseURL, Playlists: playlists}
+				} else {
+					lastErr = err
+				}
+			} else {
+				probe, lastErr = serverClient.ProbeBestConnection(res)
+			}
+
+			if lastErr != nil {
+				fmt.Printf("  Failed to connect: %v\n", lastErr)
 				continue
 			}
 
-			for _, pl := range playlists {
+			fmt.Printf("  Connected via: %s\n", probe.BaseURL)
+			for _, pl := range probe.Playlists {
 				if loc.Query != "" && !strings.Contains(strings.ToLower(pl.Title), strings.ToLower(loc.Query)) {
 					continue
 				}
 				fmt.Printf("  - [%s] %s (%d tracks)\n", pl.RatingKey, pl.Title, pl.LeafCount)
 			}
 		} else if loc.Resource == "tracks" {
-			// This would ideally fetch all tracks and apply the query
-			fmt.Printf("  (Listing all tracks not yet implemented, use playlists)\n")
+			var probe *plex.ConnectionResult
+			var lastErr error
+
+			if cfg.PlexHost != "" {
+				port := cfg.PlexPort
+				if port == 0 {
+					port = 32400
+				}
+				baseURL := fmt.Sprintf("http://%s:%d", cfg.PlexHost, port)
+				// We need to find the playlist to get its tracks, or just fetch library
+				// For now, let's assume query is a playlist ID
+				tracks, err := serverClient.GetPlaylistTracks(context.Background(), baseURL, "/playlists/"+loc.Query+"/items")
+				if err == nil {
+					probe = &plex.ConnectionResult{BaseURL: baseURL, Tracks: tracks}
+				} else {
+					lastErr = err
+				}
+			} else {
+				// Probing for tracks is complex, for now we require a host or use first connection
+				if len(res.Connections) > 0 {
+					baseURL := res.Connections[0].URI
+					tracks, err := serverClient.GetPlaylistTracks(context.Background(), baseURL, "/playlists/"+loc.Query+"/items")
+					if err == nil {
+						probe = &plex.ConnectionResult{BaseURL: baseURL, Tracks: tracks}
+					} else {
+						lastErr = err
+					}
+				}
+			}
+
+			if lastErr != nil {
+				fmt.Printf("  Failed to get tracks: %v\n", lastErr)
+				continue
+			}
+
+			for _, t := range probe.Tracks {
+				path := "No Path Found"
+				if len(t.Media) > 0 && len(t.Media[0].Part) > 0 {
+					path = t.Media[0].Part[0].File
+				}
+				fmt.Printf("  - %s - %s\n", t.Artist, t.Title)
+				fmt.Printf("    Path: %s\n", path)
+			}
 		}
 	}
 	return nil

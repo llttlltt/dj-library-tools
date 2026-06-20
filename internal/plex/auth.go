@@ -1,6 +1,7 @@
 package plex
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 )
@@ -11,9 +12,9 @@ type PinResponse struct {
 	AuthToken string `json:"authToken"`
 }
 
-func (c *Client) RequestPin() (*PinResponse, error) {
+func (c *Client) RequestPin(ctx context.Context) (*PinResponse, error) {
 	url := fmt.Sprintf("%s/pins?strong=true", PlexTvBaseURL)
-	req, err := c.newRequest(http.MethodPost, url)
+	req, err := c.newRequest(ctx, http.MethodPost, url)
 	if err != nil {
 		return nil, err
 	}
@@ -26,9 +27,9 @@ func (c *Client) RequestPin() (*PinResponse, error) {
 	return &pin, nil
 }
 
-func (c *Client) CheckPin(id int) (*PinResponse, error) {
+func (c *Client) CheckPin(ctx context.Context, id int) (*PinResponse, error) {
 	url := fmt.Sprintf("%s/pins/%d", PlexTvBaseURL, id)
-	req, err := c.newRequest(http.MethodGet, url)
+	req, err := c.newRequest(ctx, http.MethodGet, url)
 	if err != nil {
 		return nil, err
 	}
@@ -41,9 +42,9 @@ func (c *Client) CheckPin(id int) (*PinResponse, error) {
 	return &pin, nil
 }
 
-func (c *Client) GetResources() ([]Resource, error) {
+func (c *Client) GetResources(ctx context.Context) ([]Resource, error) {
 	url := fmt.Sprintf("%s/resources", PlexTvBaseURL)
-	req, err := c.newRequest(http.MethodGet, url)
+	req, err := c.newRequest(ctx, http.MethodGet, url)
 	if err != nil {
 		return nil, err
 	}
@@ -56,9 +57,9 @@ func (c *Client) GetResources() ([]Resource, error) {
 	return resources, nil
 }
 
-func (c *Client) GetPlaylists(baseURL string) ([]Playlist, error) {
+func (c *Client) GetPlaylists(ctx context.Context, baseURL string) ([]Playlist, error) {
 	url := fmt.Sprintf("%s/playlists", baseURL)
-	req, err := c.newRequest(http.MethodGet, url)
+	req, err := c.newRequest(ctx, http.MethodGet, url)
 	if err != nil {
 		return nil, err
 	}
@@ -73,9 +74,9 @@ func (c *Client) GetPlaylists(baseURL string) ([]Playlist, error) {
 	return container.MediaContainer.Metadata, nil
 }
 
-func (c *Client) GetPlaylistTracks(baseURL, playlistKey string) ([]Track, error) {
+func (c *Client) GetPlaylistTracks(ctx context.Context, baseURL, playlistKey string) ([]Track, error) {
 	url := fmt.Sprintf("%s%s", baseURL, playlistKey)
-	req, err := c.newRequest(http.MethodGet, url)
+	req, err := c.newRequest(ctx, http.MethodGet, url)
 	if err != nil {
 		return nil, err
 	}
