@@ -40,7 +40,7 @@ func TestParityWithLegacyScripts(t *testing.T) {
 
 		// Run Go implementation
 		opts := FixOptions{Ext: ".mp3"}
-		if err := FixPlaylist(m3uPath, opts); err != nil {
+		if _, err := FixPlaylist(m3uPath, opts); err != nil {
 			t.Fatalf("Go FixPlaylist failed: %v", err)
 		}
 		goResult, _ := os.ReadFile(m3uPath)

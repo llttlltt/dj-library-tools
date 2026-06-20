@@ -16,10 +16,18 @@ type FixOptions struct {
 	Force          bool
 }
 
-// FixPlaylist performs the playlist hygiene operations.
-func FixPlaylist(inputPath string, opts FixOptions) error {
+// FixResult holds the outcome of the fix operation, including any missing files found.
+type FixResult struct {
+	TotalTracks   int
+	MissingTracks []string
+	OutputPath    string
+}
+
+// FixPlaylist performs the playlist hygiene operations and returns a summary.
+func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
+	result := &FixResult{}
 	if _, err := os.Stat(inputPath); os.IsNotExist(err) {
-		return fmt.Errorf("input file '%s' not found", inputPath)
+		return nil, fmt.Errorf("input file '%s' not found", inputPath)
 	}
 
 	outputPath := inputPath
@@ -28,25 +36,25 @@ func FixPlaylist(inputPath string, opts FixOptions) error {
 		if ext == ".m3u" {
 			outputPath = strings.TrimSuffix(inputPath, ".m3u") + ".m3u8"
 		} else if ext != ".m3u8" {
-			return fmt.Errorf("input file must be .m3u or .m3u8 for M3U8 enrichment")
+			return nil, fmt.Errorf("input file must be .m3u or .m3u8 for M3U8 enrichment")
 		}
 	}
 
 	if outputPath != inputPath {
 		if _, err := os.Stat(outputPath); err == nil && !opts.Force {
-			return fmt.Errorf("output file '%s' already exists. Use --force to overwrite", outputPath)
+			return nil, fmt.Errorf("output file '%s' already exists. Use --force to overwrite", outputPath)
 		}
 	}
 
 	inputFile, err := os.Open(inputPath)
 	if err != nil {
-		return fmt.Errorf("failed to open input file: %w", err)
+		return nil, fmt.Errorf("failed to open input file: %w", err)
 	}
 	defer inputFile.Close()
 
 	tmpFile, err := os.CreateTemp("", "djlt-playlist-*")
 	if err != nil {
-		return fmt.Errorf("failed to create temp file: %w", err)
+		return nil, fmt.Errorf("failed to create temp file: %w", err)
 	}
 	defer os.Remove(tmpFile.Name())
 
@@ -54,7 +62,7 @@ func FixPlaylist(inputPath string, opts FixOptions) error {
 
 	if opts.M3U8 {
 		if err := WriteM3U8Header(tmpFile); err != nil {
-			return fmt.Errorf("failed to write M3U8 header: %w", err)
+			return nil, fmt.Errorf("failed to write M3U8 header: %w", err)
 		}
 	}
 
@@ -66,12 +74,13 @@ func FixPlaylist(inputPath string, opts FixOptions) error {
 				continue
 			}
 			if _, err := fmt.Fprintln(tmpFile, line); err != nil {
-				return fmt.Errorf("failed to write line: %w", err)
+				return nil, fmt.Errorf("failed to write line: %w", err)
 			}
 			continue
 		}
 
 		targetPath := line
+		result.TotalTracks++
 		if opts.Ext != "" {
 			targetPath = FormatPath(line, opts.Ext)
 		}
@@ -81,48 +90,53 @@ func FixPlaylist(inputPath string, opts FixOptions) error {
 			absTargetPath = filepath.Join(fileDir, targetPath)
 		}
 
+		// Check for existence
+		if _, err := os.Stat(absTargetPath); os.IsNotExist(err) {
+			result.MissingTracks = append(result.MissingTracks, absTargetPath)
+		}
+
 		if opts.M3U8 {
 			if _, err := os.Stat(absTargetPath); os.IsNotExist(err) {
-				fmt.Fprintf(os.Stderr, "Warning: Track not found: %s\n", absTargetPath)
 				if _, err := fmt.Fprintln(tmpFile, targetPath); err != nil {
-					return err
+					return nil, err
 				}
 			} else {
 				meta, err := ExtractMetadata(absTargetPath)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Warning: Could not read metadata for %s: %v\n", absTargetPath, err)
 					if _, err := fmt.Fprintln(tmpFile, targetPath); err != nil {
-						return err
+						return nil, err
 					}
 				} else {
 					duration := 0.0 // Placeholder for now
 					if err := WriteM3U8Entry(tmpFile, meta, targetPath, duration); err != nil {
-						return fmt.Errorf("failed to write M3U8 entry: %w", err)
+						return nil, fmt.Errorf("failed to write M3U8 entry: %w", err)
 					}
 				}
 			}
 		} else {
 			if _, err := fmt.Fprintln(tmpFile, targetPath); err != nil {
-				return fmt.Errorf("failed to write line: %w", err)
+				return nil, fmt.Errorf("failed to write line: %w", err)
 			}
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("error reading input: %w", err)
+		return nil, fmt.Errorf("error reading input: %w", err)
 	}
 
 	tmpFile.Close()
 
 	if err := os.Rename(tmpFile.Name(), outputPath); err != nil {
-		return fmt.Errorf("failed to save output file: %w", err)
+		return nil, fmt.Errorf("failed to save output file: %w", err)
 	}
 
 	if opts.RemoveOriginal && inputPath != outputPath {
 		if err := os.Remove(inputPath); err != nil {
-			return fmt.Errorf("failed to remove original file: %w", err)
+			return nil, fmt.Errorf("failed to remove original file: %w", err)
 		}
 	}
 
-	return nil
+	result.OutputPath = outputPath
+	return result, nil
 }
