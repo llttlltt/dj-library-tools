@@ -48,7 +48,7 @@ Example: djlt ls "artist:Four Tet bpm:120..128"`,
 		bpmFmt := color.New(color.FgHiGreen).SprintfFunc()
 		keyFmt := color.New(color.FgHiYellow).SprintfFunc()
 
-		fmt.Printf("  %s    %s    %s\n", headerFmt("BPM"), headerFmt("Key"), headerFmt("Artist - Title"))
+		fmt.Printf("%7s  %-5s  %s\n", headerFmt("BPM"), headerFmt("Key"), headerFmt("Artist - Title"))
 		for _, t := range tracks {
 			bpm := 0.0
 			if len(t.Tempo) > 0 {
