@@ -1,7 +1,9 @@
 # Planning and Metadata
-plan/
-context.md
-research.md
+CONTEXT.md
+RESEARCH.md
+AGENTS.md
+plan/**/*.md
+docs/**/*.md
 
 # macOS
 .DS_Store
