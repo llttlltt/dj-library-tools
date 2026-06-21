@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	extFlag           string
+	extsFlag          []string
 	m3u8Flag          bool
 	removeOriginal    bool
 	forceOverwrite    bool
@@ -29,7 +29,7 @@ var fixCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		inputPath := args[0]
 		opts := playlist.FixOptions{
-			Ext:            extFlag,
+			Exts:           extsFlag,
 			M3U8:           m3u8Flag,
 			RemoveOriginal: removeOriginal,
 			Force:          forceOverwrite,
@@ -42,15 +42,15 @@ var fixCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Successfully processed '%s' -> '%s'\n", inputPath, result.OutputPath)
-		fmt.Printf("Total tracks: %d\n", result.TotalTracks)
-		if len(result.MissingTracks) > 0 {
-			fmt.Printf("⚠️ Missing tracks: %d\n", len(result.MissingTracks))
+		fmt.Printf("Total tracks found: %d\n", result.TotalTracks-len(result.SkippedTracks))
+		if len(result.SkippedTracks) > 0 {
+			fmt.Printf("❌ Skipped tracks (Not found): %d\n", len(result.SkippedTracks))
 			if verboseFlag {
-				for _, path := range result.MissingTracks {
+				for _, path := range result.SkippedTracks {
 					fmt.Printf("  - %s\n", path)
 				}
 			} else {
-				fmt.Println("  (Use -v to see full list of missing tracks)")
+				fmt.Println("  (Use -v to see full list of skipped tracks)")
 			}
 		}
 
@@ -74,7 +74,7 @@ var fixCmd = &cobra.Command{
 }
 
 func init() {
-	fixCmd.Flags().StringVarP(&extFlag, "ext", "e", "", "New file extension (e.g., .mp3)")
+	fixCmd.Flags().StringSliceVarP(&extsFlag, "ext", "e", []string{}, "Priority list of file extensions to search for (comma-separated, e.g., mp3,flac)")
 	fixCmd.Flags().BoolVar(&m3u8Flag, "m3u8", false, "Enrich playlist with M3U8 #EXTINF tags")
 	fixCmd.Flags().BoolVarP(&removeOriginal, "remove-original", "r", false, "Remove the original playlist file after processing")
 	fixCmd.Flags().BoolVarP(&forceOverwrite, "force", "f", false, "Force overwrite if output file exists")
