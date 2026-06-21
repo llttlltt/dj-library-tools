@@ -24,7 +24,7 @@ var loginCmd = &cobra.Command{
 			return fmt.Errorf("failed to request pin: %w", err)
 		}
 
-		fmt.Printf("Please visit: https://app.plex.tv/auth/#!?pin=%s&clientID=%s\n", pin.Code, plex.AppID)
+		fmt.Printf("Please visit: https://app.plex.tv/auth/#!?code=%s&context%%5Bdevice%%5D%%5Bproduct%%5D=%s&clientID=%s\n", pin.Code, plex.ClientName, plex.AppID)
 		fmt.Printf("Waiting for authentication...\n")
 
 		ticker := time.NewTicker(2 * time.Second)
