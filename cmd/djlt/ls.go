@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/llttlltt/dj-library-tools/internal/engine"
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 	"github.com/spf13/cobra"
@@ -36,21 +37,31 @@ Example: djlt ls "artist:Four Tet bpm:120..128"`,
 		}
 
 		if len(tracks) == 0 {
-			fmt.Println("No tracks matched the query.")
+			color.Yellow("No tracks matched the query.")
 			return nil
 		}
 
-		fmt.Printf("  BPM    ARTIST - TITLE\n")
-		fmt.Printf("-------  ------------------------------------------------------------\n")
+		headerFmt := color.New(color.FgCyan, color.Bold).SprintfFunc()
+		dimFmt := color.New(color.FgHiBlack).SprintfFunc()
+		artistFmt := color.New(color.FgHiMagenta).SprintfFunc()
+		titleFmt := color.New(color.FgHiWhite).SprintfFunc()
+		bpmFmt := color.New(color.FgHiGreen).SprintfFunc()
+
+		fmt.Printf("  %s    %s\n", headerFmt("BPM"), headerFmt("ARTIST - TITLE"))
+		fmt.Printf("%s  %s\n", dimFmt("-------"), dimFmt("------------------------------------------------------------"))
 		for _, t := range tracks {
 			bpm := 0.0
 			if len(t.Tempo) > 0 {
 				bpm = t.Tempo[0].Bpm
 			}
-			fmt.Printf("%7.2f  %s - %s\n", bpm, t.Artist, t.Name)
+			fmt.Printf("%s  %s %s %s\n", 
+				bpmFmt("%7.2f", bpm), 
+				artistFmt(t.Artist), 
+				dimFmt("-"), 
+				titleFmt(t.Name))
 		}
 
-		fmt.Printf("\nMatched %d tracks.\n", len(tracks))
+		fmt.Printf("\n%s\n", color.HiGreenString("Matched %d tracks.", len(tracks)))
 		return nil
 	},
 }
