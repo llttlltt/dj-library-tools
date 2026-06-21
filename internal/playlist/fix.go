@@ -15,6 +15,7 @@ type FixOptions struct {
 	RemoveOriginal bool
 	Force          bool
 	OutputPath     string
+	Verbose        bool
 }
 
 // FixResult holds the outcome of the fix operation, including any missing files found.
@@ -66,6 +67,10 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 
 	fileDir := filepath.Dir(inputPath)
 
+	if opts.Verbose {
+		fmt.Printf("Starting playlist fix for: %s\n", inputPath)
+	}
+
 	if opts.M3U8 {
 		if err := WriteM3U8Header(tmpFile); err != nil {
 			return nil, fmt.Errorf("failed to write M3U8 header: %w", err)
@@ -73,6 +78,7 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 	}
 
 	scanner := bufio.NewScanner(inputFile)
+	trackCount := 0
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" || strings.HasPrefix(line, "#") {
@@ -87,6 +93,14 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 
 		targetPath := line
 		result.TotalTracks++
+		trackCount++
+
+		if opts.Verbose {
+			fmt.Printf("[%d] Processing: %s\n", trackCount, line)
+		} else if trackCount%50 == 0 {
+			fmt.Printf("Processing tracks... (%d done)\n", trackCount)
+		}
+
 		if opts.Ext != "" {
 			targetPath = FormatPath(line, opts.Ext)
 		}
