@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/media"
@@ -19,11 +20,15 @@ import (
 var (
 	exportDest   string
 	exportFormat string
+	dryRun       bool
 )
 
 var syncCmd = &cobra.Command{
 	Use:   "sync [source-location] [target-location]",
 	Short: "Sync items between a source and target",
+	Long: `Sync items between providers.
+Locations follow the format provider/resource:query.
+Example: djlt sync plex:Techno rb --dest ./Music`,
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		src := utils.ParseLocation(args[0])
@@ -72,10 +77,9 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 	var targetServer plex.Resource
 	found := false
 	for _, res := range resources {
-		if res.Provides != "server" && len(res.Connections) > 0 {
+		if res.Provides != "server" {
 			continue
 		}
-
 		targetServer = res
 		found = true
 		break
@@ -86,27 +90,9 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 	}
 
 	serverClient := plex.NewClient(targetServer.AccessToken)
-	var probe *plex.ConnectionResult
-	var syncErr error
-
-	if cfg.PlexHost != "" {
-		port := cfg.PlexPort
-		if port == 0 {
-			port = 32400
-		}
-		baseURL := fmt.Sprintf("http://%s:%d", cfg.PlexHost, port)
-		playlists, err := serverClient.GetPlaylists(context.Background(), baseURL)
-		if err == nil {
-			probe = &plex.ConnectionResult{BaseURL: baseURL, Playlists: playlists}
-		} else {
-			syncErr = err
-		}
-	} else {
-		probe, syncErr = serverClient.ProbeBestConnection(targetServer)
-	}
-
-	if syncErr != nil {
-		return fmt.Errorf("failed to connect to server: %w", syncErr)
+	probe, err := serverClient.ProbeBestConnection(targetServer)
+	if err != nil {
+		return fmt.Errorf("failed to connect to server: %w", err)
 	}
 
 	fmt.Printf("Connected via: %s\n", probe.BaseURL)
@@ -135,7 +121,7 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 	if exportDest != "" {
 		cfgMedia := media.DefaultConfig()
 		cfgMedia.Dest = exportDest
-		cfgMedia.PathMaps = cfg.PathMaps // Pass path maps from app config
+		cfgMedia.PathMaps = cfg.PathMaps
 		if exportFormat != "" {
 			cfgMedia.Format = exportFormat
 		}
@@ -168,24 +154,29 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 				continue
 			}
 
-			if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
-				fmt.Printf("    Dir error: %v\n", err)
-				continue
-			}
-
 			sourceFile := track.Media[0].Part[0].File
 			if _, err := os.Stat(sourceFile); err != nil {
 				fmt.Printf("    Source file not found: %s\n", sourceFile)
 				continue
 			}
 
-			if err := transcoder.Transcode(sourceFile, destPath); err != nil {
-				fmt.Printf("    Transcode error: %v\n", err)
-				continue
-			}
-			
-			if rbTrack != nil {
-				rbTrack.Location = "file://localhost" + destPath
+			if dryRun {
+				fmt.Printf("    [Dry Run] Would transcode: %s -> %s\n", sourceFile, destPath)
+				if rbTrack != nil {
+					rbTrack.Location = "file://localhost" + destPath
+				}
+			} else {
+				if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+					fmt.Printf("    Dir error: %v\n", err)
+					continue
+				}
+				if err := transcoder.Transcode(sourceFile, destPath); err != nil {
+					fmt.Printf("    Transcode error: %v\n", err)
+					continue
+				}
+				if rbTrack != nil {
+					rbTrack.Location = "file://localhost" + destPath
+				}
 			}
 		}
 
@@ -194,12 +185,16 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 		}
 	}
 
-	if err := injectPlaylist(rbXML, targetPlaylist.Title, rbTrackIDs); err != nil {
-		return fmt.Errorf("failed to inject playlist: %w", err)
-	}
-
-	if err := rekordbox.WriteRekordboxLibrary(path, rbXML); err != nil {
-		return fmt.Errorf("failed to save XML: %w", err)
+	if dryRun {
+		fmt.Printf("[Dry Run] Would inject playlist '%s' with %d tracks into XML\n", targetPlaylist.Title, len(rbTrackIDs))
+		fmt.Printf("[Dry Run] Would save updated library to: %s\n", path)
+	} else {
+		if err := injectPlaylist(rbXML, targetPlaylist.Title, rbTrackIDs); err != nil {
+			return fmt.Errorf("failed to inject playlist: %w", err)
+		}
+		if err := rekordbox.WriteRekordboxLibrary(path, rbXML); err != nil {
+			return fmt.Errorf("failed to save XML: %w", err)
+		}
 	}
 
 	fmt.Printf("Sync complete.\n")
@@ -268,16 +263,6 @@ func syncPlexToM3U8(src, tgt utils.Location) error {
 		m3uPath += ".m3u8"
 	}
 
-	f, err := os.Create(m3uPath)
-	if err != nil {
-		return fmt.Errorf("failed to create m3u8 file: %w", err)
-	}
-	defer f.Close()
-
-	if err := playlist.WriteM3U8Header(f); err != nil {
-		return err
-	}
-
 	// Setup Media Engine if export flag is set
 	var transcoder *media.Transcoder
 	if exportDest != "" {
@@ -290,6 +275,9 @@ func syncPlexToM3U8(src, tgt utils.Location) error {
 		transcoder = media.NewTranscoder(cfgMedia)
 	}
 
+	var m3uBody strings.Builder
+	playlist.WriteM3U8Header(&m3uBody)
+
 	for _, track := range tracks {
 		trackPath := track.Media[0].Part[0].File
 		
@@ -300,9 +288,14 @@ func syncPlexToM3U8(src, tgt utils.Location) error {
 				Title:  track.Title,
 			})
 			if err == nil {
-				os.MkdirAll(filepath.Dir(destPath), 0755)
-				if err := transcoder.Transcode(trackPath, destPath); err == nil {
+				if dryRun {
+					fmt.Printf("    [Dry Run] Would transcode: %s -> %s\n", trackPath, destPath)
 					trackPath = destPath
+				} else {
+					os.MkdirAll(filepath.Dir(destPath), 0755)
+					if err := transcoder.Transcode(trackPath, destPath); err == nil {
+						trackPath = destPath
+					}
 				}
 			}
 		}
@@ -312,13 +305,24 @@ func syncPlexToM3U8(src, tgt utils.Location) error {
 			trackPath = rel
 		}
 
-		playlist.WriteM3U8Entry(f, playlist.AudioMetadata{
+		playlist.WriteM3U8Entry(&m3uBody, playlist.AudioMetadata{
 			Artist: track.Artist,
 			Title:  track.Title,
 		}, trackPath, 0)
 	}
 
-	fmt.Printf("Sync complete. M3U8 created: %s\n", m3uPath)
+	if dryRun {
+		fmt.Printf("[Dry Run] Would create M3U8: %s with contents:\n%s\n", m3uPath, m3uBody.String())
+	} else {
+		f, err := os.Create(m3uPath)
+		if err != nil {
+			return fmt.Errorf("failed to create m3u8 file: %w", err)
+		}
+		defer f.Close()
+		f.WriteString(m3uBody.String())
+	}
+
+	fmt.Printf("Sync complete.\n")
 	return nil
 }
 
@@ -376,5 +380,6 @@ func injectPlaylist(lib *rekordbox.RekordboxLibraryXML, name string, trackIDs []
 func init() {
 	syncCmd.Flags().StringVar(&exportDest, "dest", "", "Destination directory for exported files")
 	syncCmd.Flags().StringVar(&exportFormat, "format", "mp3", "Target format for exported files")
+	syncCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without writing files or XML")
 	rootCmd.AddCommand(syncCmd)
 }
