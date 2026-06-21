@@ -11,7 +11,7 @@ func TestQueryEvaluator(t *testing.T) {
 		Name:   "Sixteen Oceans",
 		Artist: "Four Tet",
 		Tempo: []rekordbox.Tempo{
-			{Inizio: 124.0},
+			{Bpm: 124.0},
 		},
 		Genre: "Electronic",
 	}
