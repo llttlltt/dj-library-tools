@@ -128,7 +128,7 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 		fmt.Printf("Exporting files to: %s (format: %s)\n", exportDest, cfgMedia.Format)
 	}
 
-	matcher := sync.NewMatcher(rbXML.Collection.TRACK)
+	syncEng := sync.NewEngine(serverClient, rbXML)
 	var rbTrackIDs []string
 
 	type transcodeJob struct {
@@ -172,6 +172,14 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 						decor.Name(fmt.Sprintf("  -> %s", displayName), decor.WCSyncSpaceR),
 					),
 				)
+
+				if len(track.Media) == 0 || len(track.Media[0].Part) == 0 {
+					trackBar.Abort(false)
+					errors <- fmt.Errorf("no media file for: %s - %s", track.Artist, track.Title)
+					results <- ""
+					totalBar.Increment()
+					continue
+				}
 
 				if transcoder == nil {
 					trackBar.Increment()
@@ -244,7 +252,7 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 
 	// Feed jobs
 	for _, track := range tracks {
-		match := matcher.Match(track)
+		match := syncEng.Matcher.Match(track)
 		var rbTrack *rekordbox.Track
 
 		if match.RBTrack != nil && match.Confidence >= 0.8 {
@@ -276,10 +284,13 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 		fmt.Printf("[Dry Run] Would inject playlist '%s' with %d tracks into XML\n", targetPlaylist.Title, len(rbTrackIDs))
 		fmt.Printf("[Dry Run] Would save updated library to: %s\n", path)
 	} else {
-		if err := injectPlaylist(rbXML, targetPlaylist.Title, rbTrackIDs); err != nil {
-			return fmt.Errorf("failed to inject playlist: %w", err)
+		result := syncEng.InjectPlaylist(targetPlaylist.Title, rbTrackIDs)
+		action := "Created"
+		if result.Updated {
+			action = "Updated"
 		}
-		if err := rekordbox.WriteRekordboxLibrary(path, rbXML); err != nil {
+		fmt.Printf("%s playlist '%s' (%d tracks injected).\n", action, result.PlaylistName, result.TracksInjected)
+		if err := syncEng.SaveXML(path); err != nil {
 			return fmt.Errorf("failed to save XML: %w", err)
 		}
 	}
@@ -415,56 +426,7 @@ func syncPlexToM3U8(src, tgt utils.Location) error {
 	return nil
 }
 
-func injectPlaylist(lib *rekordbox.RekordboxLibraryXML, name string, trackIDs []string) error {
-	var syncFolder *rekordbox.Node
-	for i := range lib.Playlists.Node.Node {
-		if lib.Playlists.Node.Node[i].Name == "Plex Sync" && lib.Playlists.Node.Node[i].Type == 0 {
-			syncFolder = &lib.Playlists.Node.Node[i]
-			break
-		}
-	}
 
-	if syncFolder == nil {
-		lib.Playlists.Node.Node = append(lib.Playlists.Node.Node, rekordbox.Node{
-			BaseNode: rekordbox.BaseNode{
-				Type: 0,
-				Name: "Plex Sync",
-			},
-		})
-		syncFolder = &lib.Playlists.Node.Node[len(lib.Playlists.Node.Node)-1]
-	}
-
-	newPlaylist := rekordbox.Node{
-		BaseNode: rekordbox.BaseNode{
-			Type: 1,
-			Name: name,
-		},
-		KeyType: 0,
-		Entries: int32(len(trackIDs)),
-	}
-
-	for _, id := range trackIDs {
-		newPlaylist.TRACK = append(newPlaylist.TRACK, struct {
-			Key string `xml:"Key,attr"`
-		}{Key: id})
-	}
-
-	found := false
-	for i := range syncFolder.Node {
-		if syncFolder.Node[i].Name == name && syncFolder.Node[i].Type == 1 {
-			syncFolder.Node[i] = newPlaylist
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		syncFolder.Node = append(syncFolder.Node, newPlaylist)
-		syncFolder.Count++
-	}
-
-	return nil
-}
 
 func init() {
 	syncCmd.Flags().StringVar(&exportDest, "dest", "", "Destination directory for exported files")
