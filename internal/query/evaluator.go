@@ -71,7 +71,7 @@ func (e *Evaluator) getFieldValue(track rekordbox.Track, field string) string {
 		return track.Album
 	case "bpm", "tempo":
 		if len(track.Tempo) > 0 {
-			return fmt.Sprintf("%.2f", track.Tempo[0].Inizio)
+			return fmt.Sprintf("%.2f", track.Tempo[0].Bpm)
 		}
 		return "0.00"
 	case "key":
