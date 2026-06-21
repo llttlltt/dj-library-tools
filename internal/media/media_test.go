@@ -28,6 +28,29 @@ func TestApplyPathMap(t *testing.T) {
 	}
 }
 
+func TestSanitizePathComponent(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"AC/DC", "AC-DC"},
+		{"artist: name", "artist- name"},
+		{"title?", "title"},
+		{`say "hello"`, "say hello"},
+		{"pipe|sep", "pipe-sep"},
+		{"  padded  ", "padded"},
+		{"normal", "normal"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got := sanitizePathComponent(tt.input)
+			if got != tt.want {
+				t.Errorf("sanitizePathComponent(%q) = %q; want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestFormatPath(t *testing.T) {
 	cfg := DefaultConfig()
 	tr := NewTranscoder(cfg)
