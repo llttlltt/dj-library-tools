@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
@@ -9,89 +10,148 @@ import (
 )
 
 var (
-	cfgPlexHost      string
-	cfgPlexPort      int
-	cfgPlexToken     string
-	cfgPlexMap       string
-	cfgPlexRemoveMap string
-	cfgRekordboxXML  string
+	cfgUnset bool
+	cfgList  bool
 )
 
 var configCmd = &cobra.Command{
-	Use:   "config [flags]",
+	Use:   "config [key] [value]",
 	Short: "View or update application configuration",
+	Long: `Manage djlt configuration using dot-namespaced keys.
+
+Keys:
+  plex.host             Plex server hostname or IP
+  plex.port             Plex server port (default: 32400)
+  plex.token            Plex authentication token
+  plex.map              Remote-to-local path map entry (value format: remote:local)
+  rekordbox.xml-path    Path to the Rekordbox XML library
+
+Examples:
+  djlt config --list
+  djlt config plex.host 10.0.0.5
+  djlt config plex.host
+  djlt config --unset plex.host
+  djlt config plex.map /media/Music:/Volumes/Music
+  djlt config plex.map
+  djlt config --unset plex.map /media/Music
+  djlt config rekordbox.xml-path ~/Documents/rekordbox.xml`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, _ := config.LoadAppConfig()
-		dirty := false
 
-		if cfgPlexHost != "" {
-			cfg.PlexHost = cfgPlexHost
-			fmt.Printf("Plex host set to: %s\n", cfgPlexHost)
-			dirty = true
+		if cfgList || len(args) == 0 {
+			printConfig(cfg)
+			return nil
 		}
 
-		if cmd.Flags().Changed("plex-port") {
-			cfg.PlexPort = cfgPlexPort
-			fmt.Printf("Plex port set to: %d\n", cfgPlexPort)
-			dirty = true
+		key := args[0]
+
+		if cfgUnset {
+			return runConfigUnset(cfg, key, args[1:])
 		}
 
-		if cfgPlexToken != "" {
-			cfg.PlexToken = cfgPlexToken
-			fmt.Printf("Plex token updated.\n")
-			dirty = true
+		if len(args) == 1 {
+			return runConfigGet(cfg, key)
 		}
 
-		if cfgPlexMap != "" {
-			parts := strings.SplitN(cfgPlexMap, ":", 2)
-			if len(parts) != 2 {
-				return fmt.Errorf("invalid --plex-map format; use remote:local")
-			}
-			if cfg.PathMaps == nil {
-				cfg.PathMaps = make(map[string]string)
-			}
-			cfg.PathMaps[parts[0]] = parts[1]
-			fmt.Printf("Added path map: %s -> %s\n", parts[0], parts[1])
-			dirty = true
-		}
-
-		if cfgPlexRemoveMap != "" {
-			if cfg.PathMaps != nil {
-				if _, exists := cfg.PathMaps[cfgPlexRemoveMap]; exists {
-					delete(cfg.PathMaps, cfgPlexRemoveMap)
-					fmt.Printf("Removed path map for: %s\n", cfgPlexRemoveMap)
-				} else {
-					fmt.Printf("No path map found for: %s\n", cfgPlexRemoveMap)
-				}
-			}
-			dirty = true
-		}
-
-		if cfgRekordboxXML != "" {
-			cfg.RekordboxXMLPath = cfgRekordboxXML
-			fmt.Printf("Rekordbox XML path set to: %s\n", cfgRekordboxXML)
-			dirty = true
-		}
-
-		if dirty {
-			if err := config.SaveAppConfig(cfg); err != nil {
-				return fmt.Errorf("failed to save config: %w", err)
-			}
-		}
-
-		fmt.Printf("\nDJ Library Tools Config:\n")
-		fmt.Printf("  Plex Host:   %s\n", cfg.PlexHost)
-		fmt.Printf("  Plex Port:   %d\n", cfg.PlexPort)
-		fmt.Printf("  Plex Token:  %s\n", maskToken(cfg.PlexToken))
-		fmt.Printf("  RB XML Path: %s\n", cfg.RekordboxXMLPath)
-		if len(cfg.PathMaps) > 0 {
-			fmt.Printf("  Path Maps:\n")
-			for k, v := range cfg.PathMaps {
-				fmt.Printf("    %s -> %s\n", k, v)
-			}
-		}
-		return nil
+		return runConfigSet(cfg, key, args[1])
 	},
+}
+
+func runConfigSet(cfg *config.AppConfig, key, value string) error {
+	switch key {
+	case "plex.host":
+		cfg.PlexHost = value
+		fmt.Printf("plex.host = %s\n", value)
+	case "plex.port":
+		port, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("plex.port must be an integer, got %q", value)
+		}
+		cfg.PlexPort = port
+		fmt.Printf("plex.port = %d\n", port)
+	case "plex.token":
+		cfg.PlexToken = value
+		fmt.Println("plex.token updated")
+	case "plex.map":
+		parts := strings.SplitN(value, ":", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("plex.map value must be remote:local, got %q", value)
+		}
+		if cfg.PathMaps == nil {
+			cfg.PathMaps = make(map[string]string)
+		}
+		cfg.PathMaps[parts[0]] = parts[1]
+		fmt.Printf("plex.map %s -> %s\n", parts[0], parts[1])
+	case "rekordbox.xml-path":
+		cfg.RekordboxXMLPath = value
+		fmt.Printf("rekordbox.xml-path = %s\n", value)
+	default:
+		return fmt.Errorf("unknown config key %q; run 'djlt config --help' for valid keys", key)
+	}
+	return config.SaveAppConfig(cfg)
+}
+
+func runConfigGet(cfg *config.AppConfig, key string) error {
+	switch key {
+	case "plex.host":
+		fmt.Println(cfg.PlexHost)
+	case "plex.port":
+		fmt.Println(cfg.PlexPort)
+	case "plex.token":
+		fmt.Println(maskToken(cfg.PlexToken))
+	case "plex.map":
+		for remote, local := range cfg.PathMaps {
+			fmt.Printf("%s:%s\n", remote, local)
+		}
+	case "rekordbox.xml-path":
+		fmt.Println(cfg.RekordboxXMLPath)
+	default:
+		return fmt.Errorf("unknown config key %q; run 'djlt config --help' for valid keys", key)
+	}
+	return nil
+}
+
+func runConfigUnset(cfg *config.AppConfig, key string, rest []string) error {
+	switch key {
+	case "plex.host":
+		cfg.PlexHost = ""
+		fmt.Println("unset plex.host")
+	case "plex.port":
+		cfg.PlexPort = 0
+		fmt.Println("unset plex.port")
+	case "plex.token":
+		cfg.PlexToken = ""
+		fmt.Println("unset plex.token")
+	case "plex.map":
+		if len(rest) == 0 {
+			return fmt.Errorf("--unset plex.map requires the remote path to remove")
+		}
+		remote := rest[0]
+		if cfg.PathMaps == nil {
+			return fmt.Errorf("no path maps configured")
+		}
+		if _, exists := cfg.PathMaps[remote]; !exists {
+			return fmt.Errorf("no path map found for %q", remote)
+		}
+		delete(cfg.PathMaps, remote)
+		fmt.Printf("removed plex.map %s\n", remote)
+	case "rekordbox.xml-path":
+		cfg.RekordboxXMLPath = ""
+		fmt.Println("unset rekordbox.xml-path")
+	default:
+		return fmt.Errorf("unknown config key %q; run 'djlt config --help' for valid keys", key)
+	}
+	return config.SaveAppConfig(cfg)
+}
+
+func printConfig(cfg *config.AppConfig) {
+	fmt.Printf("plex.host = %s\n", cfg.PlexHost)
+	fmt.Printf("plex.port = %d\n", cfg.PlexPort)
+	fmt.Printf("plex.token = %s\n", maskToken(cfg.PlexToken))
+	fmt.Printf("rekordbox.xml-path = %s\n", cfg.RekordboxXMLPath)
+	for remote, local := range cfg.PathMaps {
+		fmt.Printf("plex.map = %s:%s\n", remote, local)
+	}
 }
 
 func maskToken(t string) string {
@@ -102,11 +162,7 @@ func maskToken(t string) string {
 }
 
 func init() {
-	configCmd.Flags().StringVar(&cfgPlexHost, "plex-host", "", "Plex server host (e.g. 10.0.0.5)")
-	configCmd.Flags().IntVar(&cfgPlexPort, "plex-port", 32400, "Plex server port (default: 32400)")
-	configCmd.Flags().StringVar(&cfgPlexToken, "plex-token", "", "Plex authentication token")
-	configCmd.Flags().StringVar(&cfgPlexMap, "plex-map", "", "Add a Plex path map (remote:local)")
-	configCmd.Flags().StringVar(&cfgPlexRemoveMap, "plex-remove-map", "", "Remove a Plex path map by its remote key")
-	configCmd.Flags().StringVar(&cfgRekordboxXML, "rekordbox-xml-path", "", "Path to the Rekordbox XML library")
+	configCmd.Flags().BoolVar(&cfgList, "list", false, "Show all configuration values")
+	configCmd.Flags().BoolVar(&cfgUnset, "unset", false, "Remove a configuration value")
 	rootCmd.AddCommand(configCmd)
 }
