@@ -2,6 +2,7 @@ package media
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -15,8 +16,27 @@ func NewTranscoder(cfg *Config) *Transcoder {
 }
 
 func (t *Transcoder) Transcode(source, dest string) error {
+	// 1. Check if FFmpeg exists
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		return fmt.Errorf("ffmpeg not found in PATH. Please install FFmpeg to use transcoding features")
+	}
+
+	// 2. Check if destination already exists (Smart Skip)
+	if info, err := os.Stat(dest); err == nil {
+		if info.Size() > 0 {
+			// File exists and is non-empty, we skip for now.
+			// In the future, we could check bitrates/metadata to decide if we need to re-transcode.
+			return nil
+		}
+	}
+
 	// Apply path mappings to source
 	source = t.ApplyPathMap(source)
+
+	// Ensure source exists
+	if _, err := os.Stat(source); err != nil {
+		return fmt.Errorf("source file not found: %s", source)
+	}
 
 	cmdStr, ok := t.Config.Formats[t.Config.Format]
 	if !ok {
