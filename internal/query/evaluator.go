@@ -84,6 +84,18 @@ func (e *Evaluator) getFieldValue(track rekordbox.Track, field string) string {
 		return strconv.Itoa(int(track.Year))
 	case "label":
 		return track.Label
+	case "grouping":
+		return track.Grouping
+	case "rating":
+		return strconv.Itoa(int(track.Rating))
+	case "playcount":
+		return strconv.Itoa(int(track.PlayCount))
+	case "added", "dateadded":
+		return track.DateAdded
+	case "kind":
+		return track.Kind
+	case "size":
+		return strconv.FormatInt(track.Size, 10)
 	}
 	return ""
 }
