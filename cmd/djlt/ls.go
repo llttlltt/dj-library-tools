@@ -48,14 +48,14 @@ Example: djlt ls "artist:Four Tet bpm:120..128"`,
 		bpmFmt := color.New(color.FgHiGreen).SprintfFunc()
 		keyFmt := color.New(color.FgHiYellow).SprintfFunc()
 
-		fmt.Printf("%s    %s    %s\n", headerFmt("BPM"), headerFmt("Key"), headerFmt("Artist - Title"))
+		fmt.Printf("%s  %s  %s\n", headerFmt("%-7s", "BPM"), headerFmt("%-5s", "Key"), headerFmt("Artist - Title"))
 		for _, t := range tracks {
 			bpm := 0.0
 			if len(t.Tempo) > 0 {
 				bpm = t.Tempo[0].Bpm
 			}
 			fmt.Printf("%s  %s  %s %s %s\n", 
-				bpmFmt("%7.2f", bpm), 
+				bpmFmt("%-7.2f", bpm), 
 				keyFmt("%-5s", t.Tonality),
 				artistFmt(t.Artist), 
 				dimFmt("-"), 
