@@ -2,6 +2,7 @@ package plex
 
 type Resource struct {
 	Name                string `json:"name"`
+	ClientIdentifier    string `json:"clientIdentifier"`
 	Product             string `json:"product"`
 	ProductVersion      string `json:"productVersion"`
 	Platform            string `json:"platform"`

@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/llttlltt/dj-library-tools/internal/plex"
@@ -23,7 +24,7 @@ func NewEngine(plexClient *plex.Client, rbXML *rekordbox.RekordboxLibraryXML) *E
 
 // SyncPlaylist takes a Plex playlist and adds it to the Rekordbox XML.
 func (e *Engine) SyncPlaylist(baseURL, playlistKey string) error {
-	_, err := e.PlexClient.GetPlaylistTracks(baseURL, playlistKey)
+	_, err := e.PlexClient.GetPlaylistTracks(context.Background(), baseURL, playlistKey)
 	if err != nil {
 		return fmt.Errorf("failed to get plex tracks: %w", err)
 	}

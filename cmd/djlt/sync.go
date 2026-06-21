@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/plex"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
+	"github.com/llttlltt/dj-library-tools/internal/playlist"
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 	"github.com/spf13/cobra"
 )
@@ -30,32 +32,39 @@ var syncCmd = &cobra.Command{
 		if src.Provider == "plex" && tgt.Provider == "rb" {
 			return syncPlexToRekordbox(src, tgt)
 		}
+		if src.Provider == "plex" && tgt.Provider == "m3u8" {
+			return syncPlexToM3U8(src, tgt)
+		}
 
 		return fmt.Errorf("unsupported sync direction: %s to %s", src.Provider, tgt.Provider)
 	},
 }
 
 func syncPlexToRekordbox(src, tgt utils.Location) error {
+	cfg, _ := config.LoadAppConfig()
 	token := os.Getenv("PLEX_TOKEN")
 	if token == "" {
-		cfg, _ := config.LoadAppConfig()
 		token = cfg.PlexToken
 	}
 	if token == "" {
 		return fmt.Errorf("Plex token not found. Run 'djlt auth plex' or set PLEX_TOKEN env var")
 	}
 
-	if xmlPath == "" {
-		return fmt.Errorf("rekordbox XML path not specified (use --xml or -x)")
+	path := utils.ExpandPath(xmlPath)
+	if path == "" {
+		path = utils.ExpandPath(cfg.RekordboxXMLPath)
+	}
+	if path == "" {
+		return fmt.Errorf("Rekordbox XML path not found. Use --xml or run 'djlt config rekordbox --xml PATH'")
 	}
 
-	rbXML, err := rekordbox.ReadRekordboxLibrary(xmlPath)
+	rbXML, err := rekordbox.ReadRekordboxLibrary(path)
 	if err != nil {
 		return fmt.Errorf("failed to read rekordbox library: %w", err)
 	}
 
 	client := plex.NewClient(token)
-	resources, err := client.GetResources()
+	resources, err := client.GetResources(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to get resources: %w", err)
 	}
@@ -63,29 +72,47 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 	var targetServer plex.Resource
 	found := false
 	for _, res := range resources {
-		if res.Provides == "server" && len(res.Connections) > 0 {
-			targetServer = res
-			found = true
-			break
+		if res.Provides != "server" && len(res.Connections) > 0 {
+			continue
 		}
+
+		targetServer = res
+		found = true
+		break
 	}
 
 	if !found {
 		return fmt.Errorf("no plex servers found")
 	}
 
-	baseURL := targetServer.Connections[0].URI
 	serverClient := plex.NewClient(targetServer.AccessToken)
+	var probe *plex.ConnectionResult
+	var syncErr error
 
-	// Fetch playlists to find the ID
-	playlists, err := serverClient.GetPlaylists(baseURL)
-	if err != nil {
-		return fmt.Errorf("failed to get playlists: %w", err)
+	if cfg.PlexHost != "" {
+		port := cfg.PlexPort
+		if port == 0 {
+			port = 32400
+		}
+		baseURL := fmt.Sprintf("http://%s:%d", cfg.PlexHost, port)
+		playlists, err := serverClient.GetPlaylists(context.Background(), baseURL)
+		if err == nil {
+			probe = &plex.ConnectionResult{BaseURL: baseURL, Playlists: playlists}
+		} else {
+			syncErr = err
+		}
+	} else {
+		probe, syncErr = serverClient.ProbeBestConnection(targetServer)
 	}
 
+	if syncErr != nil {
+		return fmt.Errorf("failed to connect to server: %w", syncErr)
+	}
+
+	fmt.Printf("Connected via: %s\n", probe.BaseURL)
+
 	var targetPlaylist plex.Playlist
-	for _, pl := range playlists {
-		// Matching query as a playlist name for now
+	for _, pl := range probe.Playlists {
 		if pl.Title == src.Query || pl.RatingKey == src.Query {
 			targetPlaylist = pl
 			break
@@ -98,7 +125,7 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 
 	fmt.Printf("Syncing Plex playlist: %s (%d tracks)...\n", targetPlaylist.Title, targetPlaylist.LeafCount)
 
-	tracks, err := serverClient.GetPlaylistTracks(baseURL, targetPlaylist.Key)
+	tracks, err := serverClient.GetPlaylistTracks(context.Background(), probe.BaseURL, targetPlaylist.Key)
 	if err != nil {
 		return fmt.Errorf("failed to get tracks: %w", err)
 	}
@@ -106,13 +133,14 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 	// Setup Media Engine if export flag is set
 	var transcoder *media.Transcoder
 	if exportDest != "" {
-		cfg := media.DefaultConfig()
-		cfg.Dest = exportDest
+		cfgMedia := media.DefaultConfig()
+		cfgMedia.Dest = exportDest
+		cfgMedia.PathMaps = cfg.PathMaps // Pass path maps from app config
 		if exportFormat != "" {
-			cfg.Format = exportFormat
+			cfgMedia.Format = exportFormat
 		}
-		transcoder = media.NewTranscoder(cfg)
-		fmt.Printf("Exporting files to: %s (format: %s)\n", exportDest, cfg.Format)
+		transcoder = media.NewTranscoder(cfgMedia)
+		fmt.Printf("Exporting files to: %s (format: %s)\n", exportDest, cfgMedia.Format)
 	}
 
 	matcher := sync.NewMatcher(rbXML.Collection.TRACK)
@@ -140,7 +168,6 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 				continue
 			}
 
-			// Ensure directory exists
 			if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
 				fmt.Printf("    Dir error: %v\n", err)
 				continue
@@ -171,11 +198,127 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 		return fmt.Errorf("failed to inject playlist: %w", err)
 	}
 
-	if err := rekordbox.WriteRekordboxLibrary(xmlPath, rbXML); err != nil {
+	if err := rekordbox.WriteRekordboxLibrary(path, rbXML); err != nil {
 		return fmt.Errorf("failed to save XML: %w", err)
 	}
 
 	fmt.Printf("Sync complete.\n")
+	return nil
+}
+
+func syncPlexToM3U8(src, tgt utils.Location) error {
+	cfg, _ := config.LoadAppConfig()
+	token := os.Getenv("PLEX_TOKEN")
+	if token == "" {
+		token = cfg.PlexToken
+	}
+	if token == "" {
+		return fmt.Errorf("Plex token not found. Run 'djlt auth plex' or set PLEX_TOKEN env var")
+	}
+
+	client := plex.NewClient(token)
+	resources, err := client.GetResources(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to get resources: %w", err)
+	}
+
+	var targetServer plex.Resource
+	found := false
+	for _, res := range resources {
+		if res.Provides != "server" {
+			continue
+		}
+		targetServer = res
+		found = true
+		break
+	}
+
+	if !found {
+		return fmt.Errorf("no plex servers found")
+	}
+
+	serverClient := plex.NewClient(targetServer.AccessToken)
+	probe, err := serverClient.ProbeBestConnection(targetServer)
+	if err != nil {
+		return fmt.Errorf("failed to connect to server: %w", err)
+	}
+
+	var targetPlaylist plex.Playlist
+	for _, pl := range probe.Playlists {
+		if pl.Title == src.Query || pl.RatingKey == src.Query {
+			targetPlaylist = pl
+			break
+		}
+	}
+
+	if targetPlaylist.RatingKey == "" {
+		return fmt.Errorf("plex playlist matching '%s' not found", src.Query)
+	}
+
+	tracks, err := serverClient.GetPlaylistTracks(context.Background(), probe.BaseURL, targetPlaylist.Key)
+	if err != nil {
+		return fmt.Errorf("failed to get tracks: %w", err)
+	}
+
+	m3uPath := utils.ExpandPath(tgt.Query)
+	if m3uPath == "" {
+		m3uPath = targetPlaylist.Title + ".m3u8"
+	}
+	if filepath.Ext(m3uPath) == "" {
+		m3uPath += ".m3u8"
+	}
+
+	f, err := os.Create(m3uPath)
+	if err != nil {
+		return fmt.Errorf("failed to create m3u8 file: %w", err)
+	}
+	defer f.Close()
+
+	if err := playlist.WriteM3U8Header(f); err != nil {
+		return err
+	}
+
+	// Setup Media Engine if export flag is set
+	var transcoder *media.Transcoder
+	if exportDest != "" {
+		cfgMedia := media.DefaultConfig()
+		cfgMedia.Dest = exportDest
+		cfgMedia.PathMaps = cfg.PathMaps
+		if exportFormat != "" {
+			cfgMedia.Format = exportFormat
+		}
+		transcoder = media.NewTranscoder(cfgMedia)
+	}
+
+	for _, track := range tracks {
+		trackPath := track.Media[0].Part[0].File
+		
+		if transcoder != nil {
+			destPath, err := transcoder.GetDestinationPath(media.PathMetadata{
+				Artist: track.Artist,
+				Album:  track.Album,
+				Title:  track.Title,
+			})
+			if err == nil {
+				os.MkdirAll(filepath.Dir(destPath), 0755)
+				if err := transcoder.Transcode(trackPath, destPath); err == nil {
+					trackPath = destPath
+				}
+			}
+		}
+
+		// Make path relative to m3u8 if possible
+		if rel, err := filepath.Rel(filepath.Dir(m3uPath), trackPath); err == nil {
+			trackPath = rel
+		}
+
+		playlist.WriteM3U8Entry(f, playlist.AudioMetadata{
+			Artist: track.Artist,
+			Title:  track.Title,
+		}, trackPath, 0)
+	}
+
+	fmt.Printf("Sync complete. M3U8 created: %s\n", m3uPath)
 	return nil
 }
 

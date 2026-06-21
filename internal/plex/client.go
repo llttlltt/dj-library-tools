@@ -1,6 +1,7 @@
 package plex
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -21,14 +22,14 @@ type Client struct {
 func NewClient(token string) *Client {
 	return &Client{
 		HTTPClient: &http.Client{
-			Timeout: 10 * time.Second,
+			Timeout: 30 * time.Second,
 		},
 		Token: token,
 	}
 }
 
-func (c *Client) newRequest(method, url string) (*http.Request, error) {
-	req, err := http.NewRequest(method, url, nil)
+func (c *Client) newRequest(ctx context.Context, method, url string) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	if err != nil {
 		return nil, err
 	}

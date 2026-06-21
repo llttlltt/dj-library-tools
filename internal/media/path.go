@@ -3,6 +3,7 @@ package media
 import (
 	"bytes"
 	"path/filepath"
+	"strings"
 	"text/template"
 )
 
@@ -10,6 +11,19 @@ type PathMetadata struct {
 	Artist string
 	Album  string
 	Title  string
+}
+
+func (t *Transcoder) ApplyPathMap(source string) string {
+	if t.Config.PathMaps == nil {
+		return source
+	}
+
+	for remote, local := range t.Config.PathMaps {
+		if strings.HasPrefix(source, remote) {
+			return strings.Replace(source, remote, local, 1)
+		}
+	}
+	return source
 }
 
 func (t *Transcoder) FormatPath(metadata PathMetadata) (string, error) {
