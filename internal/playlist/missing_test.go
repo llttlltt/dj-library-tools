@@ -42,7 +42,7 @@ func TestMissingFileReporting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	opts := FixOptions{Ext: ".mp3"}
+	opts := FixOptions{Exts: []string{".mp3"}}
 	result, err := FixPlaylist(playlistPath, opts)
 	if err != nil {
 		t.Fatalf("FixPlaylist failed: %v", err)
@@ -52,12 +52,12 @@ func TestMissingFileReporting(t *testing.T) {
 		t.Errorf("Expected 2 total tracks, got %d", result.TotalTracks)
 	}
 
-	if len(result.MissingTracks) != 1 {
-		t.Errorf("Expected 1 missing track, got %d", len(result.MissingTracks))
+	if len(result.SkippedTracks) != 1 {
+		t.Errorf("Expected 1 missing track, got %d", len(result.SkippedTracks))
 	}
 
-	expectedMissing := filepath.Join(mediaDir, "missing.mp3")
-	if result.MissingTracks[0] != expectedMissing {
-		t.Errorf("Expected missing track %s, got %s", expectedMissing, result.MissingTracks[0])
+	expectedMissing := "../Media/missing.flac"
+	if result.SkippedTracks[0] != expectedMissing {
+		t.Errorf("Expected skipped track %s, got %s", expectedMissing, result.SkippedTracks[0])
 	}
 }
