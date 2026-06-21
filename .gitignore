@@ -14,6 +14,7 @@ docs/**/*.md
 # Go
 bin/
 dist/
+djlt
 *.exe
 *.exe~
 *.dll
