@@ -12,60 +12,63 @@ var (
 	sourceXML      string
 	destinationXML string
 	outputXML      string
-	forceMove      bool
+	forceMetadata  bool
 )
 
 var metadataCmd = &cobra.Command{
-	Use:   "metadata",
-	Short: "Manage track metadata operations between Rekordbox XML libraries",
-}
-
-var moveCmd = &cobra.Command{
-	Use:   "move",
-	Short: "Move metadata (Tempo) from source to destination XML",
-	Long: `This command reads two Rekordbox XML libraries: a 'source' library 
-from which specific metadata (currently only Tempo) will be taken, and a 
-'destination' library whose tracks will receive this metadata if a match 
-is found. A new merged library is created with the updated tracks. 
-Tracks are matched using strict metadata equality (Name, Artist, Album, etc.).`,
+	Use:   "metadata [flags]",
+	Short: "Manage track metadata between Rekordbox XML libraries",
+	Long: `Reads two Rekordbox XML libraries: a source library from which Tempo
+markers are copied, and a destination library whose tracks receive them.
+Tracks are matched by strict metadata equality (Name, Artist, Album, etc.).
+A merged library is written to the output path.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := utils.CheckFileOverwrite(outputXML, forceMove); err != nil {
+		if sourceXML == "" && destinationXML == "" {
+			return cmd.Help()
+		}
+		if sourceXML == "" {
+			return fmt.Errorf("--source is required")
+		}
+		if destinationXML == "" {
+			return fmt.Errorf("--destination is required")
+		}
+		if outputXML == "" {
+			return fmt.Errorf("--output is required")
+		}
+
+		if err := utils.CheckFileOverwrite(outputXML, forceMetadata); err != nil {
 			return fmt.Errorf("output file validation failed: %w", err)
 		}
 
 		sourceLibrary, err := rekordbox.ReadRekordboxLibrary(sourceXML)
 		if err != nil {
-			return fmt.Errorf("error getting source library '%s': %w", sourceXML, err)
+			return fmt.Errorf("error reading source library %q: %w", sourceXML, err)
 		}
 
 		destinationLibrary, err := rekordbox.ReadRekordboxLibrary(destinationXML)
 		if err != nil {
-			return fmt.Errorf("error getting destination library '%s': %w", destinationXML, err)
+			return fmt.Errorf("error reading destination library %q: %w", destinationXML, err)
 		}
 
 		mergedLibrary := mergeLibraryData(sourceLibrary, destinationLibrary)
 
 		if err := rekordbox.WriteRekordboxLibrary(outputXML, mergedLibrary); err != nil {
-			return fmt.Errorf("error writing merged library to '%s': %w", outputXML, err)
+			return fmt.Errorf("error writing merged library to %q: %w", outputXML, err)
 		}
-		fmt.Printf("Successfully wrote merged library to '%s'\n", outputXML)
+		fmt.Printf("Successfully wrote merged library to %q\n", outputXML)
 		return nil
 	},
 }
 
 func init() {
-	moveCmd.Flags().StringVarP(&sourceXML, "source", "s", "", "Path to the source Rekordbox XML library (required)")
-	moveCmd.Flags().StringVarP(&destinationXML, "destination", "d", "", "Path to the destination Rekordbox XML library (required)")
-	moveCmd.Flags().StringVarP(&outputXML, "output", "o", "", "Path where the merged Rekordbox XML library will be saved (required)")
-	moveCmd.Flags().BoolVarP(&forceMove, "force", "f", false, "Force overwrite of the output file if it already exists")
-
-	moveCmd.MarkFlagRequired("source")
-	moveCmd.MarkFlagRequired("destination")
-	moveCmd.MarkFlagRequired("output")
-
-	metadataCmd.AddCommand(moveCmd)
+	metadataCmd.Flags().StringVarP(&sourceXML, "source", "s", "", "Source Rekordbox XML (Tempo markers are read from here)")
+	metadataCmd.Flags().StringVarP(&destinationXML, "destination", "d", "", "Destination Rekordbox XML (tracks receive the Tempo markers)")
+	metadataCmd.Flags().StringVarP(&outputXML, "output", "o", "", "Output path for the merged Rekordbox XML")
+	metadataCmd.Flags().BoolVarP(&forceMetadata, "force", "f", false, "Overwrite output file if it already exists")
 	rootCmd.AddCommand(metadataCmd)
 }
+
+// ── matching & merging helpers ─────────────────────────────────────────────
 
 type TrackMatch struct {
 	SourceTrack      rekordbox.Track
@@ -85,7 +88,7 @@ func matchTrackInLibrary(sourceTrack rekordbox.Track, destinationLibrary *rekord
 			return &destinationTrack, nil
 		}
 	}
-	return nil, fmt.Errorf("no match found for '%s'", sourceTrack.Name)
+	return nil, fmt.Errorf("no match found for %q", sourceTrack.Name)
 }
 
 func tracksMatchMetadata(t1, t2 rekordbox.Track) bool {
