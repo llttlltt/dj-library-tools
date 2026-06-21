@@ -81,21 +81,24 @@ func FixPlaylist(inputPath string, opts FixOptions) error {
 			absTargetPath = filepath.Join(fileDir, targetPath)
 		}
 
-		if _, err := os.Stat(absTargetPath); os.IsNotExist(err) {
-			if opts.M3U8 {
+		if opts.M3U8 {
+			if _, err := os.Stat(absTargetPath); os.IsNotExist(err) {
 				fmt.Fprintf(os.Stderr, "Warning: Track not found: %s\n", absTargetPath)
-			}
-		} else if opts.M3U8 {
-			meta, err := ExtractMetadata(absTargetPath)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Warning: Could not read metadata for %s: %v\n", absTargetPath, err)
 				if _, err := fmt.Fprintln(tmpFile, targetPath); err != nil {
 					return err
 				}
 			} else {
-				duration := 0.0 // Placeholder for now
-				if err := WriteM3U8Entry(tmpFile, meta, targetPath, duration); err != nil {
-					return fmt.Errorf("failed to write M3U8 entry: %w", err)
+				meta, err := ExtractMetadata(absTargetPath)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Warning: Could not read metadata for %s: %v\n", absTargetPath, err)
+					if _, err := fmt.Fprintln(tmpFile, targetPath); err != nil {
+						return err
+					}
+				} else {
+					duration := 0.0 // Placeholder for now
+					if err := WriteM3U8Entry(tmpFile, meta, targetPath, duration); err != nil {
+						return fmt.Errorf("failed to write M3U8 entry: %w", err)
+					}
 				}
 			}
 		} else {
