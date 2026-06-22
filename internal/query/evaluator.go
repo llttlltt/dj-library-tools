@@ -61,7 +61,9 @@ func isNumericField(field string) bool {
 		"time", "length", "duration",
 		"size", "id", "trackid",
 		"disc", "discnumber",
-		"track", "tracknumber":
+		"track", "tracknumber",
+		"entries",
+		"type":
 		return true
 	}
 	return false
@@ -400,4 +402,71 @@ func (e *Evaluator) matchColor(pm rekordbox.PositionMark, color string) bool {
 		return (pm.Red == 0 && pm.Green == 0 && pm.Blue == 0) || (pm.Red == 40 && pm.Green == 226 && pm.Blue == 20 && pm.Num == -1)
 	}
 	return false
+}
+
+// MatchesNode evaluates whether a rekordbox Node matches the query.
+// parentFolder is the name of the node's direct parent ("" if at root level).
+func (e *Evaluator) MatchesNode(node rekordbox.Node, parentFolder string) bool {
+	if e.Query.Root == nil {
+		return true
+	}
+	return e.evalNode(e.Query.Root, node, parentFolder)
+}
+
+func (e *Evaluator) evalNode(expr Expression, node rekordbox.Node, parentFolder string) bool {
+	switch v := expr.(type) {
+	case Comparison:
+		return e.matchNodeComparison(node, parentFolder, v)
+	case Logical:
+		if v.Op == "AND" {
+			return e.evalNode(v.Left, node, parentFolder) && e.evalNode(v.Right, node, parentFolder)
+		}
+		return e.evalNode(v.Left, node, parentFolder) || e.evalNode(v.Right, node, parentFolder)
+	case Not:
+		return !e.evalNode(v.Expr, node, parentFolder)
+	}
+	return false
+}
+
+func (e *Evaluator) matchNodeComparison(node rekordbox.Node, parentFolder string, c Comparison) bool {
+	fieldValue := e.getNodeFieldValue(node, parentFolder, c.Field)
+	if c.Operator == OpRange {
+		return e.matchRange(fieldValue, c.Value)
+	}
+	switch c.Operator {
+	case OpGt, OpGte, OpLt, OpLte:
+		return e.matchNumericComparison(fieldValue, c.Value, c.Operator)
+	case OpExact:
+		return strings.EqualFold(fieldValue, c.Value)
+	case OpSubstring:
+		if isNumericField(c.Field) {
+			fv, errF := strconv.ParseFloat(fieldValue, 64)
+			tv, errT := strconv.ParseFloat(c.Value, 64)
+			if errF == nil && errT == nil {
+				return fv == tv
+			}
+		}
+		return strings.Contains(strings.ToLower(fieldValue), strings.ToLower(c.Value))
+	case OpRegex:
+		re, err := regexp.Compile(c.Value)
+		if err != nil {
+			return false
+		}
+		return re.MatchString(fieldValue)
+	}
+	return false
+}
+
+func (e *Evaluator) getNodeFieldValue(node rekordbox.Node, parentFolder string, field string) string {
+	switch strings.ToLower(field) {
+	case "name":
+		return node.Name
+	case "folder", "parent":
+		return parentFolder
+	case "entries":
+		return strconv.Itoa(int(node.Entries))
+	case "type":
+		return strconv.Itoa(int(node.Type))
+	}
+	return ""
 }
