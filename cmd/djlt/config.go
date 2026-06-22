@@ -9,12 +9,12 @@ import (
 )
 
 var (
-	cfgHost      string
-	cfgPort      int
-	cfgToken     string
-	cfgMap       string
-	cfgRemoveMap string
-	cfgXMLPath   string
+	cfgPlexHost      string
+	cfgPlexPort      int
+	cfgPlexToken     string
+	cfgPlexMap       string
+	cfgPlexRemoveMap string
+	cfgRekordboxXML  string
 )
 
 var configCmd = &cobra.Command{
@@ -24,28 +24,28 @@ var configCmd = &cobra.Command{
 		cfg, _ := config.LoadAppConfig()
 		dirty := false
 
-		if cfgHost != "" {
-			cfg.PlexHost = cfgHost
-			fmt.Printf("Plex host set to: %s\n", cfgHost)
+		if cfgPlexHost != "" {
+			cfg.PlexHost = cfgPlexHost
+			fmt.Printf("Plex host set to: %s\n", cfgPlexHost)
 			dirty = true
 		}
 
-		if cmd.Flags().Changed("port") {
-			cfg.PlexPort = cfgPort
-			fmt.Printf("Plex port set to: %d\n", cfgPort)
+		if cmd.Flags().Changed("plex-port") {
+			cfg.PlexPort = cfgPlexPort
+			fmt.Printf("Plex port set to: %d\n", cfgPlexPort)
 			dirty = true
 		}
 
-		if cfgToken != "" {
-			cfg.PlexToken = cfgToken
+		if cfgPlexToken != "" {
+			cfg.PlexToken = cfgPlexToken
 			fmt.Printf("Plex token updated.\n")
 			dirty = true
 		}
 
-		if cfgMap != "" {
-			parts := strings.SplitN(cfgMap, ":", 2)
+		if cfgPlexMap != "" {
+			parts := strings.SplitN(cfgPlexMap, ":", 2)
 			if len(parts) != 2 {
-				return fmt.Errorf("invalid --map format; use remote:local")
+				return fmt.Errorf("invalid --plex-map format; use remote:local")
 			}
 			if cfg.PathMaps == nil {
 				cfg.PathMaps = make(map[string]string)
@@ -55,21 +55,21 @@ var configCmd = &cobra.Command{
 			dirty = true
 		}
 
-		if cfgRemoveMap != "" {
+		if cfgPlexRemoveMap != "" {
 			if cfg.PathMaps != nil {
-				if _, exists := cfg.PathMaps[cfgRemoveMap]; exists {
-					delete(cfg.PathMaps, cfgRemoveMap)
-					fmt.Printf("Removed path map for: %s\n", cfgRemoveMap)
+				if _, exists := cfg.PathMaps[cfgPlexRemoveMap]; exists {
+					delete(cfg.PathMaps, cfgPlexRemoveMap)
+					fmt.Printf("Removed path map for: %s\n", cfgPlexRemoveMap)
 				} else {
-					fmt.Printf("No path map found for: %s\n", cfgRemoveMap)
+					fmt.Printf("No path map found for: %s\n", cfgPlexRemoveMap)
 				}
 			}
 			dirty = true
 		}
 
-		if cfgXMLPath != "" {
-			cfg.RekordboxXMLPath = cfgXMLPath
-			fmt.Printf("Rekordbox XML path set to: %s\n", cfgXMLPath)
+		if cfgRekordboxXML != "" {
+			cfg.RekordboxXMLPath = cfgRekordboxXML
+			fmt.Printf("Rekordbox XML path set to: %s\n", cfgRekordboxXML)
 			dirty = true
 		}
 
@@ -102,11 +102,11 @@ func maskToken(t string) string {
 }
 
 func init() {
-	configCmd.Flags().StringVar(&cfgHost, "host", "", "Plex server host (e.g. 10.0.0.5)")
-	configCmd.Flags().IntVar(&cfgPort, "port", 32400, "Plex server port (default: 32400)")
-	configCmd.Flags().StringVar(&cfgToken, "token", "", "Plex authentication token")
-	configCmd.Flags().StringVar(&cfgMap, "map", "", "Add a path map (remote:local)")
-	configCmd.Flags().StringVar(&cfgRemoveMap, "remove-map", "", "Remove a path map by its remote key")
-	configCmd.Flags().StringVar(&cfgXMLPath, "xml-path", "", "Path to the Rekordbox XML library")
+	configCmd.Flags().StringVar(&cfgPlexHost, "plex-host", "", "Plex server host (e.g. 10.0.0.5)")
+	configCmd.Flags().IntVar(&cfgPlexPort, "plex-port", 32400, "Plex server port (default: 32400)")
+	configCmd.Flags().StringVar(&cfgPlexToken, "plex-token", "", "Plex authentication token")
+	configCmd.Flags().StringVar(&cfgPlexMap, "plex-map", "", "Add a Plex path map (remote:local)")
+	configCmd.Flags().StringVar(&cfgPlexRemoveMap, "plex-remove-map", "", "Remove a Plex path map by its remote key")
+	configCmd.Flags().StringVar(&cfgRekordboxXML, "rekordbox-xml-path", "", "Path to the Rekordbox XML library")
 	rootCmd.AddCommand(configCmd)
 }
