@@ -2,6 +2,6 @@
 go = "1.25"
 
 [tasks]
-build-cli = "go build -o bin/djlt ./cmd/djlt"
+build-cli = "go build -o bin/  ./cmd/djlt"
 build-gui = "go build -o bin/djlt-gui ./cmd/djlt-gui"
 test = "go test ./..."
