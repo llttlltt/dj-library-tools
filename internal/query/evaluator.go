@@ -44,6 +44,29 @@ func (e *Evaluator) eval(expr Expression, track rekordbox.Track, playlists []str
 	return false
 }
 
+// isNumericField returns true for fields whose values are always numeric.
+// For these fields, OpSubstring (`:`) performs exact numeric equality rather than
+// a string-contains check, avoiding false positives such as playlistcount:0
+// matching a track in 10 playlists because "10" contains "0".
+func isNumericField(field string) bool {
+	switch strings.ToLower(field) {
+	case "playlistcount", "playlists",
+		"hotcuecount", "hotcues",
+		"memorycuecount", "memorycues",
+		"beatgrids", "beatgridcount", "tempos", "tempocount",
+		"rating", "playcount", "year",
+		"bpm", "tempo",
+		"bitrate", "kbps",
+		"samplerate", "khz",
+		"time", "length", "duration",
+		"size", "id", "trackid",
+		"disc", "discnumber",
+		"track", "tracknumber":
+		return true
+	}
+	return false
+}
+
 func (e *Evaluator) matchComparison(track rekordbox.Track, playlists []string, c Comparison) bool {
 	field := strings.ToLower(c.Field)
 	switch field {
@@ -82,6 +105,15 @@ func (e *Evaluator) matchComparison(track rekordbox.Track, playlists []string, c
 	case OpExact:
 		return strings.EqualFold(fieldValue, c.Value)
 	case OpSubstring:
+		// For numeric fields, use exact float equality to prevent substring false-positives
+		// (e.g. playlistcount:0 must not match a track in 10 playlists).
+		if isNumericField(c.Field) {
+			fv, errF := strconv.ParseFloat(fieldValue, 64)
+			tv, errT := strconv.ParseFloat(c.Value, 64)
+			if errF == nil && errT == nil {
+				return fv == tv
+			}
+		}
 		return strings.Contains(strings.ToLower(fieldValue), strings.ToLower(c.Value))
 	case OpRegex:
 		re, err := regexp.Compile(c.Value)

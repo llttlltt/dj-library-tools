@@ -1,10 +1,55 @@
 package query
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 )
+
+// TestPlaylistCountMatching verifies that playlistcount uses exact numeric equality,
+// not substring matching, to prevent false positives.
+func TestPlaylistCountMatching(t *testing.T) {
+	track := rekordbox.Track{Name: "Test Track"}
+	parser := NewParser()
+
+	tests := []struct {
+		name      string
+		query     string
+		playlists []string
+		want      bool
+	}{
+		{"exact zero match", "playlistcount:0", nil, true},
+		{"exact zero no false positive from 10", "playlistcount:0", makePlaylists(10), false},
+		{"exact two match", "playlistcount:2", makePlaylists(2), true},
+		{"exact two mismatch", "playlistcount:2", makePlaylists(3), false},
+		{"gt operator", "playlistcount:>3", makePlaylists(4), true},
+		{"gt operator no match", "playlistcount:>3", makePlaylists(3), false},
+		{"gte operator", "playlistcount:>=3", makePlaylists(3), true},
+		{"range operator", "playlistcount:2..4", makePlaylists(3), true},
+		{"range no match", "playlistcount:2..4", makePlaylists(1), false},
+		{"bpm exact no substring", "bpm:12", nil, false}, // bpm is 0 for empty track
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q := parser.Parse(tt.query)
+			eval := NewEvaluator(q)
+			got := eval.MatchesWithPlaylists(track, tt.playlists)
+			if got != tt.want {
+				t.Errorf("query %q playlists=%d: got %v, want %v", tt.query, len(tt.playlists), got, tt.want)
+			}
+		})
+	}
+}
+
+func makePlaylists(n int) []string {
+	playlists := make([]string, n)
+	for i := range playlists {
+		playlists[i] = fmt.Sprintf("Playlist%d", i+1)
+	}
+	return playlists
+}
 
 func TestQueryEvaluator(t *testing.T) {
 	track := rekordbox.Track{
