@@ -40,9 +40,6 @@ func (p *Parser) Parse(input string) Query {
 }
 
 func (p *Parser) parsePart(word string) []Token {
-	// Identify the operator and split
-	// Important: Check longest operators first
-	
 	// Split by Field separator first
 	sepIdx := strings.IndexAny(word, ":=")
 	if sepIdx == -1 {
@@ -55,40 +52,38 @@ func (p *Parser) parsePart(word string) []Token {
 	op := ":"
 	val := rest[1:]
 	
-	switch {
-	case strings.HasPrefix(rest, "::"):
+	if strings.HasPrefix(rest, "::") {
 		op = "::"
 		val = rest[2:]
-	case strings.HasPrefix(rest, ":>="):
+	} else if strings.HasPrefix(rest, ":>=") || strings.HasPrefix(rest, ">= ") {
 		op = ">="
-		val = rest[3:]
-	case strings.HasPrefix(rest, ":<="):
+		val = strings.TrimPrefix(rest[1:], ">=")
+	} else if strings.HasPrefix(rest, ":<=") || strings.HasPrefix(rest, "<= ") {
 		op = "<="
-		val = rest[3:]
-	case strings.HasPrefix(rest, ":>"):
+		val = strings.TrimPrefix(rest[1:], "<=")
+	} else if strings.HasPrefix(rest, ":>") || strings.HasPrefix(rest, "> ") {
 		op = ">"
-		val = rest[2:]
-	case strings.HasPrefix(rest, ":<"):
+		val = strings.TrimPrefix(rest[1:], ">")
+	} else if strings.HasPrefix(rest, ":<") || strings.HasPrefix(rest, "< ") {
 		op = "<"
-		val = rest[2:]
-	case strings.HasPrefix(rest, ">="):
+		val = strings.TrimPrefix(rest[1:], "<")
+	} else if strings.HasPrefix(rest, "gte") || strings.HasPrefix(rest, ":gte") {
 		op = ">="
-		val = rest[2:]
-	case strings.HasPrefix(rest, "<="):
+		val = strings.TrimPrefix(strings.TrimPrefix(rest, ":"), "gte")
+	} else if strings.HasPrefix(rest, "lte") || strings.HasPrefix(rest, ":lte") {
 		op = "<="
-		val = rest[2:]
-	case strings.HasPrefix(rest, "="):
+		val = strings.TrimPrefix(strings.TrimPrefix(rest, ":"), "lte")
+	} else if strings.HasPrefix(rest, "gt") || strings.HasPrefix(rest, ":gt") {
+		op = ">"
+		val = strings.TrimPrefix(strings.TrimPrefix(rest, ":"), "gt")
+	} else if strings.HasPrefix(rest, "lt") || strings.HasPrefix(rest, ":lt") {
+		op = "<"
+		val = strings.TrimPrefix(strings.TrimPrefix(rest, ":"), "lt")
+	} else if strings.HasPrefix(rest, "=") {
 		op = "="
-		val = rest[1:]
-	case strings.HasPrefix(rest, ">"):
-		op = ">"
-		val = rest[1:]
-	case strings.HasPrefix(rest, "<"):
-		op = "<"
 		val = rest[1:]
 	}
 
-	// Check for range in value
 	if strings.Contains(val, "..") {
 		op = ".."
 	}
@@ -140,6 +135,8 @@ func (p *Parser) tokenize(input string) []Token {
 				tokens = append(tokens, Token{Kind: TokenAnd, Value: "AND"})
 			} else if strings.EqualFold(word, "OR") {
 				tokens = append(tokens, Token{Kind: TokenOr, Value: "OR"})
+			} else if strings.EqualFold(word, "NOT") {
+				tokens = append(tokens, Token{Kind: TokenNot, Value: "!"})
 			} else if strings.ContainsAny(word, ":=") {
 				tokens = append(tokens, p.parsePart(word)...)
 			} else {
@@ -223,7 +220,6 @@ func (p *Parser) parseAnd() Expression {
 
 func (p *Parser) isNextImplicitAnd() bool {
 	kind := p.peek().Kind
-	// Check if this token starts a new primary expression
 	return kind == TokenValue || kind == TokenLParen || kind == TokenNot
 }
 
