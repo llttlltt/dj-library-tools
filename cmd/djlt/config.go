@@ -50,7 +50,7 @@ var plexConfigCmd = &cobra.Command{
 		}
 
 		if pathMap != "" {
-			parts := strings.Split(pathMap, ":")
+			parts := strings.SplitN(pathMap, ":", 2)
 			if len(parts) == 2 {
 				if cfg.PathMaps == nil {
 					cfg.PathMaps = make(map[string]string)
@@ -59,6 +59,17 @@ var plexConfigCmd = &cobra.Command{
 				fmt.Printf("Added path map: %s -> %s\n", parts[0], parts[1])
 			} else {
 				return fmt.Errorf("invalid map format. Use remote:local")
+			}
+		}
+
+		if removeMap != "" {
+			if cfg.PathMaps != nil {
+				if _, exists := cfg.PathMaps[removeMap]; exists {
+					delete(cfg.PathMaps, removeMap)
+					fmt.Printf("Removed path map for: %s\n", removeMap)
+				} else {
+					fmt.Printf("No path map found for: %s\n", removeMap)
+				}
 			}
 		}
 
@@ -108,6 +119,7 @@ var (
 	plexPort  int
 	plexToken string
 	pathMap   string
+	removeMap string
 	rbXMLPath string
 )
 
@@ -123,6 +135,7 @@ func init() {
 	plexConfigCmd.Flags().IntVar(&plexPort, "port", 32400, "Port of the Plex server (default: 32400)")
 	plexConfigCmd.Flags().StringVar(&plexToken, "token", "", "Plex authentication token")
 	plexConfigCmd.Flags().StringVar(&pathMap, "map", "", "Map a remote path to a local path (remote:local)")
+	plexConfigCmd.Flags().StringVar(&removeMap, "remove-map", "", "Remove a path map by its remote path key")
 	configCmd.AddCommand(plexConfigCmd)
 
 	rbConfigCmd.Flags().StringVar(&rbXMLPath, "xml", "", "Path to the Rekordbox XML library")
