@@ -40,7 +40,7 @@ func (p *Parser) Parse(input string) Query {
 }
 
 func (p *Parser) parsePart(word string) []Token {
-	// Split by Field separator first
+	// First split by : if present to separate field from value
 	sepIdx := strings.IndexAny(word, ":=")
 	if sepIdx == -1 {
 		return []Token{{Kind: TokenValue, Value: word}}
@@ -52,34 +52,50 @@ func (p *Parser) parsePart(word string) []Token {
 	op := ":"
 	val := rest[1:]
 	
-	if strings.HasPrefix(rest, "::") {
+	switch {
+	case strings.HasPrefix(rest, "::"):
 		op = "::"
 		val = rest[2:]
-	} else if strings.HasPrefix(rest, ":>=") || strings.HasPrefix(rest, ">= ") {
+	case strings.HasPrefix(rest, "!="):
+		op = "!="
+		val = rest[2:]
+	case strings.HasPrefix(rest, "=="):
+		op = "="
+		val = rest[2:]
+	case strings.HasPrefix(rest, ":>="):
 		op = ">="
 		val = strings.TrimPrefix(rest[1:], ">=")
-	} else if strings.HasPrefix(rest, ":<=") || strings.HasPrefix(rest, "<= ") {
+	case strings.HasPrefix(rest, ":<="):
 		op = "<="
 		val = strings.TrimPrefix(rest[1:], "<=")
-	} else if strings.HasPrefix(rest, ":>") || strings.HasPrefix(rest, "> ") {
+	case strings.HasPrefix(rest, ":>"):
 		op = ">"
 		val = strings.TrimPrefix(rest[1:], ">")
-	} else if strings.HasPrefix(rest, ":<") || strings.HasPrefix(rest, "< ") {
+	case strings.HasPrefix(rest, ":<"):
 		op = "<"
 		val = strings.TrimPrefix(rest[1:], "<")
-	} else if strings.HasPrefix(rest, "gte") || strings.HasPrefix(rest, ":gte") {
+	case strings.HasPrefix(rest, "gte") || strings.HasPrefix(rest, ":gte"):
 		op = ">="
 		val = strings.TrimPrefix(strings.TrimPrefix(rest, ":"), "gte")
-	} else if strings.HasPrefix(rest, "lte") || strings.HasPrefix(rest, ":lte") {
+	case strings.HasPrefix(rest, "lte") || strings.HasPrefix(rest, ":lte"):
 		op = "<="
 		val = strings.TrimPrefix(strings.TrimPrefix(rest, ":"), "lte")
-	} else if strings.HasPrefix(rest, "gt") || strings.HasPrefix(rest, ":gt") {
+	case strings.HasPrefix(rest, "gt") || strings.HasPrefix(rest, ":gt"):
 		op = ">"
 		val = strings.TrimPrefix(strings.TrimPrefix(rest, ":"), "gt")
-	} else if strings.HasPrefix(rest, "lt") || strings.HasPrefix(rest, ":lt") {
+	case strings.HasPrefix(rest, "lt") || strings.HasPrefix(rest, ":lt"):
 		op = "<"
 		val = strings.TrimPrefix(strings.TrimPrefix(rest, ":"), "lt")
-	} else if strings.HasPrefix(rest, "=") {
+	case strings.HasPrefix(rest, "neq") || strings.HasPrefix(rest, ":neq"):
+		op = "!="
+		val = strings.TrimPrefix(strings.TrimPrefix(rest, ":"), "neq")
+	case strings.HasPrefix(rest, "ne") || strings.HasPrefix(rest, ":ne"):
+		op = "!="
+		val = strings.TrimPrefix(strings.TrimPrefix(rest, ":"), "ne")
+	case strings.HasPrefix(rest, "eq") || strings.HasPrefix(rest, ":eq"):
+		op = "="
+		val = strings.TrimPrefix(strings.TrimPrefix(rest, ":"), "eq")
+	case strings.HasPrefix(rest, "="):
 		op = "="
 		val = rest[1:]
 	}
@@ -109,7 +125,7 @@ func (p *Parser) tokenize(input string) []Token {
 			tokens = append(tokens, Token{Kind: TokenLParen, Value: "("})
 		case ')':
 			tokens = append(tokens, Token{Kind: TokenRParen, Value: ")"})
-		case '!':
+		case '!', '-':
 			tokens = append(tokens, Token{Kind: TokenNot, Value: "!"})
 		case '&':
 			if i+1 < len(runes) && runes[i+1] == '&' {
@@ -131,11 +147,12 @@ func (p *Parser) tokenize(input string) []Token {
 			i = end
 		default:
 			word, end := p.readWord(runes, i)
-			if strings.EqualFold(word, "AND") {
+			wordLower := strings.ToLower(word)
+			if wordLower == "and" {
 				tokens = append(tokens, Token{Kind: TokenAnd, Value: "AND"})
-			} else if strings.EqualFold(word, "OR") {
+			} else if wordLower == "or" {
 				tokens = append(tokens, Token{Kind: TokenOr, Value: "OR"})
-			} else if strings.EqualFold(word, "NOT") {
+			} else if wordLower == "not" {
 				tokens = append(tokens, Token{Kind: TokenNot, Value: "!"})
 			} else if strings.ContainsAny(word, ":=") {
 				tokens = append(tokens, p.parsePart(word)...)
@@ -244,6 +261,7 @@ func (p *Parser) parsePrimary() Expression {
 		op := OpSubstring
 		switch opToken.Value {
 		case "=": op = OpExact
+		case "!=": op = OpNeq
 		case "::": op = OpRegex
 		case "..": op = OpRange
 		case ">": op = OpGt

@@ -12,6 +12,7 @@ const (
 	OpGte       Operator = ">=" // bpm:>=128
 	OpLt        Operator = "<"  // bpm:<100
 	OpLte       Operator = "<=" // bitrate:<=320
+	OpNeq       Operator = "!=" // genre:!=House
 )
 
 // Expression is the interface for all nodes in the query tree
