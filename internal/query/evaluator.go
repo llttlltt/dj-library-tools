@@ -114,7 +114,7 @@ func (e *Evaluator) getFieldValue(track rekordbox.Track, field string) string {
 		return track.Kind
 	case "size":
 		return strconv.FormatInt(track.Size, 10)
-	case "tempocount", "tempos":
+	case "beatgrids", "beatgridcount", "tempos", "tempocount":
 		return strconv.Itoa(len(track.Tempo))
 	case "hotcuecount", "hotcues":
 		count := 0
