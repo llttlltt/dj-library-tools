@@ -26,6 +26,23 @@ func (t *Transcoder) ApplyPathMap(source string) string {
 	return source
 }
 
+// sanitizePathComponent replaces characters that are invalid or problematic in
+// file and directory names across macOS, Linux, and Windows.
+func sanitizePathComponent(s string) string {
+	replacer := strings.NewReplacer(
+		"/", "-",
+		"\\", "-",
+		":", "-",
+		"*", "-",
+		"?", "",
+		`"`, "",
+		"<", "",
+		">", "",
+		"|", "-",
+	)
+	return strings.TrimSpace(replacer.Replace(s))
+}
+
 func (t *Transcoder) FormatPath(metadata PathMetadata) (string, error) {
 	tmplStr, ok := t.Config.Paths["default"]
 	if !ok {
@@ -37,17 +54,20 @@ func (t *Transcoder) FormatPath(metadata PathMetadata) (string, error) {
 		return "", err
 	}
 
+	// Sanitize each component before template execution so that characters
+	// such as '/' in an artist name cannot create unintended subdirectories.
+	sanitized := PathMetadata{
+		Artist: sanitizePathComponent(metadata.Artist),
+		Album:  sanitizePathComponent(metadata.Album),
+		Title:  sanitizePathComponent(metadata.Title),
+	}
+
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, metadata); err != nil {
+	if err := tmpl.Execute(&buf, sanitized); err != nil {
 		return "", err
 	}
 
-	// Clean path components to be safe for filenames
-	fileName := buf.String()
-	// Add extension
-	fileName = fileName + "." + t.Config.Format
-
-	return fileName, nil
+	return buf.String() + "." + t.Config.Format, nil
 }
 
 func (t *Transcoder) GetDestinationPath(metadata PathMetadata) (string, error) {
