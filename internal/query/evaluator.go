@@ -19,30 +19,36 @@ func NewEvaluator(q Query) *Evaluator {
 }
 
 func (e *Evaluator) Matches(track rekordbox.Track) bool {
+	return e.MatchesWithPlaylists(track, nil)
+}
+
+func (e *Evaluator) MatchesWithPlaylists(track rekordbox.Track, playlists []string) bool {
 	if e.Query.Root == nil {
 		return true
 	}
-	return e.eval(e.Query.Root, track)
+	return e.eval(e.Query.Root, track, playlists)
 }
 
-func (e *Evaluator) eval(expr Expression, track rekordbox.Track) bool {
+func (e *Evaluator) eval(expr Expression, track rekordbox.Track, playlists []string) bool {
 	switch v := expr.(type) {
 	case Comparison:
-		return e.matchComparison(track, v)
+		return e.matchComparison(track, playlists, v)
 	case Logical:
 		if v.Op == "AND" {
-			return e.eval(v.Left, track) && e.eval(v.Right, track)
+			return e.eval(v.Left, track, playlists) && e.eval(v.Right, track, playlists)
 		}
-		return e.eval(v.Left, track) || e.eval(v.Right, track)
+		return e.eval(v.Left, track, playlists) || e.eval(v.Right, track, playlists)
 	case Not:
-		return !e.eval(v.Expr, track)
+		return !e.eval(v.Expr, track, playlists)
 	}
 	return false
 }
 
-func (e *Evaluator) matchComparison(track rekordbox.Track, c Comparison) bool {
+func (e *Evaluator) matchComparison(track rekordbox.Track, playlists []string, c Comparison) bool {
 	field := strings.ToLower(c.Field)
 	switch field {
+	case "playlist", "playlists":
+		return e.matchPlaylist(playlists, c)
 	case "hotcue":
 		return e.matchSpecificCue(track, c, true)
 	case "memorycue":
@@ -154,6 +160,28 @@ func (e *Evaluator) getFieldValue(track rekordbox.Track, field string) string {
 		return track.Mix
 	}
 	return ""
+}
+
+func (e *Evaluator) matchPlaylist(playlists []string, c Comparison) bool {
+	for _, p := range playlists {
+		matched := false
+		switch c.Operator {
+		case OpExact:
+			matched = strings.EqualFold(p, c.Value)
+		case OpSubstring, OpRange: // query parser might use Range operator for generic colon syntax
+			matched = strings.Contains(strings.ToLower(p), strings.ToLower(c.Value))
+		case OpRegex:
+			re, err := regexp.Compile(c.Value)
+			if err != nil {
+				return false
+			}
+			matched = re.MatchString(p)
+		}
+		if matched {
+			return true
+		}
+	}
+	return false
 }
 
 func (e *Evaluator) matchRange(fieldValue string, rangeValue string) bool {
