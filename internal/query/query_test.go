@@ -120,3 +120,49 @@ func TestQueryEvaluator(t *testing.T) {
 		})
 	}
 }
+
+func TestEvaluatorMatchesNode(t *testing.T) {
+	summerVibes := rekordbox.Node{
+		BaseNode: rekordbox.BaseNode{Type: 1, Name: "Summer Vibes"},
+		Entries:  12,
+	}
+	wintersFolder := rekordbox.Node{
+		BaseNode: rekordbox.BaseNode{Type: 0, Name: "Winter Sets"},
+	}
+
+	parser := NewParser()
+
+	tests := []struct {
+		name         string
+		query        string
+		node         rekordbox.Node
+		parentFolder string
+		want         bool
+	}{
+		{"name substring match", "name:Summer", summerVibes, "My Sets", true},
+		{"name no match", "name:Winter", summerVibes, "My Sets", false},
+		{"folder match", "folder:My Sets", summerVibes, "My Sets", true},
+		{"folder no match", "folder:Other", summerVibes, "My Sets", false},
+		{"root level folder empty string", "folder:", summerVibes, "", true},
+		{"entries range", "entries:10..15", summerVibes, "My Sets", true},
+		{"entries exact", "entries:12", summerVibes, "My Sets", true},
+		{"entries no match", "entries:5", summerVibes, "My Sets", false},
+		{"type playlist", "type:1", summerVibes, "My Sets", true},
+		{"type folder match", "type:0", wintersFolder, "", true},
+		{"type folder no match", "type:1", wintersFolder, "", false},
+		{"boolean AND", "name:Summer && folder:My Sets", summerVibes, "My Sets", true},
+		{"boolean AND fail", "name:Summer && folder:Other", summerVibes, "My Sets", false},
+		{"empty query matches all", "", summerVibes, "My Sets", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q := parser.Parse(tt.query)
+			eval := NewEvaluator(q)
+			got := eval.MatchesNode(tt.node, tt.parentFolder)
+			if got != tt.want {
+				t.Errorf("query %q: got %v, want %v", tt.query, got, tt.want)
+			}
+		})
+	}
+}
