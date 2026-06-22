@@ -2,109 +2,322 @@ package query
 
 import (
 	"strings"
+	"unicode"
 )
 
-// Parser handles converting a query string into a Query object
-type Parser struct{}
+type TokenKind int
+
+const (
+	TokenField TokenKind = iota
+	TokenOp
+	TokenValue
+	TokenLParen
+	TokenRParen
+	TokenAnd
+	TokenOr
+	TokenNot
+	TokenEOF
+)
+
+type Token struct {
+	Kind  TokenKind
+	Value string
+}
+
+type Parser struct {
+	tokens []Token
+	pos    int
+}
 
 func NewParser() *Parser {
 	return &Parser{}
 }
 
-// Parse converts a string like 'artist:"Four Tet" bpm:120..140' into a Query struct
 func (p *Parser) Parse(input string) Query {
-	q := Query{}
-
-	if strings.HasPrefix(input, "!") {
-		q.Negated = true
-		input = strings.TrimPrefix(input, "!")
-	}
-
-	// If the input contains a colon but no spaces before it,
-	// it might be a single multi-word criterion (like shell passed artist:MJ Cole)
-	if strings.Contains(input, ":") && !strings.Contains(input[:strings.Index(input, ":")], " ") && !strings.Contains(input, " ") {
-		if crit, ok := p.parsePart(input); ok {
-			q.Criteria = append(q.Criteria, crit)
-			return q
-		}
-	}
-
-	parts := p.splitInput(input)
-	for _, part := range parts {
-		if criterion, ok := p.parsePart(part); ok {
-			q.Criteria = append(q.Criteria, criterion)
-		}
-	}
-
-	return q
+	p.tokens = p.tokenize(input)
+	p.pos = 0
+	return Query{Root: p.parseExpression()}
 }
 
-// splitInput handles spaces but respects double quotes
-func (p *Parser) splitInput(input string) []string {
-	var parts []string
-	var current strings.Builder
-	inQuotes := false
-
-	for i := 0; i < len(input); i++ {
-		char := input[i]
-		if char == '"' {
-			inQuotes = !inQuotes
-			continue
-		}
-		if char == ' ' && !inQuotes {
-			if current.Len() > 0 {
-				parts = append(parts, current.String())
-				current.Reset()
-			}
-			continue
-		}
-		current.WriteByte(char)
-	}
-	if current.Len() > 0 {
-		parts = append(parts, current.String())
-	}
-	return parts
-}
-
-func (p *Parser) parsePart(part string) (Criterion, bool) {
-	// Standard format: field<operator>value
-	// Operators: :: (regex), .. (range), = (exact), : (substring)
-
-	// Check for Range first within the value part, but we need to find the field separator first
-	sepIdx := strings.IndexAny(part, ":=")
+func (p *Parser) parsePart(word string) []Token {
+	// Identify the operator and split
+	// Important: Check longest operators first
+	
+	// Split by Field separator first
+	sepIdx := strings.IndexAny(word, ":=")
 	if sepIdx == -1 {
-		// Default to substring match on 'name' if no separator is found
-		return Criterion{
-			Field:    "name",
-			Operator: OpSubstring,
-			Value:    part,
-		}, true
+		return []Token{{Kind: TokenValue, Value: word}}
 	}
 
-	field := part[:sepIdx]
-	opChar := string(part[sepIdx])
-	value := part[sepIdx+1:]
-
-	// Determine specific operator
-	op := OpSubstring
-	if opChar == "=" {
-		op = OpExact
+	field := word[:sepIdx]
+	rest := word[sepIdx:] // starts with : or =
+	
+	op := ":"
+	val := rest[1:]
+	
+	// Longest-match first to avoid ":>" matching before ":>="
+	switch {
+	case strings.HasPrefix(rest, "::"):
+		op = "::"
+		val = rest[2:]
+	case strings.HasPrefix(rest, ":>="):
+		op = ">="
+		val = rest[3:]
+	case strings.HasPrefix(rest, ":>"): 
+		op = ">"
+		val = rest[2:]
+	case strings.HasPrefix(rest, ":<=" ):
+		op = "<="
+		val = rest[3:]
+	case strings.HasPrefix(rest, ":<"):
+		op = "<"
+		val = rest[2:]
+	case strings.HasPrefix(rest, ">="):
+		op = ">="
+		val = rest[2:]
+	case strings.HasPrefix(rest, "<="):
+		op = "<="
+		val = rest[2:]
+	case strings.HasPrefix(rest, "="):
+		op = "="
+		val = rest[1:]
+	case strings.HasPrefix(rest, ">"):
+		op = ">"
+		val = rest[1:]
+	case strings.HasPrefix(rest, "<"):
+		op = "<"
+		val = rest[1:]
 	}
 
-	// Check for double-colon (Regex)
-	if opChar == ":" && strings.HasPrefix(value, ":") {
-		op = OpRegex
-		value = value[1:]
+	// Check for range in value
+	if strings.Contains(val, "..") {
+		op = ".."
 	}
 
-	// Check if value contains range operator
-	if strings.Contains(value, "..") {
-		op = OpRange
+	return []Token{
+		{Kind: TokenField, Value: field},
+		{Kind: TokenOp, Value: op},
+		{Kind: TokenValue, Value: val},
 	}
+}
 
-	return Criterion{
-		Field:    strings.ToLower(field),
-		Operator: op,
-		Value:    value,
-	}, true
+func (p *Parser) tokenize(input string) []Token {
+	var tokens []Token
+	runes := []rune(input)
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
+		if unicode.IsSpace(r) {
+			continue
+		}
+
+		switch r {
+		case '(':
+			tokens = append(tokens, Token{Kind: TokenLParen, Value: "("})
+		case ')':
+			tokens = append(tokens, Token{Kind: TokenRParen, Value: ")"})
+		case '!':
+			tokens = append(tokens, Token{Kind: TokenNot, Value: "!"})
+		case '&':
+			if i+1 < len(runes) && runes[i+1] == '&' {
+				tokens = append(tokens, Token{Kind: TokenAnd, Value: "&&"})
+				i++
+			}
+		case '|':
+			if i+1 < len(runes) && runes[i+1] == '|' {
+				tokens = append(tokens, Token{Kind: TokenOr, Value: "||"})
+				i++
+			}
+		case '"':
+			val, end := p.readQuoted(runes, i)
+			if val == "" {
+				tokens = append(tokens, Token{Kind: TokenValue, Value: `""`})
+			} else {
+				tokens = append(tokens, Token{Kind: TokenValue, Value: val})
+			}
+			i = end
+		default:
+			word, end := p.readWord(runes, i)
+			if strings.EqualFold(word, "AND") {
+				tokens = append(tokens, Token{Kind: TokenAnd, Value: "AND"})
+			} else if strings.EqualFold(word, "OR") {
+				tokens = append(tokens, Token{Kind: TokenOr, Value: "OR"})
+			} else if p.containsOperator(word) {
+				tokens = append(tokens, p.parsePart(word)...)
+			} else {
+				tokens = append(tokens, Token{Kind: TokenValue, Value: word})
+			}
+			i = end
+		}
+	}
+	return tokens
+}
+
+func (p *Parser) containsOperator(word string) bool {
+	return strings.ContainsAny(word, ":=> <.")
+}
+
+func (p *Parser) readQuoted(runes []rune, start int) (string, int) {
+	var sb strings.Builder
+	for i := start + 1; i < len(runes); i++ {
+		if runes[i] == '"' {
+			return sb.String(), i
+		}
+		sb.WriteRune(runes[i])
+	}
+	return sb.String(), len(runes)
+}
+
+func (p *Parser) readWord(runes []rune, start int) (string, int) {
+	var sb strings.Builder
+	i := start
+	for ; i < len(runes); i++ {
+		r := runes[i]
+		if unicode.IsSpace(r) || r == '(' || r == ')' || r == '!' || r == '&' || r == '|' || r == '"' {
+			break
+		}
+		sb.WriteRune(r)
+	}
+	return sb.String(), i - 1
+}
+
+func (p *Parser) parseExpression() Expression {
+	return p.parseOr()
+}
+
+func (p *Parser) parseOr() Expression {
+	left := p.parseAnd()
+	if left == nil {
+		return nil
+	}
+	for p.peek().Kind == TokenOr {
+		p.next()
+		right := p.parseAnd()
+		if right != nil {
+			left = Logical{Op: "OR", Left: left, Right: right}
+		}
+	}
+	return left
+}
+
+func (p *Parser) parseAnd() Expression {
+	left := p.parsePrimary()
+	if left == nil {
+		return nil
+	}
+	for {
+		kind := p.peek().Kind
+		if kind == TokenAnd {
+			p.next()
+			right := p.parsePrimary()
+			if right != nil {
+				left = Logical{Op: "AND", Left: left, Right: right}
+			}
+		} else if p.isNextImplicitAnd() {
+			right := p.parsePrimary()
+			if right != nil {
+				left = Logical{Op: "AND", Left: left, Right: right}
+			} else {
+				break
+			}
+		} else {
+			break
+		}
+	}
+	return left
+}
+
+func (p *Parser) isNextImplicitAnd() bool {
+	kind := p.peek().Kind
+	return kind == TokenField || kind == TokenValue || kind == TokenLParen || kind == TokenNot
+}
+
+func (p *Parser) parsePrimary() Expression {
+	token := p.next()
+	if token.Kind == TokenEOF {
+		return nil
+	}
+	
+	switch token.Kind {
+	case TokenNot:
+		return Not{Expr: p.parsePrimary()}
+	case TokenLParen:
+		expr := p.parseExpression()
+		if p.peek().Kind == TokenRParen {
+			p.next() // consume ')'
+		}
+		return expr
+	case TokenField:
+		opToken := p.next()
+		
+		op := OpSubstring
+		switch opToken.Value {
+		case "=":
+			op = OpExact
+		case "::":
+			op = OpRegex
+		case "..":
+			op = OpRange
+		case ">":
+			op = OpGt
+		case ">=":
+			op = OpGte
+		case "<":
+			op = OpLt
+		case "<=":
+			op = OpLte
+		}
+		
+		val := ""
+		if p.peek().Kind == TokenValue {
+			valToken := p.next()
+			val = valToken.Value
+		}
+		
+		isCueField := strings.HasPrefix(strings.ToLower(token.Value), "hotcue") || strings.HasPrefix(strings.ToLower(token.Value), "memorycue")
+
+		for {
+			peek := p.peek()
+			if peek.Kind != TokenValue {
+				break
+			}
+			if val == "" {
+				val = peek.Value
+			} else if isCueField {
+				val += ":" + peek.Value
+			} else {
+				val += " " + peek.Value
+			}
+			p.next()
+		}
+
+		if strings.Contains(val, "..") {
+			op = OpRange
+		}
+		
+		if val == `""` {
+			val = ""
+		}
+		
+		return Comparison{Field: token.Value, Operator: op, Value: val}
+	case TokenValue:
+		val := token.Value
+		if val == `""` {
+			val = ""
+		}
+		return Comparison{Field: "name", Operator: OpSubstring, Value: val}
+	}
+	return nil
+}
+
+func (p *Parser) peek() Token {
+	if p.pos >= len(p.tokens) {
+		return Token{Kind: TokenEOF}
+	}
+	return p.tokens[p.pos]
+}
+
+func (p *Parser) next() Token {
+	token := p.peek()
+	p.pos++
+	return token
 }
