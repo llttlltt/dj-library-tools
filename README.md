@@ -43,7 +43,8 @@ djlt list [source] '[query]'
 | Source | Description |
 | :--- | :--- |
 | `rb/tracks` | All tracks in your Rekordbox Collection |
-| `rb/playlists` | All playlists in Rekordbox |
+| `rb/playlists` | Playlist nodes in Rekordbox (Type=1) |
+| `rb/folders` | Folder nodes in Rekordbox (Type=0) |
 | `plex/playlists` | All Plex playlists |
 | `plex/tracks` | Tracks from a specific Plex playlist ID |
 
@@ -77,6 +78,9 @@ djlt list [source] '[query]'
 
 #### Library State
 `rating` (0–5 stars), `playcount`, `added` (date string), `playlistcount`, `playlist`
+
+#### Playlist & Folder Nodes (`rb/playlists:`, `rb/folders:`)
+`name`, `folder` (parent folder name, `""` = root level), `entries` (track count), `type` (`0`=folder, `1`=playlist)
 
 #### Cues & Beatgrids
 | Field | Description |
@@ -112,6 +116,83 @@ djlt list rb "hotcue:b:aqua:label:INTRO"
 # Tracks by Four Tet that are NOT MP3s
 djlt list rb 'artist:Four !kind:MP3'
 ```
+
+---
+
+## Playlist & Folder Management
+
+The `playlist` and `folder` commands provide full CRUD on the rekordbox playlist tree. Both follow the god-command pattern: the first argument is an `rb/playlists:` or `rb/folders:` query that selects the target(s), and a flag specifies the operation.
+
+### `djlt playlist`
+
+```bash
+# Create a new playlist at root level
+djlt playlist --new "Fast Bangers"
+
+# Create a new playlist inside a folder
+djlt playlist --new "Fast Bangers" --folder "My Sets"
+
+# Create and populate in one step
+djlt playlist --new "Fast Bangers" --add "rb/tracks:bpm:128..140"
+
+# Add tracks to one or more existing playlists
+djlt playlist rb/playlists:name:Fast --add "rb/tracks:genre:Techno"
+
+# Add to all playlists in a folder simultaneously
+djlt playlist "rb/playlists:folder:My Sets" --add "rb/tracks:rating:>=4"
+
+# Rename (requires unambiguous single match)
+djlt playlist rb/playlists:name:Fast --rename "Fast Bangers"
+
+# Move matched playlists into a folder
+djlt playlist rb/playlists:name:Fast --move "Archive"
+
+# Remove matched playlists
+djlt playlist rb/playlists:name:Fast --remove
+
+# Preview any operation without writing
+djlt playlist --new "Test" --dry-run
+```
+
+| Flag | Description |
+| :--- | :--- |
+| `--new <name>` | Create a new playlist; combinable with `--add` |
+| `--add <rb/tracks query>` | Add matched tracks; use alone to append to existing playlists |
+| `--rename <name>` | Rename matched playlists (single match required) |
+| `--move <folder>` | Move matched playlists into a folder |
+| `--remove` | Remove matched playlists |
+| `--folder <name>` | Parent folder for `--new` (default: root level) |
+| `--dry-run` | Preview changes without writing |
+
+### `djlt folder`
+
+```bash
+# Create a new folder
+djlt folder --new "My Sets"
+
+# Create a folder nested inside another
+djlt folder --new "Deep Cuts" --parent "My Sets"
+
+# Rename
+djlt folder rb/folders:name:Sets --rename "My Sets"
+
+# Move into another folder
+djlt folder rb/folders:name:Sets --move "Archive"
+
+# Remove
+djlt folder rb/folders:name:Sets --remove
+```
+
+| Flag | Description |
+| :--- | :--- |
+| `--new <name>` | Create a new folder |
+| `--rename <name>` | Rename matched folder (single match required) |
+| `--move <folder>` | Move matched folder into a parent folder |
+| `--remove` | Remove matched folder |
+| `--parent <name>` | Parent folder for `--new` (default: root level) |
+| `--dry-run` | Preview changes without writing |
+
+> Both commands inherit `--xml` from the global flags and fall back to the configured XML path.
 
 ---
 
