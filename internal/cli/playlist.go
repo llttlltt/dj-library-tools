@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"fmt"
@@ -432,5 +432,5 @@ func init() {
 	playlistCmd.Flags().BoolVar(&plDryRun, "dry-run", false, "Preview changes without writing")
 
 	playlistCmd.AddCommand(fixCmd)
-	rootCmd.AddCommand(playlistCmd)
+	RootCmd.AddCommand(playlistCmd)
 }

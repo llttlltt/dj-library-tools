@@ -1,0 +1,77 @@
+site_name: djlt (DJ Library Tools)
+site_description: DJ library management and Rekordbox XML manipulation.
+repo_url: https://github.com/llttlltt/dj-library-tools
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - navigation.breadcrumbs
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+
+extra:
+  generator: false
+
+nav:
+  - index.md
+  - Guide:
+    - Getting Started: guide/getting-started.md
+    - Configuration: guide/configuration.md
+    - Syntax: guide/syntax.md
+    - Providers:
+      - guide/query/providers/index.md
+      - Rekordbox:
+        - guide/query/providers/rekordbox/index.md
+        - Examples: guide/query/providers/rekordbox/examples.md
+      - Plex:
+        - guide/query/providers/plex/index.md
+        - Examples: guide/query/providers/plex/examples.md
+    - Commands:
+      - guide/commands/index.md
+      - djlt:
+        - commands/index.md
+        - auth: commands/auth.md
+        - config: commands/config.md
+        - folder: commands/folder.md
+        - list: commands/list.md
+        - metadata: commands/metadata.md
+        - playlist:
+          - commands/playlist/index.md
+          - fix: commands/playlist/fix.md
+        - stat: commands/stat.md
+        - sync: commands/sync.md
+  - Development:
+    - Architecture: development/architecture.md
