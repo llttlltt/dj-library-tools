@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"context"
@@ -432,5 +432,5 @@ func init() {
 	syncCmd.Flags().StringVar(&exportDest, "dest", "", "Destination directory for exported files")
 	syncCmd.Flags().StringVar(&exportFormat, "format", "mp3", "Target format for exported files")
 	syncCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without writing files or XML")
-	rootCmd.AddCommand(syncCmd)
+	RootCmd.AddCommand(syncCmd)
 }

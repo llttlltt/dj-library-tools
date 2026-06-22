@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"context"
@@ -208,5 +208,5 @@ func listPlex(loc utils.Location) error {
 }
 
 func init() {
-	rootCmd.AddCommand(listCmd)
+	RootCmd.AddCommand(listCmd)
 }
