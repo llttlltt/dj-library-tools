@@ -65,8 +65,8 @@ type Track struct {
 	Label        string       `xml:"Label,attr"`
 	Mix          string       `xml:"Mix,attr"`
 	Colour       string       `xml:"Colour,attr"`
-	Tempo        []Tempo      `xml:"TEMPO"`
-	PositionMark PositionMark `xml:"POSITION_MARK"`
+	Tempo        []Tempo        `xml:"TEMPO"`
+	PositionMark []PositionMark `xml:"POSITION_MARK"`
 }
 
 type Tempo struct {
@@ -84,6 +84,9 @@ type PositionMark struct {
 	Start   float64  `xml:"Start,attr"`
 	End     float64  `xml:"End,attr"`
 	Num     int32    `xml:"Num,attr"`
+	Red     int32    `xml:"Red,attr"`
+	Green   int32    `xml:"Green,attr"`
+	Blue    int32    `xml:"Blue,attr"`
 }
 
 type Playlists struct {
