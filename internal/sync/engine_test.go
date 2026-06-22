@@ -132,3 +132,192 @@ func findFolder(lib *rekordbox.RekordboxLibraryXML, name string) *rekordbox.Node
 	}
 	return nil
 }
+
+func TestUpsertPlaylist_RootLevel(t *testing.T) {
+	lib := makeLibrary()
+	eng := NewEngine(nil, lib)
+
+	result := eng.UpsertPlaylist("", "RootPlaylist", []string{"1", "2"})
+	if result.Updated {
+		t.Error("expected Updated=false for new playlist")
+	}
+	if result.TracksInjected != 2 {
+		t.Errorf("TracksInjected: got %d, want 2", result.TracksInjected)
+	}
+
+	found := false
+	for _, n := range lib.Playlists.Node.Node {
+		if n.Name == "RootPlaylist" && n.Type == 1 {
+			found = true
+			if len(n.TRACK) != 2 {
+				t.Errorf("track count: got %d, want 2", len(n.TRACK))
+			}
+		}
+	}
+	if !found {
+		t.Error("root-level playlist not found")
+	}
+}
+
+func TestUpsertPlaylist_NamedFolder(t *testing.T) {
+	lib := makeLibrary()
+	eng := NewEngine(nil, lib)
+
+	eng.UpsertPlaylist("DJ Sets", "Techno Night", []string{"1"})
+	eng.UpsertPlaylist("DJ Sets", "Techno Night", []string{"2", "3"})
+
+	folder := findFolder(lib, "DJ Sets")
+	if folder == nil {
+		t.Fatal("folder DJ Sets not created")
+	}
+	if len(folder.Node) != 1 {
+		t.Errorf("expected 1 playlist (upsert), got %d", len(folder.Node))
+	}
+	if len(folder.Node[0].TRACK) != 2 {
+		t.Errorf("track count after upsert: got %d, want 2", len(folder.Node[0].TRACK))
+	}
+}
+
+func TestAddTracksToPlaylist(t *testing.T) {
+	lib := makeLibrary()
+	eng := NewEngine(nil, lib)
+
+	eng.UpsertPlaylist("", "Picks", []string{"1", "2"})
+
+	found, added := eng.AddTracksToPlaylist("Picks", []string{"2", "3", "4"})
+	if !found {
+		t.Error("expected playlist to be found")
+	}
+	// "2" is a duplicate — only "3" and "4" should be added
+	if added != 2 {
+		t.Errorf("added: got %d, want 2", added)
+	}
+
+	for _, n := range lib.Playlists.Node.Node {
+		if n.Name == "Picks" && n.Type == 1 {
+			if len(n.TRACK) != 4 {
+				t.Errorf("total tracks: got %d, want 4", len(n.TRACK))
+			}
+			return
+		}
+	}
+	t.Error("playlist Picks not found after add")
+}
+
+func TestAddTracksToPlaylist_NotFound(t *testing.T) {
+	lib := makeLibrary()
+	eng := NewEngine(nil, lib)
+
+	found, added := eng.AddTracksToPlaylist("Nonexistent", []string{"1"})
+	if found {
+		t.Error("expected found=false for missing playlist")
+	}
+	if added != 0 {
+		t.Errorf("expected added=0, got %d", added)
+	}
+}
+
+func TestRenameNode(t *testing.T) {
+	lib := makeLibrary()
+	eng := NewEngine(nil, lib)
+
+	eng.InjectPlaylist("Summer", []string{"1"})
+
+	ok := eng.RenameNode("Summer", "Summer 2025", 1)
+	if !ok {
+		t.Error("expected RenameNode to return true")
+	}
+
+	folder := findFolder(lib, PlexSyncFolder)
+	if folder.Node[0].Name != "Summer 2025" {
+		t.Errorf("name after rename: got %q, want %q", folder.Node[0].Name, "Summer 2025")
+	}
+}
+
+func TestRenameNode_NotFound(t *testing.T) {
+	lib := makeLibrary()
+	eng := NewEngine(nil, lib)
+
+	ok := eng.RenameNode("Nonexistent", "New Name", 1)
+	if ok {
+		t.Error("expected RenameNode to return false for missing node")
+	}
+}
+
+func TestMoveNode(t *testing.T) {
+	lib := makeLibrary()
+	eng := NewEngine(nil, lib)
+
+	eng.InjectPlaylist("Summer", []string{"1"})
+
+	ok := eng.MoveNode("Summer", 1, "Archive")
+	if !ok {
+		t.Error("expected MoveNode to return true")
+	}
+
+	// Should no longer be in PlexSyncFolder
+	plexFolder := findFolder(lib, PlexSyncFolder)
+	for _, n := range plexFolder.Node {
+		if n.Name == "Summer" {
+			t.Error("playlist still present in original folder after move")
+		}
+	}
+
+	// Should be in Archive
+	archiveFolder := findFolder(lib, "Archive")
+	if archiveFolder == nil {
+		t.Fatal("Archive folder not created")
+	}
+	found := false
+	for _, n := range archiveFolder.Node {
+		if n.Name == "Summer" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("playlist not found in Archive after move")
+	}
+}
+
+func TestRemoveNode_Playlist(t *testing.T) {
+	lib := makeLibrary()
+	eng := NewEngine(nil, lib)
+
+	eng.InjectPlaylist("Summer", []string{"1"})
+	eng.InjectPlaylist("Winter", []string{"2"})
+
+	ok := eng.RemoveNode("Summer", 1)
+	if !ok {
+		t.Error("expected RemoveNode to return true")
+	}
+
+	folder := findFolder(lib, PlexSyncFolder)
+	if len(folder.Node) != 1 || folder.Node[0].Name != "Winter" {
+		t.Errorf("unexpected folder state after remove: %+v", folder.Node)
+	}
+}
+
+func TestRemoveNode_NotFound(t *testing.T) {
+	lib := makeLibrary()
+	eng := NewEngine(nil, lib)
+
+	ok := eng.RemoveNode("Nonexistent", 1)
+	if ok {
+		t.Error("expected RemoveNode to return false for missing node")
+	}
+}
+
+func TestWrapperBackcompat(t *testing.T) {
+	lib := makeLibrary()
+	eng := NewEngine(nil, lib)
+
+	r := eng.InjectPlaylist("Test", []string{"1"})
+	if r.Updated || r.TracksInjected != 1 {
+		t.Errorf("InjectPlaylist wrapper: unexpected result %+v", r)
+	}
+
+	removed := eng.RemovePlaylist("Test")
+	if !removed {
+		t.Error("RemovePlaylist wrapper: expected true")
+	}
+}
