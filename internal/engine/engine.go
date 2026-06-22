@@ -1,17 +1,50 @@
 package engine
 
 import (
+	"fmt"
+
 	"github.com/llttlltt/dj-library-tools/internal/query"
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 )
 
 // Engine performs operations on a Rekordbox library using queries
 type Engine struct {
-	Library *rekordbox.RekordboxLibraryXML
+	Library   *rekordbox.RekordboxLibraryXML
+	trackMap  map[int][]string // Map TrackID to list of playlist names
 }
 
 func NewEngine(lib *rekordbox.RekordboxLibraryXML) *Engine {
-	return &Engine{Library: lib}
+	e := &Engine{
+		Library:  lib,
+		trackMap: make(map[int][]string),
+	}
+	e.indexPlaylists()
+	return e
+}
+
+func (e *Engine) indexPlaylists() {
+	e.walkPlaylists(e.Library.Playlists.Node.Node)
+}
+
+func (e *Engine) walkPlaylists(nodes []rekordbox.Node) {
+	for _, node := range nodes {
+		if node.Type == 1 { // Playlist
+			for _, t := range node.TRACK {
+				// Record this track is in this playlist
+				// Note: In fixture KeyType="0" means TrackID
+				// If we encounter KeyType="1" we might need to handle Location mapping
+				var id int
+				_, err := fmt.Sscanf(t.Key, "%d", &id)
+				if err == nil {
+					e.trackMap[id] = append(e.trackMap[id], node.Name)
+				}
+			}
+		}
+		// Always walk children, folders have node.Node
+		if len(node.Node) > 0 {
+			e.walkPlaylists(node.Node)
+		}
+	}
 }
 
 // Ls returns all tracks that match the given query string
@@ -22,7 +55,7 @@ func (e *Engine) Ls(queryString string) ([]rekordbox.Track, error) {
 
 	var matched []rekordbox.Track
 	for _, track := range e.Library.Collection.TRACK {
-		if eval.Matches(track) {
+		if eval.MatchesWithPlaylists(track, e.trackMap[track.TrackID]) {
 			matched = append(matched, track)
 		}
 	}
@@ -90,7 +123,8 @@ func (e *Engine) Modify(queryString string, changes map[string]string) (int, err
 
 	modifyCount := 0
 	for i := range e.Library.Collection.TRACK {
-		if eval.Matches(e.Library.Collection.TRACK[i]) {
+		track := e.Library.Collection.TRACK[i]
+		if eval.MatchesWithPlaylists(track, e.trackMap[track.TrackID]) {
 			e.applyChanges(&e.Library.Collection.TRACK[i], changes)
 			modifyCount++
 		}
