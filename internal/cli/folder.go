@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"fmt"
@@ -167,5 +167,5 @@ func init() {
 	folderCmd.Flags().StringVar(&folderParentFlag, "parent", "", "Parent folder for --new (default: root level)")
 	folderCmd.Flags().BoolVar(&folderDryRun, "dry-run", false, "Preview changes without writing")
 
-	rootCmd.AddCommand(folderCmd)
+	RootCmd.AddCommand(folderCmd)
 }
