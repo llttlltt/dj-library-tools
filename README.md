@@ -31,7 +31,8 @@ djlt config rekordbox --xml "~/Documents/rekordbox.xml"
 
 ### Command Format
 ```bash
-djlt list [source] [query]
+# Recommendation: Use single quotes '' for queries to prevent shell interference with ! or ( )
+djlt list [source] '[query]'
 ```
 
 ### Sources
@@ -97,7 +98,7 @@ djlt list rb "beatgrids:>1"
 djlt list rb "hotcue:b:aqua:label:INTRO"
 
 # Tracks by Four Tet that are NOT MP3s
-djlt list rb "artist:Four !kind:MP3"
+djlt list rb 'artist:Four !kind:MP3'
 ```
 
 ---
