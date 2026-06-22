@@ -15,16 +15,16 @@ go install github.com/llttlltt/dj-library-tools/cmd/djlt@latest
 djlt auth --plex
 
 # Map remote Plex paths to local mount points (required when syncing from Plex)
-djlt config --plex-map "/media/Music:/Volumes/Music"
+djlt config plex.map /media/Music:/Volumes/Music
 
 # Remove a path map
-djlt config --plex-remove-map "/media/Music"
+djlt config --unset plex.map /media/Music
 
 # Set your master Rekordbox XML path
-djlt config --rekordbox-xml-path "~/Documents/rekordbox.xml"
+djlt config rekordbox.xml-path ~/Documents/rekordbox.xml
 
 # Show all current settings
-djlt config
+djlt config --list
 ```
 
 ---
@@ -254,17 +254,24 @@ Transcoding requires FFmpeg to be installed and available on `PATH`. Files that 
 
 ```bash
 # View all settings
-djlt config
+djlt config --list
 
-# Plex
-djlt config --plex-host 10.0.0.5
-djlt config --plex-port 32400
-djlt config --plex-token <token>
-djlt config --plex-map "/remote/path:/local/path"
-djlt config --plex-remove-map "/remote/path"
+# Set a value
+djlt config plex.host 10.0.0.5
+djlt config plex.port 32400
+djlt config plex.token <token>
+djlt config rekordbox.xml-path ~/Documents/rekordbox.xml
 
-# Rekordbox
-djlt config --rekordbox-xml-path "~/Documents/rekordbox.xml"
+# Read a single value
+djlt config plex.host
+
+# Clear a value
+djlt config --unset plex.host
+
+# Path maps
+djlt config plex.map /remote/path:/local/path   # add or update
+djlt config plex.map                             # list all
+djlt config --unset plex.map /remote/path        # remove one entry
 ```
 
 Settings are persisted to `~/.config/djlt/config.json`.
