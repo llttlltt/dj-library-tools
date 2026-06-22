@@ -217,6 +217,49 @@ func TestAddTracksToPlaylist_NotFound(t *testing.T) {
 	}
 }
 
+func TestRemoveTracksFromPlaylist(t *testing.T) {
+	lib := makeLibrary()
+	eng := NewEngine(nil, lib)
+
+	eng.UpsertPlaylist("", "Picks", []string{"1", "2", "3", "4"})
+
+	found, removed := eng.RemoveTracksFromPlaylist("Picks", []string{"2", "4"})
+	if !found {
+		t.Error("expected playlist to be found")
+	}
+	if removed != 2 {
+		t.Errorf("removed: got %d, want 2", removed)
+	}
+
+	for _, n := range lib.Playlists.Node.Node {
+		if n.Name == "Picks" && n.Type == 1 {
+			if len(n.TRACK) != 2 {
+				t.Errorf("remaining tracks: got %d, want 2", len(n.TRACK))
+			}
+			for _, tr := range n.TRACK {
+				if tr.Key == "2" || tr.Key == "4" {
+					t.Errorf("track %q should have been removed", tr.Key)
+				}
+			}
+			return
+		}
+	}
+	t.Error("playlist Picks not found")
+}
+
+func TestRemoveTracksFromPlaylist_NotFound(t *testing.T) {
+	lib := makeLibrary()
+	eng := NewEngine(nil, lib)
+
+	found, removed := eng.RemoveTracksFromPlaylist("Nonexistent", []string{"1"})
+	if found {
+		t.Error("expected found=false for missing playlist")
+	}
+	if removed != 0 {
+		t.Errorf("expected removed=0, got %d", removed)
+	}
+}
+
 func TestRenameNode(t *testing.T) {
 	lib := makeLibrary()
 	eng := NewEngine(nil, lib)
