@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"context"
@@ -67,5 +67,5 @@ func runPlexAuth() error {
 
 func init() {
 	authCmd.Flags().BoolVar(&authPlexFlag, "plex", false, "Authenticate with Plex using PIN flow")
-	rootCmd.AddCommand(authCmd)
+	RootCmd.AddCommand(authCmd)
 }
