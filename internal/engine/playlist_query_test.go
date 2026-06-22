@@ -38,8 +38,27 @@ func TestPlaylistQuery(t *testing.T) {
 		}
 	})
 
-	t.Run("Match track by partial playlist name", func(t *testing.T) {
-		tracks, err := eng.Ls("playlist:BBQ && id:265849715")
+	t.Run("Match track on zero playlists", func(t *testing.T) {
+		// Track 121598507 is on Everything, Terracotta, and Disco to House #1
+		// We need to find one that is on NO playlists or just check count
+		tracks, err := eng.Ls("playlistcount:0")
+		if err != nil {
+			t.Fatalf("Ls failed: %v", err)
+		}
+		// Based on the XML, most tracks are at least in "Everything" 
+		// but let's check a specific one we know has several
+		tracks, err = eng.Ls("id:121598507 && playlistcount:3")
+		if err != nil {
+			t.Fatalf("Ls failed: %v", err)
+		}
+		if len(tracks) != 1 {
+			t.Errorf("Expected track 121598507 to be in 3 playlists, found in %d", len(tracks))
+		}
+	})
+
+	t.Run("Match track in two specific playlists", func(t *testing.T) {
+		// Track 267482775 is in "Mike's BBQ" and "Terracotta"
+		tracks, err := eng.Ls("playlist:\"Mike's BBQ\" && playlist:Terracotta && id:267482775")
 		if err != nil {
 			t.Fatalf("Ls failed: %v", err)
 		}
