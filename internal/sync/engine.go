@@ -17,7 +17,7 @@ type Engine struct {
 }
 
 // NewEngine creates a sync Engine backed by the given Rekordbox XML.
-// plexClient may be nil if the caller only needs InjectPlaylist / SaveXML.
+// plexClient may be nil if the caller only needs playlist write operations or SaveXML.
 func NewEngine(plexClient *plex.Client, rbXML *rekordbox.RekordboxLibraryXML) *Engine {
 	return &Engine{
 		PlexClient: plexClient,
@@ -34,21 +34,23 @@ type SyncResult struct {
 	Updated bool
 }
 
-// InjectPlaylist upserts a named playlist under PlexSyncFolder in the XML.
+// UpsertPlaylist creates or replaces a named playlist inside folder.
+// When folder is empty the playlist is placed at the root level.
 // trackIDs must be Rekordbox TrackID strings (KeyType=0).
-// The folder is created if it does not already exist.
-// If a playlist with the same name already exists in the folder it is replaced,
-// otherwise a new one is appended.
-func (e *Engine) InjectPlaylist(name string, trackIDs []string) *SyncResult {
-	folder := e.findOrCreateFolder(PlexSyncFolder)
+func (e *Engine) UpsertPlaylist(folder, name string, trackIDs []string) *SyncResult {
+	var container *[]rekordbox.Node
+	var folderNode *rekordbox.Node
+	if folder == "" {
+		container = &e.RBXML.Playlists.Node.Node
+	} else {
+		folderNode = e.findOrCreateFolder(folder)
+		container = &folderNode.Node
+	}
 
 	node := rekordbox.Node{
-		BaseNode: rekordbox.BaseNode{
-			Type: 1,
-			Name: name,
-		},
-		KeyType: 0,
-		Entries: int32(len(trackIDs)),
+		BaseNode: rekordbox.BaseNode{Type: 1, Name: name},
+		KeyType:  0,
+		Entries:  int32(len(trackIDs)),
 	}
 	for _, id := range trackIDs {
 		node.TRACK = append(node.TRACK, struct {
@@ -56,37 +58,105 @@ func (e *Engine) InjectPlaylist(name string, trackIDs []string) *SyncResult {
 		}{Key: id})
 	}
 
-	for i := range folder.Node {
-		if folder.Node[i].Name == name && folder.Node[i].Type == 1 {
-			folder.Node[i] = node
+	for i := range *container {
+		if (*container)[i].Name == name && (*container)[i].Type == 1 {
+			(*container)[i] = node
 			return &SyncResult{PlaylistName: name, TracksInjected: len(trackIDs), Updated: true}
 		}
 	}
 
-	folder.Node = append(folder.Node, node)
-	folder.Count++
+	*container = append(*container, node)
+	if folderNode != nil {
+		folderNode.Count++
+	}
 	return &SyncResult{PlaylistName: name, TracksInjected: len(trackIDs), Updated: false}
 }
 
-// RemovePlaylist removes a named playlist from PlexSyncFolder.
-// Returns true if the playlist was found and removed.
-func (e *Engine) RemovePlaylist(name string) bool {
-	for i := range e.RBXML.Playlists.Node.Node {
-		folder := &e.RBXML.Playlists.Node.Node[i]
-		if folder.Name != PlexSyncFolder || folder.Type != 0 {
-			continue
-		}
-		for j := range folder.Node {
-			if folder.Node[j].Name == name && folder.Node[j].Type == 1 {
-				folder.Node = append(folder.Node[:j], folder.Node[j+1:]...)
-				if folder.Count > 0 {
-					folder.Count--
-				}
-				return true
-			}
+// InjectPlaylist upserts a named playlist under PlexSyncFolder.
+// Preserved for backward compatibility; delegates to UpsertPlaylist.
+func (e *Engine) InjectPlaylist(name string, trackIDs []string) *SyncResult {
+	return e.UpsertPlaylist(PlexSyncFolder, name, trackIDs)
+}
+
+// AddTracksToPlaylist appends trackIDs to a named playlist anywhere in the tree.
+// Duplicate IDs are silently ignored.
+// Returns (true, addedCount) if the playlist was found, (false, 0) otherwise.
+func (e *Engine) AddTracksToPlaylist(name string, trackIDs []string) (bool, int) {
+	node, _, _, _ := findNodeInTree(&e.RBXML.Playlists.Node.Node, nil, name, 1)
+	if node == nil {
+		return false, 0
+	}
+
+	existing := make(map[string]struct{}, len(node.TRACK))
+	for _, t := range node.TRACK {
+		existing[t.Key] = struct{}{}
+	}
+
+	added := 0
+	for _, id := range trackIDs {
+		if _, dup := existing[id]; !dup {
+			node.TRACK = append(node.TRACK, struct {
+				Key string `xml:"Key,attr"`
+			}{Key: id})
+			existing[id] = struct{}{}
+			added++
 		}
 	}
-	return false
+	node.Entries = int32(len(node.TRACK))
+	return true, added
+}
+
+// RenameNode renames the first node matching name and nodeType anywhere in the tree.
+// nodeType: 0=folder, 1=playlist.
+// Returns false if no matching node is found.
+func (e *Engine) RenameNode(name, newName string, nodeType int32) bool {
+	node, _, _, _ := findNodeInTree(&e.RBXML.Playlists.Node.Node, nil, name, nodeType)
+	if node == nil {
+		return false
+	}
+	node.Name = newName
+	return true
+}
+
+// MoveNode detaches the first node matching name and nodeType from its current location
+// and re-attaches it inside targetFolder (creating the folder if it does not exist).
+// Returns false if the node is not found.
+func (e *Engine) MoveNode(name string, nodeType int32, targetFolder string) bool {
+	node, parentNode, parentSlice, idx := findNodeInTree(&e.RBXML.Playlists.Node.Node, nil, name, nodeType)
+	if node == nil {
+		return false
+	}
+
+	moved := *node
+	*parentSlice = append((*parentSlice)[:idx], (*parentSlice)[idx+1:]...)
+	if parentNode != nil && parentNode.Count > 0 {
+		parentNode.Count--
+	}
+
+	target := e.findOrCreateFolder(targetFolder)
+	target.Node = append(target.Node, moved)
+	target.Count++
+	return true
+}
+
+// RemoveNode removes the first node matching name and nodeType from anywhere in the tree.
+// Returns false if no matching node is found.
+func (e *Engine) RemoveNode(name string, nodeType int32) bool {
+	_, parentNode, parentSlice, idx := findNodeInTree(&e.RBXML.Playlists.Node.Node, nil, name, nodeType)
+	if idx == -1 {
+		return false
+	}
+	*parentSlice = append((*parentSlice)[:idx], (*parentSlice)[idx+1:]...)
+	if parentNode != nil && parentNode.Count > 0 {
+		parentNode.Count--
+	}
+	return true
+}
+
+// RemovePlaylist removes a named playlist from anywhere in the tree.
+// Preserved for backward compatibility; delegates to RemoveNode.
+func (e *Engine) RemovePlaylist(name string) bool {
+	return e.RemoveNode(name, 1)
 }
 
 // MatchTracks matches a slice of Plex tracks against the Rekordbox collection,
@@ -120,4 +190,22 @@ func (e *Engine) findOrCreateFolder(name string) *rekordbox.Node {
 		BaseNode: rekordbox.BaseNode{Type: 0, Name: name},
 	})
 	return &(*nodes)[len(*nodes)-1]
+}
+
+// findNodeInTree recursively searches for the first node matching name and nodeType.
+// parent is the node whose Node slice is being searched (nil at root level).
+// Returns (found node, parent node, parent slice, index) or (nil, nil, nil, -1) when not found.
+func findNodeInTree(nodes *[]rekordbox.Node, parent *rekordbox.Node, name string, nodeType int32) (*rekordbox.Node, *rekordbox.Node, *[]rekordbox.Node, int) {
+	for i := range *nodes {
+		n := &(*nodes)[i]
+		if n.Name == name && n.Type == nodeType {
+			return n, parent, nodes, i
+		}
+		if len(n.Node) > 0 {
+			if found, foundParent, foundSlice, idx := findNodeInTree(&n.Node, n, name, nodeType); found != nil {
+				return found, foundParent, foundSlice, idx
+			}
+		}
+	}
+	return nil, nil, nil, -1
 }
