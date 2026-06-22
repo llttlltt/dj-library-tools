@@ -106,6 +106,31 @@ func (e *Engine) AddTracksToPlaylist(name string, trackIDs []string) (bool, int)
 	return true, added
 }
 
+// RemoveTracksFromPlaylist removes all trackIDs present in the given slice from a named playlist.
+// Returns (true, removedCount) if the playlist was found, (false, 0) otherwise.
+func (e *Engine) RemoveTracksFromPlaylist(name string, trackIDs []string) (bool, int) {
+	node, _, _, _ := findNodeInTree(&e.RBXML.Playlists.Node.Node, nil, name, 1)
+	if node == nil {
+		return false, 0
+	}
+
+	toRemove := make(map[string]struct{}, len(trackIDs))
+	for _, id := range trackIDs {
+		toRemove[id] = struct{}{}
+	}
+
+	before := len(node.TRACK)
+	kept := node.TRACK[:0]
+	for _, t := range node.TRACK {
+		if _, remove := toRemove[t.Key]; !remove {
+			kept = append(kept, t)
+		}
+	}
+	node.TRACK = kept
+	node.Entries = int32(len(node.TRACK))
+	return true, before - len(node.TRACK)
+}
+
 // RenameNode renames the first node matching name and nodeType anywhere in the tree.
 // nodeType: 0=folder, 1=playlist.
 // Returns false if no matching node is found.
