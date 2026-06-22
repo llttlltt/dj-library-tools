@@ -26,10 +26,12 @@ var (
 
 	// playlist god command flags
 	plAddFlag    string
+	plRemoveFlag string
+	plSyncFlag   string
 	plNewFlag    string
 	plRenameFlag string
 	plMoveFlag   string
-	plRemoveFlag bool
+	plDeleteFlag bool
 	plFolderFlag string
 	plDryRun     bool
 )
@@ -43,16 +45,22 @@ var playlistCmd = &cobra.Command{
 func runPlaylistCmd(cmd *cobra.Command, args []string) error {
 	// Tally mutually exclusive ops. --add without --new counts as one.
 	exclusiveOps := 0
+	if plAddFlag != "" && plNewFlag == "" {
+		exclusiveOps++
+	}
+	if plRemoveFlag != "" {
+		exclusiveOps++
+	}
+	if plSyncFlag != "" {
+		exclusiveOps++
+	}
 	if plRenameFlag != "" {
 		exclusiveOps++
 	}
 	if plMoveFlag != "" {
 		exclusiveOps++
 	}
-	if plRemoveFlag {
-		exclusiveOps++
-	}
-	if plAddFlag != "" && plNewFlag == "" {
+	if plDeleteFlag {
 		exclusiveOps++
 	}
 
@@ -60,10 +68,10 @@ func runPlaylistCmd(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	}
 	if plNewFlag != "" && exclusiveOps > 0 {
-		return fmt.Errorf("--new cannot be combined with --rename, --move, or --remove")
+		return fmt.Errorf("--new cannot be combined with --remove, --sync, --rename, --move, or --delete")
 	}
 	if exclusiveOps > 1 {
-		return fmt.Errorf("only one of --add, --rename, --move, --remove may be specified at a time")
+		return fmt.Errorf("only one of --add, --remove, --sync, --rename, --move, --delete may be specified at a time")
 	}
 	if plNewFlag == "" && len(args) == 0 {
 		return fmt.Errorf("a playlist query (e.g. rb/playlists:name:MyPlaylist) is required")
@@ -98,12 +106,16 @@ func runPlaylistCmd(cmd *cobra.Command, args []string) error {
 		return runPlaylistNew(syncEng, eng, path)
 	case plAddFlag != "":
 		return runPlaylistAdd(syncEng, eng, targets, path)
+	case plRemoveFlag != "":
+		return runPlaylistRemoveTracks(syncEng, eng, targets, path)
+	case plSyncFlag != "":
+		return runPlaylistSync(syncEng, eng, targets, path)
 	case plRenameFlag != "":
 		return runPlaylistRename(syncEng, targets, path)
 	case plMoveFlag != "":
 		return runPlaylistMove(syncEng, targets, path)
-	case plRemoveFlag:
-		return runPlaylistRemove(syncEng, targets, path)
+	case plDeleteFlag:
+		return runPlaylistDelete(syncEng, targets, path)
 	}
 	return nil
 }
@@ -206,20 +218,112 @@ func runPlaylistMove(syncEng *syncpkg.Engine, targets []engine.NodeResult, path 
 	return syncEng.SaveXML(path)
 }
 
-func runPlaylistRemove(syncEng *syncpkg.Engine, targets []engine.NodeResult, path string) error {
+func runPlaylistRemoveTracks(syncEng *syncpkg.Engine, eng *engine.Engine, targets []engine.NodeResult, path string) error {
+	loc := utils.ParseLocation(plRemoveFlag)
+	if loc.Provider != "rb" || loc.Resource != "tracks" {
+		return fmt.Errorf("--remove must use rb/tracks: syntax, got %q", plRemoveFlag)
+	}
+	tracks, err := eng.Ls(loc.Query)
+	if err != nil {
+		return fmt.Errorf("failed to resolve track query: %w", err)
+	}
+	var trackIDs []string
+	for _, t := range tracks {
+		trackIDs = append(trackIDs, strconv.Itoa(t.TrackID))
+	}
+
 	if plDryRun {
 		for _, target := range targets {
-			fmt.Printf("[Dry Run] Would remove playlist %q\n", target.Node.Name)
+			fmt.Printf("[Dry Run] Would remove %d tracks from playlist %q\n", len(trackIDs), target.Node.Name)
+		}
+		return nil
+	}
+
+	for _, target := range targets {
+		found, removed := syncEng.RemoveTracksFromPlaylist(target.Node.Name, trackIDs)
+		if !found {
+			fmt.Printf("Warning: playlist %q not found\n", target.Node.Name)
+			continue
+		}
+		fmt.Printf("Removed %d tracks from %q\n", removed, target.Node.Name)
+	}
+	return syncEng.SaveXML(path)
+}
+
+func runPlaylistSync(syncEng *syncpkg.Engine, eng *engine.Engine, targets []engine.NodeResult, path string) error {
+	loc := utils.ParseLocation(plSyncFlag)
+	if loc.Provider != "rb" || loc.Resource != "tracks" {
+		return fmt.Errorf("--sync must use rb/tracks: syntax, got %q", plSyncFlag)
+	}
+	tracks, err := eng.Ls(loc.Query)
+	if err != nil {
+		return fmt.Errorf("failed to resolve track query: %w", err)
+	}
+	newIDs := make(map[string]struct{}, len(tracks))
+	var newIDSlice []string
+	for _, t := range tracks {
+		id := strconv.Itoa(t.TrackID)
+		newIDs[id] = struct{}{}
+		newIDSlice = append(newIDSlice, id)
+	}
+
+	for _, target := range targets {
+		// Determine current IDs in the playlist.
+		currentIDs := make(map[string]struct{}, len(target.Node.TRACK))
+		for _, tr := range target.Node.TRACK {
+			currentIDs[tr.Key] = struct{}{}
+		}
+
+		// Tracks to add: in new set but not currently in playlist.
+		var toAdd []string
+		for _, id := range newIDSlice {
+			if _, exists := currentIDs[id]; !exists {
+				toAdd = append(toAdd, id)
+			}
+		}
+
+		// Tracks to remove: currently in playlist but not in new set.
+		var toRemove []string
+		for id := range currentIDs {
+			if _, keep := newIDs[id]; !keep {
+				toRemove = append(toRemove, id)
+			}
+		}
+
+		if plDryRun {
+			fmt.Printf("[Dry Run] %q: would add %d, remove %d tracks\n", target.Node.Name, len(toAdd), len(toRemove))
+			continue
+		}
+
+		if len(toAdd) > 0 {
+			syncEng.AddTracksToPlaylist(target.Node.Name, toAdd)
+		}
+		if len(toRemove) > 0 {
+			syncEng.RemoveTracksFromPlaylist(target.Node.Name, toRemove)
+		}
+		fmt.Printf("Synced %q: +%d / -%d tracks\n", target.Node.Name, len(toAdd), len(toRemove))
+	}
+
+	if plDryRun {
+		return nil
+	}
+	return syncEng.SaveXML(path)
+}
+
+func runPlaylistDelete(syncEng *syncpkg.Engine, targets []engine.NodeResult, path string) error {
+	if plDryRun {
+		for _, target := range targets {
+			fmt.Printf("[Dry Run] Would delete playlist %q\n", target.Node.Name)
 		}
 		return nil
 	}
 
 	for _, target := range targets {
 		if !syncEng.RemoveNode(target.Node.Name, 1) {
-			fmt.Printf("Warning: could not remove playlist %q\n", target.Node.Name)
+			fmt.Printf("Warning: could not delete playlist %q\n", target.Node.Name)
 			continue
 		}
-		fmt.Printf("Removed playlist %q\n", target.Node.Name)
+		fmt.Printf("Deleted playlist %q\n", target.Node.Name)
 	}
 	return syncEng.SaveXML(path)
 }
@@ -317,11 +421,13 @@ func init() {
 	fixCmd.Flags().BoolVar(&dryRunFlag, "dry-run", false, "Show what would be done without modifying files")
 
 	// playlist god command flags
-	playlistCmd.Flags().StringVar(&plAddFlag, "add", "", "Add tracks matching this rb/tracks: query to matched playlists")
+	playlistCmd.Flags().StringVar(&plAddFlag, "add", "", "Add tracks matching this rb/tracks: query")
+	playlistCmd.Flags().StringVar(&plRemoveFlag, "remove", "", "Remove tracks matching this rb/tracks: query from matched playlists")
+	playlistCmd.Flags().StringVar(&plSyncFlag, "sync", "", "Sync matched playlists to exactly match this rb/tracks: query")
 	playlistCmd.Flags().StringVar(&plNewFlag, "new", "", "Create a new playlist with this name")
 	playlistCmd.Flags().StringVar(&plRenameFlag, "rename", "", "Rename matched playlists to this name")
 	playlistCmd.Flags().StringVar(&plMoveFlag, "move", "", "Move matched playlists into this folder")
-	playlistCmd.Flags().BoolVar(&plRemoveFlag, "remove", false, "Remove matched playlists")
+	playlistCmd.Flags().BoolVar(&plDeleteFlag, "delete", false, "Delete matched playlists")
 	playlistCmd.Flags().StringVar(&plFolderFlag, "folder", "", "Parent folder for --new (default: root level)")
 	playlistCmd.Flags().BoolVar(&plDryRun, "dry-run", false, "Preview changes without writing")
 
