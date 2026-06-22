@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"fmt"
@@ -17,24 +17,36 @@ var (
 var configCmd = &cobra.Command{
 	Use:   "config [key] [value]",
 	Short: "View or update application configuration",
-	Long: `Manage djlt configuration using dot-namespaced keys.
+	Long: `Manage djlt configuration using dot-namespaced keys. Settings are stored in ~/.config/djlt/config.json.
 
-Keys:
-  plex.host             Plex server hostname or IP
-  plex.port             Plex server port (default: 32400)
-  plex.token            Plex authentication token
-  plex.map              Remote-to-local path map entry (value format: remote:local)
-  rekordbox.xml-path    Path to the Rekordbox XML library
+## Keys
 
-Examples:
+- **plex.host**: Plex server hostname or IP.
+- **plex.port**: Plex server port (default: 32400).
+- **plex.token**: Plex authentication token (usually set via 'djlt auth --plex').
+- **plex.map**: Remote-to-local path map entry. Used to bridge Plex remote paths to your local mount points.
+- **rekordbox.xml-path**: Absolute path to your Rekordbox XML export file.
+
+## Examples
+
+**List all settings**
   djlt config --list
-  djlt config plex.host 10.0.0.5
-  djlt config plex.host
-  djlt config --unset plex.host
-  djlt config plex.map /media/Music:/Volumes/Music
-  djlt config plex.map
-  djlt config --unset plex.map /media/Music
-  djlt config rekordbox.xml-path ~/Documents/rekordbox.xml`,
+
+**Configure Rekordbox library**
+  djlt config rekordbox.xml-path ~/Documents/rekordbox.xml
+
+**Set up Plex connection**
+  djlt config plex.host 192.168.1.50
+  djlt config plex.port 32400
+
+**Add a Plex path mapping**
+  djlt config plex.map /music/remote:/Volumes/Music
+
+**Remove a specific path mapping**
+  djlt config --unset plex.map /music/remote
+
+**Unset a scalar value**
+  djlt config --unset plex.host`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, _ := config.LoadAppConfig()
 
@@ -164,5 +176,5 @@ func maskToken(t string) string {
 func init() {
 	configCmd.Flags().BoolVar(&cfgList, "list", false, "Show all configuration values")
 	configCmd.Flags().BoolVar(&cfgUnset, "unset", false, "Remove a configuration value")
-	rootCmd.AddCommand(configCmd)
+	RootCmd.AddCommand(configCmd)
 }

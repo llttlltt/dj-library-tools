@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"fmt"
@@ -93,5 +93,5 @@ func printTop(m map[string]int, title string, limit int) {
 }
 
 func init() {
-	rootCmd.AddCommand(statCmd)
+	RootCmd.AddCommand(statCmd)
 }

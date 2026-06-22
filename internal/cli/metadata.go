@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"fmt"
@@ -65,7 +65,7 @@ func init() {
 	metadataCmd.Flags().StringVarP(&destinationXML, "destination", "d", "", "Destination Rekordbox XML (tracks receive the Tempo markers)")
 	metadataCmd.Flags().StringVarP(&outputXML, "output", "o", "", "Output path for the merged Rekordbox XML")
 	metadataCmd.Flags().BoolVarP(&forceMetadata, "force", "f", false, "Overwrite output file if it already exists")
-	rootCmd.AddCommand(metadataCmd)
+	RootCmd.AddCommand(metadataCmd)
 }
 
 // ── matching & merging helpers ─────────────────────────────────────────────
