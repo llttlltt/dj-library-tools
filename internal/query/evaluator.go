@@ -48,7 +48,13 @@ func (e *Evaluator) matchComparison(track rekordbox.Track, playlists []string, c
 	field := strings.ToLower(c.Field)
 	switch field {
 	case "playlist", "playlists":
+		// If it's a numeric comparison or range, treat it as a count check
+		if _, err := strconv.Atoi(c.Value); err == nil || strings.Contains(c.Value, "..") {
+			break
+		}
 		return e.matchPlaylist(playlists, c)
+	case "playlistcount":
+		break
 	case "hotcue":
 		return e.matchSpecificCue(track, c, true)
 	case "memorycue":
@@ -65,7 +71,7 @@ func (e *Evaluator) matchComparison(track rekordbox.Track, playlists []string, c
 		return e.matchAnyCue(track, false, c.Value)
 	}
 
-	fieldValue := e.getFieldValue(track, c.Field)
+	fieldValue := e.getFieldValue(track, playlists, c.Field)
 	if c.Operator == OpRange {
 		return e.matchRange(fieldValue, c.Value)
 	}
@@ -87,8 +93,10 @@ func (e *Evaluator) matchComparison(track rekordbox.Track, playlists []string, c
 	return false
 }
 
-func (e *Evaluator) getFieldValue(track rekordbox.Track, field string) string {
+func (e *Evaluator) getFieldValue(track rekordbox.Track, playlists []string, field string) string {
 	switch strings.ToLower(field) {
+	case "playlistcount", "playlists":
+		return strconv.Itoa(len(playlists))
 	case "name", "title":
 		return track.Name
 	case "artist":

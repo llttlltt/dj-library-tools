@@ -70,7 +70,8 @@ You can filter by any standard Rekordbox field:
 - `bpm`, `bitrate`, `kind` (e.g., MP3 File), `size`, `time` (duration in seconds)
 
 #### Library State
-- `rating` (0-5 stars), `playcount`, `added` (date)
+- `rating` (0-5 stars), `playcount`, `added` (date), `playlistcount` (number of playlists)
+- `playlist` (match by name, e.g. `playlist:Summer`)
 
 #### Cues & Beatgrids (Advanced)
 | Property | Description |
@@ -99,6 +100,12 @@ djlt list rb "hotcue:b:aqua:label:INTRO"
 
 # Tracks by Four Tet that are NOT MP3s
 djlt list rb 'artist:Four !kind:MP3'
+
+# Tracks appearing on more than 3 playlists
+djlt list rb "playlistcount:>3"
+
+# Tracks appearing in both specific playlists
+djlt list rb "playlist:Summer && playlist:Beach"
 ```
 
 ---
