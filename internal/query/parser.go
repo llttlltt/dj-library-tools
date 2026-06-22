@@ -8,9 +8,9 @@ import (
 type TokenKind int
 
 const (
-	TokenField TokenKind = iota
+	TokenValue TokenKind = iota
+	TokenField
 	TokenOp
-	TokenValue
 	TokenLParen
 	TokenRParen
 	TokenAnd
@@ -55,7 +55,6 @@ func (p *Parser) parsePart(word string) []Token {
 	op := ":"
 	val := rest[1:]
 	
-	// Longest-match first to avoid ":>" matching before ":>="
 	switch {
 	case strings.HasPrefix(rest, "::"):
 		op = "::"
@@ -63,12 +62,12 @@ func (p *Parser) parsePart(word string) []Token {
 	case strings.HasPrefix(rest, ":>="):
 		op = ">="
 		val = rest[3:]
-	case strings.HasPrefix(rest, ":>"): 
-		op = ">"
-		val = rest[2:]
-	case strings.HasPrefix(rest, ":<=" ):
+	case strings.HasPrefix(rest, ":<="):
 		op = "<="
 		val = rest[3:]
+	case strings.HasPrefix(rest, ":>"):
+		op = ">"
+		val = rest[2:]
 	case strings.HasPrefix(rest, ":<"):
 		op = "<"
 		val = rest[2:]
@@ -141,7 +140,7 @@ func (p *Parser) tokenize(input string) []Token {
 				tokens = append(tokens, Token{Kind: TokenAnd, Value: "AND"})
 			} else if strings.EqualFold(word, "OR") {
 				tokens = append(tokens, Token{Kind: TokenOr, Value: "OR"})
-			} else if p.containsOperator(word) {
+			} else if strings.ContainsAny(word, ":=") {
 				tokens = append(tokens, p.parsePart(word)...)
 			} else {
 				tokens = append(tokens, Token{Kind: TokenValue, Value: word})
@@ -150,10 +149,6 @@ func (p *Parser) tokenize(input string) []Token {
 		}
 	}
 	return tokens
-}
-
-func (p *Parser) containsOperator(word string) bool {
-	return strings.ContainsAny(word, ":=> <.")
 }
 
 func (p *Parser) readQuoted(runes []rune, start int) (string, int) {
@@ -228,7 +223,8 @@ func (p *Parser) parseAnd() Expression {
 
 func (p *Parser) isNextImplicitAnd() bool {
 	kind := p.peek().Kind
-	return kind == TokenField || kind == TokenValue || kind == TokenLParen || kind == TokenNot
+	// Check if this token starts a new primary expression
+	return kind == TokenValue || kind == TokenLParen || kind == TokenNot
 }
 
 func (p *Parser) parsePrimary() Expression {
@@ -251,26 +247,18 @@ func (p *Parser) parsePrimary() Expression {
 		
 		op := OpSubstring
 		switch opToken.Value {
-		case "=":
-			op = OpExact
-		case "::":
-			op = OpRegex
-		case "..":
-			op = OpRange
-		case ">":
-			op = OpGt
-		case ">=":
-			op = OpGte
-		case "<":
-			op = OpLt
-		case "<=":
-			op = OpLte
+		case "=": op = OpExact
+		case "::": op = OpRegex
+		case "..": op = OpRange
+		case ">": op = OpGt
+		case ">=": op = OpGte
+		case "<": op = OpLt
+		case "<=": op = OpLte
 		}
 		
 		val := ""
 		if p.peek().Kind == TokenValue {
-			valToken := p.next()
-			val = valToken.Value
+			val = p.next().Value
 		}
 		
 		isCueField := strings.HasPrefix(strings.ToLower(token.Value), "hotcue") || strings.HasPrefix(strings.ToLower(token.Value), "memorycue")
@@ -280,7 +268,7 @@ func (p *Parser) parsePrimary() Expression {
 			if peek.Kind != TokenValue {
 				break
 			}
-			if val == "" {
+			if val == "" || val == `""` {
 				val = peek.Value
 			} else if isCueField {
 				val += ":" + peek.Value
