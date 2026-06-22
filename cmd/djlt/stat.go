@@ -6,7 +6,9 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/engine"
+	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 	"github.com/spf13/cobra"
 )
@@ -15,11 +17,16 @@ var statCmd = &cobra.Command{
 	Use:   "stat [query]",
 	Short: "Show statistics for tracks matching the query",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if xmlPath == "" {
-			return fmt.Errorf("XML path must be provided via --xml or -x")
+		cfg, _ := config.LoadAppConfig()
+		path := utils.ExpandPath(xmlPath)
+		if path == "" {
+			path = utils.ExpandPath(cfg.RekordboxXMLPath)
+		}
+		if path == "" {
+			return fmt.Errorf("Rekordbox XML path not found. Use --xml or run 'djlt config rekordbox --xml PATH'")
 		}
 
-		lib, err := rekordbox.ReadRekordboxLibrary(xmlPath)
+		lib, err := rekordbox.ReadRekordboxLibrary(path)
 		if err != nil {
 			return fmt.Errorf("failed to read XML: %w", err)
 		}
