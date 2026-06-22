@@ -38,21 +38,25 @@ func TestPlaylistQuery(t *testing.T) {
 		}
 	})
 
-	t.Run("Match track on zero playlists", func(t *testing.T) {
-		// Track 121598507 is on Everything, Terracotta, and Disco to House #1
-		// We need to find one that is on NO playlists or just check count
-		tracks, err := eng.Ls("playlistcount:0")
+	t.Run("Match track by exact playlist count", func(t *testing.T) {
+		// Track 121598507 appears in exactly 13 unique playlists in the fixture.
+		// Previously playlistcount:3 matched it via substring ("13" contains "3");
+		// exact numeric equality should not match.
+		tracks, err := eng.Ls("id:121598507 && playlistcount:3")
 		if err != nil {
 			t.Fatalf("Ls failed: %v", err)
 		}
-		// Based on the XML, most tracks are at least in "Everything" 
-		// but let's check a specific one we know has several
-		tracks, err = eng.Ls("id:121598507 && playlistcount:3")
+		if len(tracks) != 0 {
+			t.Errorf("playlistcount:3 should not match a track in 13 playlists, got %d", len(tracks))
+		}
+
+		// Now verify the real count matches.
+		tracks, err = eng.Ls("id:121598507 && playlistcount:13")
 		if err != nil {
 			t.Fatalf("Ls failed: %v", err)
 		}
 		if len(tracks) != 1 {
-			t.Errorf("Expected track 121598507 to be in 3 playlists, found in %d", len(tracks))
+			t.Errorf("Expected track 121598507 to be in 13 playlists, got %d results", len(tracks))
 		}
 	})
 
