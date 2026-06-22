@@ -141,26 +141,35 @@ djlt playlist rb/playlists:name:Fast --add "rb/tracks:genre:Techno"
 # Add to all playlists in a folder simultaneously
 djlt playlist "rb/playlists:folder:My Sets" --add "rb/tracks:rating:>=4"
 
+# Remove tracks matching a query from a playlist
+djlt playlist rb/playlists:name:Fast --remove "rb/tracks:hotcues:>0"
+
+# Sync a playlist to exactly match a query
+# Adds new matches, removes non-matches, preserves existing track order
+djlt playlist rb/playlists:name:"Needs Work" --sync "rb/tracks:hotcues:0 && memorycues:0 && beatgrids:1"
+
 # Rename (requires unambiguous single match)
 djlt playlist rb/playlists:name:Fast --rename "Fast Bangers"
 
 # Move matched playlists into a folder
 djlt playlist rb/playlists:name:Fast --move "Archive"
 
-# Remove matched playlists
-djlt playlist rb/playlists:name:Fast --remove
+# Delete matched playlists entirely
+djlt playlist rb/playlists:name:Fast --delete
 
 # Preview any operation without writing
-djlt playlist --new "Test" --dry-run
+djlt playlist rb/playlists:name:"Needs Work" --sync "rb/tracks:beatgrids:1" --dry-run
 ```
 
 | Flag | Description |
 | :--- | :--- |
 | `--new <name>` | Create a new playlist; combinable with `--add` |
-| `--add <rb/tracks query>` | Add matched tracks; use alone to append to existing playlists |
+| `--add <rb/tracks query>` | Append matched tracks (deduped) |
+| `--remove <rb/tracks query>` | Remove matched tracks from the playlist |
+| `--sync <rb/tracks query>` | Add new matches, remove non-matches; preserves existing track order |
 | `--rename <name>` | Rename matched playlists (single match required) |
 | `--move <folder>` | Move matched playlists into a folder |
-| `--remove` | Remove matched playlists |
+| `--delete` | Delete matched playlists entirely |
 | `--folder <name>` | Parent folder for `--new` (default: root level) |
 | `--dry-run` | Preview changes without writing |
 
