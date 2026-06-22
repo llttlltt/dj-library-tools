@@ -18,9 +18,17 @@ import (
 var listCmd = &cobra.Command{
 	Use:   "list [location]",
 	Short: "List items from a location (e.g. plex/playlists:Summer)",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		loc := utils.ParseLocation(args[0])
+		var loc utils.Location
+		if len(args) == 1 && strings.Contains(args[0], ":") {
+			loc = utils.ParseLocation(args[0])
+		} else {
+			loc = utils.ParseLocation(args[0])
+			if len(args) > 1 {
+				loc.Query = strings.Join(args[1:], " ")
+			}
+		}
 
 		switch loc.Provider {
 		case "rb", "rekordbox":
