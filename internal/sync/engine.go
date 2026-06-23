@@ -50,9 +50,10 @@ func (e *Engine) UpsertPlaylist(folder, name string, trackIDs []string, position
 	}
 
 	node := rekordbox.Node{
-		BaseNode: rekordbox.BaseNode{Type: 1, Name: name},
-		KeyType:  0,
-		Entries:  int32(len(trackIDs)),
+		Name:    name,
+		Type:    1,
+		KeyType: 0,
+		Entries: int32(len(trackIDs)),
 	}
 	for _, id := range trackIDs {
 		node.TRACK = append(node.TRACK, struct {
@@ -228,7 +229,8 @@ func (e *Engine) findOrCreateFolder(name string) *rekordbox.Node {
 		}
 	}
 	*nodes = append(*nodes, rekordbox.Node{
-		BaseNode: rekordbox.BaseNode{Type: 0, Name: name},
+		Name: name,
+		Type: 0,
 	})
 	return &(*nodes)[len(*nodes)-1]
 }
