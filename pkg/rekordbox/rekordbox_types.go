@@ -88,9 +88,9 @@ type PositionMark struct {
 	Start   string   `xml:"Start,attr"`
 	End     string   `xml:"End,attr,omitempty"`
 	Num     int32    `xml:"Num,attr"`
-	Red     int32    `xml:"Red,attr,omitempty"`
-	Green   int32    `xml:"Green,attr,omitempty"`
-	Blue    int32    `xml:"Blue,attr,omitempty"`
+	Red     int32    `xml:"Red,attr"`
+	Green   int32    `xml:"Green,attr"`
+	Blue    int32    `xml:"Blue,attr"`
 }
 
 type Playlists struct {
