@@ -1,7 +1,6 @@
 package query
 
 import (
-	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -138,7 +137,7 @@ func (e *Evaluator) getFieldValue(track rekordbox.Track, playlists []string, fie
 	case "album":
 		return track.Album
 	case "bpm", "tempo":
-		return fmt.Sprintf("%.2f", track.AverageBpm)
+		return track.AverageBpm
 	case "key":
 		return track.Tonality
 	case "genre":
