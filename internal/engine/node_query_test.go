@@ -25,25 +25,29 @@ func makeLibraryWithPlaylists() *rekordbox.RekordboxLibraryXML {
 		},
 		Playlists: rekordbox.Playlists{
 			Node: rekordbox.RootNode{
-				BaseNode: rekordbox.BaseNode{Type: 0, Name: "ROOT"},
-				Count:    2,
+				Name:  "ROOT",
+				Type:  0,
+				Count: 2,
 				Node: []rekordbox.Node{
 					{
-						BaseNode: rekordbox.BaseNode{Type: 0, Name: "My Sets"},
-						Count:    2,
+						Name:  "My Sets",
+						Type:  0,
+						Count: 2,
 						Node: []rekordbox.Node{
 							{
-								BaseNode: rekordbox.BaseNode{Type: 1, Name: "Summer Vibes"},
-								KeyType:  0,
-								Entries:  2,
+								Name:    "Summer Vibes",
+								Type:    1,
+								KeyType: 0,
+								Entries: 2,
 								TRACK: []struct {
 									Key string `xml:"Key,attr"`
 								}{{Key: "1"}, {Key: "2"}},
 							},
 							{
-								BaseNode: rekordbox.BaseNode{Type: 1, Name: "Winter Warmers"},
-								KeyType:  0,
-								Entries:  1,
+								Name:    "Winter Warmers",
+								Type:    1,
+								KeyType: 0,
+								Entries: 1,
 								TRACK: []struct {
 									Key string `xml:"Key,attr"`
 								}{{Key: "3"}},
@@ -51,9 +55,10 @@ func makeLibraryWithPlaylists() *rekordbox.RekordboxLibraryXML {
 						},
 					},
 					{
-						BaseNode: rekordbox.BaseNode{Type: 1, Name: "All Techno"},
-						KeyType:  0,
-						Entries:  2,
+						Name:    "All Techno",
+						Type:    1,
+						KeyType: 0,
+						Entries: 2,
 						TRACK: []struct {
 							Key string `xml:"Key,attr"`
 						}{{Key: "1"}, {Key: "3"}},

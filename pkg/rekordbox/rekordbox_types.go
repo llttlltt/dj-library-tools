@@ -102,8 +102,6 @@ type Playlists struct {
 
 type BaseNode struct {
 	XMLName xml.Name `xml:"NODE"`
-	Type    int32    `xml:"Type,attr"`
-	Name    string   `xml:"Name,attr"`
 }
 
 type RootNode struct {
@@ -111,19 +109,22 @@ type RootNode struct {
 	// Name = "ROOT"
 	BaseNode
 	XMLName xml.Name `xml:"NODE"`
+	Type    int32    `xml:"Type,attr"`
+	Name    string   `xml:"Name,attr"`
 	Count   int32    `xml:"Count,attr"` // Number of NODE in the NODE
 	Node    []Node   `xml:"NODE"`
 }
 
-// Combined Folder and Playlist Node
 type Node struct {
 	BaseNode
 	// Type = "0" (FOLDER) | "1" (PLAYLIST)
 	XMLName xml.Name `xml:"NODE"`
+	Name    string   `xml:"Name,attr"`
+	Type    int32    `xml:"Type,attr"`
 	Count   int32    `xml:"Count,attr"`
-	Node    []Node   `xml:"NODE"`
 	Entries int32    `xml:"Entries,attr"` // Number of TRACK in PLAYLIST
 	KeyType int32    `xml:"KeyType,attr"` // Kind of identification - "0" (Track ID) | "1" (Location)
+	Node    []Node   `xml:"NODE"`
 	TRACK   []struct {
 		Key string `xml:"Key,attr"` // Identification of track - "Track ID" or "Location" in "COLLECTION"
 	} `xml:"TRACK"`

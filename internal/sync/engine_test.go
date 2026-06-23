@@ -137,7 +137,7 @@ func TestUpsertPlaylist_RootLevel(t *testing.T) {
 	lib := makeLibrary()
 	eng := NewEngine(nil, lib)
 
-	result := eng.UpsertPlaylist("", "RootPlaylist", []string{"1", "2"})
+	result := eng.UpsertPlaylist("", "RootPlaylist", []string{"1", "2"}, -1)
 	if result.Updated {
 		t.Error("expected Updated=false for new playlist")
 	}
@@ -163,8 +163,8 @@ func TestUpsertPlaylist_NamedFolder(t *testing.T) {
 	lib := makeLibrary()
 	eng := NewEngine(nil, lib)
 
-	eng.UpsertPlaylist("DJ Sets", "Techno Night", []string{"1"})
-	eng.UpsertPlaylist("DJ Sets", "Techno Night", []string{"2", "3"})
+	eng.UpsertPlaylist("DJ Sets", "Techno Night", []string{"1"}, -1)
+	eng.UpsertPlaylist("DJ Sets", "Techno Night", []string{"2", "3"}, -1)
 
 	folder := findFolder(lib, "DJ Sets")
 	if folder == nil {
@@ -182,7 +182,7 @@ func TestAddTracksToPlaylist(t *testing.T) {
 	lib := makeLibrary()
 	eng := NewEngine(nil, lib)
 
-	eng.UpsertPlaylist("", "Picks", []string{"1", "2"})
+	eng.UpsertPlaylist("", "Picks", []string{"1", "2"}, -1)
 
 	found, added := eng.AddTracksToPlaylist("Picks", []string{"2", "3", "4"})
 	if !found {
@@ -221,7 +221,7 @@ func TestRemoveTracksFromPlaylist(t *testing.T) {
 	lib := makeLibrary()
 	eng := NewEngine(nil, lib)
 
-	eng.UpsertPlaylist("", "Picks", []string{"1", "2", "3", "4"})
+	eng.UpsertPlaylist("", "Picks", []string{"1", "2", "3", "4"}, -1)
 
 	found, removed := eng.RemoveTracksFromPlaylist("Picks", []string{"2", "4"})
 	if !found {

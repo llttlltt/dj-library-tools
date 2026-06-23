@@ -123,11 +123,13 @@ func TestQueryEvaluator(t *testing.T) {
 
 func TestEvaluatorMatchesNode(t *testing.T) {
 	summerVibes := rekordbox.Node{
-		BaseNode: rekordbox.BaseNode{Type: 1, Name: "Summer Vibes"},
-		Entries:  12,
+		Name:    "Summer Vibes",
+		Type:    1,
+		Entries: 12,
 	}
 	wintersFolder := rekordbox.Node{
-		BaseNode: rekordbox.BaseNode{Type: 0, Name: "Winter Sets"},
+		Name: "Winter Sets",
+		Type: 0,
 	}
 
 	parser := NewParser()
