@@ -59,6 +59,9 @@ nav:
       - Plex:
         - guide/query/providers/plex/index.md
         - Examples: guide/query/providers/plex/examples.md
+    - Workflows:
+      - guide/workflows/index.md
+      - Automating Playlists: guide/workflows/automating-playlists.md
     - Commands:
       - guide/commands/index.md
       - djlt:

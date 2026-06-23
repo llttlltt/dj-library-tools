@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
@@ -88,7 +89,7 @@ func listRekordbox(loc utils.Location) error {
 	for _, t := range tracks {
 		bpm := 0.0
 		if len(t.Tempo) > 0 {
-			bpm = t.Tempo[0].Bpm
+			bpm, _ = strconv.ParseFloat(t.Tempo[0].Bpm, 64)
 		}
 		fmt.Printf("%s %s %s %s %s\n", 
 			bpmFmt("%6.2f", bpm), 
