@@ -15,9 +15,11 @@ type RekordboxLibraryXML struct {
 	Collection Collection `xml:"COLLECTION"`
 	Playlists  Playlists  `xml:"PLAYLISTS"`
 
-	// Format holds the detected or desired XML formatting.
-	// It is not marshaled/unmarshaled.
-	Format *XMLFormat `xml:"-"`
+	// Internal state for surgical saving
+	OriginalRaw       []byte     `xml:"-"`
+	CollectionChanged bool       `xml:"-"`
+	Format            *XMLFormat `xml:"-"`
+	PlaylistsChanged  bool       `xml:"-"`
 }
 
 type Product struct {
