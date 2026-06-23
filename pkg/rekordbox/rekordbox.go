@@ -28,11 +28,18 @@ func ReadRekordboxLibrary(path string) (*RekordboxLibraryXML, error) {
 	}
 
 	rekordboxLibrary.Format = DetectFormat(xmlFileBytes)
+	rekordboxLibrary.OriginalRaw = xmlFileBytes
 
 	return &rekordboxLibrary, nil
 }
 
 func WriteRekordboxLibrary(path string, library *RekordboxLibraryXML) error {
+	// If the collection hasn't changed and we have the original raw bytes, 
+	// we perform a surgical save of just the playlists section.
+	if !library.CollectionChanged && len(library.OriginalRaw) > 0 {
+		return writeSurgically(path, library)
+	}
+
 	format := library.Format
 	if format == nil {
 		format = DefaultFormat()
@@ -121,4 +128,49 @@ func postProcessWrapping(data []byte, lineLength int, indent string) []byte {
 	}
 
 	return bytes.Join(result, []byte("\n"))
+}
+
+var playlistBlockRegex = regexp.MustCompile(`(?s)<PLAYLISTS>.*</PLAYLISTS>`)
+
+func writeSurgically(path string, library *RekordboxLibraryXML) error {
+	// If nothing changed at all, just return
+	if !library.CollectionChanged && !library.PlaylistsChanged {
+		return nil
+	}
+
+	format := library.Format
+	if format == nil {
+		format = DefaultFormat()
+	}
+
+	// Marshal only the playlists section
+	newPlaylists, err := xml.MarshalIndent(library.Playlists, "", format.Indent)
+	if err != nil {
+		return fmt.Errorf("failed to marshal playlists: %w", err)
+	}
+
+	if format.SelfClosing {
+		newPlaylists = postProcessSelfClosing(newPlaylists)
+	}
+	
+	// Apply line endings
+	if format.LineEnding != "\n" {
+		newPlaylists = bytes.ReplaceAll(newPlaylists, []byte("\n"), []byte(format.LineEnding))
+	}
+
+	// Find the playlists block in the original file
+	loc := playlistBlockRegex.FindIndex(library.OriginalRaw)
+	if loc == nil {
+		// Fallback to full write if we can't find the block
+		library.CollectionChanged = true
+		return WriteRekordboxLibrary(path, library)
+	}
+
+	// Stitch it together
+	var output bytes.Buffer
+	output.Write(library.OriginalRaw[:loc[0]])
+	output.Write(newPlaylists)
+	output.Write(library.OriginalRaw[loc[1]:])
+
+	return os.WriteFile(path, output.Bytes(), 0644)
 }

@@ -94,7 +94,7 @@ func runFolderNew(syncEng *syncpkg.Engine, path string) error {
 	// Create the folder by upserting a temporary placeholder playlist inside it,
 	// then removing that placeholder. This triggers findOrCreateFolder internally.
 	const tmp = "__djlt_tmp__"
-	syncEng.UpsertPlaylist(folderNewFlag, tmp, nil)
+	syncEng.UpsertPlaylist(folderNewFlag, tmp, nil, -1)
 	syncEng.RemoveNode(tmp, 1)
 
 	if folderParentFlag != "" {

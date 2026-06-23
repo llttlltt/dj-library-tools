@@ -36,8 +36,10 @@ type SyncResult struct {
 
 // UpsertPlaylist creates or replaces a named playlist inside folder.
 // When folder is empty the playlist is placed at the root level.
+// position is the 0-indexed position in the folder. -1 appends to the end.
 // trackIDs must be Rekordbox TrackID strings (KeyType=0).
-func (e *Engine) UpsertPlaylist(folder, name string, trackIDs []string) *SyncResult {
+func (e *Engine) UpsertPlaylist(folder, name string, trackIDs []string, position int) *SyncResult {
+	e.RBXML.PlaylistsChanged = true
 	var container *[]rekordbox.Node
 	var folderNode *rekordbox.Node
 	if folder == "" {
@@ -58,6 +60,7 @@ func (e *Engine) UpsertPlaylist(folder, name string, trackIDs []string) *SyncRes
 		}{Key: id})
 	}
 
+	// Check if updating
 	for i := range *container {
 		if (*container)[i].Name == name && (*container)[i].Type == 1 {
 			(*container)[i] = node
@@ -65,7 +68,15 @@ func (e *Engine) UpsertPlaylist(folder, name string, trackIDs []string) *SyncRes
 		}
 	}
 
-	*container = append(*container, node)
+	// New playlist - handle position
+	if position < 0 || position >= len(*container) {
+		*container = append(*container, node)
+	} else {
+		// Insert at position
+		*container = append((*container)[:position+1], (*container)[position:]...)
+		(*container)[position] = node
+	}
+
 	if folderNode != nil {
 		folderNode.Count++
 	}
@@ -75,13 +86,14 @@ func (e *Engine) UpsertPlaylist(folder, name string, trackIDs []string) *SyncRes
 // InjectPlaylist upserts a named playlist under PlexSyncFolder.
 // Preserved for backward compatibility; delegates to UpsertPlaylist.
 func (e *Engine) InjectPlaylist(name string, trackIDs []string) *SyncResult {
-	return e.UpsertPlaylist(PlexSyncFolder, name, trackIDs)
+	return e.UpsertPlaylist(PlexSyncFolder, name, trackIDs, -1)
 }
 
 // AddTracksToPlaylist appends trackIDs to a named playlist anywhere in the tree.
 // Duplicate IDs are silently ignored.
 // Returns (true, addedCount) if the playlist was found, (false, 0) otherwise.
 func (e *Engine) AddTracksToPlaylist(name string, trackIDs []string) (bool, int) {
+	e.RBXML.PlaylistsChanged = true
 	node, _, _, _ := findNodeInTree(&e.RBXML.Playlists.Node.Node, nil, name, 1)
 	if node == nil {
 		return false, 0
@@ -109,6 +121,7 @@ func (e *Engine) AddTracksToPlaylist(name string, trackIDs []string) (bool, int)
 // RemoveTracksFromPlaylist removes all trackIDs present in the given slice from a named playlist.
 // Returns (true, removedCount) if the playlist was found, (false, 0) otherwise.
 func (e *Engine) RemoveTracksFromPlaylist(name string, trackIDs []string) (bool, int) {
+	e.RBXML.PlaylistsChanged = true
 	node, _, _, _ := findNodeInTree(&e.RBXML.Playlists.Node.Node, nil, name, 1)
 	if node == nil {
 		return false, 0
@@ -135,6 +148,7 @@ func (e *Engine) RemoveTracksFromPlaylist(name string, trackIDs []string) (bool,
 // nodeType: 0=folder, 1=playlist.
 // Returns false if no matching node is found.
 func (e *Engine) RenameNode(name, newName string, nodeType int32) bool {
+	e.RBXML.PlaylistsChanged = true
 	node, _, _, _ := findNodeInTree(&e.RBXML.Playlists.Node.Node, nil, name, nodeType)
 	if node == nil {
 		return false
@@ -147,6 +161,7 @@ func (e *Engine) RenameNode(name, newName string, nodeType int32) bool {
 // and re-attaches it inside targetFolder (creating the folder if it does not exist).
 // Returns false if the node is not found.
 func (e *Engine) MoveNode(name string, nodeType int32, targetFolder string) bool {
+	e.RBXML.PlaylistsChanged = true
 	node, parentNode, parentSlice, idx := findNodeInTree(&e.RBXML.Playlists.Node.Node, nil, name, nodeType)
 	if node == nil {
 		return false
@@ -167,6 +182,7 @@ func (e *Engine) MoveNode(name string, nodeType int32, targetFolder string) bool
 // RemoveNode removes the first node matching name and nodeType from anywhere in the tree.
 // Returns false if no matching node is found.
 func (e *Engine) RemoveNode(name string, nodeType int32) bool {
+	e.RBXML.PlaylistsChanged = true
 	_, parentNode, parentSlice, idx := findNodeInTree(&e.RBXML.Playlists.Node.Node, nil, name, nodeType)
 	if idx == -1 {
 		return false

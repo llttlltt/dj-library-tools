@@ -33,6 +33,7 @@ var (
 	plMoveFlag   string
 	plDeleteFlag bool
 	plFolderFlag string
+	plAtFlag     int
 	plDryRun     bool
 )
 
@@ -137,11 +138,11 @@ func runPlaylistNew(syncEng *syncpkg.Engine, eng *engine.Engine, path string) er
 	}
 
 	if plDryRun {
-		fmt.Printf("[Dry Run] Would create playlist %q in folder %q with %d tracks\n", plNewFlag, plFolderFlag, len(trackIDs))
+		fmt.Printf("[Dry Run] Would create playlist %q in folder %q at position %d with %d tracks\n", plNewFlag, plFolderFlag, plAtFlag, len(trackIDs))
 		return nil
 	}
 
-	result := syncEng.UpsertPlaylist(plFolderFlag, plNewFlag, trackIDs)
+	result := syncEng.UpsertPlaylist(plFolderFlag, plNewFlag, trackIDs, plAtFlag)
 	if result.Updated {
 		fmt.Printf("Updated existing playlist %q (%d tracks)\n", result.PlaylistName, result.TracksInjected)
 	} else {
@@ -429,6 +430,7 @@ func init() {
 	playlistCmd.Flags().StringVar(&plMoveFlag, "move", "", "Move matched playlists into this folder")
 	playlistCmd.Flags().BoolVar(&plDeleteFlag, "delete", false, "Delete matched playlists")
 	playlistCmd.Flags().StringVar(&plFolderFlag, "folder", "", "Parent folder for --new (default: root level)")
+	playlistCmd.Flags().IntVar(&plAtFlag, "at", -1, "Insert new playlist at this 0-indexed position (-1 for end)")
 	playlistCmd.Flags().BoolVar(&plDryRun, "dry-run", false, "Preview changes without writing")
 
 	playlistCmd.AddCommand(fixCmd)
