@@ -51,6 +51,10 @@ func WriteRekordboxLibrary(path string, library *RekordboxLibraryXML) error {
 		output = bytes.ReplaceAll(output, []byte("\n"), []byte(format.LineEnding))
 	}
 
+	if format.LineLength > 0 {
+		output = postProcessWrapping(output, format.LineLength, format.Indent)
+	}
+
 	xmlHeader := []byte(`<?xml version="1.0" encoding="UTF-8"?>` + format.LineEnding + format.LineEnding)
 	output = append(xmlHeader, output...)
 
@@ -70,4 +74,51 @@ func postProcessSelfClosing(data []byte) []byte {
 	// or use a more robust approach if needed.
 	// Since we know the structure, a simple regex should work for most empty tags.
 	return tagRegex.ReplaceAll(data, []byte(`<${1}${2}/>`))
+}
+
+func postProcessWrapping(data []byte, lineLength int, indent string) []byte {
+	if lineLength <= 0 {
+		return data
+	}
+
+	lines := bytes.Split(data, []byte("\n"))
+	var result [][]byte
+
+	for _, line := range lines {
+		if len(line) <= lineLength {
+			result = append(result, line)
+			continue
+		}
+
+		// Look for attributes to wrap
+		// Regex for: space + attribute name + ="
+		attrRegex := regexp.MustCompile(` [a-zA-Z0-9]+="`)
+		matches := attrRegex.FindAllIndex(line, -1)
+		if len(matches) == 0 {
+			result = append(result, line)
+			continue
+		}
+
+		currentLine := line
+		var wrappedLines [][]byte
+
+		for i := len(matches) - 1; i >= 0; i-- {
+			pos := matches[i][0]
+			if pos > lineLength {
+				// We wrap from the end to avoid shifting indices
+				head := currentLine[:pos]
+				tail := currentLine[pos+1:] // Skip the space
+				
+				// Keep the head and start a new line for the tail
+				// Note: recursion/looping would be better for multiple wraps
+				// This simple version handles the most common case
+				wrappedLines = append([][]byte{append([]byte(indent+indent+indent), tail...)}, wrappedLines...)
+				currentLine = head
+			}
+		}
+		result = append(result, currentLine)
+		result = append(result, wrappedLines...)
+	}
+
+	return bytes.Join(result, []byte("\n"))
 }
