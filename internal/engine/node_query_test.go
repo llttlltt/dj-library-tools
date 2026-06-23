@@ -18,9 +18,9 @@ func makeLibraryWithPlaylists() *rekordbox.RekordboxLibraryXML {
 		Collection: rekordbox.Collection{
 			Entries: 3,
 			TRACK: []rekordbox.Track{
-				{TrackID: 1, Name: "Track One", Genre: "Techno", AverageBpm: 128.0},
-				{TrackID: 2, Name: "Track Two", Genre: "House", AverageBpm: 122.0},
-				{TrackID: 3, Name: "Track Three", Genre: "Techno", AverageBpm: 132.0},
+				{TrackID: 1, Name: "Track One", Genre: "Techno", AverageBpm: "128.0"},
+				{TrackID: 2, Name: "Track Two", Genre: "House", AverageBpm: "122.0"},
+				{TrackID: 3, Name: "Track Three", Genre: "Techno", AverageBpm: "132.0"},
 			},
 		},
 		Playlists: rekordbox.Playlists{

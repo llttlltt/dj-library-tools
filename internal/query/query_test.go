@@ -55,17 +55,17 @@ func TestQueryEvaluator(t *testing.T) {
 	track := rekordbox.Track{
 		Name:       "Sixteen Oceans",
 		Artist:     "Four Tet",
-		AverageBpm: 124.0,
+		AverageBpm: "124.0",
 		Tempo: []rekordbox.Tempo{
-			{Bpm: 124.0},
-			{Bpm: 125.0},
+			{Bpm: "124.0"},
+			{Bpm: "125.0"},
 		},
 		Genre: "Electronic",
 		PositionMark: []rekordbox.PositionMark{
 			{Num: 0, Red: 40, Green: 226, Blue: 20}, // Green Hot Cue A
 			{Num: 1, Red: 224, Green: 100, Blue: 27}, // Orange Hot Cue B
-			{Num: -1, Name: "GROOVE", Type: 4, Start: 60.0}, // Memory Cue 1 (Highest Start)
-			{Num: -1, Name: "", Start: 30.0},                // Memory Cue 2
+			{Num: -1, Name: "GROOVE", Type: 4, Start: "60.0"}, // Memory Cue 1 (Highest Start)
+			{Num: -1, Name: "", Start: "30.0"},                // Memory Cue 2
 		},
 	}
 
