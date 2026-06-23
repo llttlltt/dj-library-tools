@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/llttlltt/dj-library-tools/internal/query"
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
@@ -106,7 +107,9 @@ func (e *Engine) Stat(queryString string) (*StatResult, error) {
 			res.Artists[t.Artist]++
 		}
 		if len(t.Tempo) > 0 {
-			res.TotalTempo += t.Tempo[0].Bpm
+			if bpm, err := strconv.ParseFloat(t.Tempo[0].Bpm, 64); err == nil {
+				res.TotalTempo += bpm
+			}
 		}
 	}
 	res.AvgBPM = res.TotalTempo / float64(len(tracks))
