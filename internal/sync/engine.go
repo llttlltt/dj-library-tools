@@ -52,8 +52,8 @@ func (e *Engine) UpsertPlaylist(folder, name string, trackIDs []string, position
 	node := rekordbox.Node{
 		Name:    name,
 		Type:    1,
-		KeyType: 0,
-		Entries: int32(len(trackIDs)),
+		KeyType: rekordbox.PtrInt32(0),
+		Entries: rekordbox.PtrInt32(int32(len(trackIDs))),
 	}
 	for _, id := range trackIDs {
 		node.TRACK = append(node.TRACK, struct {
@@ -79,7 +79,11 @@ func (e *Engine) UpsertPlaylist(folder, name string, trackIDs []string, position
 	}
 
 	if folderNode != nil {
-		folderNode.Count++
+		if folderNode.Count == nil {
+			folderNode.Count = rekordbox.PtrInt32(1)
+		} else {
+			*folderNode.Count++
+		}
 	}
 	return &SyncResult{PlaylistName: name, TracksInjected: len(trackIDs), Updated: false}
 }
@@ -115,7 +119,7 @@ func (e *Engine) AddTracksToPlaylist(name string, trackIDs []string) (bool, int)
 			added++
 		}
 	}
-	node.Entries = int32(len(node.TRACK))
+	node.Entries = rekordbox.PtrInt32(int32(len(node.TRACK)))
 	return true, added
 }
 
@@ -141,7 +145,7 @@ func (e *Engine) RemoveTracksFromPlaylist(name string, trackIDs []string) (bool,
 		}
 	}
 	node.TRACK = kept
-	node.Entries = int32(len(node.TRACK))
+	node.Entries = rekordbox.PtrInt32(int32(len(node.TRACK)))
 	return true, before - len(node.TRACK)
 }
 
@@ -170,13 +174,17 @@ func (e *Engine) MoveNode(name string, nodeType int32, targetFolder string) bool
 
 	moved := *node
 	*parentSlice = append((*parentSlice)[:idx], (*parentSlice)[idx+1:]...)
-	if parentNode != nil && parentNode.Count > 0 {
-		parentNode.Count--
+	if parentNode != nil && parentNode.Count != nil && *parentNode.Count > 0 {
+		*parentNode.Count--
 	}
 
 	target := e.findOrCreateFolder(targetFolder)
 	target.Node = append(target.Node, moved)
-	target.Count++
+	if target.Count == nil {
+		target.Count = rekordbox.PtrInt32(1)
+	} else {
+		*target.Count++
+	}
 	return true
 }
 
@@ -189,8 +197,8 @@ func (e *Engine) RemoveNode(name string, nodeType int32) bool {
 		return false
 	}
 	*parentSlice = append((*parentSlice)[:idx], (*parentSlice)[idx+1:]...)
-	if parentNode != nil && parentNode.Count > 0 {
-		parentNode.Count--
+	if parentNode != nil && parentNode.Count != nil && *parentNode.Count > 0 {
+		*parentNode.Count--
 	}
 	return true
 }
@@ -229,8 +237,9 @@ func (e *Engine) findOrCreateFolder(name string) *rekordbox.Node {
 		}
 	}
 	*nodes = append(*nodes, rekordbox.Node{
-		Name: name,
-		Type: 0,
+		Name:  name,
+		Type:  0,
+		Count: rekordbox.PtrInt32(0),
 	})
 	return &(*nodes)[len(*nodes)-1]
 }

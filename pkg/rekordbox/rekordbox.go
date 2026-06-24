@@ -68,7 +68,9 @@ func WriteRekordboxLibrary(path string, library *RekordboxLibraryXML) error {
 	return os.WriteFile(path, finalOutput, 0644)
 }
 
-var playlistBlockRegex = regexp.MustCompile(`(?s)<PLAYLISTS>.*</PLAYLISTS>`)
+// playlistBlockRegex matches the PLAYLISTS block including any leading
+// horizontal whitespace so the stitched output preserves the original indent.
+var playlistBlockRegex = regexp.MustCompile(`(?s)[ \t]*<PLAYLISTS>.*</PLAYLISTS>`)
 
 func writeSurgically(path string, library *RekordboxLibraryXML) error {
 	// If nothing changed at all, just return
@@ -81,8 +83,11 @@ func writeSurgically(path string, library *RekordboxLibraryXML) error {
 		format = DefaultFormat()
 	}
 
-	// Marshal only the playlists section
-	newPlaylistsRaw, err := xml.Marshal(library.Playlists)
+	// Marshal only the playlists section, using the same indent as the source
+	// file so that the formatter receives pre-indented tokens and produces
+	// correctly nested output (instead of a single-line flat block).
+	indent := format.Indent
+	newPlaylistsRaw, err := xml.MarshalIndent(library.Playlists, indent, indent)
 	if err != nil {
 		return fmt.Errorf("failed to marshal playlists: %w", err)
 	}

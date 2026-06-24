@@ -32,13 +32,13 @@ func makeLibraryWithPlaylists() *rekordbox.RekordboxLibraryXML {
 					{
 						Name:  "My Sets",
 						Type:  0,
-						Count: 2,
+						Count: rekordbox.PtrInt32(2),
 						Node: []rekordbox.Node{
 							{
 								Name:    "Summer Vibes",
 								Type:    1,
-								KeyType: 0,
-								Entries: 2,
+								KeyType: rekordbox.PtrInt32(0),
+								Entries: rekordbox.PtrInt32(2),
 								TRACK: []struct {
 									Key string `xml:"Key,attr"`
 								}{{Key: "1"}, {Key: "2"}},
@@ -46,8 +46,8 @@ func makeLibraryWithPlaylists() *rekordbox.RekordboxLibraryXML {
 							{
 								Name:    "Winter Warmers",
 								Type:    1,
-								KeyType: 0,
-								Entries: 1,
+								KeyType: rekordbox.PtrInt32(0),
+								Entries: rekordbox.PtrInt32(1),
 								TRACK: []struct {
 									Key string `xml:"Key,attr"`
 								}{{Key: "3"}},
@@ -57,8 +57,8 @@ func makeLibraryWithPlaylists() *rekordbox.RekordboxLibraryXML {
 					{
 						Name:    "All Techno",
 						Type:    1,
-						KeyType: 0,
-						Entries: 2,
+						KeyType: rekordbox.PtrInt32(0),
+						Entries: rekordbox.PtrInt32(2),
 						TRACK: []struct {
 							Key string `xml:"Key,attr"`
 						}{{Key: "1"}, {Key: "3"}},
