@@ -11,9 +11,17 @@
     - `query/`: Lexer/Parser for selection syntax.
     - `sync/`: Orchestration for data movement and XML injection.
     - `media/`: FFmpeg transcoding and path sanitization.
-- `pkg/`: Publicly accessible packages (e.g., `rekordbox` XML types).
+- `pkg/`: Publicly accessible packages.
+    - `rekordbox/`: XML types and a **High-Fidelity Formatter**. This package ensures that any XML modified by `djlt` is indistinguishable from one exported by Rekordbox, preserving idiosyncratic attribute ordering and wrapping rules.
 
 ## Core Concepts
+
+### High-Fidelity XML Formatting
+Rekordbox is sensitive to the structure of its XML. The `TokenStreamFormatter` in `pkg/rekordbox` implements several rules to match this:
+- **Attribute Ordering**: Attributes for `TRACK`, `NODE`, `POSITION_MARK`, etc., are sorted according to a specific schema.
+- **Smart Wrapping**: Attributes are wrapped onto new lines only when the total decoded line length exceeds 88 characters.
+- **Self-Closing Tags**: Empty tags are automatically converted to self-closing format (`<TAG/>`).
+- **Entity Encoding**: Specific character escaping rules for ampersands, quotes, and other special characters.
 
 ### Selection Engine
 The selection engine uses a recursive descent parser. It supports:
