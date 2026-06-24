@@ -84,8 +84,8 @@ func TestInjectPlaylist_MultiplePlaylists(t *testing.T) {
 	if len(folder.Node) != 2 {
 		t.Errorf("expected 2 playlists in folder, got %d", len(folder.Node))
 	}
-	if folder.Count != 2 {
-		t.Errorf("folder.Count: got %d, want 2", folder.Count)
+	if rekordbox.DerefInt32(folder.Count) != 2 {
+		t.Errorf("folder.Count: got %d, want 2", rekordbox.DerefInt32(folder.Count))
 	}
 }
 
@@ -108,8 +108,8 @@ func TestRemovePlaylist(t *testing.T) {
 	if folder.Node[0].Name != "Winter" {
 		t.Errorf("remaining playlist: got %q, want %q", folder.Node[0].Name, "Winter")
 	}
-	if folder.Count != 1 {
-		t.Errorf("folder.Count after removal: got %d, want 1", folder.Count)
+	if rekordbox.DerefInt32(folder.Count) != 1 {
+		t.Errorf("folder.Count after removal: got %d, want 1", rekordbox.DerefInt32(folder.Count))
 	}
 }
 

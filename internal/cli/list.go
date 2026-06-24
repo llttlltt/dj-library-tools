@@ -60,11 +60,7 @@ func listRekordbox(loc utils.Location) error {
 	eng := engine.NewEngine(lib)
 	
 	if loc.Resource == "playlists" {
-		for _, node := range lib.Playlists.Node.Node {
-			if loc.Query == "" || strings.Contains(strings.ToLower(node.Name), strings.ToLower(loc.Query)) {
-				fmt.Printf("Playlist: %s (%d entries)\n", node.Name, node.Entries)
-			}
-		}
+		printPlaylists(lib.Playlists.Node.Node, loc.Query, "")
 		return nil
 	}
 
@@ -101,6 +97,29 @@ func listRekordbox(loc utils.Location) error {
 
 	fmt.Printf("\n%s\n", color.HiGreenString("Matched %d tracks.", len(tracks)))
 	return nil
+}
+
+// printPlaylists recursively walks the node tree and prints matching playlists.
+func printPlaylists(nodes []rekordbox.Node, query, folderPath string) {
+	for _, node := range nodes {
+		if node.Type == 1 { // playlist
+			name := node.Name
+			if folderPath != "" {
+				name = folderPath + "/" + name
+			}
+			if query == "" || strings.Contains(strings.ToLower(node.Name), strings.ToLower(query)) {
+				fmt.Printf("Playlist: %s (%d entries)\n", name, rekordbox.DerefInt32(node.Entries))
+			}
+		} else if node.Type == 0 { // folder
+			nextPath := node.Name
+			if folderPath != "" {
+				nextPath = folderPath + "/" + node.Name
+			}
+			if len(node.Node) > 0 {
+				printPlaylists(node.Node, query, nextPath)
+			}
+		}
+	}
 }
 
 func listPlex(loc utils.Location) error {

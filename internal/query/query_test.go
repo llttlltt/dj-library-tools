@@ -169,7 +169,7 @@ func TestEvaluatorMatchesNode(t *testing.T) {
 	summerVibes := rekordbox.Node{
 		Name:    "Summer Vibes",
 		Type:    1,
-		Entries: 12,
+		Entries: rekordbox.PtrInt32(12),
 	}
 	wintersFolder := rekordbox.Node{
 		Name: "Winter Sets",

@@ -121,13 +121,28 @@ type Node struct {
 	XMLName xml.Name `xml:"NODE"`
 	Name    string   `xml:"Name,attr"`
 	Type    int32    `xml:"Type,attr"`
-	Count   int32    `xml:"Count,attr"`
-	Entries int32    `xml:"Entries,attr"`
-	KeyType int32    `xml:"KeyType,attr"`
+	// Count, Entries, and KeyType are optional: folders use Count, playlists use
+	// KeyType+Entries. Using *int32 with omitempty ensures zero-valued absent
+	// attributes are never written (a nil pointer is omitted; &0 is written as
+	// "0", which is correct for KeyType=0).
+	Count   *int32   `xml:"Count,attr,omitempty"`
+	Entries *int32   `xml:"Entries,attr,omitempty"`
+	KeyType *int32   `xml:"KeyType,attr,omitempty"`
 	Node    []Node   `xml:"NODE"`
 	TRACK   []struct {
 		Key string `xml:"Key,attr"`
 	} `xml:"TRACK"`
+}
+
+// PtrInt32 returns a pointer to the given int32 value.
+func PtrInt32(v int32) *int32 { return &v }
+
+// DerefInt32 safely dereferences an *int32, returning 0 for a nil pointer.
+func DerefInt32(p *int32) int32 {
+	if p == nil {
+		return 0
+	}
+	return *p
 }
 
 type FolderNode struct {

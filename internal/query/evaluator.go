@@ -679,9 +679,9 @@ func (e *Evaluator) getNodeFieldValue(node rekordbox.Node, parentFolder string, 
 	case "parent", "folder":
 		return parentFolder
 	case "entries":
-		return strconv.Itoa(int(node.Entries))
+		return strconv.Itoa(int(rekordbox.DerefInt32(node.Entries)))
 	case "count":
-		return strconv.Itoa(int(node.Count))
+		return strconv.Itoa(int(rekordbox.DerefInt32(node.Count)))
 	case "type":
 		return strconv.Itoa(int(node.Type))
 	}
