@@ -49,20 +49,21 @@ func (e *Evaluator) eval(expr Expression, track rekordbox.Track, playlists []str
 // matching a track in 10 playlists because "10" contains "0".
 func isNumericField(field string) bool {
 	switch strings.ToLower(field) {
-	case "playlistcount", "playlists",
-		"hotcuecount", "hotcues",
-		"memorycuecount", "memorycues",
-		"beatgrids", "beatgridcount", "tempos", "tempocount",
+	case "playlistcount",
+		"hotcues",
+		"memorycues",
+		"beatgrids",
 		"rating", "playcount", "year",
-		"bpm", "tempo",
-		"bitrate", "kbps",
-		"samplerate", "khz",
-		"time", "length", "duration",
-		"size", "id", "trackid",
-		"disc", "discnumber",
-		"track", "tracknumber",
-		"entries",
-		"type":
+		"bpm",
+		"bitrate",
+		"samplerate",
+		"time",
+		"size", "id",
+		"disc",
+		"track",
+		"entries", "count",
+		"type", "inizio", "battito", "start", "end",
+		"num":
 		return true
 	}
 	return false
@@ -71,7 +72,7 @@ func isNumericField(field string) bool {
 func (e *Evaluator) matchComparison(track rekordbox.Track, playlists []string, c Comparison) bool {
 	field := strings.ToLower(c.Field)
 	switch field {
-	case "playlist", "playlists":
+	case "playlist":
 		// If it's a numeric comparison or range, treat it as a count check
 		if _, err := strconv.Atoi(c.Value); err == nil || strings.Contains(c.Value, "..") {
 			break
@@ -83,6 +84,8 @@ func (e *Evaluator) matchComparison(track rekordbox.Track, playlists []string, c
 		return e.matchSpecificCue(track, c, true)
 	case "memorycue":
 		return e.matchSpecificCue(track, c, false)
+	case "tempo":
+		return e.matchSpecificTempo(track, c)
 	case "hotcues":
 		if _, err := strconv.Atoi(c.Value); err == nil || strings.Contains(c.Value, "..") {
 			break
@@ -128,21 +131,21 @@ func (e *Evaluator) matchComparison(track rekordbox.Track, playlists []string, c
 
 func (e *Evaluator) getFieldValue(track rekordbox.Track, playlists []string, field string) string {
 	switch strings.ToLower(field) {
-	case "playlistcount", "playlists":
+	case "playlistcount":
 		return strconv.Itoa(len(playlists))
-	case "name", "title":
+	case "title":
 		return track.Name
 	case "artist":
 		return track.Artist
 	case "album":
 		return track.Album
-	case "bpm", "tempo":
+	case "bpm":
 		return track.AverageBpm
 	case "key":
 		return track.Tonality
 	case "genre":
 		return track.Genre
-	case "comment", "comments":
+	case "comment":
 		return track.Comments
 	case "year":
 		return strconv.Itoa(int(track.Year))
@@ -155,15 +158,25 @@ func (e *Evaluator) getFieldValue(track rekordbox.Track, playlists []string, fie
 		return strconv.Itoa(int(track.Rating / 51))
 	case "playcount":
 		return strconv.Itoa(int(track.PlayCount))
-	case "added", "dateadded":
+	case "added":
 		return track.DateAdded
+	case "modified":
+		return track.DateModified
+	case "played":
+		return track.LastPlayed
+	case "color":
+		// Check track-level colour attribute (Standard Spec)
+		if name := e.getTrackColorName(track.Colour); name != track.Colour {
+			return name
+		}
+		return track.Colour
 	case "kind":
 		return track.Kind
 	case "size":
 		return strconv.FormatInt(track.Size, 10)
-	case "beatgrids", "beatgridcount", "tempos", "tempocount":
+	case "beatgrids":
 		return strconv.Itoa(len(track.Tempo))
-	case "hotcuecount", "hotcues":
+	case "hotcues":
 		count := 0
 		for _, pm := range track.PositionMark {
 			if pm.Num != -1 {
@@ -171,7 +184,7 @@ func (e *Evaluator) getFieldValue(track rekordbox.Track, playlists []string, fie
 			}
 		}
 		return strconv.Itoa(count)
-	case "memorycuecount", "memorycues":
+	case "memorycues":
 		count := 0
 		for _, pm := range track.PositionMark {
 			if pm.Num == -1 {
@@ -179,28 +192,55 @@ func (e *Evaluator) getFieldValue(track rekordbox.Track, playlists []string, fie
 			}
 		}
 		return strconv.Itoa(count)
-	case "id", "trackid":
+	case "id":
 		return strconv.Itoa(track.TrackID)
 	case "composer":
 		return track.Composer
-	case "time", "length", "duration":
+	case "time":
 		return strconv.Itoa(int(track.TotalTime))
-	case "disc", "discnumber":
+	case "disc":
 		return strconv.Itoa(int(track.DiscNumber))
-	case "track", "tracknumber":
+	case "track":
 		return strconv.Itoa(int(track.TrackNumber))
-	case "bitrate", "kbps":
+	case "bitrate":
 		return strconv.Itoa(int(track.BitRate))
-	case "samplerate", "khz":
+	case "samplerate":
 		return strconv.Itoa(int(track.SampleRate))
-	case "path", "file", "location":
+	case "location":
 		return track.Location
 	case "remixer":
 		return track.Remixer
-	case "mix", "version":
+	case "mix":
 		return track.Mix
 	}
 	return ""
+}
+
+const (
+	// NullValue is a global constant representing no value or empty state.
+	NullValue = "none"
+)
+
+func (e *Evaluator) getTrackColorName(hex string) string {
+	switch strings.ToUpper(hex) {
+	case "0XFF007F":
+		return "pink"
+	case "0XFF0000":
+		return "red"
+	case "0XFFA500":
+		return "orange"
+	case "0XFFFF00":
+		return "yellow"
+	case "0X00FF00":
+		return "green"
+	case "0X25FDE9":
+		return "aqua"
+	case "0X0000FF":
+		return "blue"
+	case "0X660099":
+		return "purple"
+	}
+	return hex
 }
 
 func (e *Evaluator) matchPlaylist(playlists []string, c Comparison) bool {
@@ -275,12 +315,22 @@ func (e *Evaluator) matchSpecificCue(track rekordbox.Track, c Comparison, isHotC
 	if isHotCue {
 		slotStr := parts[0]
 		if len(slotStr) != 1 {
-			return false
-		}
-		targetSlot := int(strings.ToLower(slotStr)[0] - 'a')
-		for _, pm := range track.PositionMark {
-			if int(pm.Num) == targetSlot {
-				targetPMs = append(targetPMs, pm)
+			// Check if it's a numeric slot (0-7 for A-H)
+			if slot, err := strconv.Atoi(slotStr); err == nil && slot >= 0 {
+				for _, pm := range track.PositionMark {
+					if int(pm.Num) == slot {
+						targetPMs = append(targetPMs, pm)
+					}
+				}
+			} else {
+				return false
+			}
+		} else {
+			targetSlot := int(strings.ToLower(slotStr)[0] - 'a')
+			for _, pm := range track.PositionMark {
+				if int(pm.Num) == targetSlot {
+					targetPMs = append(targetPMs, pm)
+				}
 			}
 		}
 	} else {
@@ -320,22 +370,61 @@ func (e *Evaluator) matchCueProperties(pm rekordbox.PositionMark, props []string
 		prop := strings.ToLower(props[i])
 		matched := false
 
-		if prop == "label" {
+		switch prop {
+		case "comment":
 			targetLabel := ""
 			if i+1 < len(props) {
 				targetLabel = props[i+1]
 				i++
 			}
-			if targetLabel == `""` || targetLabel == "" || targetLabel == "none" || targetLabel == "empty" {
+			if targetLabel == `""` || targetLabel == "" || targetLabel == NullValue || targetLabel == "empty" {
 				matched = pm.Name == ""
 			} else {
 				matched = strings.Contains(strings.ToLower(pm.Name), strings.ToLower(targetLabel))
 			}
-		} else if prop == "loop" || prop == "active loop" {
+		case "loop", "active-loop", "activeloop":
 			matched = pm.Type == 4
-		} else if prop == `""` { // Added explicit check for quoted empty string
+		case "type":
+			if i+1 < len(props) {
+				targetType := strings.ToLower(props[i+1])
+				i++
+				switch targetType {
+				case "cue":
+					matched = pm.Type == 0
+				case "fade-in", "fadein":
+					matched = pm.Type == 1
+				case "fade-out", "fadeout":
+					matched = pm.Type == 2
+				case "load":
+					matched = pm.Type == 3
+				case "loop":
+					matched = pm.Type == 4
+				default:
+					iv, _ := strconv.Atoi(targetType)
+					matched = pm.Type == int32(iv)
+				}
+			}
+		case "start", "time", "pos":
+			if i+1 < len(props) {
+				val := props[i+1]
+				i++
+				matched = e.matchNumericProperty(pm.Start, val)
+			}
+		case "end":
+			if i+1 < len(props) {
+				val := props[i+1]
+				i++
+				matched = e.matchNumericProperty(pm.End, val)
+			}
+		case "num":
+			if i+1 < len(props) {
+				val := props[i+1]
+				i++
+				matched = e.matchNumericProperty(strconv.Itoa(int(pm.Num)), val)
+			}
+		case `""`:
 			matched = pm.Name == ""
-		} else {
+		default:
 			matched = e.matchColor(pm, prop)
 		}
 
@@ -346,6 +435,82 @@ func (e *Evaluator) matchCueProperties(pm rekordbox.PositionMark, props []string
 	}
 
 	return true
+}
+
+func (e *Evaluator) matchSpecificTempo(track rekordbox.Track, c Comparison) bool {
+	val := strings.ReplaceAll(c.Value, " ", "")
+	parts := strings.Split(val, ":")
+	if len(parts) == 0 {
+		return false
+	}
+
+	idx, err := strconv.Atoi(parts[0])
+	if err != nil || idx < 1 || idx > len(track.Tempo) {
+		return false
+	}
+
+	tempo := track.Tempo[idx-1]
+
+	if len(parts) == 1 {
+		return true
+	}
+
+	return e.matchTempoProperties(tempo, parts[1:])
+}
+
+func (e *Evaluator) matchTempoProperties(t rekordbox.Tempo, props []string) bool {
+	i := 0
+	for i < len(props) {
+		prop := strings.ToLower(props[i])
+		matched := false
+
+		switch prop {
+		case "bpm", "tempo":
+			if i+1 < len(props) {
+				val := props[i+1]
+				i++
+				matched = e.matchNumericProperty(t.Bpm, val)
+			}
+		case "inizio", "start", "time":
+			if i+1 < len(props) {
+				val := props[i+1]
+				i++
+				matched = e.matchNumericProperty(t.Inizio, val)
+			}
+		case "metro", "meter", "signature":
+			if i+1 < len(props) {
+				val := props[i+1]
+				i++
+				matched = strings.EqualFold(t.Metro, val) || strings.Contains(t.Metro, val)
+			}
+		case "battito", "beat":
+			if i+1 < len(props) {
+				val := props[i+1]
+				i++
+				matched = e.matchNumericProperty(strconv.Itoa(int(t.Battito)), val)
+			}
+		}
+
+		if !matched {
+			return false
+		}
+		i++
+	}
+	return true
+}
+
+func (e *Evaluator) matchNumericProperty(fieldValue, targetValue string) bool {
+	// Properties don't have operators in the string "start:10.5".
+	// We handle ranges (10..20) or exact equality.
+	if strings.Contains(targetValue, "..") {
+		return e.matchRange(fieldValue, targetValue)
+	}
+	fv, errF := strconv.ParseFloat(fieldValue, 64)
+	tv, errT := strconv.ParseFloat(targetValue, 64)
+	if errF == nil && errT == nil {
+		return fv == tv
+	}
+	return strings.EqualFold(fieldValue, targetValue)
 }
 
 func (e *Evaluator) matchAnyCue(track rekordbox.Track, isHotCue bool, value string) bool {
@@ -379,27 +544,78 @@ func (e *Evaluator) getSortedMemoryCues(track rekordbox.Track) []rekordbox.Posit
 }
 
 func (e *Evaluator) matchColor(pm rekordbox.PositionMark, color string) bool {
-	c := strings.ToLower(color)
-	switch c {
-	case "green":
-		return pm.Red == 40 && pm.Green == 226 && pm.Blue == 20
-	case "aqua":
-		return pm.Red == 0 && pm.Green == 224 && pm.Blue == 255
-	case "orange":
-		return pm.Red == 224 && pm.Green == 100 && pm.Blue == 27
-	case "red":
-		return pm.Red == 230 && pm.Green == 40 && pm.Blue == 40
-	case "blue":
-		return pm.Red == 48 && pm.Green == 90 && pm.Blue == 255
-	case "purple":
-		return pm.Red == 180 && pm.Green == 50 && pm.Blue == 255
-	case "yellow":
-		return pm.Red == 255 && pm.Green == 255 && pm.Blue == 0
-	case "pink":
-		return pm.Red == 255 && pm.Green == 50 && pm.Blue == 180
-	case "no color", "none":
-		return (pm.Red == 0 && pm.Green == 0 && pm.Blue == 0) || (pm.Red == 40 && pm.Green == 226 && pm.Blue == 20 && pm.Num == -1)
+	if pm.Num == -1 {
+		return false
 	}
+	return e.matchHotCueColor(pm, color)
+}
+
+func (e *Evaluator) matchHotCueColor(pm rekordbox.PositionMark, color string) bool {
+	c := strings.ToLower(color)
+	switch {
+	case c == "hotpink":
+		return pm.Red == 222 && pm.Green == 68 && pm.Blue == 207
+	case c == "purple":
+		return pm.Red == 180 && pm.Green == 50 && pm.Blue == 255
+	case c == "violet":
+		return pm.Red == 170 && pm.Green == 114 && pm.Blue == 255
+	case c == "indigo":
+		return pm.Red == 100 && pm.Green == 115 && pm.Blue == 255
+	case c == "blue":
+		return pm.Red == 48 && pm.Green == 90 && pm.Blue == 255
+	case c == "skyblue":
+		return pm.Red == 80 && pm.Green == 180 && pm.Blue == 255
+	case c == "aqua":
+		return pm.Red == 0 && pm.Green == 224 && pm.Blue == 255
+	case c == "darkgreen":
+		return pm.Red == 31 && pm.Green == 163 && pm.Blue == 146
+	case c == "brightgreen":
+		return pm.Red == 16 && pm.Green == 177 && pm.Blue == 118
+	case c == "green":
+		return pm.Red == 40 && pm.Green == 226 && pm.Blue == 20
+	case c == "yellowgreen":
+		return pm.Red == 165 && pm.Green == 225 && pm.Blue == 22
+	case c == "yellow":
+		return pm.Red == 180 && pm.Green == 190 && pm.Blue == 4
+	case c == "orange":
+		return pm.Red == 195 && pm.Green == 175 && pm.Blue == 4
+	case c == "darkorange":
+		return pm.Red == 224 && pm.Green == 100 && pm.Blue == 27
+	case c == "red":
+		return pm.Red == 230 && pm.Green == 40 && pm.Blue == 40
+	case c == "pink":
+		return pm.Red == 255 && pm.Green == 18 && pm.Blue == 123
+	case c == NullValue:
+		return pm.Red == 0 && pm.Green == 0 && pm.Blue == 0
+	}
+
+	return e.matchRawRGB(pm, color)
+}
+
+func (e *Evaluator) matchRawRGB(pm rekordbox.PositionMark, color string) bool {
+	// Extensions: allow querying by exact RGB values if color name doesn't match
+	// Format: red:255, green:0, blue:0
+	if strings.Contains(color, ",") {
+		parts := strings.Split(color, ",")
+		var r, g, b int
+		for _, p := range parts {
+			kv := strings.Split(strings.TrimSpace(p), ":")
+			if len(kv) != 2 {
+				continue
+			}
+			val, _ := strconv.Atoi(kv[1])
+			switch strings.TrimSpace(kv[0]) {
+			case "red", "r":
+				r = val
+			case "green", "g":
+				g = val
+			case "blue", "b":
+				b = val
+			}
+		}
+		return int(pm.Red) == r && int(pm.Green) == g && int(pm.Blue) == b
+	}
+
 	return false
 }
 
@@ -464,6 +680,8 @@ func (e *Evaluator) getNodeFieldValue(node rekordbox.Node, parentFolder string, 
 		return parentFolder
 	case "entries":
 		return strconv.Itoa(int(node.Entries))
+	case "count":
+		return strconv.Itoa(int(node.Count))
 	case "type":
 		return strconv.Itoa(int(node.Type))
 	}

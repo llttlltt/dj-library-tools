@@ -36,63 +36,66 @@ type Collection struct {
 }
 
 type Track struct {
-	XMLName      xml.Name `xml:"TRACK"`
-	TrackID      int      `xml:"TrackID,attr"`
-	Name         string   `xml:"Name,attr"`
-	Artist       string   `xml:"Artist,attr"`
-	Composer     string   `xml:"Composer,attr"`
-	Album        string   `xml:"Album,attr"`
-	Grouping     string   `xml:"Grouping,attr"`
-	Genre        string   `xml:"Genre,attr"`
-	Kind         string   `xml:"Kind,attr"`
-	Size         int64    `xml:"Size,attr"`
-	TotalTime    int32    `xml:"TotalTime,attr"`
-	DiscNumber   int32    `xml:"DiscNumber,attr"`
-	TrackNumber  int32    `xml:"TrackNumber,attr"`
-	Year         int32    `xml:"Year,attr"`
-	AverageBpm   string   `xml:"AverageBpm,attr"`
-	DateModified string   `xml:"DateModified,attr,omitempty"`
-	DateAdded    string   `xml:"DateAdded,attr"`
-	BitRate      int32    `xml:"BitRate,attr"`
-	SampleRate   float64  `xml:"SampleRate,attr"`
-	Comments     string   `xml:"Comments,attr"`
-	PlayCount    int32    `xml:"PlayCount,attr"`
-	LastPlayed   string   `xml:"LastPlayed,attr,omitempty"`
-	// 0 star = "0"
-	// 1 star = "51"
-	// 2 stars = "102"
-	// 3 stars = "153"
-	// 4 stars = "204"
-	// 5 stars = "255"
-	Rating       int32        `xml:"Rating,attr"`
-	Location     string       `xml:"Location,attr"`
-	Remixer      string       `xml:"Remixer,attr"`
-	Tonality     string       `xml:"Tonality,attr"`
-	Label        string       `xml:"Label,attr"`
-	Mix          string       `xml:"Mix,attr"`
-	Colour       string       `xml:"Colour,attr,omitempty"`
+	XMLName xml.Name `xml:"TRACK"`
+
+	// --- Standard Rekordbox XML Specification (v1.0.0) ---
+	TrackID      int     `xml:"TrackID,attr"`
+	Name         string  `xml:"Name,attr"`
+	Artist       string  `xml:"Artist,attr"`
+	Composer     string  `xml:"Composer,attr"`
+	Album        string  `xml:"Album,attr"`
+	Grouping     string  `xml:"Grouping,attr"`
+	Genre        string  `xml:"Genre,attr"`
+	Kind         string  `xml:"Kind,attr"`
+	Size         int64   `xml:"Size,attr"`
+	TotalTime    int32   `xml:"TotalTime,attr"`
+	DiscNumber   int32   `xml:"DiscNumber,attr"`
+	TrackNumber  int32   `xml:"TrackNumber,attr"`
+	Year         int32   `xml:"Year,attr"`
+	AverageBpm   string  `xml:"AverageBpm,attr"`
+	DateModified string  `xml:"DateModified,attr,omitempty"`
+	DateAdded    string  `xml:"DateAdded,attr"`
+	BitRate      int32   `xml:"BitRate,attr"`
+	SampleRate   float64 `xml:"SampleRate,attr"`
+	Comments     string  `xml:"Comments,attr"`
+	PlayCount    int32   `xml:"PlayCount,attr"`
+	LastPlayed   string  `xml:"LastPlayed,attr,omitempty"`
+	Rating       int32   `xml:"Rating,attr"`
+	Location     string  `xml:"Location,attr"`
+	Remixer      string  `xml:"Remixer,attr"`
+	Tonality     string  `xml:"Tonality,attr"`
+	Label        string  `xml:"Label,attr"`
+	Mix          string  `xml:"Mix,attr"`
+	Colour       string  `xml:"Colour,attr,omitempty"`
+
 	Tempo        []Tempo        `xml:"TEMPO"`
 	PositionMark []PositionMark `xml:"POSITION_MARK"`
 }
 
 type Tempo struct {
 	XMLName xml.Name `xml:"TEMPO"`
-	Inizio  string   `xml:"Inizio,attr"`
-	Bpm     string   `xml:"Bpm,attr"`
-	Metro   string   `xml:"Metro,attr"`
-	Battito int32    `xml:"Battito,attr"`
+
+	// --- Standard Rekordbox XML Specification (v1.0.0) ---
+	Inizio  string `xml:"Inizio,attr"`
+	Bpm     string `xml:"Bpm,attr"`
+	Metro   string `xml:"Metro,attr"`
+	Battito int32  `xml:"Battito,attr"`
 }
 
 type PositionMark struct {
 	XMLName xml.Name `xml:"POSITION_MARK"`
-	Name    string   `xml:"Name,attr"`
-	Type    int32    `xml:"Type,attr"`
-	Start   string   `xml:"Start,attr"`
-	End     string   `xml:"End,attr,omitempty"`
-	Num     int32    `xml:"Num,attr"`
-	Red     int32    `xml:"Red,attr"`
-	Green   int32    `xml:"Green,attr"`
-	Blue    int32    `xml:"Blue,attr"`
+
+	// --- Standard Rekordbox XML Specification (v1.0.0) ---
+	Name  string `xml:"Name,attr"`
+	Type  int32  `xml:"Type,attr"`
+	Start string `xml:"Start,attr"`
+	End   string `xml:"End,attr,omitempty"`
+	Num   int32  `xml:"Num,attr"`
+
+	// --- Extensions (Undocumented Rekordbox Attributes) ---
+	Red   int32 `xml:"Red,attr,omitempty"`
+	Green int32 `xml:"Green,attr,omitempty"`
+	Blue  int32 `xml:"Blue,attr,omitempty"`
 }
 
 type Playlists struct {
