@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/llttlltt/dj-library-tools/compare/v1.1.0...v1.2.0) (2026-06-24)
+
+
+### Features
+
+* **rekordbox:** match idiosyncratic attribute order for root and sub-nodes ([488932e](https://github.com/llttlltt/dj-library-tools/commit/488932ecd4ab64bd1aef917491b7600f7b9f4cd7))
+
 ## [1.1.0](https://github.com/llttlltt/dj-library-tools/compare/v1.0.0...v1.1.0) (2026-06-24)
 
 
