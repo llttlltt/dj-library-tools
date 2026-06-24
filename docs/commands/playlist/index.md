@@ -10,6 +10,7 @@ djlt playlist [rb/playlists query] [flags]
 
 ```
       --add string      Add tracks matching this rb/tracks: query
+      --at int          Insert new playlist at this 0-indexed position (-1 for end) (default -1)
       --delete          Delete matched playlists
       --dry-run         Preview changes without writing
       --folder string   Parent folder for --new (default: root level)

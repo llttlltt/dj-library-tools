@@ -7,8 +7,8 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 | Resource | Description | Example |
 | :--- | :--- | :--- |
 | `tracks` | The main track collection. | `rb/tracks:bpm:124` |
-| `playlists` | Individual playlist nodes. | `rb/playlists:name:Summer` |
-| `folders` | Folder nodes in the playlist tree. | `rb/folders:name:House` |
+| `playlists` | Individual playlist nodes. | `rb/playlists:title:Summer` |
+| `folders` | Folder nodes in the playlist tree. | `rb/folders:title:House` |
 
 ## Fields
 
@@ -16,11 +16,11 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `name`, `title` | String | Track title. |
+| `title` | String | Track title. |
 | `artist` | String | Artist name. |
 | `album` | String | Album name. |
 | `genre` | String | Genre name. |
-| `bpm`, `tempo` | Numeric | Beats per minute. |
+| `bpm` | Numeric | Beats per minute. |
 | `rating` | Numeric | Star rating (0-5 stars). |
 | `playcount` | Numeric | Number of times played. |
 | `playlist` | String | Matches tracks in a specific playlist. |
@@ -30,20 +30,25 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 | `comment` | String | Track comments. |
 | `label` | String | Record label. |
 | `remixer` | String | Remixer name. |
-| `mix`, `version` | String | Track mix/version. |
+| `mix` | String | Track mix/version. |
 | `added` | String | Date added to collection. |
-| `time`, `length` | Numeric | Total time in seconds. |
-| `bitrate`, `kbps` | Numeric | Audio bitrate. |
+| `modified` | String | Date track was last modified. |
+| `played` | String | Date track was last played. |
+| `color` | String | Track color (`pink`, `red`, `orange`, `yellow`, `green`, `aqua`, `blue`, `purple`). |
+| `time` | Numeric | Total time in seconds. |
+| `bitrate` | Numeric | Audio bitrate. |
+| `samplerate` | Numeric | Sample rate in Hz. |
 | `size` | Numeric | File size in bytes. |
 
 ### Playlist & Folder Fields
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `name` | String | Name of the node. |
-| `folder`, `parent` | String | Name of the parent folder. |
+| `title` | String | Name of the node. |
+| `parent` | String | Name of the parent folder. |
 | `entries` | Numeric | Number of tracks or sub-items. |
 | `type` | Numeric | `0` for folder, `1` for playlist. |
+| `count` | Numeric | Number of child nodes (folders only). |
 
 ## Cue Filtering
 
@@ -65,14 +70,61 @@ You can target a specific cue by its ID and check its properties.
 | Resource | IDs | Example |
 | :--- | :--- | :--- |
 | `hotcue` | `a` through `h` | `hotcue:a:red` |
-| `memorycue` | `1`, `2`, ... | `memorycue:1:label:Intro` |
+| `memorycue` | `1`, `2`, ... | `memorycue:1:comment:Break` |
 
 ### Available Properties
 
 | Property | Value | Description |
 | :--- | :--- | :--- |
-| **Color** | `red`, `blue`, etc. | Match by cue color. |
-| `label` | `Text` | Substring match on the cue label. |
+| **Color** | `Color Name` | Match by cue color (Hot Cues only). |
+| `comment` | `Text` | Substring match on the cue comment. |
 | `loop` | (none) | Match if it is an active loop. |
 
-**Available Colors**: `red`, `orange`, `yellow`, `green`, `aqua`, `blue`, `purple`, `pink`, `none`.
+### Color Palettes
+
+Different palettes are used for Tracks and Cues to match Rekordbox's UI.
+
+#### Track Colors
+
+The following colors are available for track-level filtering:
+
+- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#FF007F;margin-right:5px;"></span> `pink`
+- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#FF0000;margin-right:5px;"></span> `red`
+- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#FFA500;margin-right:5px;"></span> `orange`
+- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#FFFF00;margin-right:5px;"></span> `yellow`
+- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#00FF00;margin-right:5px;"></span> `green`
+- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#25FDE9;margin-right:5px;"></span> `aqua`
+- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#0000FF;margin-right:5px;"></span> `blue`
+- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#660099;margin-right:5px;"></span> `purple`
+- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:transparent;margin-right:5px;"></span> `none`
+
+#### Hot Cue Colors
+
+Use the following names to match the 16-color pad palette. Cues with no color set match `none`.
+
+<table style="border-collapse: separate; border-spacing: 5px;">
+  <tr>
+    <td style="background:#DE44CF; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>hotpink</code></td>
+    <td style="background:#B432FF; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>purple</code></td>
+    <td style="background:#AA72FF; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>violet</code></td>
+    <td style="background:#6473FF; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>indigo</code></td>
+  </tr>
+  <tr>
+    <td style="background:#305AFF; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>blue</code></td>
+    <td style="background:#50B4FF; color:black; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>skyblue</code></td>
+    <td style="background:#00E0FF; color:black; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>aqua</code></td>
+    <td style="background:#1FA392; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>darkgreen</code></td>
+  </tr>
+  <tr>
+    <td style="background:#10B176; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>brightgreen</code></td>
+    <td style="background:#28E214; color:black; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>green</code></td>
+    <td style="background:#A5E116; color:black; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>yellowgreen</code></td>
+    <td style="background:#B4BE04; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>yellow</code></td>
+  </tr>
+  <tr>
+    <td style="background:#C3AF04; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>orange</code></td>
+    <td style="background:#E0641B; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>darkorange</code></td>
+    <td style="background:#E62828; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>red</code></td>
+    <td style="background:#FF127B; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>pink</code></td>
+  </tr>
+</table>
