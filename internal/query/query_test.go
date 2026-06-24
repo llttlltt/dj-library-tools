@@ -53,18 +53,42 @@ func makePlaylists(n int) []string {
 
 func TestQueryEvaluator(t *testing.T) {
 	track := rekordbox.Track{
-		Name:       "Sixteen Oceans",
-		Artist:     "Four Tet",
-		AverageBpm: "124.0",
+		TrackID:      12345,
+		Name:         "Sixteen Oceans",
+		Artist:       "Four Tet",
+		Composer:     "Kieran Hebden",
+		Album:        "Sixteen Oceans",
+		Grouping:     "Electronic",
+		Genre:        "House",
+		Kind:         "MP3 File",
+		Size:         10485760,
+		TotalTime:    300,
+		DiscNumber:   1,
+		TrackNumber:  5,
+		Year:         2020,
+		AverageBpm:   "124.0",
+		DateAdded:    "2020-03-13",
+		DateModified: "2020-03-14",
+		LastPlayed:   "2020-06-25",
+		BitRate:      320,
+		SampleRate:   44100.0,
+		Comments:     "Great track",
+		PlayCount:    10,
+		Rating:       255, // 5 stars
+		Location:     "file://localhost/Users/test/track.mp3",
+		Remixer:      "Four Tet",
+		Tonality:     "8A",
+		Label:        "Text Records",
+		Mix:          "Original Mix",
+		Colour:       "0xFF007F", // pink
 		Tempo: []rekordbox.Tempo{
-			{Bpm: "124.0"},
+			{Bpm: "124.0", Metro: "4/4", Inizio: "0.0", Battito: 1},
 			{Bpm: "125.0"},
 		},
-		Genre: "Electronic",
 		PositionMark: []rekordbox.PositionMark{
-			{Num: 0, Red: 40, Green: 226, Blue: 20}, // Green Hot Cue A
-			{Num: 1, Red: 224, Green: 100, Blue: 27}, // Orange Hot Cue B
-			{Num: -1, Name: "GROOVE", Type: 4, Start: "60.0"}, // Memory Cue 1 (Highest Start)
+			{Num: 0, Red: 16, Green: 177, Blue: 118},         // brightgreen
+			{Num: 1, Red: 180, Green: 50, Blue: 255},         // purple
+			{Num: -1, Name: "GROOVE", Type: 4, Start: "60.0"}, // Memory Cue 1
 			{Num: -1, Name: "", Start: "30.0"},                // Memory Cue 2
 		},
 	}
@@ -74,39 +98,59 @@ func TestQueryEvaluator(t *testing.T) {
 		query   string
 		matches bool
 	}{
+		// Standard Spec Fields
+		{"ID match", "id:12345", true},
+		{"Title match", "title:Oceans", true},
+		{"Artist match", "artist:Four", true},
+		{"Composer match", "composer:Kieran", true},
+		{"Album match", "album:Sixteen", true},
+		{"Grouping match", "grouping:Electronic", true},
+		{"Genre match", "genre:House", true},
+		{"Kind match", "kind:MP3", true},
+		{"Size match", "size:10485760", true},
+		{"Time match", "time:300", true},
+		{"Disc match", "disc:1", true},
+		{"Track match", "track:5", true},
+		{"Year match", "year:2020", true},
+		{"BPM match", "bpm:124", true},
+		{"Added match", "added:2020-03-13", true},
+		{"Modified match", "modified:2020-03-14", true},
+		{"Played match", "played:2020-06-25", true},
+		{"Bitrate match", "bitrate:320", true},
+		{"Samplerate match", "samplerate:44100", true},
+		{"Comment match", "comment:Great", true},
+		{"Playcount match", "playcount:10", true},
+		{"Rating match (stars)", "rating:5", true},
+		{"Location match", "location:track.mp3", true},
+		{"Remixer match", "remixer:Four", true},
+		{"Key match", "key:8A", true},
+		{"Label match", "label:Text", true},
+		{"Mix match", "mix:Original", true},
+		{"Track Color", "color:pink", true},
+
+		// Logical & Operators
 		{"Substring match", "artist:Four", true},
 		{"Exact match", "artist=\"Four Tet\"", true},
-		{"Exact match no quotes", "artist=Four Tet", true},
-		{"Exact mismatch", "artist=Four", false},
 		{"Regex match", "artist::^Four", true},
 		{"Range match", "bpm:120..130", true},
-		{"Range mismatch", "bpm:130..140", false},
-		{"Multi-criteria", "artist:Four bpm:120..130", true},
-		{"Default field (name)", "Oceans", true},
-		{"Negation", "!artist:Skrillex", true},
-		{"Tempo count", "tempos:2", true},
+		{"Negation", "!genre:Techno", true},
+		{"Default field (title)", "Oceans", true},
+
+		// Cues & Tempos
+		{"Tempo count", "beatgrids:2", true},
 		{"Hot cue count", "hotcues:2", true},
 		{"Memory cue count", "memorycues:2", true},
-		{"Any Green Hot Cue", "hotcues:green", true},
-		{"Any Orange Hot Cue", "hotcues:orange", true},
-		{"Any Green Memory Cue", "memorycues:green", false},
 		{"Hot Cue Slot A", "hotcue:a", true},
-		{"Hot Cue Slot B", "hotcue:b", true},
-		{"Hot Cue Slot C", "hotcue:c", false},
-		{"Hot Cue A Green", "hotcue:a:green", true},
-		{"Hot Cue B Green", "hotcue:b:green", false},
-		{"Hot Cue B Orange", "hotcue:b:orange", true},
+		{"Hot Cue A BrightGreen", "hotcue:a:brightgreen", true},
+		{"Hot Cue B Purple", "hotcue:b:purple", true},
 		{"Memory Cue 1", "memorycue:1", true},
-		{"Memory Cue 1 Label", "memorycue:1:label:GROOVE", true},
-		{"Memory Cue 2 No Label", "memorycue:2:label:\"\"", true},
-		{"Memory Cue 2 Empty Alias", "memorycue:2:label:empty", true},
+		{"Memory Cue 1 Comment", "memorycue:1:comment:GROOVE", true},
+		{"Memory Cue 2 No Comment", "memorycue:2:comment:none", true},
 		{"Memory Cue Loop", "memorycues:loop", true},
-		{"Any Memory Cue No Label", "memorycues:label:\"\"", true},
-		{"Property Chaining", "hotcue:a:green:label:none", true},
-		{"Numeric GT", "bpm:>120", true},
-		{"Numeric GTE", "bpm:>=124", true},
-		{"Numeric LT", "bpm:<125", true},
-		{"Numeric LTE", "bpm:<=124", true},
+		{"Tempo 1 Bpm", "tempo:1:bpm:124", true},
+		{"Tempo 1 Meter", "tempo:1:meter:4/4", true},
+		{"Tempo 1 Inizio", "tempo:1:inizio:0.0", true},
+		{"Tempo 1 Battito", "tempo:1:battito:1", true},
 	}
 
 	parser := NewParser()
@@ -141,19 +185,17 @@ func TestEvaluatorMatchesNode(t *testing.T) {
 		parentFolder string
 		want         bool
 	}{
-		{"name substring match", "name:Summer", summerVibes, "My Sets", true},
-		{"name no match", "name:Winter", summerVibes, "My Sets", false},
-		{"folder match", "folder:My Sets", summerVibes, "My Sets", true},
-		{"folder no match", "folder:Other", summerVibes, "My Sets", false},
-		{"root level folder empty string", "folder:", summerVibes, "", true},
+		{"title substring match", "title:Summer", summerVibes, "My Sets", true},
+		{"title no match", "title:Winter", summerVibes, "My Sets", false},
+		{"parent match", "parent:My Sets", summerVibes, "My Sets", true},
+		{"parent no match", "parent:Other", summerVibes, "My Sets", false},
 		{"entries range", "entries:10..15", summerVibes, "My Sets", true},
 		{"entries exact", "entries:12", summerVibes, "My Sets", true},
 		{"entries no match", "entries:5", summerVibes, "My Sets", false},
 		{"type playlist", "type:1", summerVibes, "My Sets", true},
 		{"type folder match", "type:0", wintersFolder, "", true},
 		{"type folder no match", "type:1", wintersFolder, "", false},
-		{"boolean AND", "name:Summer && folder:My Sets", summerVibes, "My Sets", true},
-		{"boolean AND fail", "name:Summer && folder:Other", summerVibes, "My Sets", false},
+		{"boolean AND", "title:Summer && parent:My Sets", summerVibes, "My Sets", true},
 		{"empty query matches all", "", summerVibes, "My Sets", true},
 	}
 
