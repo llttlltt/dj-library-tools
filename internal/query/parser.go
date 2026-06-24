@@ -306,7 +306,8 @@ func (p *Parser) parsePrimary() Expression {
 		if val == `""` {
 			val = ""
 		}
-		return Comparison{Field: "name", Operator: OpSubstring, Value: val}
+		
+		return Comparison{Field: "title", Operator: OpSubstring, Value: val}
 	}
 	return nil
 }

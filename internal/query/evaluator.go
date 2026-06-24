@@ -674,9 +674,9 @@ func (e *Evaluator) matchNodeComparison(node rekordbox.Node, parentFolder string
 
 func (e *Evaluator) getNodeFieldValue(node rekordbox.Node, parentFolder string, field string) string {
 	switch strings.ToLower(field) {
-	case "name":
+	case "title", "name":
 		return node.Name
-	case "folder", "parent":
+	case "parent", "folder":
 		return parentFolder
 	case "entries":
 		return strconv.Itoa(int(node.Entries))
