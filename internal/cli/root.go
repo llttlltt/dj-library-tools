@@ -37,9 +37,10 @@ func loadXML() (*rekordbox.RekordboxLibraryXML, string, error) {
 }
 
 var RootCmd = &cobra.Command{
-	Use:   "djlt",
-	Short: "DJ Library Tools CLI",
-	Long:  `A comprehensive CLI tool for managing DJ libraries and Rekordbox XMLs.`,
+	Use:           "djlt",
+	Short:         "DJ Library Tools CLI",
+	Long:          `A comprehensive CLI tool for managing DJ libraries and Rekordbox XMLs.`,
+	SilenceErrors: true,
 }
 
 func init() {
