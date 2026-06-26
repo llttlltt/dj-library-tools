@@ -24,4 +24,6 @@ type WritableProvider interface {
 	DeleteNode(node models.Node) error
 	RenameNode(node models.Node, newName string) error
 	MoveNode(node models.Node, targetParent models.Node) error
+	// Save persists any in-memory mutations to the given path.
+	Save(path string) error
 }
