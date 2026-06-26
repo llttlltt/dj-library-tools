@@ -9,6 +9,8 @@ import (
 	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/spf13/cobra"
+	"github.com/vbauerster/mpb/v8"
+	"github.com/vbauerster/mpb/v8/decor"
 )
 
 var (
@@ -87,19 +89,44 @@ func runRemoveCmd(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
+		p := mpb.New(mpb.WithWidth(64))
 		for _, origin := range origins {
+			bar := p.AddBar(int64(len(trackIDs)),
+				mpb.PrependDecorators(
+					decor.Name(fmt.Sprintf("Removing from %q", origin.Node.Name), decor.WCSyncSpaceR),
+					decor.CountersNoUnit("%d / %d", decor.WCSyncSpace),
+				),
+				mpb.AppendDecorators(decor.Percentage(decor.WCSyncSpace)),
+			)
+
 			if verbose {
 				fmt.Printf("Removing %d tracks from playlist %q...\n", len(trackIDs), origin.Node.Name)
-				for _, id := range trackIDs {
-					fmt.Printf("  - Track ID: %s\n", id)
+			}
+
+			// We process in chunks to show progress
+			chunkSize := 10
+			if len(trackIDs) < chunkSize {
+				chunkSize = len(trackIDs)
+			}
+
+			totalRemoved := 0
+			for i := 0; i < len(trackIDs); i += chunkSize {
+				end := i + chunkSize
+				if end > len(trackIDs) {
+					end = len(trackIDs)
 				}
+				chunk := trackIDs[i:end]
+				found, removed := syncEng.RemoveTracksFromPlaylist(origin.Node.Name, chunk)
+				if !found {
+					fmt.Printf("Warning: playlist %q not found during remove\n", origin.Node.Name)
+					bar.Abort(false)
+					break
+				}
+				totalRemoved += removed
+				bar.IncrBy(len(chunk))
 			}
-			found, removed := syncEng.RemoveTracksFromPlaylist(origin.Node.Name, trackIDs)
-			if !found {
-				fmt.Printf("Warning: playlist %q not found during remove\n", origin.Node.Name)
-				continue
-			}
-			fmt.Printf("Removed %d tracks from %q\n", removed, origin.Node.Name)
+			p.Wait()
+			fmt.Printf("Removed %d tracks from %q\n", totalRemoved, origin.Node.Name)
 		}
 	}
 
