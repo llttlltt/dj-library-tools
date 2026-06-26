@@ -9,80 +9,71 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	updateFrom     string
-	updateTo       string // optional destination, defaults to primary loaded XML
-	updateOutput   string
-	updateMerge    bool
-	updateForce    bool
-)
+func newUpdateCmd() *cobra.Command {
+	var updateFrom, updateTo, updateOutput string
+	var updateMerge, updateForce bool
 
-var updateCmd = &cobra.Command{
-	Use:   "update [resource] [query] --from [source-xml]",
-	Short: "Update track metadata or merge markers between libraries",
-	Long: `Update metadata for tracks in the library using another Rekordbox XML as a source.
+	cmd := &cobra.Command{
+		Use:   "update [resource] [query] --from [source-xml]",
+		Short: "Update track metadata or merge markers between libraries",
+		Long: `Update metadata for tracks in the library using another Rekordbox XML as a source.
 Currently supports updating/merging Tempo markers (Beatgrids).
 
 Example:
   djlt update rb/tracks --from other_library.xml`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if updateFrom == "" {
-			return fmt.Errorf("--from source-xml is required")
-		}
-
-		// Load primary library (the one we are updating)
-		destLibrary, destPath, err := loadXMLFunc()
-		if err != nil {
-			return err
-		}
-
-		// If --to is specified, it overrides the primary library loaded via -x
-		if updateTo != "" {
-			destLibrary, err = rekordbox.ReadRekordboxLibrary(updateTo)
-			if err != nil {
-				return fmt.Errorf("error reading destination library %q: %w", updateTo, err)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if updateFrom == "" {
+				return fmt.Errorf("--from source-xml is required")
 			}
-			destPath = updateTo
-		}
 
-		// Use --output if provided, otherwise update the destination in-place
-		outputPath := updateOutput
-		if outputPath == "" {
-			outputPath = destPath
-		}
+			destLibrary, destPath, err := loadXMLFunc()
+			if err != nil {
+				return err
+			}
 
-		if err := utils.CheckFileOverwrite(outputPath, updateForce); err != nil {
-			return fmt.Errorf("output file validation failed: %w", err)
-		}
+			if updateTo != "" {
+				destLibrary, err = rekordbox.ReadRekordboxLibrary(updateTo)
+				if err != nil {
+					return fmt.Errorf("error reading destination library %q: %w", updateTo, err)
+				}
+				destPath = updateTo
+			}
 
-		sourceLibrary, err := rekordbox.ReadRekordboxLibrary(updateFrom)
-		if err != nil {
-			return fmt.Errorf("error reading source library %q: %w", updateFrom, err)
-		}
+			outputPath := updateOutput
+			if outputPath == "" {
+				outputPath = destPath
+			}
 
-		mergedLibrary := mergeLibraryData(sourceLibrary, destLibrary)
+			if err := utils.CheckFileOverwrite(outputPath, updateForce); err != nil {
+				return fmt.Errorf("output file validation failed: %w", err)
+			}
 
-		if dryRun {
-			fmt.Printf("[Dry Run] Would write updated library to %q\n", outputPath)
+			sourceLibrary, err := rekordbox.ReadRekordboxLibrary(updateFrom)
+			if err != nil {
+				return fmt.Errorf("error reading source library %q: %w", updateFrom, err)
+			}
+
+			mergedLibrary := mergeLibraryData(sourceLibrary, destLibrary)
+
+			if dryRun {
+				fmt.Printf("[Dry Run] Would write updated library to %q\n", outputPath)
+				return nil
+			}
+
+			destLibWrapper := engine.NewRekordboxLibrary(mergedLibrary)
+			if err := destLibWrapper.Save(outputPath); err != nil {
+				return fmt.Errorf("error writing merged library to %q: %w", outputPath, err)
+			}
+			fmt.Printf("Successfully updated library: %s\n", outputPath)
 			return nil
-		}
-
-		destLibWrapper := engine.NewRekordboxLibrary(mergedLibrary)
-		if err := destLibWrapper.Save(outputPath); err != nil {
-			return fmt.Errorf("error writing merged library to %q: %w", outputPath, err)
-		}
-		fmt.Printf("Successfully updated library: %s\n", outputPath)
-		return nil
-	},
-}
-
-func init() {
-	updateCmd.Flags().StringVarP(&updateFrom, "from", "f", "", "Source Rekordbox XML to read metadata from")
-	updateCmd.Flags().StringVarP(&updateTo, "to", "t", "", "Destination Rekordbox XML to update (defaults to primary library)")
-	updateCmd.Flags().StringVarP(&updateOutput, "output", "o", "", "Output path for the updated Rekordbox XML")
-	updateCmd.Flags().BoolVar(&updateMerge, "merge", false, "Merge metadata instead of overwriting")
-	updateCmd.Flags().BoolVar(&updateForce, "force", false, "Overwrite output file if it already exists")
-	RootCmd.AddCommand(updateCmd)
+		},
+	}
+	cmd.Flags().StringVarP(&updateFrom, "from", "f", "", "Source Rekordbox XML to read metadata from")
+	cmd.Flags().StringVarP(&updateTo, "to", "t", "", "Destination Rekordbox XML to update (defaults to primary library)")
+	cmd.Flags().StringVarP(&updateOutput, "output", "o", "", "Output path for the updated Rekordbox XML")
+	cmd.Flags().BoolVar(&updateMerge, "merge", false, "Merge metadata instead of overwriting")
+	cmd.Flags().BoolVar(&updateForce, "force", false, "Overwrite output file if it already exists")
+	return cmd
 }
 
 // ── matching & merging helpers ─────────────────────────────────────────────

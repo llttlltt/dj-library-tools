@@ -59,5 +59,7 @@ The selection engine uses a recursive descent parser and a universal evaluator. 
 - **`Resource`**: A universal interface for any item in a library (Track, Node), allowing for generic movement and listing logic.
 - **`sys.FileSystem` & `sys.Runner`**: Abstract the OS environment (Filesystem, FFmpeg), enabling side-effect-free testing of media and sync operations.
 
-### Cobra Flag Isolation in Tests
-Because `RootCmd` is a package-level singleton, cobra's `pflag` does **not** reset flag values or `Changed` state between successive `Execute()` calls. CLI tests must call `resetTestState(root)` at the top of each `executeCommand` invocation to zero all mutable flag vars and clear `Changed` bits across the full command tree. Any new cobra flag variable added to a verb must also be reset there.
+### Cobra Command Factory
+Each verb is created by a `newXxxCmd()` constructor function. Flag variables are captured in closures, so each command instance carries its own isolated state. `NewRootCmd()` wires all constructors together and is the sole entry point used by both the production binary (`var RootCmd = NewRootCmd()`) and tests (`root := NewRootCmd()`).
+
+The four persistent flags (`--xml`, `--dry-run`, `--verbose`, `--json`) are still bound to package-level vars shared across all verbs. Tests reset these four vars in `resetTestState()` before creating a new root command. No `pflag.Changed` traversal is needed because each `NewRootCmd()` call produces a fresh flag set.

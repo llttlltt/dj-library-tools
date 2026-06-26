@@ -8,17 +8,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	moveTo   string
-	moveFrom string
-	moveName string
-)
+func newMoveCmd() *cobra.Command {
+	var moveTo, moveFrom, moveName string
 
-var moveCmd = &cobra.Command{
-	Use:     "move [resource] [query] --to [destination] [--from origin]",
-	Aliases: []string{"mv"},
-	Short:   "Move items between locations",
-	Long: `Move items between locations.
+	cmd := &cobra.Command{
+		Use:     "move [resource] [query] --to [destination] [--from origin]",
+		Aliases: []string{"mv"},
+		Short:   "Move items between locations",
+		Long: `Move items between locations.
 For tracks, both --from and --to are required.
 For playlists and folders, only --to (the parent folder) is required.
 
@@ -27,56 +24,57 @@ Use the --name flag to rename a resource.
 Example:
   djlt mv rb/tracks "bpm:>130" --from "name:Inbox" --to "name:'High Energy'"
   djlt mv rb/playlists name:Inbox --name "Processed"`,
-	Args: cobra.MinimumNArgs(1),
-	RunE: runMoveCmd,
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if moveTo == "" && moveName == "" {
+				return fmt.Errorf("either --to destination or --name (for rename) is required")
+			}
+
+			queryOverride := ""
+			if len(args) > 1 {
+				queryOverride = strings.Join(args[1:], " ")
+			}
+			src, err := ResolveSelection(args[0], queryOverride)
+			if err != nil {
+				return err
+			}
+
+			wp, ok := src.Provider.(provider.WritableProvider)
+			if !ok {
+				return fmt.Errorf("provider %q does not support moving resources", src.Location.Provider)
+			}
+
+			if moveName != "" {
+				return runRenameNodes(wp, src, moveName)
+			}
+
+			if src.Location.Resource == "tracks" {
+				if moveFrom == "" {
+					return fmt.Errorf("--from origin is required when moving tracks")
+				}
+				return runMoveTracks(wp, src, moveFrom, moveTo)
+			}
+
+			return runMoveNodes(wp, src, moveTo)
+		},
+	}
+	cmd.Flags().StringVar(&moveTo, "to", "", "Destination playlist or folder")
+	cmd.Flags().StringVar(&moveFrom, "from", "", "Origin playlist (required for tracks)")
+	cmd.Flags().StringVar(&moveName, "name", "", "New name for the resource (renames)")
+	return cmd
 }
 
-func runMoveCmd(cmd *cobra.Command, args []string) error {
-	if moveTo == "" && moveName == "" {
-		return fmt.Errorf("either --to destination or --name (for rename) is required")
-	}
-
-	queryOverride := ""
-	if len(args) > 1 {
-		queryOverride = strings.Join(args[1:], " ")
-	}
-	src, err := ResolveSelection(args[0], queryOverride)
-	if err != nil {
-		return err
-	}
-
-	wp, ok := src.Provider.(provider.WritableProvider)
-	if !ok {
-		return fmt.Errorf("provider %q does not support moving resources", src.Location.Provider)
-	}
-
-	if moveName != "" {
-		return runRenameNodes(wp, src, moveName)
-	}
-
-	if src.Location.Resource == "tracks" {
-		if moveFrom == "" {
-			return fmt.Errorf("--from origin is required when moving tracks")
-		}
-		return runMoveTracks(wp, src)
-	}
-
-	return runMoveNodes(wp, src)
-}
-
-func runMoveTracks(wp provider.WritableProvider, src *Selection) error {
+func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveTo string) error {
 	if len(src.Tracks) == 0 {
 		fmt.Println("No tracks matched the source query.")
 		return nil
 	}
 
-	// 2. Resolve origin playlists
 	org, err := ResolveSelection(moveFrom, "")
 	if err != nil || len(org.Nodes) == 0 {
 		return fmt.Errorf("could not find origin playlist(s) matching %q", moveFrom)
 	}
 
-	// 3. Resolve target playlists
 	tgt, err := ResolveSelection(moveTo, "")
 	if err != nil || len(tgt.Nodes) == 0 {
 		return fmt.Errorf("could not find target playlist(s) matching %q", moveTo)
@@ -87,7 +85,6 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection) error {
 		return nil
 	}
 
-	// 4. Perform Move
 	for _, origin := range org.Nodes {
 		if verbose {
 			fmt.Printf("Removing tracks from origin playlist %q...\n", origin.Name)
@@ -105,13 +102,12 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection) error {
 	return wp.Save(path)
 }
 
-func runMoveNodes(wp provider.WritableProvider, src *Selection) error {
+func runMoveNodes(wp provider.WritableProvider, src *Selection, moveTo string) error {
 	if len(src.Nodes) == 0 {
 		fmt.Println("No resources found matching query.")
 		return nil
 	}
 
-	// Resolve target parent
 	tgt, err := ResolveSelection(moveTo, "")
 	if err != nil || len(tgt.Nodes) == 0 {
 		return fmt.Errorf("could not find target folder matching %q", moveTo)
@@ -166,11 +162,4 @@ func runRenameNodes(wp provider.WritableProvider, src *Selection, newName string
 
 	_, path, _ := loadXMLFunc()
 	return wp.Save(path)
-}
-
-func init() {
-	moveCmd.Flags().StringVar(&moveTo, "to", "", "Destination playlist or folder")
-	moveCmd.Flags().StringVar(&moveFrom, "from", "", "Origin playlist (required for tracks)")
-	moveCmd.Flags().StringVar(&moveName, "name", "", "New name for the resource (renames)")
-	RootCmd.AddCommand(moveCmd)
 }

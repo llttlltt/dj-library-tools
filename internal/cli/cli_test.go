@@ -7,43 +7,25 @@ import (
 	"testing"
 
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
-	"github.com/spf13/cobra"
-	pflag "github.com/spf13/pflag"
 )
 
-// resetTestState resets all mutable package-level flag vars and clears cobra's
-// Changed tracking so that flag state from one test cannot bleed into the next
-// when the same RootCmd instance is reused across subtests.
-func resetTestState(root *cobra.Command) {
-	removeOrigins = nil
-	syncTo = nil
-	syncAppend = false
-	moveTo = ""
-	moveFrom = ""
-	moveName = ""
-	listSort = ""
-	listStats = false
+// resetTestState resets the four package-level persistent flag vars.
+// Verb-specific flag vars live in closures inside NewRootCmd, so a fresh
+// root command (created per test) carries no stale state for those.
+func resetTestState() {
 	dryRun = false
 	verbose = false
 	jsonOutput = false
-
-	var resetChanged func(cmd *cobra.Command)
-	resetChanged = func(cmd *cobra.Command) {
-		cmd.Flags().VisitAll(func(f *pflag.Flag) { f.Changed = false })
-		cmd.PersistentFlags().VisitAll(func(f *pflag.Flag) { f.Changed = false })
-		for _, child := range cmd.Commands() {
-			resetChanged(child)
-		}
-	}
-	resetChanged(root)
+	xmlPath = ""
 }
 
-func executeCommand(root *cobra.Command, args ...string) (string, error) {
-	resetTestState(root)
+func executeCommand(args ...string) (string, error) {
+	resetTestState()
+	root := NewRootCmd()
 	buf := new(bytes.Buffer)
 	root.SetOut(buf)
 	root.SetErr(buf)
-	root.SetArgs(args)
+	root.SetArgs(args[:])
 
 	// Since we use fmt.Printf in many places, we need to capture stdout
 	old := os.Stdout
@@ -135,7 +117,7 @@ func TestCommandConsistency(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			out, err := executeCommand(RootCmd, tt.args...)
+			out, err := executeCommand(tt.args...)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("executeCommand(%v) error = %v, wantErr %v", tt.args, err, tt.wantErr)
 				return

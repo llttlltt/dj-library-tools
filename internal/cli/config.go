@@ -9,12 +9,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	cfgUnset bool
-	cfgList  bool
-)
+func newConfigCmd() *cobra.Command {
+	var cfgUnset, cfgList bool
 
-var configCmd = &cobra.Command{
+	cmd := &cobra.Command{
 	Use:   "config [key] [value]",
 	Short: "View or update application configuration",
 	Long: `Manage djlt configuration using dot-namespaced keys. Settings are stored in ~/.config/djlt/config.json.
@@ -47,26 +45,30 @@ var configCmd = &cobra.Command{
 
 **Unset a scalar value**
   djlt config --unset plex.host`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, _ := config.LoadAppConfig()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, _ := config.LoadAppConfig()
 
-		if cfgList || len(args) == 0 {
+			if cfgList || len(args) == 0 {
 			printConfig(cfg)
 			return nil
 		}
 
-		key := args[0]
+			key := args[0]
 
-		if cfgUnset {
-			return runConfigUnset(cfg, key, args[1:])
-		}
+			if cfgUnset {
+				return runConfigUnset(cfg, key, args[1:])
+			}
 
-		if len(args) == 1 {
-			return runConfigGet(cfg, key)
-		}
+			if len(args) == 1 {
+				return runConfigGet(cfg, key)
+			}
 
-		return runConfigSet(cfg, key, args[1])
-	},
+			return runConfigSet(cfg, key, args[1])
+		},
+	}
+	cmd.Flags().BoolVar(&cfgList, "list", false, "Show all configuration values")
+	cmd.Flags().BoolVar(&cfgUnset, "unset", false, "Remove a configuration value")
+	return cmd
 }
 
 func runConfigSet(cfg *config.AppConfig, key, value string) error {
@@ -173,8 +175,4 @@ func maskToken(t string) string {
 	return t[:4] + "...." + t[len(t)-4:]
 }
 
-func init() {
-	configCmd.Flags().BoolVar(&cfgList, "list", false, "Show all configuration values")
-	configCmd.Flags().BoolVar(&cfgUnset, "unset", false, "Remove a configuration value")
-	RootCmd.AddCommand(configCmd)
-}
+
