@@ -11,8 +11,9 @@ import (
 )
 
 var deleteCmd = &cobra.Command{
-	Use:   "delete [resource] [query]",
-	Short: "Delete a resource from the library (destructive)",
+	Use:     "delete [resource] [query]",
+	Aliases: []string{"del", "rm"},
+	Short:   "Delete a resource from the library (destructive)",
 	Long: `Permanently delete playlists or folders from the Rekordbox XML.
 Warning: This is destructive to the resource, but does not delete tracks from the collection.
 

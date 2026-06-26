@@ -17,8 +17,9 @@ var (
 )
 
 var moveCmd = &cobra.Command{
-	Use:   "move [resource] [query] --to [destination] [--from origin]",
-	Short: "Move items between locations",
+	Use:     "move [resource] [query] --to [destination] [--from origin]",
+	Aliases: []string{"mv"},
+	Short:   "Move items between locations",
 	Long: `Move items between Rekordbox locations.
 For tracks, both --from and --to are required.
 For playlists and folders, only --to (the parent folder) is required.
