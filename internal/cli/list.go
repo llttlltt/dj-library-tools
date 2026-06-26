@@ -11,6 +11,7 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/engine"
 	"github.com/llttlltt/dj-library-tools/internal/plex"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 	"github.com/spf13/cobra"
@@ -35,7 +36,13 @@ var listCmd = &cobra.Command{
 			if loc.Resource == "" {
 				return fmt.Errorf("resource must be specified (e.g. rb/tracks or rb/playlists)")
 			}
-			return listRekordbox(loc)
+			lib, _, err := loadXMLFunc()
+			if err != nil {
+				return err
+			}
+			eng := engine.NewEngine(engine.NewRekordboxLibrary(lib))
+			prov := provider.NewRekordboxProvider(eng)
+			return listProvider(prov, loc)
 		case "plex":
 			if loc.Resource == "" {
 				return fmt.Errorf("resource must be specified (e.g. plex/playlists)")
@@ -47,16 +54,9 @@ var listCmd = &cobra.Command{
 	},
 }
 
-func listRekordbox(loc utils.Location) error {
-	lib, _, err := loadXMLFunc()
-	if err != nil {
-		return err
-	}
-
-	eng := engine.NewEngine(engine.NewRekordboxLibrary(lib))
-	
-	if loc.Resource == "playlists" {
-		results, err := eng.LsPlaylists(loc.Query)
+func listProvider(p provider.Provider, loc utils.Location) error {
+	if loc.Resource == "playlists" || loc.Resource == "folders" {
+		results, err := p.GetPlaylists(loc.Query)
 		if err != nil {
 			return fmt.Errorf("ls failed: %w", err)
 		}
@@ -66,50 +66,23 @@ func listRekordbox(loc utils.Location) error {
 			return nil
 		}
 		if verbose {
-			fmt.Printf("Query %q matched %d playlists\n", loc.Query, len(results))
+			fmt.Printf("Query %q matched %d %s\n", loc.Query, len(results), loc.Resource)
 		}
 		if len(results) == 0 {
-			color.Yellow("No playlists matched the query.")
+			color.Yellow("No %s matched the query.", loc.Resource)
 			return nil
 		}
 		for _, res := range results {
-			name := res.Node.Name
+			name := res.Name
 			if res.ParentFolder != "" {
 				name = res.ParentFolder + "/" + name
 			}
-			fmt.Printf("Playlist: %s (%d entries)\n", name, rekordbox.DerefInt32(res.Node.Entries))
+			fmt.Printf("%s: %s (%d entries)\n", strings.Title(loc.Resource[:len(loc.Resource)-1]), name, res.Entries)
 		}
 		return nil
 	}
 
-	if loc.Resource == "folders" {
-		results, err := eng.LsFolders(loc.Query)
-		if err != nil {
-			return fmt.Errorf("ls failed: %w", err)
-		}
-		if jsonOutput {
-			data, _ := json.MarshalIndent(results, "", "  ")
-			fmt.Println(string(data))
-			return nil
-		}
-		if verbose {
-			fmt.Printf("Query %q matched %d folders\n", loc.Query, len(results))
-		}
-		if len(results) == 0 {
-			color.Yellow("No folders matched the query.")
-			return nil
-		}
-		for _, res := range results {
-			name := res.Node.Name
-			if res.ParentFolder != "" {
-				name = res.ParentFolder + "/" + name
-			}
-			fmt.Printf("Folder: %s (%d entries)\n", name, rekordbox.DerefInt32(res.Node.Count))
-		}
-		return nil
-	}
-
-	tracks, err := eng.Ls(loc.Query)
+	tracks, err := p.GetTracks(loc.Query)
 	if err != nil {
 		return fmt.Errorf("ls failed: %w", err)
 	}
@@ -142,15 +115,20 @@ func listRekordbox(loc utils.Location) error {
 		if len(t.Tempo) > 0 {
 			bpm, _ = strconv.ParseFloat(t.Tempo[0].Bpm, 64)
 		}
-		fmt.Printf("%s %s %s %s %s\n", 
-			bpmFmt("%6.2f", bpm), 
+		fmt.Printf("%s %s %s %s %s\n",
+			bpmFmt("%6.2f", bpm),
 			keyFmt("%4s", t.Tonality),
-			artistFmt(t.Artist), 
-			dimFmt("-"), 
+			artistFmt(t.Artist),
+			dimFmt("-"),
 			titleFmt(t.Name))
 	}
 
 	fmt.Printf("\n%s\n", color.HiGreenString("Matched %d tracks.", len(tracks)))
+	return nil
+}
+
+func listRekordbox(loc utils.Location) error {
+	// listRekordbox is now absorbed by listProvider
 	return nil
 }
 
