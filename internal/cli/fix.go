@@ -15,7 +15,6 @@ var (
 	removeOriginal bool
 	forceOverwrite bool
 	outputFileFlag string
-	verboseFixFlag bool
 )
 
 var fixCmd = &cobra.Command{
@@ -35,7 +34,7 @@ var fixPlaylistCmd = &cobra.Command{
 				RemoveOriginal: removeOriginal,
 				Force:          forceOverwrite,
 				OutputPath:     outputFileFlag,
-				Verbose:        verboseFixFlag,
+				Verbose:        verbose,
 				DryRun:         dryRun,
 			}
 
@@ -58,7 +57,7 @@ var fixPlaylistCmd = &cobra.Command{
 			fmt.Printf("Total tracks found: %d\n", result.TotalTracks-len(result.SkippedTracks))
 			if len(result.SkippedTracks) > 0 {
 				fmt.Printf("Skipped tracks (not found): %d\n", len(result.SkippedTracks))
-				if verboseFixFlag {
+				if verbose {
 					for _, p := range result.SkippedTracks {
 						fmt.Printf("  - %s\n", p)
 					}
@@ -92,7 +91,6 @@ func init() {
 	fixPlaylistCmd.Flags().BoolVarP(&removeOriginal, "remove-original", "r", false, "Remove the original playlist file after processing")
 	fixPlaylistCmd.Flags().BoolVarP(&forceOverwrite, "force", "f", false, "Force overwrite if output file exists")
 	fixPlaylistCmd.Flags().StringVarP(&outputFileFlag, "output", "o", "", "Specific output path (optional)")
-	fixPlaylistCmd.Flags().BoolVarP(&verboseFixFlag, "verbose", "v", false, "Enable verbose logging")
 
 	fixCmd.AddCommand(fixPlaylistCmd)
 	RootCmd.AddCommand(fixCmd)
