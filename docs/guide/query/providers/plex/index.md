@@ -1,6 +1,8 @@
-# Plex (`plex`)
+# Plex
 
 The Plex provider interacts with your Plex Media Server via its API using the parallel prober for fast response times.
+
+### Provider Alias: `plex`
 
 ## Resources
 
