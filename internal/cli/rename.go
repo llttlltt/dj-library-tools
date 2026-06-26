@@ -34,7 +34,7 @@ Example:
 		}
 
 		eng := engine.NewEngine(engine.NewRekordboxLibrary(rbXML))
-		syncEng := syncpkg.NewEngine(nil, rbXML)
+		syncEng := syncpkg.NewEngine(nil, engine.NewRekordboxLibrary(rbXML))
 
 		query := ""
 		if len(args) > 1 {

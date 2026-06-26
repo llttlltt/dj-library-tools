@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/llttlltt/dj-library-tools/internal/engine"
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 )
 
@@ -24,7 +25,7 @@ func makeLibrary() *rekordbox.RekordboxLibraryXML {
 
 func TestInjectPlaylist_Create(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	result := eng.InjectPlaylist("Summer", []string{"1", "2", "3"})
 
@@ -52,7 +53,7 @@ func TestInjectPlaylist_Create(t *testing.T) {
 
 func TestInjectPlaylist_Update(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	eng.InjectPlaylist("Summer", []string{"1", "2", "3"})
 	result := eng.InjectPlaylist("Summer", []string{"4", "5"})
@@ -75,7 +76,7 @@ func TestInjectPlaylist_Update(t *testing.T) {
 
 func TestInjectPlaylist_MultiplePlaylists(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	eng.InjectPlaylist("Summer", []string{"1"})
 	eng.InjectPlaylist("Winter", []string{"2", "3"})
@@ -91,7 +92,7 @@ func TestInjectPlaylist_MultiplePlaylists(t *testing.T) {
 
 func TestRemovePlaylist(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	eng.InjectPlaylist("Summer", []string{"1"})
 	eng.InjectPlaylist("Winter", []string{"2"})
@@ -115,7 +116,7 @@ func TestRemovePlaylist(t *testing.T) {
 
 func TestRemovePlaylist_NotFound(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	removed := eng.RemovePlaylist("Nonexistent")
 	if removed {
@@ -135,7 +136,7 @@ func findFolder(lib *rekordbox.RekordboxLibraryXML, name string) *rekordbox.Node
 
 func TestUpsertPlaylist_RootLevel(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	result := eng.UpsertPlaylist("", "RootPlaylist", []string{"1", "2"}, -1)
 	if result.Updated {
@@ -161,7 +162,7 @@ func TestUpsertPlaylist_RootLevel(t *testing.T) {
 
 func TestUpsertPlaylist_NamedFolder(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	eng.UpsertPlaylist("DJ Sets", "Techno Night", []string{"1"}, -1)
 	eng.UpsertPlaylist("DJ Sets", "Techno Night", []string{"2", "3"}, -1)
@@ -180,7 +181,7 @@ func TestUpsertPlaylist_NamedFolder(t *testing.T) {
 
 func TestAddTracksToPlaylist(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	eng.UpsertPlaylist("", "Picks", []string{"1", "2"}, -1)
 
@@ -206,7 +207,7 @@ func TestAddTracksToPlaylist(t *testing.T) {
 
 func TestAddTracksToPlaylist_NotFound(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	found, added := eng.AddTracksToPlaylist("Nonexistent", []string{"1"})
 	if found {
@@ -219,7 +220,7 @@ func TestAddTracksToPlaylist_NotFound(t *testing.T) {
 
 func TestRemoveTracksFromPlaylist(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	eng.UpsertPlaylist("", "Picks", []string{"1", "2", "3", "4"}, -1)
 
@@ -249,7 +250,7 @@ func TestRemoveTracksFromPlaylist(t *testing.T) {
 
 func TestRemoveTracksFromPlaylist_NotFound(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	found, removed := eng.RemoveTracksFromPlaylist("Nonexistent", []string{"1"})
 	if found {
@@ -262,7 +263,7 @@ func TestRemoveTracksFromPlaylist_NotFound(t *testing.T) {
 
 func TestRenameNode(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	eng.InjectPlaylist("Summer", []string{"1"})
 
@@ -279,7 +280,7 @@ func TestRenameNode(t *testing.T) {
 
 func TestRenameNode_NotFound(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	ok := eng.RenameNode("Nonexistent", "New Name", 1)
 	if ok {
@@ -289,7 +290,7 @@ func TestRenameNode_NotFound(t *testing.T) {
 
 func TestMoveNode(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	eng.InjectPlaylist("Summer", []string{"1"})
 
@@ -324,7 +325,7 @@ func TestMoveNode(t *testing.T) {
 
 func TestRemoveNode_Playlist(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	eng.InjectPlaylist("Summer", []string{"1"})
 	eng.InjectPlaylist("Winter", []string{"2"})
@@ -342,7 +343,7 @@ func TestRemoveNode_Playlist(t *testing.T) {
 
 func TestRemoveNode_NotFound(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	ok := eng.RemoveNode("Nonexistent", 1)
 	if ok {
@@ -352,7 +353,7 @@ func TestRemoveNode_NotFound(t *testing.T) {
 
 func TestWrapperBackcompat(t *testing.T) {
 	lib := makeLibrary()
-	eng := NewEngine(nil, lib)
+	eng := NewEngine(nil, engine.NewRekordboxLibrary(lib))
 
 	r := eng.InjectPlaylist("Test", []string{"1"})
 	if r.Updated || r.TracksInjected != 1 {
