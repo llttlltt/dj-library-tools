@@ -7,7 +7,7 @@ The Plex provider interacts with your Plex Media Server via its API using the pa
 | Resource | Description | Example |
 | :--- | :--- | :--- |
 | `playlists` | Your Plex music playlists. | `plex/playlists name:Summer` |
-| `tracks` | Tracks from a specific Plex playlist. Query must be a playlist ID or Name. | `plex/tracks 12345` |
+| `tracks` | Tracks from a specific Plex playlist. | `plex/tracks name:'Summer Hits'` or `plex/tracks id:12345` |
 
 ## Authentication
 

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/plex"
+	"github.com/llttlltt/dj-library-tools/internal/query"
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 )
 
@@ -27,16 +28,66 @@ func (p *PlexProvider) Name() string {
 	return "plex"
 }
 
-func (p *PlexProvider) GetTracks(query string) ([]rekordbox.Track, error) {
+func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) {
 	ctx := context.Background()
 	baseURL, err := p.resolveBaseURL(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// For now, we assume query is a playlist ID (RatingKey) as seen in current list.go
-	// In the future, this could be a more complex query.
-	path := "/playlists/" + query + "/items"
+	q := query.NewParser().Parse(queryString)
+	if err := q.Validate(); err != nil {
+		return nil, err
+	}
+
+	playlistID := ""
+	if queryString != "" {
+		if q.Root == nil {
+			return nil, fmt.Errorf("query must specify a field (e.g. id:%q or name:%q)", queryString, queryString)
+		}
+
+		// Helper to extract fields from query
+		var playlistName string
+		var walk func(expr query.Expression)
+		walk = func(expr query.Expression) {
+			switch v := expr.(type) {
+			case query.Comparison:
+				switch strings.ToLower(v.Field) {
+				case "id", "ratingkey":
+					playlistID = v.Value
+				case "name", "title", "playlist":
+					playlistName = v.Value
+				}
+			case query.Logical:
+				walk(v.Left)
+				walk(v.Right)
+			}
+		}
+		walk(q.Root)
+
+		if playlistID == "" && playlistName != "" {
+			// Resolve name to ID
+			plexPlaylists, err := p.client.GetPlaylists(ctx, baseURL)
+			if err != nil {
+				return nil, err
+			}
+			for _, pl := range plexPlaylists {
+				if strings.EqualFold(pl.Title, playlistName) {
+					playlistID = pl.RatingKey
+					break
+				}
+			}
+			if playlistID == "" {
+				return nil, fmt.Errorf("plex playlist %q not found", playlistName)
+			}
+		}
+	}
+
+	if playlistID == "" {
+		return nil, fmt.Errorf("query must resolve to a playlist ID (use id:123 or name:'Summer')")
+	}
+
+	path := "/playlists/" + playlistID + "/items"
 	plexTracks, err := p.client.GetPlaylistTracks(ctx, baseURL, path)
 	if err != nil {
 		return nil, err
@@ -58,10 +109,15 @@ func (p *PlexProvider) GetTracks(query string) ([]rekordbox.Track, error) {
 	return tracks, nil
 }
 
-func (p *PlexProvider) GetPlaylists(query string) ([]NodeResult, error) {
+func (p *PlexProvider) GetPlaylists(queryString string) ([]NodeResult, error) {
 	ctx := context.Background()
 	baseURL, err := p.resolveBaseURL(ctx)
 	if err != nil {
+		return nil, err
+	}
+
+	q := query.NewParser().Parse(queryString)
+	if err := q.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -72,8 +128,35 @@ func (p *PlexProvider) GetPlaylists(query string) ([]NodeResult, error) {
 
 	var results []NodeResult
 	for _, pl := range plexPlaylists {
-		if query != "" && !strings.Contains(strings.ToLower(pl.Title), strings.ToLower(query)) {
-			continue
+		if queryString != "" {
+			matched := false
+			// Simple evaluator for playlists
+			var walk func(expr query.Expression) bool
+			walk = func(expr query.Expression) bool {
+				switch v := expr.(type) {
+				case query.Comparison:
+					f := strings.ToLower(v.Field)
+					if f == "name" || f == "title" {
+						return strings.Contains(strings.ToLower(pl.Title), strings.ToLower(v.Value))
+					}
+					if f == "id" || f == "ratingkey" {
+						return pl.RatingKey == v.Value
+					}
+					return false
+				case query.Logical:
+					if v.Op == "AND" {
+						return walk(v.Left) && walk(v.Right)
+					}
+					return walk(v.Left) || walk(v.Right)
+				case query.Not:
+					return !walk(v.Expr)
+				}
+				return true
+			}
+			matched = walk(q.Root)
+			if !matched {
+				continue
+			}
 		}
 		results = append(results, NodeResult{
 			Name:    pl.Title,
