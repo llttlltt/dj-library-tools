@@ -1,7 +1,6 @@
 # Planning and Metadata
-CONTEXT.md
-RESEARCH.md
-AGENTS.md
+/*.md
+!/README.md
 plan/**/*.md
 docs/adr/
 
