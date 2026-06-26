@@ -9,7 +9,8 @@ djlt list [resource] [query] [flags]
 ### Options
 
 ```
-  -h, --help   help for list
+  -h, --help          help for list
+      --sort string   Sort results by field (e.g. bpm, artist, title)
 ```
 
 ### Inherited Options
