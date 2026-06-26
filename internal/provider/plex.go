@@ -41,13 +41,13 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 		return nil, err
 	}
 
-	playlistID := ""
+	playlistIDs := []string{}
 	if queryString != "" {
 		if q.Root == nil {
 			return nil, fmt.Errorf("query must specify a field (e.g. playlist:%q or id:%q)", queryString, queryString)
 		}
 
-		// 1. Resolve Playlist Context
+		// 1. Resolve Playlist Contexts
 		var playlistName string
 		var playlistOp query.Operator
 		var walkResolve func(expr query.Expression)
@@ -56,7 +56,7 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 			case query.Comparison:
 				f := strings.ToLower(v.Field)
 				if f == "id" || f == "ratingkey" {
-					playlistID = v.Value
+					playlistIDs = append(playlistIDs, v.Value)
 				} else if f == "playlist" {
 					playlistName = v.Value
 					playlistOp = v.Operator
@@ -68,7 +68,7 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 		}
 		walkResolve(q.Root)
 
-		if playlistID == "" && playlistName != "" {
+		if len(playlistIDs) == 0 && playlistName != "" {
 			plexPlaylists, err := p.client.GetPlaylists(ctx, baseURL)
 			if err != nil {
 				return nil, err
@@ -82,22 +82,34 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 				}
 
 				if match {
-					playlistID = pl.RatingKey
-					break
+					playlistIDs = append(playlistIDs, pl.RatingKey)
 				}
 			}
-			if playlistID == "" {
-				// If a playlist was explicitly requested but not found, 
-				// we return an empty list rather than a fatal error.
+			
+			// If we specifically asked for a playlist but found none, return empty
+			if len(playlistIDs) == 0 {
 				return []rekordbox.Track{}, nil
 			}
 		}
 	}
 
 	var plexTracks []plex.Track
-	if playlistID != "" {
-		path := "/playlists/" + playlistID + "/items"
-		plexTracks, err = p.client.GetPlaylistTracks(ctx, baseURL, path)
+	if len(playlistIDs) > 0 {
+		// Aggregate tracks from all matching playlists
+		seen := make(map[string]bool)
+		for _, id := range playlistIDs {
+			path := "/playlists/" + id + "/items"
+			pt, err := p.client.GetPlaylistTracks(ctx, baseURL, path)
+			if err != nil {
+				continue // Skip failing playlists
+			}
+			for _, t := range pt {
+				if !seen[t.RatingKey] {
+					plexTracks = append(plexTracks, t)
+					seen[t.RatingKey] = true
+				}
+			}
+		}
 	} else {
 		// Global search
 		plexTracks, err = p.client.GetAllTracks(ctx, baseURL)
