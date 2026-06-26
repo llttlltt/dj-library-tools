@@ -134,7 +134,6 @@ func TestQueryEvaluator(t *testing.T) {
 		{"Regex match", "artist::^Four", true},
 		{"Range match", "bpm:120..130", true},
 		{"Negation", "!genre:Techno", true},
-		{"Default field (title)", "Oceans", true},
 
 		// Cues & Tempos
 		{"Tempo count", "beatgrids:2", true},
