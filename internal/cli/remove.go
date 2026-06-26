@@ -88,6 +88,12 @@ func runRemoveCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		for _, origin := range origins {
+			if verbose {
+				fmt.Printf("Removing %d tracks from playlist %q...\n", len(trackIDs), origin.Node.Name)
+				for _, id := range trackIDs {
+					fmt.Printf("  - Track ID: %s\n", id)
+				}
+			}
 			found, removed := syncEng.RemoveTracksFromPlaylist(origin.Node.Name, trackIDs)
 			if !found {
 				fmt.Printf("Warning: playlist %q not found during remove\n", origin.Node.Name)

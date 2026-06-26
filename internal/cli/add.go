@@ -89,6 +89,12 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 		}
 
 		for _, target := range targets {
+			if verbose {
+				fmt.Printf("Adding %d tracks to playlist %q...\n", len(trackIDs), target.Node.Name)
+				for _, id := range trackIDs {
+					fmt.Printf("  + Track ID: %s\n", id)
+				}
+			}
 			found, added := syncEng.AddTracksToPlaylist(target.Node.Name, trackIDs)
 			if !found {
 				fmt.Printf("Warning: playlist %q not found during add\n", target.Node.Name)
