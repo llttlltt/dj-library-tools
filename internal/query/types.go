@@ -60,27 +60,44 @@ func (q Query) Validate() error {
 	if q.Root == nil {
 		return nil
 	}
-	// Try to find the full bare string for better error messages
-	if err := q.validateExpr(q.Root); err != nil {
-		return err
-	}
-	return nil
+	return q.validateExpr(q.Root, nil)
 }
 
-func (q Query) validateExpr(expr Expression) error {
+// ValidateWithFields checks if the query fields are valid for the given resource.
+func (q Query) ValidateWithFields(allowedFields []string) error {
+	if q.Root == nil {
+		return nil
+	}
+	return q.validateExpr(q.Root, allowedFields)
+}
+
+func (q Query) validateExpr(expr Expression, allowedFields []string) error {
 	switch v := expr.(type) {
 	case Comparison:
 		if v.Field == "" {
 			fullQuery := q.String()
 			return fmt.Errorf("query must specify a field (e.g. title:%q). Bare values are not supported", fullQuery)
 		}
+		if allowedFields != nil {
+			found := false
+			f := strings.ToLower(v.Field)
+			for _, allowed := range allowedFields {
+				if f == allowed {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("unrecognized field %q. Allowed fields are: %s", v.Field, strings.Join(allowedFields, ", "))
+			}
+		}
 	case Logical:
-		if err := q.validateExpr(v.Left); err != nil {
+		if err := q.validateExpr(v.Left, allowedFields); err != nil {
 			return err
 		}
-		return q.validateExpr(v.Right)
+		return q.validateExpr(v.Right, allowedFields)
 	case Not:
-		return q.validateExpr(v.Expr)
+		return q.validateExpr(v.Expr, allowedFields)
 	}
 	return nil
 }
