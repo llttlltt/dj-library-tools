@@ -6,11 +6,13 @@ import (
 
 func TestParseLocation(t *testing.T) {
 	tests := []struct {
-		input    string
+		locStr   string
+		query    string
 		expected Location
 	}{
 		{
-			input: "plex/playlists:Summer",
+			locStr: "plex/playlists",
+			query:  "Summer",
 			expected: Location{
 				Provider: "plex",
 				Resource: "playlists",
@@ -18,7 +20,8 @@ func TestParseLocation(t *testing.T) {
 			},
 		},
 		{
-			input: "rb:bpm:120..130",
+			locStr: "rb",
+			query:  "bpm:120..130",
 			expected: Location{
 				Provider: "rb",
 				Resource: "tracks",
@@ -26,7 +29,8 @@ func TestParseLocation(t *testing.T) {
 			},
 		},
 		{
-			input: "plex",
+			locStr: "plex",
+			query:  "",
 			expected: Location{
 				Provider: "plex",
 				Resource: "playlists",
@@ -34,19 +38,20 @@ func TestParseLocation(t *testing.T) {
 			},
 		},
 		{
-			input: "m3u8:my_playlist.m3u8",
+			locStr: "m3u8",
+			query:  "my_playlist.m3u8",
 			expected: Location{
 				Provider: "m3u8",
-				Resource: "",
+				Resource: "file",
 				Query:    "my_playlist.m3u8",
 			},
 		},
 	}
 
 	for _, tt := range tests {
-		result := ParseLocation(tt.input)
+		result := ParseLocation(tt.locStr, tt.query)
 		if result.Provider != tt.expected.Provider || result.Resource != tt.expected.Resource || result.Query != tt.expected.Query {
-			t.Errorf("ParseLocation(%q) = %+v; want %+v", tt.input, result, tt.expected)
+			t.Errorf("ParseLocation(%q, %q) = %+v; want %+v", tt.locStr, tt.query, result, tt.expected)
 		}
 	}
 }

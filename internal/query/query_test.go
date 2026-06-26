@@ -185,8 +185,8 @@ func TestEvaluatorMatchesNode(t *testing.T) {
 		parentFolder string
 		want         bool
 	}{
-		{"title substring match", "title:Summer", summerVibes, "My Sets", true},
-		{"title no match", "title:Winter", summerVibes, "My Sets", false},
+		{"name substring match", "name:Summer", summerVibes, "My Sets", true},
+		{"name no match", "name:Winter", summerVibes, "My Sets", false},
 		{"parent match", "parent:My Sets", summerVibes, "My Sets", true},
 		{"parent no match", "parent:Other", summerVibes, "My Sets", false},
 		{"entries range", "entries:10..15", summerVibes, "My Sets", true},
@@ -195,7 +195,7 @@ func TestEvaluatorMatchesNode(t *testing.T) {
 		{"type playlist", "type:1", summerVibes, "My Sets", true},
 		{"type folder match", "type:0", wintersFolder, "", true},
 		{"type folder no match", "type:1", wintersFolder, "", false},
-		{"boolean AND", "title:Summer && parent:My Sets", summerVibes, "My Sets", true},
+		{"boolean AND", "name:Summer && parent:My Sets", summerVibes, "My Sets", true},
 		{"empty query matches all", "", summerVibes, "My Sets", true},
 	}
 
