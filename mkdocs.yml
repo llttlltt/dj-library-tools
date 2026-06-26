@@ -63,7 +63,7 @@ nav:
       - Automating Playlists: guide/workflows/automating-playlists.md
     - Commands:
       - guide/commands/index.md
-      - CLI Reference:
+      - djlt:
         - commands/index.md
         - add: commands/add.md
         - remove: commands/remove.md
