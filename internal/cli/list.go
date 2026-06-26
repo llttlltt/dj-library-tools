@@ -17,9 +17,10 @@ import (
 )
 
 var listCmd = &cobra.Command{
-	Use:   "list [location]",
-	Short: "List items from a location (e.g. plex/playlists:Summer)",
-	Args:  cobra.MinimumNArgs(1),
+	Use:     "list [resource] [query]",
+	Aliases: []string{"ls"},
+	Short:   "List items from a location (e.g. rb/tracks artist:Four)",
+	Args:    cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var loc utils.Location
 		if len(args) > 1 {
