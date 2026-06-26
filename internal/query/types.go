@@ -1,5 +1,7 @@
 package query
 
+import "fmt"
+
 // Operator defines the type of match to perform
 type Operator string
 
@@ -48,4 +50,29 @@ func (n Not) isExpression() {}
 // Query is the top-level container
 type Query struct {
 	Root Expression
+}
+
+// Validate checks if the query is valid and returns a helpful error if not.
+func (q Query) Validate() error {
+	if q.Root == nil {
+		return nil
+	}
+	return q.validateExpr(q.Root)
+}
+
+func (q Query) validateExpr(expr Expression) error {
+	switch v := expr.(type) {
+	case Comparison:
+		if v.Field == "" {
+			return fmt.Errorf("query must specify a field (e.g. title:%q). Bare values are not supported", v.Value)
+		}
+	case Logical:
+		if err := q.validateExpr(v.Left); err != nil {
+			return err
+		}
+		return q.validateExpr(v.Right)
+	case Not:
+		return q.validateExpr(v.Expr)
+	}
+	return nil
 }

@@ -22,7 +22,6 @@ import (
 var (
 	exportDest   string
 	exportFormat string
-	dryRun       bool
 	syncTo       []string
 )
 
