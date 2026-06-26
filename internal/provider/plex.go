@@ -92,12 +92,15 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 		}
 	}
 
-	if playlistID == "" {
-		return nil, fmt.Errorf("query must resolve to a playlist ID (use id:123 or name:'Summer')")
+	var plexTracks []plex.Track
+	if playlistID != "" {
+		path := "/playlists/" + playlistID + "/items"
+		plexTracks, err = p.client.GetPlaylistTracks(ctx, baseURL, path)
+	} else {
+		// Global search
+		plexTracks, err = p.client.GetAllTracks(ctx, baseURL)
 	}
 
-	path := "/playlists/" + playlistID + "/items"
-	plexTracks, err := p.client.GetPlaylistTracks(ctx, baseURL, path)
 	if err != nil {
 		return nil, err
 	}
