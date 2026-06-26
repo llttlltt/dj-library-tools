@@ -130,11 +130,7 @@ func (e *Evaluator) matchComparison(track rekordbox.Track, playlists []string, c
 }
 
 func (e *Evaluator) getFieldValue(track rekordbox.Track, playlists []string, field string) string {
-	f := strings.ToLower(field)
-	if f == "default" {
-		f = "title"
-	}
-	switch f {
+	switch strings.ToLower(field) {
 	case "playlistcount":
 		return strconv.Itoa(len(playlists))
 	case "title":
@@ -677,11 +673,7 @@ func (e *Evaluator) matchNodeComparison(node rekordbox.Node, parentFolder string
 }
 
 func (e *Evaluator) getNodeFieldValue(node rekordbox.Node, parentFolder string, field string) string {
-	f := strings.ToLower(field)
-	if f == "default" {
-		f = "name"
-	}
-	switch f {
+	switch strings.ToLower(field) {
 	case "name":
 		return node.Name
 	case "parent", "folder":

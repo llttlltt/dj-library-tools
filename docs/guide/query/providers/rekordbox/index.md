@@ -16,7 +16,7 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `title` | String | Track title (Default). |
+| `title` | String | Track title. |
 | `artist` | String | Artist name. |
 | `album` | String | Album name. |
 | `genre` | String | Genre name. |
@@ -44,7 +44,7 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `name` | String | Name of the node (Default). |
+| `name` | String | Name of the node. |
 | `parent` | String | Name of the parent folder. |
 | `entries` | Numeric | Number of tracks or sub-items. |
 | `type` | Numeric | `0` for folder, `1` for playlist. |
