@@ -124,7 +124,7 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 					
 					val := ""
 					switch f {
-					case "title", "name": val = pt.Title
+					case "title": val = pt.Title
 					case "artist": val = pt.Artist
 					case "album": val = pt.Album
 					}

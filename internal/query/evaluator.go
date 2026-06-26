@@ -16,7 +16,7 @@ var AllowedTrackFields = []string{
 	"year", "label", "grouping", "rating", "playcount", "added", "modified", "played",
 	"color", "kind", "size", "beatgrids", "hotcues", "memorycues", "id", "composer",
 	"time", "disc", "track", "bitrate", "samplerate", "location", "remixer", "mix",
-	"hotcue", "memorycue", "tempo", "playlist", "name",
+	"hotcue", "memorycue", "tempo", "playlist",
 }
 
 // AllowedNodeFields is a list of valid fields for playlist and folder queries.
@@ -186,7 +186,7 @@ func (e *Evaluator) getFieldValue(track rekordbox.Track, playlists []string, fie
 	switch strings.ToLower(field) {
 	case "playlistcount":
 		return strconv.Itoa(len(playlists))
-	case "title", "name":
+	case "title":
 		return track.Name
 	case "artist":
 		return track.Artist
