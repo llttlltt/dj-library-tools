@@ -59,6 +59,9 @@ func listRekordbox(loc utils.Location) error {
 		if err != nil {
 			return fmt.Errorf("ls failed: %w", err)
 		}
+		if verbose {
+			fmt.Printf("Query %q matched %d playlists\n", loc.Query, len(results))
+		}
 		if len(results) == 0 {
 			color.Yellow("No playlists matched the query.")
 			return nil
@@ -78,6 +81,9 @@ func listRekordbox(loc utils.Location) error {
 		if err != nil {
 			return fmt.Errorf("ls failed: %w", err)
 		}
+		if verbose {
+			fmt.Printf("Query %q matched %d folders\n", loc.Query, len(results))
+		}
 		if len(results) == 0 {
 			color.Yellow("No folders matched the query.")
 			return nil
@@ -95,6 +101,10 @@ func listRekordbox(loc utils.Location) error {
 	tracks, err := eng.Ls(loc.Query)
 	if err != nil {
 		return fmt.Errorf("ls failed: %w", err)
+	}
+
+	if verbose {
+		fmt.Printf("Query %q matched %d tracks\n", loc.Query, len(tracks))
 	}
 
 	if len(tracks) == 0 {

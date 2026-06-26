@@ -96,9 +96,18 @@ func runMoveTracks(eng *engine.Engine, syncEng *syncpkg.Engine, sourceQuery, pat
 
 	// 4. Perform Move
 	for _, origin := range origins {
+		if verbose {
+			fmt.Printf("Removing tracks from origin playlist %q...\n", origin.Node.Name)
+		}
 		syncEng.RemoveTracksFromPlaylist(origin.Node.Name, trackIDs)
 	}
 	for _, target := range targets {
+		if verbose {
+			fmt.Printf("Adding tracks to target playlist %q...\n", target.Node.Name)
+			for _, id := range trackIDs {
+				fmt.Printf("  + Track ID: %s\n", id)
+			}
+		}
 		syncEng.AddTracksToPlaylist(target.Node.Name, trackIDs)
 	}
 
@@ -131,6 +140,9 @@ func runMoveNodes(eng *engine.Engine, syncEng *syncpkg.Engine, loc utils.Locatio
 	}
 
 	for _, t := range targets {
+		if verbose {
+			fmt.Printf("Moving %s %q into folder %q...\n", loc.Resource, t.Node.Name, moveTo)
+		}
 		if !syncEng.MoveNode(t.Node.Name, int32(nodeType), moveTo) {
 			fmt.Printf("Warning: failed to move %q\n", t.Node.Name)
 			continue

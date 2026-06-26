@@ -64,6 +64,9 @@ Example:
 		}
 
 		for _, t := range targets {
+			if verbose {
+				fmt.Printf("Deleting %s %q...\n", loc.Resource, t.Node.Name)
+			}
 			if !syncEng.RemoveNode(t.Node.Name, int32(nodeType)) {
 				fmt.Printf("Warning: failed to delete %q\n", t.Node.Name)
 				continue
