@@ -44,14 +44,14 @@ Once configured, you can explore your library using the `list` command. `djlt` u
 To list tracks from your Rekordbox library matching a specific criteria:
 
 ```bash
-djlt list "rb/tracks:artist:Daft Punk"
+djlt list rb/tracks "artist:'Daft Punk'"
 ```
 
 ### Searching Specific Fields
 You can combine fields and use boolean logic for complex searches:
 
 ```bash
-djlt list "rb/tracks:genre:House && bpm:124..128"
+djlt list rb/tracks "genre:House && bpm:124..128"
 ```
 
 ## Syncing Your Library
@@ -62,14 +62,15 @@ One of the most powerful features of `djlt` is its ability to sync data between 
 To take a playlist from Plex and inject it into your Rekordbox tree:
 
 ```bash
-djlt sync "plex/playlists:Summer" "rb/playlists:Plex Sync"
+djlt sync plex/playlists Summer --to "rb/playlists 'Plex Sync'"
 ```
 
 ### Export and Transcode
 You can also export files to a local directory while syncing:
 
 ```bash
-djlt sync "plex/playlists:Summer" "rb/playlists:Plex Sync" --dest ~/Music/Export --format mp3
+djlt sync plex/playlists Summer --to "rb/playlists 'Plex Sync'" \
+  --dest ~/Music/Export --format mp3
 ```
 
 ## Library Statistics
@@ -77,7 +78,7 @@ djlt sync "plex/playlists:Summer" "rb/playlists:Plex Sync" --dest ~/Music/Export
 Get quick insights into any part of your library:
 
 ```bash
-djlt stat "rb/tracks:rating:>=4"
+djlt stat rb/tracks "rating:>=4"
 ```
 
 ---

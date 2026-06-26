@@ -3,7 +3,7 @@
 Show statistics for tracks matching the query
 
 ```
-djlt stat [query] [flags]
+djlt stat [resource] [query] [flags]
 ```
 
 ### Options
