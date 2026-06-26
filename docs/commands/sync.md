@@ -10,7 +10,6 @@ djlt sync [source-resource] [source-query] --to [target-resource] [target-query]
 
 ```
       --dest string     Destination directory for exported files
-      --dry-run         Preview changes without writing files or XML
       --format string   Target format for exported files (default "mp3")
   -h, --help            help for sync
       --to strings      Target resource(s) to sync to (repeatable)
@@ -19,6 +18,7 @@ djlt sync [source-resource] [source-query] --to [target-resource] [target-query]
 ### Inherited Options
 
 ```
+      --dry-run      Preview changes without writing
   -v, --verbose      Enable verbose logging
   -x, --xml string   Path to the Rekordbox XML library
 ```
