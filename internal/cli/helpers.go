@@ -85,7 +85,7 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 	}
 	loc := utils.ParseLocation(locStr, queryOverride)
 	if loc.Resource == "" {
-		return nil, fmt.Errorf("resource must be specified in location %q (e.g. rb/tracks)", locStr)
+		return nil, fmt.Errorf("resource must be specified in location %q (e.g. %s/tracks)", locStr, loc.Provider)
 	}
 
 	cfg, _ := config.LoadAppConfig()
