@@ -95,10 +95,60 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 
 	var tracks []rekordbox.Track
 	for _, pt := range plexTracks {
+		// Apply remaining filters from the query
+		if queryString != "" {
+			matched := false
+			var walk func(expr query.Expression) bool
+			walk = func(expr query.Expression) bool {
+				switch v := expr.(type) {
+				case query.Comparison:
+					f := strings.ToLower(v.Field)
+					// Skip playlist/id fields as they were used for initial resolution
+					if f == "playlist" || f == "name" || f == "id" || f == "ratingkey" {
+						return true
+					}
+					
+					val := ""
+					switch f {
+					case "title": val = pt.Title
+					case "artist": val = pt.Artist
+					case "album": val = pt.Album
+					}
+
+					switch v.Operator {
+					case query.OpExact:
+						return val == v.Value
+					case query.OpRegex:
+						return false // TODO: implement regex
+					case query.OpGt, query.OpGte, query.OpLt, query.OpLte, query.OpRange:
+						return false // TODO: implement numeric for Plex
+					default: // query.OpSubstring (":")
+						return strings.Contains(strings.ToLower(val), strings.ToLower(v.Value))
+					}
+				case query.Logical:
+					if v.Op == "AND" {
+						return walk(v.Left) && walk(v.Right)
+					}
+					return walk(v.Left) || walk(v.Right)
+				case query.Not:
+					return !walk(v.Expr)
+				}
+				return true
+			}
+			matched = walk(q.Root)
+			if !matched {
+				continue
+			}
+		}
+
 		t := rekordbox.Track{
-			Name:   pt.Title,
-			Artist: pt.Artist,
-			Album:  pt.Album,
+			Name:     pt.Title,
+			Artist:   pt.Artist,
+			Album:    pt.Album,
+			Tonality: pt.KeyTag,
+		}
+		if pt.BPM > 0 {
+			t.Tempo = []rekordbox.Tempo{{Bpm: fmt.Sprintf("%.2f", pt.BPM)}}
 		}
 		if len(pt.Media) > 0 && len(pt.Media[0].Part) > 0 {
 			t.Location = pt.Media[0].Part[0].File
