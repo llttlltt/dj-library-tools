@@ -58,4 +58,8 @@ djlt sync rb/tracks "beatgrids:1 && hotcues:<1 && memorycues:<1" \
 ## Why use `sync`?
 While you could delete and recreate the playlist each time, the `sync` command is **surgical**. It only adds or removes the tracks that are relevant to the query.
 
-If you have manually dragged other tracks into that playlist (like reference tracks or favourites), `sync` will leave them alone — whereas recreating the playlist would delete them.
+!!! warning "sync replaces playlist membership"
+    `sync` without `--append` will remove any tracks in the playlist that no longer match the query — including tracks you have manually added. If you want to only ever add tracks and never remove any, use `--append`:
+    ```bash
+    djlt sync rb/tracks "..." --to "rb/playlists name:'Inbox (Simple)'" --append
+    ```

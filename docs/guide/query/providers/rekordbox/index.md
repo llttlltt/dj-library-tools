@@ -46,9 +46,9 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 | :--- | :--- | :--- |
 | `name` | String | Name of the node. |
 | `parent` | String | Name of the parent folder. |
-| `entries` | Numeric | Number of tracks or sub-items. |
+| `entries` | Numeric | Number of tracks in a playlist, or number of child nodes in a folder. |
+| `count` | Numeric | Alias for `entries`. |
 | `type` | Numeric | `0` for folder, `1` for playlist. |
-| `count` | Numeric | Number of child nodes (folders only). |
 
 ## Cue Filtering
 

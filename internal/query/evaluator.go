@@ -265,7 +265,7 @@ func (e *Evaluator) matchNodeComparison(node models.Node, c Comparison) bool {
 	switch strings.ToLower(c.Field) {
 	case "name": val = node.Name
 	case "parent", "folder": val = node.ParentFolder
-	case "entries": val = strconv.Itoa(node.Entries)
+	case "entries", "count": val = strconv.Itoa(node.Entries) // count is an alias; both map to Entries (which holds Count for folders)
 	case "type": val = strconv.Itoa(node.Type)
 	}
 	if c.Operator == OpRange { return e.matchRange(val, c.Value) }
