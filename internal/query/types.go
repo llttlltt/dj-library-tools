@@ -1,6 +1,9 @@
 package query
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // Operator defines the type of match to perform
 type Operator string
@@ -57,14 +60,19 @@ func (q Query) Validate() error {
 	if q.Root == nil {
 		return nil
 	}
-	return q.validateExpr(q.Root)
+	// Try to find the full bare string for better error messages
+	if err := q.validateExpr(q.Root); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (q Query) validateExpr(expr Expression) error {
 	switch v := expr.(type) {
 	case Comparison:
 		if v.Field == "" {
-			return fmt.Errorf("query must specify a field (e.g. title:%q). Bare values are not supported", v.Value)
+			fullQuery := q.String()
+			return fmt.Errorf("query must specify a field (e.g. title:%q). Bare values are not supported", fullQuery)
 		}
 	case Logical:
 		if err := q.validateExpr(v.Left); err != nil {
@@ -75,4 +83,35 @@ func (q Query) validateExpr(expr Expression) error {
 		return q.validateExpr(v.Expr)
 	}
 	return nil
+}
+
+// String returns a string representation of the query
+func (q Query) String() string {
+	if q.Root == nil {
+		return ""
+	}
+	return q.exprToString(q.Root)
+}
+
+func (q Query) exprToString(expr Expression) string {
+	switch v := expr.(type) {
+	case Comparison:
+		if v.Field == "" {
+			return v.Value
+		}
+		return fmt.Sprintf("%s%s%s", v.Field, v.Operator, v.Value)
+	case Logical:
+		left := q.exprToString(v.Left)
+		right := q.exprToString(v.Right)
+		if v.Op == "AND" {
+			// If both sides are bare, just join with space for cleaner error messages
+			if !strings.Contains(left, ":") && !strings.Contains(right, ":") {
+				return left + " " + right
+			}
+		}
+		return fmt.Sprintf("%s %s %s", left, v.Op, right)
+	case Not:
+		return fmt.Sprintf("!%s", q.exprToString(v.Expr))
+	}
+	return ""
 }

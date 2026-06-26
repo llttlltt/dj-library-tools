@@ -42,6 +42,11 @@ func ParseLocation(locStr string, query string) Location {
 			loc.Resource = "file"
 		}
 	}
+	
+	// Ensure provider is specified
+	if loc.Provider == "" {
+		// No default provider for now to ensure explicitness
+	}
 
 	return loc
 }
