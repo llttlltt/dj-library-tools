@@ -9,6 +9,8 @@ import (
 	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/spf13/cobra"
+	"github.com/vbauerster/mpb/v8"
+	"github.com/vbauerster/mpb/v8/decor"
 )
 
 var (
@@ -88,19 +90,44 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
+		p := mpb.New(mpb.WithWidth(64))
 		for _, target := range targets {
+			bar := p.AddBar(int64(len(trackIDs)),
+				mpb.PrependDecorators(
+					decor.Name(fmt.Sprintf("Adding to %q", target.Node.Name), decor.WCSyncSpaceR),
+					decor.CountersNoUnit("%d / %d", decor.WCSyncSpace),
+				),
+				mpb.AppendDecorators(decor.Percentage(decor.WCSyncSpace)),
+			)
+
 			if verbose {
 				fmt.Printf("Adding %d tracks to playlist %q...\n", len(trackIDs), target.Node.Name)
-				for _, id := range trackIDs {
-					fmt.Printf("  + Track ID: %s\n", id)
+			}
+
+			// We process in chunks to show progress
+			chunkSize := 10
+			if len(trackIDs) < chunkSize {
+				chunkSize = len(trackIDs)
+			}
+
+			totalAdded := 0
+			for i := 0; i < len(trackIDs); i += chunkSize {
+				end := i + chunkSize
+				if end > len(trackIDs) {
+					end = len(trackIDs)
 				}
+				chunk := trackIDs[i:end]
+				found, added := syncEng.AddTracksToPlaylist(target.Node.Name, chunk)
+				if !found {
+					fmt.Printf("Warning: playlist %q not found during add\n", target.Node.Name)
+					bar.Abort(false)
+					break
+				}
+				totalAdded += added
+				bar.IncrBy(len(chunk))
 			}
-			found, added := syncEng.AddTracksToPlaylist(target.Node.Name, trackIDs)
-			if !found {
-				fmt.Printf("Warning: playlist %q not found during add\n", target.Node.Name)
-				continue
-			}
-			fmt.Printf("Added %d tracks to %q\n", added, target.Node.Name)
+			p.Wait()
+			fmt.Printf("Added %d tracks to %q\n", totalAdded, target.Node.Name)
 		}
 	}
 
