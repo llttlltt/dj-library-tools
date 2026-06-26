@@ -5,9 +5,24 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 )
+
+// AllowedTrackFields is a list of valid fields for track queries.
+var AllowedTrackFields = []string{
+	"playlistcount", "title", "artist", "album", "bpm", "key", "genre", "comment",
+	"year", "label", "grouping", "rating", "playcount", "added", "modified", "played",
+	"color", "kind", "size", "beatgrids", "hotcues", "memorycues", "id", "composer",
+	"time", "disc", "track", "bitrate", "samplerate", "location", "remixer", "mix",
+	"hotcue", "memorycue", "tempo", "playlist",
+}
+
+// AllowedNodeFields is a list of valid fields for playlist and folder queries.
+var AllowedNodeFields = []string{
+	"name", "parent", "folder", "entries", "count", "type",
+}
 
 type Evaluator struct {
 	Query Query
@@ -71,6 +86,13 @@ func isNumericField(field string) bool {
 
 func (e *Evaluator) matchComparison(track rekordbox.Track, playlists []string, c Comparison) bool {
 	field := strings.ToLower(c.Field)
+	
+	// Date Shorthand Resolution
+	targetValue := c.Value
+	if field == "added" || field == "modified" || field == "played" {
+		targetValue = e.resolveDateShorthand(c.Value)
+	}
+
 	switch field {
 	case "playlist":
 		// If it's a numeric comparison or range, treat it as a count check
@@ -100,33 +122,64 @@ func (e *Evaluator) matchComparison(track rekordbox.Track, playlists []string, c
 
 	fieldValue := e.getFieldValue(track, playlists, c.Field)
 	if c.Operator == OpRange {
-		return e.matchRange(fieldValue, c.Value)
+		return e.matchRange(fieldValue, targetValue)
 	}
 
 	switch c.Operator {
 	case OpGt, OpGte, OpLt, OpLte:
-		return e.matchNumericComparison(fieldValue, c.Value, c.Operator)
+		return e.matchNumericComparison(fieldValue, targetValue, c.Operator)
 	case OpExact:
-		return strings.EqualFold(fieldValue, c.Value)
+		return strings.EqualFold(fieldValue, targetValue)
 	case OpSubstring:
 		// For numeric fields, use exact float equality to prevent substring false-positives
 		// (e.g. playlistcount:0 must not match a track in 10 playlists).
 		if isNumericField(c.Field) {
 			fv, errF := strconv.ParseFloat(fieldValue, 64)
-			tv, errT := strconv.ParseFloat(c.Value, 64)
+			tv, errT := strconv.ParseFloat(targetValue, 64)
 			if errF == nil && errT == nil {
 				return fv == tv
 			}
 		}
-		return strings.Contains(strings.ToLower(fieldValue), strings.ToLower(c.Value))
+		return strings.Contains(strings.ToLower(fieldValue), strings.ToLower(targetValue))
 	case OpRegex:
-		re, err := regexp.Compile(c.Value)
+		re, err := regexp.Compile(targetValue)
 		if err != nil {
 			return false
 		}
 		return re.MatchString(fieldValue)
 	}
 	return false
+}
+
+func (e *Evaluator) resolveDateShorthand(val string) string {
+	val = strings.ToLower(val)
+	now := time.Now()
+
+	switch val {
+	case "today":
+		return now.Format("2006-01-02")
+	case "yesterday":
+		return now.AddDate(0, 0, -1).Format("2006-01-02")
+	}
+
+	// Handle relative offsets like -7d, -1m, -1y
+	if strings.HasPrefix(val, "-") {
+		unit := val[len(val)-1:]
+		amountStr := val[1 : len(val)-1]
+		amount, err := strconv.Atoi(amountStr)
+		if err == nil {
+			switch unit {
+			case "d":
+				return now.AddDate(0, 0, -amount).Format("2006-01-02")
+			case "m":
+				return now.AddDate(0, -amount, 0).Format("2006-01-02")
+			case "y":
+				return now.AddDate(-amount, 0, 0).Format("2006-01-02")
+			}
+		}
+	}
+
+	return val
 }
 
 func (e *Evaluator) getFieldValue(track rekordbox.Track, playlists []string, field string) string {

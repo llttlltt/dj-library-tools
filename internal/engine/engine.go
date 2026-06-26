@@ -52,7 +52,7 @@ func (e *Engine) walkPlaylists(nodes []rekordbox.Node) {
 func (e *Engine) Ls(queryString string) ([]rekordbox.Track, error) {
 	parser := query.NewParser()
 	q := parser.Parse(queryString)
-	if err := q.Validate(); err != nil {
+	if err := q.ValidateWithFields(query.AllowedTrackFields); err != nil {
 		return nil, err
 	}
 	eval := query.NewEvaluator(q)
