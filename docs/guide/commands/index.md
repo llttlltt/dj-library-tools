@@ -26,15 +26,15 @@ djlt sync rb/tracks "rating:>=4" --to "rb/playlists name:Favorites"
 djlt sync rb/tracks "genre:House" --to "rb/playlists name:Inbox" --append
 ```
 
-### `create` (Alias: `mk`)
+### `make` (Aliases: `mk`, `create`)
 Creates a new playlist or folder. Optionally pre-populate it using `--from`.
 
 ```bash
 # Create an empty playlist
-djlt create rb/playlists "New Arrivals"
+djlt mk rb/playlists "New Arrivals"
 
 # Create and populate in one step
-djlt create rb/playlists "New Arrivals" --from "rb/tracks added:>2024-01-01"
+djlt mk rb/playlists "New Arrivals" --from "rb/tracks added:>2024-01-01"
 ```
 
 ### `move` (Alias: `mv`)

@@ -13,7 +13,7 @@ djlt list rb/tracks "beatgrids:1 && hotcues:<1 && memorycues:<1"
 Next, create an empty playlist in Rekordbox to hold these tracks.
 
 ```bash
-djlt create rb/playlists "Inbox (Simple)"
+djlt mk rb/playlists "Inbox (Simple)"
 ```
 
 ### 3. Add the tracks
@@ -27,7 +27,7 @@ djlt sync rb/tracks "beatgrids:1 && hotcues:<1 && memorycues:<1" \
 !!! tip "All-in-one"
     You can combine the creation and population steps into a single command:
     ```bash
-    djlt create rb/playlists "Inbox (Simple)" --from "rb/tracks beatgrids:1 && hotcues:<1 && memorycues:<1"
+    djlt mk rb/playlists "Inbox (Simple)" --from "rb/tracks beatgrids:1 && hotcues:<1 && memorycues:<1"
     ```
 
 ### 4. Work in Rekordbox
