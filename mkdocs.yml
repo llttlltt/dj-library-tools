@@ -51,7 +51,7 @@ nav:
     - Configuration: guide/configuration.md
     - Syntax: guide/syntax.md
     - Providers:
-      - guide/query/providers/index.md
+      - Overview: guide/query/providers/index.md
       - Rekordbox:
         - guide/query/providers/rekordbox/index.md
         - Examples: guide/query/providers/rekordbox/examples.md
@@ -63,20 +63,17 @@ nav:
       - Automating Playlists: guide/workflows/automating-playlists.md
     - Commands:
       - guide/commands/index.md
-      - djlt:
+      - Reference:
         - commands/index.md
-        - add: commands/add.md
-        - remove: commands/remove.md
+        - ls: commands/ls.md
+        - mk: commands/mk.md
+        - mv: commands/mv.md
+        - rm: commands/rm.md
         - sync: commands/sync.md
-        - move: commands/move.md
-        - rename: commands/rename.md
-        - create: commands/create.md
-        - delete: commands/delete.md
         - update: commands/update.md
-        - stat: commands/stat.md
         - auth: commands/auth.md
         - config: commands/config.md
-        - fix: 
+        - fix:
           - commands/fix/index.md
           - playlist: commands/fix/playlist.md
   - Development:
