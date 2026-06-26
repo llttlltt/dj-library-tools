@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.6.0](https://github.com/llttlltt/dj-library-tools/compare/v1.5.0...v1.6.0) (2026-06-26)
+
+
+### Features
+
+* **cli:** add --sort flag to list command ([6f29335](https://github.com/llttlltt/dj-library-tools/commit/6f293354077b52e9e3f3b906245fe4b6b3a9f6ee))
+* **cli:** add ascending/descending sorting and unit tests ([cd0d2f7](https://github.com/llttlltt/dj-library-tools/commit/cd0d2f7f1a3daffde5bacb69bb9aef0c4f300efe))
+* **cli:** add column width capping and truncation to table rendering ([a92f0b3](https://github.com/llttlltt/dj-library-tools/commit/a92f0b313b8d3a3cd9ba7ca998d0576c94709cd2))
+* **cli:** harden all verbs with interface-based capability checks ([0c23d0c](https://github.com/llttlltt/dj-library-tools/commit/0c23d0cca3b94c3dab1b62434b6c82c4d7b1e810))
+* **cli:** implement dynamic terminal-aware table scaling ([87bf290](https://github.com/llttlltt/dj-library-tools/commit/87bf2906981b4af00ff963ab43afcb546642cc4a))
+* **cli:** implement unified table rendering for list results ([2b3ef50](https://github.com/llttlltt/dj-library-tools/commit/2b3ef50aaffd59fccb186b81f14e4603803dd719))
+* **models:** unify track and node models under universal Resource interface ([22d3476](https://github.com/llttlltt/dj-library-tools/commit/22d347696a2c8a0aefa894184e24b7f134c89d5c))
+* **provider/plex:** add metadata extraction and track-level filtering ([8657fe9](https://github.com/llttlltt/dj-library-tools/commit/8657fe90588e85574c7319d55815a4c29d6cafa7))
+* **provider/plex:** aggregate tracks from all matching playlists ([dea840b](https://github.com/llttlltt/dj-library-tools/commit/dea840bcd97e0038a4e959b704441879e5139f9d))
+* **provider/plex:** enforce field-based selection and add name resolution ([e82a85e](https://github.com/llttlltt/dj-library-tools/commit/e82a85ebb01c334453cf4f0bdf9d8685cc937dd8))
+* **provider/plex:** implement operator-aware playlist resolution and regex filtering ([144d41f](https://github.com/llttlltt/dj-library-tools/commit/144d41f0c0c428bfdd243219d4c5570538315dce))
+* **provider/plex:** support global track search when no playlist is specified ([1a9178d](https://github.com/llttlltt/dj-library-tools/commit/1a9178df4b7fe9d4f464e17eb4870cf84647efd6))
+* **provider:** implement capability-based verbs and universal orchestrator ([df508cb](https://github.com/llttlltt/dj-library-tools/commit/df508cb87f251907104116c6030cb0c8ba5568be))
+* **query:** align 'name' and 'title' fields and improve playlist error handling ([6b3185b](https://github.com/llttlltt/dj-library-tools/commit/6b3185b45f7e6fcb339fe369d50eaefb4871b83d))
+
+
+### Bug Fixes
+
+* **cli:** silence redundant error printing in root command ([f8f3148](https://github.com/llttlltt/dj-library-tools/commit/f8f31481586cdd87df5b0d7946f9623c0cd24052))
+* **main:** remove unused fmt import ([915be4e](https://github.com/llttlltt/dj-library-tools/commit/915be4eb28d3dfbb8dc37058754536ddea5f9b1f))
+* **provider/plex:** allow fuzzy name matching for playlist resolution ([369e50d](https://github.com/llttlltt/dj-library-tools/commit/369e50d0c9837344e81ba69f827aceb53a68fe68))
+* **provider/plex:** enable field validation for track and playlist queries ([46843e3](https://github.com/llttlltt/dj-library-tools/commit/46843e359ea58fd3d23c1e210215a80d15e2a70f))
+* **query:** support implicit AND for field comparisons ([990c012](https://github.com/llttlltt/dj-library-tools/commit/990c012394db1c660d1d8a7c02f8704d3b58d488))
+
 ## [1.5.0](https://github.com/llttlltt/dj-library-tools/compare/v1.4.0...v1.5.0) (2026-06-26)
 
 
