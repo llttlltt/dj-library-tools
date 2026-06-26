@@ -16,6 +16,7 @@ djlt remove [source-resource] [source-query] --from [origin-resource] [origin-qu
 
 ```
       --dry-run      Preview changes without writing
+  -v, --verbose      Enable verbose logging
   -x, --xml string   Path to the Rekordbox XML library
 ```
 
