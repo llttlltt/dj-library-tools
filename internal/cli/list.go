@@ -3,7 +3,6 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
@@ -68,13 +67,8 @@ func listProvider(p provider.Provider, loc utils.Location) error {
 			color.Yellow("No %s matched the query.", loc.Resource)
 			return nil
 		}
-		for _, res := range results {
-			name := res.Name
-			if res.ParentFolder != "" {
-				name = res.ParentFolder + "/" + name
-			}
-			fmt.Printf("%s: %s (%d entries)\n", stringsTitle(loc.Resource[:len(loc.Resource)-1]), name, res.Entries)
-		}
+
+		renderNodeTable(results, loc.Resource[:len(loc.Resource)-1])
 		return nil
 	}
 
@@ -98,28 +92,7 @@ func listProvider(p provider.Provider, loc utils.Location) error {
 		return nil
 	}
 
-	headerFmt := color.New(color.FgCyan, color.Bold, color.Underline).SprintfFunc()
-	dimFmt := color.New(color.FgHiBlack).SprintfFunc()
-	artistFmt := color.New(color.FgHiMagenta).SprintfFunc()
-	titleFmt := color.New(color.FgHiWhite).SprintfFunc()
-	bpmFmt := color.New(color.FgHiGreen).SprintfFunc()
-	keyFmt := color.New(color.FgHiYellow).SprintfFunc()
-
-	fmt.Printf("%s%s %s%s %s\n", "   ", headerFmt("BPM"), " ", headerFmt("Key"), headerFmt("Artist - Title"))
-	for _, t := range tracks {
-		bpm := 0.0
-		if len(t.Tempo) > 0 {
-			bpm, _ = strconv.ParseFloat(t.Tempo[0].Bpm, 64)
-		}
-		fmt.Printf("%s %s %s %s %s\n",
-			bpmFmt("%6.2f", bpm),
-			keyFmt("%4s", t.Tonality),
-			artistFmt(t.Artist),
-			dimFmt("-"),
-			titleFmt(t.Name))
-	}
-
-	fmt.Printf("\n%s\n", color.HiGreenString("Matched %d tracks.", len(tracks)))
+	renderTrackTable(tracks)
 	return nil
 }
 

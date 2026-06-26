@@ -70,7 +70,7 @@ func TestCommandConsistency(t *testing.T) {
 		{
 			name: "list rb/playlists positional query",
 			args: []string{"list", "rb/playlists", "name:Inbox"},
-			wantIn: "Playlist: Inbox",
+			wantIn: "Inbox",
 		},
 		{
 			name: "stat rb/tracks positional query",
