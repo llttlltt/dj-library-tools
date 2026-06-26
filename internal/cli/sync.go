@@ -23,24 +23,39 @@ var (
 	exportDest   string
 	exportFormat string
 	dryRun       bool
+	syncTo       []string
 )
 
 var syncCmd = &cobra.Command{
-	Use:   "sync [source-location] [target-location]",
-	Short: "Sync items between a source and target",
-	Args:  cobra.ExactArgs(2),
+	Use:   "sync [source-resource] [source-query] --to [target-resource] [target-query]",
+	Short: "Sync items between a source and one or more targets",
+	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		src := utils.ParseLocation(args[0], "")
-		tgt := utils.ParseLocation(args[1], "")
-
-		if src.Provider == "plex" && tgt.Provider == "rb" {
-			return syncPlexToRekordbox(src, tgt)
-		}
-		if src.Provider == "plex" && tgt.Provider == "m3u8" {
-			return syncPlexToM3U8(src, tgt)
+		if len(syncTo) == 0 {
+			return fmt.Errorf("at least one --to target is required")
 		}
 
-		return fmt.Errorf("unsupported sync direction: %s to %s", src.Provider, tgt.Provider)
+		sourceQuery := ""
+		if len(args) > 1 {
+			sourceQuery = strings.Join(args[1:], " ")
+		}
+		src := utils.ParseLocation(args[0], sourceQuery)
+
+		for _, targetStr := range syncTo {
+			tgt := utils.ParseLocation(targetStr, "")
+			if src.Provider == "plex" && tgt.Provider == "rb" {
+				if err := syncPlexToRekordbox(src, tgt); err != nil {
+					return err
+				}
+			} else if src.Provider == "plex" && tgt.Provider == "m3u8" {
+				if err := syncPlexToM3U8(src, tgt); err != nil {
+					return err
+				}
+			} else {
+				return fmt.Errorf("unsupported sync direction: %s to %s", src.Provider, tgt.Provider)
+			}
+		}
+		return nil
 	},
 }
 
@@ -429,6 +444,7 @@ func syncPlexToM3U8(src, tgt utils.Location) error {
 
 
 func init() {
+	syncCmd.Flags().StringSliceVar(&syncTo, "to", []string{}, "Target resource(s) to sync to (repeatable)")
 	syncCmd.Flags().StringVar(&exportDest, "dest", "", "Destination directory for exported files")
 	syncCmd.Flags().StringVar(&exportFormat, "format", "mp3", "Target format for exported files")
 	syncCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Preview changes without writing files or XML")
