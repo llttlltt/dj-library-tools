@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/plex"
@@ -43,36 +44,44 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 	playlistID := ""
 	if queryString != "" {
 		if q.Root == nil {
-			return nil, fmt.Errorf("query must specify a field (e.g. id:%q or name:%q)", queryString, queryString)
+			return nil, fmt.Errorf("query must specify a field (e.g. playlist:%q or id:%q)", queryString, queryString)
 		}
 
-		// Helper to extract fields from query
+		// 1. Resolve Playlist Context
 		var playlistName string
-		var walk func(expr query.Expression)
-		walk = func(expr query.Expression) {
+		var playlistOp query.Operator
+		var walkResolve func(expr query.Expression)
+		walkResolve = func(expr query.Expression) {
 			switch v := expr.(type) {
 			case query.Comparison:
-				switch strings.ToLower(v.Field) {
-				case "id", "ratingkey":
+				f := strings.ToLower(v.Field)
+				if f == "id" || f == "ratingkey" {
 					playlistID = v.Value
-				case "name", "title", "playlist":
+				} else if f == "name" || f == "playlist" {
 					playlistName = v.Value
+					playlistOp = v.Operator
 				}
 			case query.Logical:
-				walk(v.Left)
-				walk(v.Right)
+				walkResolve(v.Left)
+				walkResolve(v.Right)
 			}
 		}
-		walk(q.Root)
+		walkResolve(q.Root)
 
 		if playlistID == "" && playlistName != "" {
-			// Resolve name to ID
 			plexPlaylists, err := p.client.GetPlaylists(ctx, baseURL)
 			if err != nil {
 				return nil, err
 			}
 			for _, pl := range plexPlaylists {
-				if strings.EqualFold(pl.Title, playlistName) || strings.Contains(strings.ToLower(pl.Title), strings.ToLower(playlistName)) {
+				match := false
+				if playlistOp == query.OpExact {
+					match = pl.Title == playlistName
+				} else {
+					match = strings.Contains(strings.ToLower(pl.Title), strings.ToLower(playlistName))
+				}
+
+				if match {
 					playlistID = pl.RatingKey
 					break
 				}
@@ -119,7 +128,11 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 					case query.OpExact:
 						return val == v.Value
 					case query.OpRegex:
-						return false // TODO: implement regex
+						re, err := regexp.Compile(v.Value)
+						if err != nil {
+							return true // Ignore invalid regex
+						}
+						return re.MatchString(val)
 					case query.OpGt, query.OpGte, query.OpLt, query.OpLte, query.OpRange:
 						return false // TODO: implement numeric for Plex
 					default: // query.OpSubstring (":")
