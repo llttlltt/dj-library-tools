@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/llttlltt/dj-library-tools/internal/engine"
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/spf13/cobra"
@@ -70,13 +69,8 @@ func runCreateCmd(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Created %s %q\n", sel.Location.Resource, name)
 	}
 
-	// Save Rekordbox
-	if rb, ok := wp.(*provider.RekordboxProvider); ok {
-		_, path, _ := loadXMLFunc()
-		return rb.Engine.Library.(engine.WritableLibrary).Save(path)
-	}
-
-	return nil
+	_, path, _ := loadXMLFunc()
+	return wp.Save(path)
 }
 
 func init() {

@@ -75,6 +75,10 @@ func (p *RekordboxProvider) MoveNode(node models.Node, targetParent models.Node)
 	return nil
 }
 
+func (p *RekordboxProvider) Save(path string) error {
+	return p.Engine.Library.(engine.WritableLibrary).Save(path)
+}
+
 func NewRekordboxProvider(eng *engine.Engine) *RekordboxProvider {
 	return &RekordboxProvider{Engine: eng}
 }

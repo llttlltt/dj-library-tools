@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/llttlltt/dj-library-tools/internal/engine"
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/spf13/cobra"
@@ -61,8 +60,9 @@ Example:
 		}
 
 		if dryRun {
+			kind := strings.TrimSuffix(sel.Location.Resource, "s")
 			for _, t := range sel.Nodes {
-				fmt.Printf("[Dry Run] Would delete playlist %q\n", t.Name)
+				fmt.Printf("[Dry Run] Would delete %s %q\n", kind, t.Name)
 			}
 			return nil
 		}
@@ -78,13 +78,8 @@ Example:
 			fmt.Printf("Deleted %s %q\n", sel.Location.Resource, t.Name)
 		}
 
-		// Save Rekordbox
-		if rb, ok := wp.(*provider.RekordboxProvider); ok {
-			_, path, _ := loadXMLFunc()
-			return rb.Engine.Library.(engine.WritableLibrary).Save(path)
-		}
-
-		return nil
+		_, path, _ := loadXMLFunc()
+		return wp.Save(path)
 	},
 }
 
@@ -118,13 +113,8 @@ func runRemoveMembership(wp provider.WritableProvider, src *Selection) error {
 		fmt.Printf("Removed %d tracks from %q\n", removed, n.Name)
 	}
 
-	// Save Rekordbox
-	if rb, ok := wp.(*provider.RekordboxProvider); ok {
-		_, path, _ := loadXMLFunc()
-		return rb.Engine.Library.(engine.WritableLibrary).Save(path)
-	}
-
-	return nil
+	_, path, _ := loadXMLFunc()
+	return wp.Save(path)
 }
 
 func init() {

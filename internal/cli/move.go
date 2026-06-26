@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/llttlltt/dj-library-tools/internal/engine"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/spf13/cobra"
 )
@@ -102,13 +101,8 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection) error {
 		wp.AddTracks(target, src.Tracks)
 	}
 
-	// Save Rekordbox
-	if rb, ok := wp.(*provider.RekordboxProvider); ok {
-		_, path, _ := loadXMLFunc()
-		return rb.Engine.Library.(engine.WritableLibrary).Save(path)
-	}
-
-	return nil
+	_, path, _ := loadXMLFunc()
+	return wp.Save(path)
 }
 
 func runMoveNodes(wp provider.WritableProvider, src *Selection) error {
@@ -142,13 +136,8 @@ func runMoveNodes(wp provider.WritableProvider, src *Selection) error {
 		fmt.Printf("Moved %s %q -> %q\n", src.Location.Resource, t.Name, targetParent.Name)
 	}
 
-	// Save Rekordbox
-	if rb, ok := wp.(*provider.RekordboxProvider); ok {
-		_, path, _ := loadXMLFunc()
-		return rb.Engine.Library.(engine.WritableLibrary).Save(path)
-	}
-
-	return nil
+	_, path, _ := loadXMLFunc()
+	return wp.Save(path)
 }
 
 func runRenameNodes(wp provider.WritableProvider, src *Selection, newName string) error {
@@ -175,13 +164,8 @@ func runRenameNodes(wp provider.WritableProvider, src *Selection, newName string
 
 	fmt.Printf("Renamed %q -> %q\n", target.Name, newName)
 
-	// Save Rekordbox
-	if rb, ok := wp.(*provider.RekordboxProvider); ok {
-		_, path, _ := loadXMLFunc()
-		return rb.Engine.Library.(engine.WritableLibrary).Save(path)
-	}
-
-	return nil
+	_, path, _ := loadXMLFunc()
+	return wp.Save(path)
 }
 
 func init() {
