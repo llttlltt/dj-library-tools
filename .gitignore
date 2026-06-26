@@ -3,6 +3,7 @@ CONTEXT.md
 RESEARCH.md
 AGENTS.md
 plan/**/*.md
+docs/adr/
 
 # macOS
 .DS_Store
