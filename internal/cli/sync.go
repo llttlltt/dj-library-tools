@@ -6,6 +6,7 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/engine"
+	"github.com/llttlltt/dj-library-tools/internal/plex"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
@@ -16,6 +17,7 @@ var (
 	exportDest   string
 	exportFormat string
 	syncTo       []string
+	syncAppend   bool
 )
 
 var syncCmd = &cobra.Command{
@@ -42,8 +44,8 @@ var syncCmd = &cobra.Command{
 				return err
 			}
 
-			if src.Location.Provider == "plex" && tgt.Location.Provider == "rb" {
-				if err := syncPlexToRekordbox(src, tgt); err != nil {
+			if (src.Location.Provider == "plex" || src.Location.Provider == "rb") && tgt.Location.Provider == "rb" {
+				if err := syncToRekordbox(src, tgt); err != nil {
 					return err
 				}
 			} else if src.Location.Provider == "plex" && tgt.Location.Provider == "m3u8" {
@@ -58,30 +60,30 @@ var syncCmd = &cobra.Command{
 	},
 }
 
-func syncPlexToRekordbox(src, tgt *Selection) error {
+func syncToRekordbox(src, tgt *Selection) error {
 	cfg, _ := config.LoadAppConfig()
 	rbXML, path, err := loadXMLFunc()
 	if err != nil {
 		return err
 	}
 
-	plexProv, ok := src.Provider.(*provider.PlexProvider)
-	if !ok {
-		return fmt.Errorf("source must be a plex provider for this sync direction")
+	var plexClient *plex.Client
+	if plexProv, ok := src.Provider.(*provider.PlexProvider); ok {
+		plexClient = plexProv.Client()
 	}
 
-	orch := sync.NewOrchestrator(plexProv.Client(), engine.NewRekordboxLibrary(rbXML), dryRun, verbose)
+	orch := sync.NewOrchestrator(plexClient, engine.NewRekordboxLibrary(rbXML), dryRun, verbose)
 
 	raw, err := src.Provider.GetRawTracks(src.Location.Query)
 	if err != nil {
 		return err
 	}
 
-	err = orch.SyncToLibrary(raw, src.Location.Query, src.Location.Query, sync.SyncOptions{
+	err = orch.SyncToLibrary(raw, src.Location.Query, tgt.Location.Query, sync.SyncOptions{
 		ExportDest:   exportDest,
 		ExportFormat: exportFormat,
 		PathMaps:     cfg.PathMaps,
-	})
+	}, syncAppend)
 	if err != nil {
 		return err
 	}
@@ -101,5 +103,6 @@ func init() {
 	syncCmd.Flags().StringSliceVar(&syncTo, "to", []string{}, "Target resource(s) to sync to (repeatable)")
 	syncCmd.Flags().StringVar(&exportDest, "dest", "", "Destination directory for exported files")
 	syncCmd.Flags().StringVar(&exportFormat, "format", "mp3", "Target format for exported files")
+	syncCmd.Flags().BoolVar(&syncAppend, "append", false, "Append new tracks without removing existing ones")
 	RootCmd.AddCommand(syncCmd)
 }

@@ -1,9 +1,9 @@
 # remove
 
-Remove items from one or more origins
+Remove a resource or membership from the library
 
 ```
-djlt remove [source-resource] [source-query] --from [origin-resource] [origin-query] [flags]
+djlt remove [resource] [query] [flags]
 ```
 ### Options
 
@@ -21,11 +21,14 @@ djlt remove [source-resource] [source-query] --from [origin-resource] [origin-qu
   -x, --xml string   Path to the Rekordbox XML library
 ```
 
-Remove items matching a source selection from one or more origin resources.
-Currently supports removing tracks (rb/tracks) from playlists (rb/playlists).
+Permanently delete resources or remove track membership from playlists.
+
+Use --from to specify which playlist to remove tracks from.
+Without --from, the command deletes the resource itself.
 
 Example:
-  djlt remove rb/tracks artist:Four --from "rb/playlists name:Inbox"
+  djlt rm rb/tracks artist:Four --from "rb/playlists name:Inbox"
+  djlt rm rb/playlists name:Inbox
 
 ## See also
 

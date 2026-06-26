@@ -12,26 +12,29 @@ import (
 var (
 	moveTo   string
 	moveFrom string
+	moveName string
 )
 
 var moveCmd = &cobra.Command{
 	Use:     "move [resource] [query] --to [destination] [--from origin]",
 	Aliases: []string{"mv"},
 	Short:   "Move items between locations",
-	Long: `Move items between Rekordbox locations.
+	Long: `Move items between locations.
 For tracks, both --from and --to are required.
 For playlists and folders, only --to (the parent folder) is required.
 
+Use the --name flag to rename a resource.
+
 Example:
-  djlt move rb/tracks "bpm:>130" --from "name:Inbox" --to "name:'High Energy'"
-  djlt move rb/playlists "name:'Deep House'" --to "name:Genres"`,
+  djlt mv rb/tracks "bpm:>130" --from "name:Inbox" --to "name:'High Energy'"
+  djlt mv rb/playlists name:Inbox --name "Processed"`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: runMoveCmd,
 }
 
 func runMoveCmd(cmd *cobra.Command, args []string) error {
-	if moveTo == "" {
-		return fmt.Errorf("--to destination is required")
+	if moveTo == "" && moveName == "" {
+		return fmt.Errorf("either --to destination or --name (for rename) is required")
 	}
 
 	queryOverride := ""
@@ -46,6 +49,10 @@ func runMoveCmd(cmd *cobra.Command, args []string) error {
 	wp, ok := src.Provider.(provider.WritableProvider)
 	if !ok {
 		return fmt.Errorf("provider %q does not support moving resources", src.Location.Provider)
+	}
+
+	if moveName != "" {
+		return runRenameNodes(wp, src, moveName)
 	}
 
 	if src.Location.Resource == "tracks" {
@@ -144,8 +151,42 @@ func runMoveNodes(wp provider.WritableProvider, src *Selection) error {
 	return nil
 }
 
+func runRenameNodes(wp provider.WritableProvider, src *Selection, newName string) error {
+	if len(src.Nodes) == 0 {
+		return fmt.Errorf("no resources found matching query %q", src.Location.Query)
+	}
+	if len(src.Nodes) > 1 {
+		return fmt.Errorf("rename matched %d resources; refine your query to match exactly one", len(src.Nodes))
+	}
+
+	target := src.Nodes[0]
+	if verbose {
+		fmt.Printf("Renaming %s %q -> %q...\n", src.Location.Resource, target.Name, newName)
+	}
+
+	if dryRun {
+		fmt.Printf("[Dry Run] Would rename %q to %q\n", target.Name, newName)
+		return nil
+	}
+
+	if err := wp.RenameNode(target, newName); err != nil {
+		return fmt.Errorf("failed to rename %q: %v", target.Name, err)
+	}
+
+	fmt.Printf("Renamed %q -> %q\n", target.Name, newName)
+
+	// Save Rekordbox
+	if rb, ok := wp.(*provider.RekordboxProvider); ok {
+		_, path, _ := loadXMLFunc()
+		return rb.Engine.Library.(engine.WritableLibrary).Save(path)
+	}
+
+	return nil
+}
+
 func init() {
 	moveCmd.Flags().StringVar(&moveTo, "to", "", "Destination playlist or folder")
 	moveCmd.Flags().StringVar(&moveFrom, "from", "", "Origin playlist (required for tracks)")
+	moveCmd.Flags().StringVar(&moveName, "name", "", "New name for the resource (renames)")
 	RootCmd.AddCommand(moveCmd)
 }
