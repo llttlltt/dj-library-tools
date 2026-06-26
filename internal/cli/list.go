@@ -57,7 +57,40 @@ func listRekordbox(loc utils.Location) error {
 	eng := engine.NewEngine(lib)
 	
 	if loc.Resource == "playlists" {
-		printPlaylists(lib.Playlists.Node.Node, loc.Query, "")
+		results, err := eng.LsPlaylists(loc.Query)
+		if err != nil {
+			return fmt.Errorf("ls failed: %w", err)
+		}
+		if len(results) == 0 {
+			color.Yellow("No playlists matched the query.")
+			return nil
+		}
+		for _, res := range results {
+			name := res.Node.Name
+			if res.ParentFolder != "" {
+				name = res.ParentFolder + "/" + name
+			}
+			fmt.Printf("Playlist: %s (%d entries)\n", name, rekordbox.DerefInt32(res.Node.Entries))
+		}
+		return nil
+	}
+
+	if loc.Resource == "folders" {
+		results, err := eng.LsFolders(loc.Query)
+		if err != nil {
+			return fmt.Errorf("ls failed: %w", err)
+		}
+		if len(results) == 0 {
+			color.Yellow("No folders matched the query.")
+			return nil
+		}
+		for _, res := range results {
+			name := res.Node.Name
+			if res.ParentFolder != "" {
+				name = res.ParentFolder + "/" + name
+			}
+			fmt.Printf("Folder: %s (%d entries)\n", name, rekordbox.DerefInt32(res.Node.Count))
+		}
 		return nil
 	}
 

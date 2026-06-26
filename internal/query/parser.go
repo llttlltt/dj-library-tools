@@ -48,6 +48,11 @@ func (p *Parser) parsePart(word string) []Token {
 
 	field := word[:sepIdx]
 	rest := word[sepIdx:] // starts with : or =
+
+	// Ensure we don't treat quoted values inside the word as part of the operator
+	if strings.Contains(field, "\"") || strings.Contains(field, "'") {
+		return []Token{{Kind: TokenValue, Value: word}}
+	}
 	
 	op := ":"
 	val := rest[1:]
@@ -137,8 +142,9 @@ func (p *Parser) tokenize(input string) []Token {
 				tokens = append(tokens, Token{Kind: TokenOr, Value: "||"})
 				i++
 			}
-		case '"':
-			val, end := p.readQuoted(runes, i)
+		case '"', '\'':
+			quote := r
+			val, end := p.readQuoted(runes, i, quote)
 			if val == "" {
 				tokens = append(tokens, Token{Kind: TokenValue, Value: `""`})
 			} else {
@@ -165,10 +171,10 @@ func (p *Parser) tokenize(input string) []Token {
 	return tokens
 }
 
-func (p *Parser) readQuoted(runes []rune, start int) (string, int) {
+func (p *Parser) readQuoted(runes []rune, start int, quote rune) (string, int) {
 	var sb strings.Builder
 	for i := start + 1; i < len(runes); i++ {
-		if runes[i] == '"' {
+		if runes[i] == quote {
 			return sb.String(), i
 		}
 		sb.WriteRune(runes[i])
@@ -181,7 +187,7 @@ func (p *Parser) readWord(runes []rune, start int) (string, int) {
 	i := start
 	for ; i < len(runes); i++ {
 		r := runes[i]
-		if unicode.IsSpace(r) || r == '(' || r == ')' || r == '!' || r == '&' || r == '|' || r == '"' {
+		if unicode.IsSpace(r) || r == '(' || r == ')' || r == '!' || r == '&' || r == '|' || r == '"' || r == '\'' {
 			break
 		}
 		sb.WriteRune(r)
@@ -307,7 +313,10 @@ func (p *Parser) parsePrimary() Expression {
 			val = ""
 		}
 		
-		return Comparison{Field: "title", Operator: OpSubstring, Value: val}
+		// For Node queries (lsNodes), we default to "name"
+		// For Track queries (Ls), we default to "title"
+		// We use a generic "default" field and let the evaluator decide.
+		return Comparison{Field: "default", Operator: OpSubstring, Value: val}
 	}
 	return nil
 }
