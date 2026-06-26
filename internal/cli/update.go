@@ -61,6 +61,11 @@ Example:
 
 		mergedLibrary := mergeLibraryData(sourceLibrary, destLibrary)
 
+		if dryRun {
+			fmt.Printf("[Dry Run] Would write updated library to %q\n", outputPath)
+			return nil
+		}
+
 		if err := rekordbox.WriteRekordboxLibrary(outputPath, mergedLibrary); err != nil {
 			return fmt.Errorf("error writing merged library to %q: %w", outputPath, err)
 		}
