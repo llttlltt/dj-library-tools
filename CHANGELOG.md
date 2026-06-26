@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.7.0](https://github.com/llttlltt/dj-library-tools/compare/v1.6.0...v1.7.0) (2026-06-26)
+
+
+### Features
+
+* **cli:** rename create verb to make with mk alias ([cf0a6d9](https://github.com/llttlltt/dj-library-tools/commit/cf0a6d936bc385589cfaea1e0d3808cd2f0b6250))
+* **provider:** add M3U and M3U8 playlist support ([8ef1536](https://github.com/llttlltt/dj-library-tools/commit/8ef153694895ca9533ef9f140a57a186b22ac560))
+
+
+### Bug Fixes
+
+* **cli:** support file-based providers in mv and rename ([8fd0bd0](https://github.com/llttlltt/dj-library-tools/commit/8fd0bd048f3ef442ab93d4c309fd94a162580440))
+* **engine,provider:** rb/folders now correctly queries folder nodes ([c74e640](https://github.com/llttlltt/dj-library-tools/commit/c74e640197fda8a83b91fa6d5e37f0857608bd9b))
+* **query,docs:** wire count alias; correct sync/append docs ([b225040](https://github.com/llttlltt/dj-library-tools/commit/b225040015e231b7a40f1fed255bef09e3547571))
+* **rekordbox:** folder nodes now map Count to models.Node.Entries ([dda2626](https://github.com/llttlltt/dj-library-tools/commit/dda26265ac968905efd20e9981554cfd2c7ead72))
+
 ## [1.6.0](https://github.com/llttlltt/dj-library-tools/compare/v1.5.0...v1.6.0) (2026-06-26)
 
 
