@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	xmlPath string
-	dryRun  bool
-	verbose bool
+	xmlPath    string
+	dryRun     bool
+	verbose    bool
+	jsonOutput bool
 	// loadXMLFunc allows overriding the XML loading logic for testing.
 	loadXMLFunc = loadXML
 )
@@ -45,6 +46,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&xmlPath, "xml", "x", "", "Path to the Rekordbox XML library")
 	RootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Preview changes without writing")
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
+	RootCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Output results in JSON format")
 }
 
 func Execute() error {

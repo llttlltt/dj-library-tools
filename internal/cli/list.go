@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -59,6 +60,11 @@ func listRekordbox(loc utils.Location) error {
 		if err != nil {
 			return fmt.Errorf("ls failed: %w", err)
 		}
+		if jsonOutput {
+			data, _ := json.MarshalIndent(results, "", "  ")
+			fmt.Println(string(data))
+			return nil
+		}
 		if verbose {
 			fmt.Printf("Query %q matched %d playlists\n", loc.Query, len(results))
 		}
@@ -81,6 +87,11 @@ func listRekordbox(loc utils.Location) error {
 		if err != nil {
 			return fmt.Errorf("ls failed: %w", err)
 		}
+		if jsonOutput {
+			data, _ := json.MarshalIndent(results, "", "  ")
+			fmt.Println(string(data))
+			return nil
+		}
 		if verbose {
 			fmt.Printf("Query %q matched %d folders\n", loc.Query, len(results))
 		}
@@ -101,6 +112,12 @@ func listRekordbox(loc utils.Location) error {
 	tracks, err := eng.Ls(loc.Query)
 	if err != nil {
 		return fmt.Errorf("ls failed: %w", err)
+	}
+
+	if jsonOutput {
+		data, _ := json.MarshalIndent(tracks, "", "  ")
+		fmt.Println(string(data))
+		return nil
 	}
 
 	if verbose {

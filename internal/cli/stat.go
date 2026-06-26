@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -36,6 +37,12 @@ var statCmd = &cobra.Command{
 		res, err := eng.Stat(loc.Query)
 		if err != nil {
 			return fmt.Errorf("stat failed: %w", err)
+		}
+
+		if jsonOutput {
+			data, _ := json.MarshalIndent(res, "", "  ")
+			fmt.Println(string(data))
+			return nil
 		}
 
 		titleFmt := color.New(color.FgCyan, color.Bold, color.Underline).SprintFunc()
