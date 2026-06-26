@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/cli"
@@ -28,7 +29,7 @@ func main() {
 func generateDocs(cmd *cobra.Command, dir string) error {
 	name := cmd.Name()
 	var path string
-	isParent := cmd.HasSubCommands() && cmd.Name() != "fix"
+	isParent := cmd.HasSubCommands()
 
 	if isParent {
 		subDir := dir
@@ -131,51 +132,31 @@ func writeCommandDoc(cmd *cobra.Command, w io.Writer, filePath string) error {
 }
 
 func fixLinks(content string, filePath string) string {
-	// The structure is:
-	// commands/index.md (djlt)
-	// commands/auth.md (djlt_auth)
-	// commands/playlist/index.md (djlt_playlist)
-	// commands/playlist/fix.md (djlt_playlist_fix)
+	// Root of commands docs is ./docs/commands
+	commandsDir, _ := filepath.Abs("docs/commands")
+	currentDir, _ := filepath.Abs(filepath.Dir(filePath))
 
-	isAtRoot := filepath.Dir(filePath) == "docs/commands"
+	// 1. Fix root link (djlt.md)
+	rootRel, _ := filepath.Rel(currentDir, filepath.Join(commandsDir, "index.md"))
+	content = strings.ReplaceAll(content, "(djlt.md)", "("+rootRel+")")
 
-	// 1. Fix root link
-	if isAtRoot {
-		content = strings.ReplaceAll(content, "(djlt.md)", "(index.md)")
-	} else {
-		content = strings.ReplaceAll(content, "(djlt.md)", "(../index.md)")
-	}
+	// 2. Fix other links (djlt_verb_sub.md)
+	re := regexp.MustCompile(`\(djlt_([a-z0-9_]+)\.md\)`)
+	content = re.ReplaceAllStringFunc(content, func(m string) string {
+		match := re.FindStringSubmatch(m)[1] // e.g. fix_playlist or add
+		parts := strings.Split(match, "_")
 
-	// 2. Fix subcommands
-	// Standard cobra links are (djlt_subcommand.md)
-	// We need to translate them.
-	mappings := map[string]string{
-		"djlt_auth.md":         "auth.md",
-		"djlt_config.md":       "config.md",
-		"djlt_folder.md":       "folder.md",
-		"djlt_list.md":         "list.md",
-		"djlt_metadata.md":     "metadata.md",
-		"djlt_playlist.md":     "playlist/index.md",
-		"djlt_playlist_fix.md": "playlist/fix.md",
-		"djlt_stat.md":         "stat.md",
-		"djlt_sync.md":         "sync.md",
-	}
-
-	// Adjust mappings if we are inside the playlist folder
-	if !isAtRoot {
-		mappings["djlt_playlist.md"] = "index.md"
-		mappings["djlt_playlist_fix.md"] = "fix.md"
-		// Everything else needs to go up one level
-		for k, v := range mappings {
-			if k != "djlt_playlist.md" && k != "djlt_playlist_fix.md" {
-				mappings[k] = "../" + v
-			}
+		targetPath := filepath.Join(commandsDir, strings.Join(parts, "/"))
+		// Check if it's a directory (parent)
+		if _, err := os.Stat(targetPath); err == nil {
+			targetPath = filepath.Join(targetPath, "index.md")
+		} else {
+			targetPath += ".md"
 		}
-	}
 
-	for old, new := range mappings {
-		content = strings.ReplaceAll(content, "("+old+")", "("+new+")")
-	}
+		rel, _ := filepath.Rel(currentDir, targetPath)
+		return "(" + rel + ")"
+	})
 
 	return content
 }
