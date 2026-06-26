@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.4.0](https://github.com/llttlltt/dj-library-tools/compare/v1.3.0...v1.4.0) (2026-06-26)
+
+
+### Features
+
+* **cli:** finalize verb-centric architecture and cleanup legacy commands ([2df73b3](https://github.com/llttlltt/dj-library-tools/commit/2df73b39ae78477f60298c977a6e59c6c0c80896))
+* **cli:** implement add and remove verbs ([b969bb6](https://github.com/llttlltt/dj-library-tools/commit/b969bb6756265813951b681afc1a60d8e0a998a5))
+* **cli:** implement create and move verbs ([328b06d](https://github.com/llttlltt/dj-library-tools/commit/328b06dee4733dd1ce1eaa8a6f39ff529f0f68cf))
+* **cli:** implement rename and delete verbs ([c3507a9](https://github.com/llttlltt/dj-library-tools/commit/c3507a994b164ea30aab0e28d7839427e505aa50))
+* **cli:** refactor metadata command into update verb ([64a012a](https://github.com/llttlltt/dj-library-tools/commit/64a012ad83e0a58d1e3b2f7df74354c1c78b18bd))
+* **cli:** refactor sync command to verb-centric architecture ([0eb787f](https://github.com/llttlltt/dj-library-tools/commit/0eb787f40eb691cdfce9d5a5d69cad0f8d5a1187))
+* **query:** improve name matching and quoted string support ([2fcbcb9](https://github.com/llttlltt/dj-library-tools/commit/2fcbcb920ffcc01893decccdf1c6922c648e161d))
+* **sync:** add folder creation and standardize node types ([529d1c5](https://github.com/llttlltt/dj-library-tools/commit/529d1c5ba845f4b4ca3c3264f02c91f97a6deb4d))
+
 ## [1.3.0](https://github.com/llttlltt/dj-library-tools/compare/v1.2.0...v1.3.0) (2026-06-26)
 
 
