@@ -89,9 +89,9 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 	}
 
 	cfg, _ := config.LoadAppConfig()
-	var rbXML, _, _ = loadXMLFunc()
+	var rbXML, xmlPath, _ = loadXMLFunc()
 
-	prov, err := provider.NewProvider(loc.Provider, rbXML, cfg)
+	prov, err := provider.NewProvider(loc.Provider, rbXML, xmlPath, cfg)
 	if err != nil {
 		return nil, err
 	}

@@ -74,15 +74,7 @@ func runCreateCmd(cmd *cobra.Command, args []string, createIn, createFrom string
 		fmt.Printf("Created %s %q\n", sel.Location.Resource, name)
 	}
 
-	// For M3U, the path is in the selection location resource
-	savePath := sel.Location.Resource
-	if sel.Location.Provider == "rb" || sel.Location.Provider == "rekordbox" {
-		_, path, _ := loadXMLFunc()
-		savePath = path
-	} else if sel.Location.Provider == "m3u" || sel.Location.Provider == "m3u8" {
-		savePath = sel.Location.Resource
-	}
-	return wp.Save(savePath)
+	return wp.Save("")
 }
 
 
