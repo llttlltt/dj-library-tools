@@ -71,7 +71,7 @@ func makeLibraryWithPlaylists() *rekordbox.RekordboxLibraryXML {
 
 func TestLsPlaylists(t *testing.T) {
 	lib := makeLibraryWithPlaylists()
-	eng := NewEngine(lib)
+	eng := NewEngine(NewRekordboxLibrary(lib))
 
 	tests := []struct {
 		name      string
@@ -142,7 +142,7 @@ func TestLsPlaylists(t *testing.T) {
 
 func TestLsFolders(t *testing.T) {
 	lib := makeLibraryWithPlaylists()
-	eng := NewEngine(lib)
+	eng := NewEngine(NewRekordboxLibrary(lib))
 
 	tests := []struct {
 		name      string
@@ -196,7 +196,7 @@ func TestLsFolders(t *testing.T) {
 
 func TestLsPlaylists_ParentFolderPropagated(t *testing.T) {
 	lib := makeLibraryWithPlaylists()
-	eng := NewEngine(lib)
+	eng := NewEngine(NewRekordboxLibrary(lib))
 
 	results, err := eng.LsPlaylists("folder:My Sets")
 	if err != nil {

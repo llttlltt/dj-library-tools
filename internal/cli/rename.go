@@ -33,7 +33,7 @@ Example:
 			return err
 		}
 
-		eng := engine.NewEngine(rbXML)
+		eng := engine.NewEngine(engine.NewRekordboxLibrary(rbXML))
 		syncEng := syncpkg.NewEngine(nil, rbXML)
 
 		query := ""
