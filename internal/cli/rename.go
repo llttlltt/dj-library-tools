@@ -60,14 +60,14 @@ Example:
 		}
 
 		target := targets[0]
-		nodeType := int(target.Node.Type)
+		nodeType := target.Node.Type
 
 		if renameDryRun {
 			fmt.Printf("[Dry Run] Would rename %q to %q\n", target.Node.Name, renameTo)
 			return nil
 		}
 
-		if !syncEng.RenameNode(target.Node.Name, nodeType, renameTo) {
+		if !syncEng.RenameNode(target.Node.Name, renameTo, nodeType) {
 			return fmt.Errorf("failed to rename %q", target.Node.Name)
 		}
 

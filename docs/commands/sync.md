@@ -1,9 +1,9 @@
 # sync
 
-Sync items between a source and target
+Sync items between a source and one or more targets
 
 ```
-djlt sync [source-location] [target-location] [flags]
+djlt sync [source-resource] [source-query] --to [target-resource] [target-query] [flags]
 ```
 
 ### Options
@@ -13,6 +13,7 @@ djlt sync [source-location] [target-location] [flags]
       --dry-run         Preview changes without writing files or XML
       --format string   Target format for exported files (default "mp3")
   -h, --help            help for sync
+      --to strings      Target resource(s) to sync to (repeatable)
 ```
 
 ### Inherited Options

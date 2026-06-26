@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
 	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
@@ -58,7 +57,7 @@ func runCreateCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if createDryRun {
+		if createDryRun {
 		fmt.Printf("[Dry Run] Would create %s %q in folder %q with %d tracks\n", loc.Resource, name, createIn, len(trackIDs))
 		return nil
 	}

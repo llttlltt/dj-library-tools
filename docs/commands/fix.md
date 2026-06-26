@@ -1,0 +1,20 @@
+# fix
+
+Fix library issues or resource metadata
+
+### Options
+
+```
+  -h, --help   help for fix
+```
+
+### Inherited Options
+
+```
+  -x, --xml string   Path to the Rekordbox XML library
+```
+
+## See also
+
+* [djlt](index.md)	 - DJ Library Tools CLI
+* [djlt fix playlist](djlt_fix_playlist.md)	 - Fix playlist extensions and/or enrich with M3U8 metadata

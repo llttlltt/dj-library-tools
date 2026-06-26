@@ -131,7 +131,7 @@ func runMoveNodes(eng *engine.Engine, syncEng *syncpkg.Engine, loc utils.Locatio
 	}
 
 	for _, t := range targets {
-		if !syncEng.MoveNode(t.Node.Name, nodeType, moveTo) {
+		if !syncEng.MoveNode(t.Node.Name, int32(nodeType), moveTo) {
 			fmt.Printf("Warning: failed to move %q\n", t.Node.Name)
 			continue
 		}
