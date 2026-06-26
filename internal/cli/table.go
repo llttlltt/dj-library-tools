@@ -22,6 +22,9 @@ func (t *Table) Render() {
 
 	headerFmt := color.New(color.FgCyan, color.Bold, color.Underline).SprintfFunc()
 	
+	// Max column width for wrapping
+	maxColWidth := 40
+
 	// Calculate column widths
 	widths := make([]int, len(t.Headers))
 	for i, h := range t.Headers {
@@ -29,8 +32,12 @@ func (t *Table) Render() {
 	}
 	for _, row := range t.Rows {
 		for i, val := range row {
-			if len(val) > widths[i] {
-				widths[i] = len(val)
+			w := len(val)
+			if w > maxColWidth {
+				w = maxColWidth
+			}
+			if w > widths[i] {
+				widths[i] = w
 			}
 		}
 	}
@@ -47,22 +54,27 @@ func (t *Table) Render() {
 	// Print Rows
 	for _, row := range t.Rows {
 		for i, val := range row {
+			displayVal := val
+			if len(displayVal) > maxColWidth {
+				displayVal = displayVal[:maxColWidth-3] + "..."
+			}
+
 			// Apply specific colors based on header name
-			rendered := val
+			rendered := displayVal
 			header := strings.ToLower(t.Headers[i])
 			switch {
 			case header == "bpm":
-				rendered = color.HiGreenString("%*s", widths[i], val)
+				rendered = color.HiGreenString("%*s", widths[i], displayVal)
 			case header == "key":
-				rendered = color.HiYellowString("%*s", widths[i], val)
+				rendered = color.HiYellowString("%*s", widths[i], displayVal)
 			case header == "artist":
-				rendered = color.HiMagentaString("%-*s", widths[i], val)
+				rendered = color.HiMagentaString("%-*s", widths[i], displayVal)
 			case header == "title" || header == "name":
-				rendered = color.HiWhiteString("%-*s", widths[i], val)
+				rendered = color.HiWhiteString("%-*s", widths[i], displayVal)
 			case header == "entries" || header == "count":
-				rendered = color.CyanString("%*s", widths[i], val)
+				rendered = color.CyanString("%*s", widths[i], displayVal)
 			default:
-				rendered = fmt.Sprintf("%-*s", widths[i], val)
+				rendered = fmt.Sprintf("%-*s", widths[i], displayVal)
 			}
 			
 			fmt.Print(rendered)
