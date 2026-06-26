@@ -17,6 +17,7 @@ djlt config [key] [value] [flags]
 
 ```
       --dry-run      Preview changes without writing
+      --json         Output results in JSON format
   -v, --verbose      Enable verbose logging
   -x, --xml string   Path to the Rekordbox XML library
 ```
