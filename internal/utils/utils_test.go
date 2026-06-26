@@ -20,7 +20,7 @@ func TestParseLocation(t *testing.T) {
 			},
 		},
 		{
-			locStr: "rb",
+			locStr: "rb/tracks",
 			query:  "bpm:120..130",
 			expected: Location{
 				Provider: "rb",
@@ -29,7 +29,7 @@ func TestParseLocation(t *testing.T) {
 			},
 		},
 		{
-			locStr: "plex",
+			locStr: "plex/playlists",
 			query:  "",
 			expected: Location{
 				Provider: "plex",
@@ -38,7 +38,7 @@ func TestParseLocation(t *testing.T) {
 			},
 		},
 		{
-			locStr: "m3u8",
+			locStr: "m3u8/file",
 			query:  "my_playlist.m3u8",
 			expected: Location{
 				Provider: "m3u8",
