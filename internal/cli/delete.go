@@ -67,7 +67,7 @@ Example:
 		}
 
 		for _, t := range targets {
-			if !syncEng.RemoveNode(t.Node.Name, nodeType) {
+			if !syncEng.RemoveNode(t.Node.Name, int32(nodeType)) {
 				fmt.Printf("Warning: failed to delete %q\n", t.Node.Name)
 				continue
 			}

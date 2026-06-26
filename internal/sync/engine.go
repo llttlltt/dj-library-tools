@@ -149,6 +149,43 @@ func (e *Engine) RemoveTracksFromPlaylist(name string, trackIDs []string) (bool,
 	return true, before - len(node.TRACK)
 }
 
+// CreateFolder creates a new folder node at the specified position.
+func (e *Engine) CreateFolder(folder, name string, position int) bool {
+	e.RBXML.PlaylistsChanged = true
+	var container *[]rekordbox.Node
+	var folderNode *rekordbox.Node
+	if folder == "" {
+		container = &e.RBXML.Playlists.Node.Node
+	} else {
+		folderNode = e.findOrCreateFolder(folder)
+		container = &folderNode.Node
+	}
+
+	node := rekordbox.Node{
+		Name:  name,
+		Type:  0,
+		Count: rekordbox.PtrInt32(0),
+	}
+
+	// New folder - handle position
+	if position < 0 || position >= len(*container) {
+		*container = append(*container, node)
+	} else {
+		// Insert at position
+		*container = append((*container)[:position+1], (*container)[position:]...)
+		(*container)[position] = node
+	}
+
+	if folderNode != nil {
+		if folderNode.Count == nil {
+			folderNode.Count = rekordbox.PtrInt32(1)
+		} else {
+			*folderNode.Count++
+		}
+	}
+	return true
+}
+
 // RenameNode renames the first node matching name and nodeType anywhere in the tree.
 // nodeType: 0=folder, 1=playlist.
 // Returns false if no matching node is found.
