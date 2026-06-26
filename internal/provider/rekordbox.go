@@ -35,6 +35,10 @@ func (p *RekordboxProvider) GetPlaylists(query string) ([]NodeResult, error) {
 	return out, nil
 }
 
+func (p *RekordboxProvider) GetRawTracks(query string) (interface{}, error) {
+	return p.GetTracks(query)
+}
+
 func NewRekordboxProvider(eng *engine.Engine) *RekordboxProvider {
 	return &RekordboxProvider{Engine: eng}
 }

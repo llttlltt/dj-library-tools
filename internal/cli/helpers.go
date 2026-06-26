@@ -3,6 +3,11 @@ package cli
 import (
 	"fmt"
 
+	"github.com/llttlltt/dj-library-tools/internal/config"
+	"github.com/llttlltt/dj-library-tools/internal/plex"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
+	"github.com/llttlltt/dj-library-tools/internal/utils"
+	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 	"github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"
 )
@@ -62,6 +67,63 @@ func RunBulkOperation(verb string, targetNames []string, itemIDs []string, actio
 		p.Wait()
 		fmt.Printf("%s %d items in %q\n", stringsTitle(verb), totalAffected, name)
 	}
+}
+
+// Selection represents a resolved set of tracks or nodes from a provider.
+type Selection struct {
+	Tracks     []rekordbox.Track
+	Nodes      []provider.NodeResult
+	Location   utils.Location
+	RawTracks  interface{} // Holds provider-specific raw track models (e.g. []plex.Track)
+	PlexClient *plex.Client
+}
+
+// ResolveSelection resolves a location string into a Selection.
+func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
+	loc := utils.ParseLocation(locStr, queryOverride)
+	if loc.Resource == "" {
+		return nil, fmt.Errorf("resource must be specified in location %q (e.g. rb/tracks)", locStr)
+	}
+
+	cfg, _ := config.LoadAppConfig()
+	var rbXML *rekordbox.RekordboxLibraryXML
+	if loc.Provider == "rb" || loc.Provider == "rekordbox" {
+		var err error
+		rbXML, _, err = loadXMLFunc()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	prov, err := provider.NewProvider(loc.Provider, rbXML, cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	sel := &Selection{Location: loc}
+	if loc.Resource == "tracks" {
+		tracks, err := prov.GetTracks(loc.Query)
+		if err != nil {
+			return nil, err
+		}
+		sel.Tracks = tracks
+
+		raw, err := prov.GetRawTracks(loc.Query)
+		if err == nil {
+			sel.RawTracks = raw
+		}
+		if p, ok := prov.(*provider.PlexProvider); ok {
+			sel.PlexClient = p.Client() // We'll add this getter
+		}
+	} else {
+		nodes, err := prov.GetPlaylists(loc.Query)
+		if err != nil {
+			return nil, err
+		}
+		sel.Nodes = nodes
+	}
+
+	return sel, nil
 }
 
 // stringsTitle is a simple helper since strings.Title is deprecated.

@@ -7,7 +7,6 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
 	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
-	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -41,113 +40,102 @@ func runMoveCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	eng := engine.NewEngine(engine.NewRekordboxLibrary(rbXML))
 	syncEng := syncpkg.NewEngine(nil, engine.NewRekordboxLibrary(rbXML))
 
-	query := ""
+	queryOverride := ""
 	if len(args) > 1 {
-		query = strings.Join(args[1:], " ")
+		queryOverride = strings.Join(args[1:], " ")
 	}
-	loc := utils.ParseLocation(args[0], query)
-
-	if loc.Resource == "tracks" {
-		if moveFrom == "" {
-			return fmt.Errorf("--from origin is required when moving tracks")
-		}
-		return runMoveTracks(eng, syncEng, loc.Query, path)
-	}
-
-	return runMoveNodes(eng, syncEng, loc, path)
-}
-
-func runMoveTracks(eng *engine.Engine, syncEng *syncpkg.Engine, sourceQuery, path string) error {
-	// 1. Resolve source tracks
-	tracks, err := eng.Ls(sourceQuery)
+	sel, err := ResolveSelection(args[0], queryOverride)
 	if err != nil {
 		return err
 	}
-	if len(tracks) == 0 {
+
+	if sel.Location.Resource == "tracks" {
+		if moveFrom == "" {
+			return fmt.Errorf("--from origin is required when moving tracks")
+		}
+		return runMoveTracks(syncEng, sel, path)
+	}
+
+	return runMoveNodes(syncEng, sel, path)
+}
+
+func runMoveTracks(syncEng *syncpkg.Engine, sel *Selection, path string) error {
+	if len(sel.Tracks) == 0 {
 		fmt.Println("No tracks matched the source query.")
 		return nil
 	}
 	var trackIDs []string
-	for _, t := range tracks {
+	for _, t := range sel.Tracks {
 		trackIDs = append(trackIDs, strconv.Itoa(t.TrackID))
 	}
 
 	// 2. Resolve origin playlists
-	org := utils.ParseLocation(moveFrom, "")
-	origins, err := eng.LsPlaylists(org.Query)
-	if err != nil || len(origins) == 0 {
+	org, err := ResolveSelection(moveFrom, "")
+	if err != nil || len(org.Nodes) == 0 {
 		return fmt.Errorf("could not find origin playlist(s) matching %q", moveFrom)
 	}
 
 	// 3. Resolve target playlists
-	tgt := utils.ParseLocation(moveTo, "")
-	targets, err := eng.LsPlaylists(tgt.Query)
-	if err != nil || len(targets) == 0 {
+	tgt, err := ResolveSelection(moveTo, "")
+	if err != nil || len(tgt.Nodes) == 0 {
 		return fmt.Errorf("could not find target playlist(s) matching %q", moveTo)
 	}
 
 	if dryRun {
-		fmt.Printf("[Dry Run] Would move %d tracks from %d origins to %d targets\n", len(trackIDs), len(origins), len(targets))
+		fmt.Printf("[Dry Run] Would move %d tracks from %d origins to %d targets\n", len(trackIDs), len(org.Nodes), len(tgt.Nodes))
 		return nil
 	}
 
 	// 4. Perform Move
-	for _, origin := range origins {
+	for _, origin := range org.Nodes {
 		if verbose {
-			fmt.Printf("Removing tracks from origin playlist %q...\n", origin.Node.Name)
+			fmt.Printf("Removing tracks from origin playlist %q...\n", origin.Name)
 		}
-		syncEng.RemoveTracksFromPlaylist(origin.Node.Name, trackIDs)
+		syncEng.RemoveTracksFromPlaylist(origin.Name, trackIDs)
 	}
-	for _, target := range targets {
+	for _, target := range tgt.Nodes {
 		if verbose {
-			fmt.Printf("Adding tracks to target playlist %q...\n", target.Node.Name)
-			for _, id := range trackIDs {
-				fmt.Printf("  + Track ID: %s\n", id)
-			}
+			fmt.Printf("Adding tracks to target playlist %q...\n", target.Name)
 		}
-		syncEng.AddTracksToPlaylist(target.Node.Name, trackIDs)
+		syncEng.AddTracksToPlaylist(target.Name, trackIDs)
 	}
 
 	return syncEng.SaveXML(path)
 }
 
-func runMoveNodes(eng *engine.Engine, syncEng *syncpkg.Engine, loc utils.Location, path string) error {
-	var targets []engine.NodeResult
+func runMoveNodes(syncEng *syncpkg.Engine, sel *Selection, path string) error {
 	var nodeType int
-	if loc.Resource == "playlists" {
-		targets, _ = eng.LsPlaylists(loc.Query)
+	if sel.Location.Resource == "playlists" {
 		nodeType = 1
-	} else if loc.Resource == "folders" {
-		targets, _ = eng.LsFolders(loc.Query)
+	} else if sel.Location.Resource == "folders" {
 		nodeType = 0
 	} else {
 		return fmt.Errorf("move only supports rb/tracks, rb/playlists, and rb/folders")
 	}
 
-	if len(targets) == 0 {
+	if len(sel.Nodes) == 0 {
 		fmt.Println("No resources found matching query.")
 		return nil
 	}
 
 	if dryRun {
-		for _, t := range targets {
-			fmt.Printf("[Dry Run] Would move %s %q to folder %q\n", loc.Resource, t.Node.Name, moveTo)
+		for _, t := range sel.Nodes {
+			fmt.Printf("[Dry Run] Would move %s %q to folder %q\n", sel.Location.Resource, t.Name, moveTo)
 		}
 		return nil
 	}
 
-	for _, t := range targets {
+	for _, t := range sel.Nodes {
 		if verbose {
-			fmt.Printf("Moving %s %q into folder %q...\n", loc.Resource, t.Node.Name, moveTo)
+			fmt.Printf("Moving %s %q into folder %q...\n", sel.Location.Resource, t.Name, moveTo)
 		}
-		if !syncEng.MoveNode(t.Node.Name, int32(nodeType), moveTo) {
-			fmt.Printf("Warning: failed to move %q\n", t.Node.Name)
+		if !syncEng.MoveNode(t.Name, int32(nodeType), moveTo) {
+			fmt.Printf("Warning: failed to move %q\n", t.Name)
 			continue
 		}
-		fmt.Printf("Moved %s %q -> %q\n", loc.Resource, t.Node.Name, moveTo)
+		fmt.Printf("Moved %s %q -> %q\n", sel.Location.Resource, t.Name, moveTo)
 	}
 
 	return syncEng.SaveXML(path)

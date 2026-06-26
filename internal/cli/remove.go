@@ -7,7 +7,6 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
 	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
-	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -37,51 +36,39 @@ func runRemoveCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	eng := engine.NewEngine(engine.NewRekordboxLibrary(rbXML))
 	syncEng := syncpkg.NewEngine(nil, engine.NewRekordboxLibrary(rbXML))
 
 	// 1. Resolve source
-	sourceQuery := ""
+	queryOverride := ""
 	if len(args) > 1 {
-		sourceQuery = strings.Join(args[1:], " ")
+		queryOverride = strings.Join(args[1:], " ")
 	}
-	src := utils.ParseLocation(args[0], sourceQuery)
+	src, err := ResolveSelection(args[0], queryOverride)
+	if err != nil {
+		return err
+	}
 
-	if src.Provider != "rb" || src.Resource != "tracks" {
+	if src.Location.Provider != "rb" || src.Location.Resource != "tracks" {
 		return fmt.Errorf("currently only rb/tracks is supported as a source for remove")
 	}
 
-	tracks, err := eng.Ls(src.Query)
-	if err != nil {
-		return fmt.Errorf("failed to resolve source tracks: %w", err)
-	}
-	if len(tracks) == 0 {
-		fmt.Println("No tracks found matching query.")
-		return nil
-	}
-
 	var trackIDs []string
-	for _, t := range tracks {
+	for _, t := range src.Tracks {
 		trackIDs = append(trackIDs, strconv.Itoa(t.TrackID))
 	}
 
 	// 2. Resolve origins and apply
 	var originNames []string
 	for _, originStr := range removeOrigins {
-		org := utils.ParseLocation(originStr, "")
-		if org.Provider != "rb" || org.Resource != "playlists" {
+		org, err := ResolveSelection(originStr, "")
+		if err != nil {
+			return err
+		}
+		if org.Location.Provider != "rb" || org.Location.Resource != "playlists" {
 			return fmt.Errorf("currently only rb/playlists is supported as an origin for remove, got %q", originStr)
 		}
-
-		origins, err := eng.LsPlaylists(org.Query)
-		if err != nil {
-			return fmt.Errorf("failed to resolve origin playlists: %w", err)
-		}
-		if len(origins) == 0 {
-			return fmt.Errorf("no origin playlists matched query %q", org.Query)
-		}
-		for _, o := range origins {
-			originNames = append(originNames, o.Node.Name)
+		for _, o := range org.Nodes {
+			originNames = append(originNames, o.Name)
 		}
 	}
 

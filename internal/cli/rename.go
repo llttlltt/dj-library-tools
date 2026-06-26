@@ -6,7 +6,6 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
 	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
-	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -33,48 +32,49 @@ Example:
 			return err
 		}
 
-		eng := engine.NewEngine(engine.NewRekordboxLibrary(rbXML))
 		syncEng := syncpkg.NewEngine(nil, engine.NewRekordboxLibrary(rbXML))
 
-		query := ""
+		queryOverride := ""
 		if len(args) > 1 {
-			query = strings.Join(args[1:], " ")
+			queryOverride = strings.Join(args[1:], " ")
 		}
-		loc := utils.ParseLocation(args[0], query)
+		sel, err := ResolveSelection(args[0], queryOverride)
+		if err != nil {
+			return err
+		}
 
-		var targets []engine.NodeResult
-		if loc.Resource == "playlists" {
-			targets, _ = eng.LsPlaylists(loc.Query)
-		} else if loc.Resource == "folders" {
-			targets, _ = eng.LsFolders(loc.Query)
-		} else {
+		if sel.Location.Resource != "playlists" && sel.Location.Resource != "folders" {
 			return fmt.Errorf("rename only supports rb/playlists and rb/folders")
 		}
 
-		if len(targets) == 0 {
-			return fmt.Errorf("no resources found matching query %q", loc.Query)
+		if len(sel.Nodes) == 0 {
+			return fmt.Errorf("no resources found matching query %q", sel.Location.Query)
 		}
-		if len(targets) > 1 {
-			return fmt.Errorf("rename matched %d resources; refine your query to match exactly one", len(targets))
+		if len(sel.Nodes) > 1 {
+			return fmt.Errorf("rename matched %d resources; refine your query to match exactly one", len(sel.Nodes))
 		}
 
-		target := targets[0]
-		nodeType := target.Node.Type
+		target := sel.Nodes[0]
+		// Since we don't have nodeType in NodeResult yet, we'll assume based on Resource
+		nodeType := int32(1)
+		if sel.Location.Resource == "folders" {
+			nodeType = 0
+		}
 
 		if verbose {
-			fmt.Printf("Renaming %s %q -> %q...\n", loc.Resource, target.Node.Name, renameTo)
+			fmt.Printf("Renaming %s %q -> %q...\n", sel.Location.Resource, target.Name, renameTo)
 		}
 
 		if dryRun {
-			fmt.Printf("[Dry Run] Would rename %q to %q\n", target.Node.Name, renameTo)
+			fmt.Printf("[Dry Run] Would rename %q to %q\n", target.Name, renameTo)
 			return nil
 		}
 
-		if !syncEng.RenameNode(target.Node.Name, renameTo, nodeType) {
-			return fmt.Errorf("failed to rename %q", target.Node.Name)
+		if !syncEng.RenameNode(target.Name, renameTo, nodeType) {
+			return fmt.Errorf("failed to rename %q", target.Name)
 		}
 
-		fmt.Printf("Renamed %q -> %q\n", target.Node.Name, renameTo)
+		fmt.Printf("Renamed %q -> %q\n", target.Name, renameTo)
 		return syncEng.SaveXML(path)
 	},
 }
