@@ -76,6 +76,16 @@ func (c *Client) GetPlaylists(ctx context.Context, baseURL string) ([]Playlist, 
 
 func (c *Client) GetPlaylistTracks(ctx context.Context, baseURL, playlistKey string) ([]Track, error) {
 	url := fmt.Sprintf("%s%s", baseURL, playlistKey)
+	return c.getTracks(ctx, url)
+}
+
+func (c *Client) GetAllTracks(ctx context.Context, baseURL string) ([]Track, error) {
+	// type 10 = Track in Plex
+	url := fmt.Sprintf("%s/library/all?type=10", baseURL)
+	return c.getTracks(ctx, url)
+}
+
+func (c *Client) getTracks(ctx context.Context, url string) ([]Track, error) {
 	req, err := c.newRequest(ctx, http.MethodGet, url)
 	if err != nil {
 		return nil, err
