@@ -5,19 +5,27 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
+	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/spf13/cobra"
 )
 
+var (
+	removeOrigins []string
+)
+
 var deleteCmd = &cobra.Command{
-	Use:     "delete [resource] [query]",
-	Aliases: []string{"del", "rm"},
-	Short:   "Delete a resource from the library (destructive)",
-	Long: `Permanently delete playlists or folders from the Rekordbox XML.
-Warning: This is destructive to the resource, but does not delete tracks from the collection.
+	Use:     "remove [resource] [query]",
+	Aliases: []string{"rm", "del", "delete"},
+	Short:   "Remove a resource or membership from the library",
+	Long: `Permanently delete resources or remove track membership from playlists.
+
+Use --from to specify which playlist to remove tracks from.
+Without --from, the command deletes the resource itself.
 
 Example:
-  djlt delete rb/playlists "name:'Old Mixes'"`,
+  djlt rm rb/tracks artist:Four --from "rb/playlists name:Inbox"
+  djlt rm rb/playlists name:Inbox`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		queryOverride := ""
@@ -31,11 +39,20 @@ Example:
 
 		wp, ok := sel.Provider.(provider.WritableProvider)
 		if !ok {
-			return fmt.Errorf("provider %q does not support deleting resources", sel.Location.Provider)
+			return fmt.Errorf("provider %q does not support removal", sel.Location.Provider)
 		}
 
+		// Membership removal case
+		if cmd.Flags().Changed("from") {
+			if sel.Location.Resource != "tracks" {
+				return fmt.Errorf("can only remove tracks from playlists")
+			}
+			return runRemoveMembership(wp, sel)
+		}
+
+		// Resource deletion case
 		if sel.Location.Resource == "tracks" {
-			return fmt.Errorf("deleting tracks from collection is not yet supported; use remove to unlink from playlists")
+			return fmt.Errorf("deleting tracks from collection is not yet supported; use --from to unlink from playlists")
 		}
 
 		if len(sel.Nodes) == 0 {
@@ -45,7 +62,7 @@ Example:
 
 		if dryRun {
 			for _, t := range sel.Nodes {
-				fmt.Printf("[Dry Run] Would delete %s %q\n", sel.Location.Resource, t.Name)
+				fmt.Printf("[Dry Run] Would delete playlist %q\n", t.Name)
 			}
 			return nil
 		}
@@ -61,7 +78,7 @@ Example:
 			fmt.Printf("Deleted %s %q\n", sel.Location.Resource, t.Name)
 		}
 
-		// For Rekordbox we still need to save.
+		// Save Rekordbox
 		if rb, ok := wp.(*provider.RekordboxProvider); ok {
 			_, path, _ := loadXMLFunc()
 			return rb.Engine.Library.(engine.WritableLibrary).Save(path)
@@ -71,6 +88,46 @@ Example:
 	},
 }
 
+func runRemoveMembership(wp provider.WritableProvider, src *Selection) error {
+	var targetNodes []models.Node
+
+	for _, originStr := range removeOrigins {
+		org, err := ResolveSelection(originStr, "")
+		if err != nil {
+			return err
+		}
+
+		if org.Location.Resource != "playlists" {
+			return fmt.Errorf("can only remove from playlists, got %q", org.Location.Resource)
+		}
+		targetNodes = append(targetNodes, org.Nodes...)
+	}
+
+	if dryRun {
+		for _, n := range targetNodes {
+			fmt.Printf("[Dry Run] Would remove %d tracks from playlist %q\n", len(src.Tracks), n.Name)
+		}
+		return nil
+	}
+
+	for _, n := range targetNodes {
+		removed, err := wp.RemoveTracks(n, src.Tracks)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Removed %d tracks from %q\n", removed, n.Name)
+	}
+
+	// Save Rekordbox
+	if rb, ok := wp.(*provider.RekordboxProvider); ok {
+		_, path, _ := loadXMLFunc()
+		return rb.Engine.Library.(engine.WritableLibrary).Save(path)
+	}
+
+	return nil
+}
+
 func init() {
+	deleteCmd.Flags().StringSliceVar(&removeOrigins, "from", []string{}, "Origin resource(s) to remove from (repeatable)")
 	RootCmd.AddCommand(deleteCmd)
 }

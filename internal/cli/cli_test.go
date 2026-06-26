@@ -8,9 +8,38 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 	"github.com/spf13/cobra"
+	pflag "github.com/spf13/pflag"
 )
 
+// resetTestState resets all mutable package-level flag vars and clears cobra's
+// Changed tracking so that flag state from one test cannot bleed into the next
+// when the same RootCmd instance is reused across subtests.
+func resetTestState(root *cobra.Command) {
+	removeOrigins = nil
+	syncTo = nil
+	syncAppend = false
+	moveTo = ""
+	moveFrom = ""
+	moveName = ""
+	listSort = ""
+	listStats = false
+	dryRun = false
+	verbose = false
+	jsonOutput = false
+
+	var resetChanged func(cmd *cobra.Command)
+	resetChanged = func(cmd *cobra.Command) {
+		cmd.Flags().VisitAll(func(f *pflag.Flag) { f.Changed = false })
+		cmd.PersistentFlags().VisitAll(func(f *pflag.Flag) { f.Changed = false })
+		for _, child := range cmd.Commands() {
+			resetChanged(child)
+		}
+	}
+	resetChanged(root)
+}
+
 func executeCommand(root *cobra.Command, args ...string) (string, error) {
+	resetTestState(root)
 	buf := new(bytes.Buffer)
 	root.SetOut(buf)
 	root.SetErr(buf)
@@ -64,53 +93,43 @@ func TestCommandConsistency(t *testing.T) {
 	}{
 		{
 			name: "list rb/tracks positional query",
-			args: []string{"list", "rb/tracks", "title:'Test Track'"},
+			args: []string{"ls", "rb/tracks", "title:'Test Track'"},
 			wantIn: "Test Track",
 		},
 		{
 			name: "list rb/playlists positional query",
-			args: []string{"list", "rb/playlists", "name:Inbox"},
+			args: []string{"ls", "rb/playlists", "name:Inbox"},
 			wantIn: "Inbox",
 		},
 		{
-			name: "stat rb/tracks positional query",
-			args: []string{"stat", "rb/tracks", "title:'Test Track'"},
-			wantIn: "Total Tracks:   1",
+			name: "stat merged into list --stats",
+			args: []string{"ls", "rb/tracks", "title:'Test Track'", "--stats"},
+			wantIn: "Selection Summary",
 		},
 		{
-			name: "add requires --to",
-			args: []string{"add", "rb/tracks", "title:Test"},
-			wantErr: true,
+			name: "add tracks merged into sync --append",
+			args: []string{"sync", "rb/tracks", "title:Test", "--to", "rb/playlists name:Inbox", "--append", "--dry-run"},
+			wantIn: "Would append to playlist",
 		},
 		{
-			name: "add rb/tracks to playlist",
-			args: []string{"add", "rb/tracks", "title:'Test Track'", "--to", "rb/playlists name:Inbox", "--dry-run"},
-			wantIn: "Would add 1 tracks to playlist \"Inbox\"",
-		},
-		{
-			name: "remove requires --from",
-			args: []string{"remove", "rb/tracks", "title:Test"},
-			wantErr: true,
-		},
-		{
-			name: "remove rb/tracks from playlist",
-			args: []string{"remove", "rb/tracks", "title:'Test Track'", "--from", "rb/playlists name:Inbox", "--dry-run"},
+			name: "remove tracks from playlist",
+			args: []string{"rm", "rb/tracks", "title:'Test Track'", "--from", "rb/playlists name:Inbox", "--dry-run"},
 			wantIn: "Would remove 1 tracks from playlist \"Inbox\"",
 		},
 		{
 			name: "move tracks requires --from and --to",
-			args: []string{"move", "rb/tracks", "title:Test", "--to", "Target"},
+			args: []string{"mv", "rb/tracks", "title:Test", "--to", "Target"},
 			wantErr: true,
 		},
 		{
-			name: "rename requires --to",
-			args: []string{"rename", "rb/playlists", "name:Inbox"},
-			wantErr: true,
+			name: "rename merged into move --name",
+			args: []string{"mv", "rb/playlists", "name:Inbox", "--name", "NewInbox", "--dry-run"},
+			wantIn: "Would rename \"Inbox\" to \"NewInbox\"",
 		},
 		{
-			name: "delete requires resource",
-			args: []string{"delete"},
-			wantErr: true,
+			name: "remove playlist resource",
+			args: []string{"rm", "rb/playlists", "name:Inbox", "--dry-run"},
+			wantIn: "Would delete playlist \"Inbox\"",
 		},
 	}
 
@@ -118,11 +137,11 @@ func TestCommandConsistency(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			out, err := executeCommand(RootCmd, tt.args...)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("executeCommand() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("executeCommand(%v) error = %v, wantErr %v", tt.args, err, tt.wantErr)
 				return
 			}
 			if tt.wantIn != "" && !strings.Contains(out, tt.wantIn) {
-				t.Errorf("executeCommand() out = %q, want to contain %q", out, tt.wantIn)
+				t.Errorf("executeCommand(%v) out = %q, want to contain %q", tt.args, out, tt.wantIn)
 			}
 		})
 	}

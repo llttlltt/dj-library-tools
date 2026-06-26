@@ -79,6 +79,9 @@ type Selection struct {
 
 // ResolveSelection resolves a location string into a Selection.
 func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
+	if locStr == "" {
+		return &Selection{}, nil
+	}
 	loc := utils.ParseLocation(locStr, queryOverride)
 	if loc.Resource == "" {
 		return nil, fmt.Errorf("resource must be specified in location %q (e.g. rb/tracks)", locStr)

@@ -9,6 +9,7 @@ djlt sync [source-resource] [source-query] --to [target-resource] [target-query]
 ### Options
 
 ```
+      --append          Append new tracks without removing existing ones
       --dest string     Destination directory for exported files
       --format string   Target format for exported files (default "mp3")
   -h, --help            help for sync

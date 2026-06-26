@@ -3,10 +3,12 @@ package query
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/llttlltt/dj-library-tools/internal/models"
 )
 
@@ -278,4 +280,46 @@ func (e *Evaluator) matchNodeComparison(node models.Node, c Comparison) bool {
 		return strings.Contains(strings.ToLower(val), strings.ToLower(c.Value))
 	}
 	return false
+}
+
+func printTop(m map[string]int, title string, limit int) {
+	if len(m) == 0 {
+		return
+	}
+
+	type kv struct {
+		Key   string
+		Value int
+	}
+
+	var ss []kv
+	for k, v := range m {
+		ss = append(ss, kv{k, v})
+	}
+
+	sort.Slice(ss, func(i, j int) bool {
+		return ss[i].Value > ss[j].Value
+	})
+
+	headerFmt := color.New(color.FgCyan, color.Bold, color.Underline).SprintFunc()
+	labelFmt := color.New(color.FgHiWhite).SprintFunc()
+	valFmt := color.New(color.FgHiMagenta).SprintFunc()
+
+	fmt.Printf("\n%s\n", headerFmt(title))
+	for i, kv := range ss {
+		if i >= limit {
+			break
+		}
+		fmt.Printf("%-20s %s\n", labelFmt(kv.Key), valFmt(fmt.Sprintf("%d", kv.Value)))
+	}
+}
+
+type StatResult struct {
+	Count      int
+	AvgBPM     float64
+	Genres     map[string]int
+	Labels     map[string]int
+	Keys       map[string]int
+	Artists    map[string]int
+	TotalTempo float64
 }

@@ -10,6 +10,7 @@ djlt move [resource] [query] --to [destination] [--from origin] [flags]
 ```
       --from string   Origin playlist (required for tracks)
   -h, --help          help for move
+      --name string   New name for the resource (renames)
       --to string     Destination playlist or folder
 ```
 
@@ -22,13 +23,15 @@ djlt move [resource] [query] --to [destination] [--from origin] [flags]
   -x, --xml string   Path to the Rekordbox XML library
 ```
 
-Move items between Rekordbox locations.
+Move items between locations.
 For tracks, both --from and --to are required.
 For playlists and folders, only --to (the parent folder) is required.
 
+Use the --name flag to rename a resource.
+
 Example:
-  djlt move rb/tracks "bpm:>130" --from "name:Inbox" --to "name:'High Energy'"
-  djlt move rb/playlists "name:'Deep House'" --to "name:Genres"
+  djlt mv rb/tracks "bpm:>130" --from "name:Inbox" --to "name:'High Energy'"
+  djlt mv rb/playlists name:Inbox --name "Processed"
 
 ## See also
 

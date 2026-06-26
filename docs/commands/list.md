@@ -11,6 +11,7 @@ djlt list [resource] [query] [flags]
 ```
   -h, --help          help for list
       --sort string   Sort results by field (e.g. bpm, artist, title)
+      --stats         Show summary statistics for the selection
 ```
 
 ### Inherited Options
