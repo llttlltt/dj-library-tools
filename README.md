@@ -31,10 +31,10 @@ djlt config rekordbox.xml-path ~/Documents/rekordbox.xml
 djlt auth --plex
 
 # 3. Query your library
-djlt list "rb/tracks:genre:House && bpm:124..128"
+djlt list rb/tracks "genre:House && bpm:124..128"
 
 # 4. Sync a Plex playlist to Rekordbox
-djlt sync "plex/playlists:Summer" "rb/playlists:Plex Sync"
+djlt sync plex/playlists name:Summer --to "rb/playlists name:'Plex Sync'"
 ```
 
 ## Contributing
