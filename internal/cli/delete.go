@@ -41,7 +41,7 @@ Example:
 
 			// Membership removal case
 			if cmd.Flags().Changed("from") {
-				if sel.Location.Resource != "tracks" {
+				if sel.Location.Resource != "tracks" && sel.Location.Provider != "m3u" && sel.Location.Provider != "m3u8" {
 					return fmt.Errorf("can only remove tracks from playlists")
 				}
 				return runRemoveMembership(wp, sel, removeOrigins)
@@ -74,6 +74,10 @@ Example:
 					continue
 				}
 				fmt.Printf("Deleted %s %q\n", sel.Location.Resource, t.Name)
+			}
+
+			if sel.Location.Provider == "m3u" || sel.Location.Provider == "m3u8" {
+				return nil
 			}
 
 			_, path, _ := loadXMLFunc()

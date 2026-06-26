@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/models"
@@ -95,15 +96,47 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 		return nil, err
 	}
 
+	// For M3U, the "Resource" part of the location is actually the file path.
+	filePath := loc.Resource
+	isM3U := loc.Provider == "m3u" || loc.Provider == "m3u8"
+	if isM3U {
+		// If the resource was something like "test.m3u8/tracks", we should strip /tracks
+		if strings.HasSuffix(filePath, "/tracks") {
+			filePath = strings.TrimSuffix(filePath, "/tracks")
+			loc.Resource = "tracks"
+		} else {
+			loc.Resource = "playlists"
+		}
+
+		m3uProv, err := provider.NewM3UProvider(filePath)
+		if err != nil {
+			return nil, err
+		}
+		prov = m3uProv
+	}
+
 	sel := &Selection{Location: loc, Provider: prov}
-	if loc.Resource == "tracks" {
+	if isM3U {
+		if loc.Resource == "playlists" {
+			nodes, _ := prov.GetPlaylists("")
+			sel.Nodes = nodes
+			for _, n := range nodes {
+				sel.Items = append(sel.Items, n)
+			}
+		}
+	}
+
+	if loc.Resource == "tracks" || isM3U {
 		tracks, err := prov.GetTracks(loc.Query)
 		if err != nil {
 			return nil, err
 		}
 		sel.Tracks = tracks
-		for _, t := range tracks {
-			sel.Items = append(sel.Items, t)
+		// Only add to sel.Items if we haven't already added nodes
+		if len(sel.Items) == 0 {
+			for _, t := range tracks {
+				sel.Items = append(sel.Items, t)
+			}
 		}
 	} else {
 		var nodes []models.Node

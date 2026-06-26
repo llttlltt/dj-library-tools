@@ -27,6 +27,8 @@ func NewProvider(name string, rbXML *rekordbox.RekordboxLibraryXML, cfg *config.
 			return nil, fmt.Errorf("plex token not found; run 'djlt auth plex' or set PLEX_TOKEN")
 		}
 		return NewPlexProvider(token, cfg.PlexHost, cfg.PlexPort), nil
+	case "m3u", "m3u8":
+		return NewM3UProvider("")
 	default:
 		return nil, fmt.Errorf("unknown provider: %s", name)
 	}
