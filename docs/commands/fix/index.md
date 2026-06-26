@@ -16,5 +16,5 @@ Fix library issues or resource metadata
 
 ## See also
 
-* [djlt](index.md)	 - DJ Library Tools CLI
-* [djlt fix playlist](djlt_fix_playlist.md)	 - Fix playlist extensions and/or enrich with M3U8 metadata
+* [djlt](../index.md)	 - DJ Library Tools CLI
+* [djlt fix playlist](playlist.md)	 - Fix playlist extensions and/or enrich with M3U8 metadata
