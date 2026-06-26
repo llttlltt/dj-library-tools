@@ -1,64 +1,88 @@
 # Command Overview
 
-`djlt` uses an action-centric (verb-centric) command structure. Commands are organized by the action you want to perform on your library.
+`djlt` uses an action-centric (verb-centric) command structure. There are six top-level verbs — the **Surgical 6** — each with a short alias for terminal use.
 
-## Core Verbs
+## The Surgical 6
 
 ### `list` (Alias: `ls`)
-The primary discovery command. Use it to see tracks, playlists, or folders matching a query.
-```bash
-djlt list rb/tracks artist:Four
-```
+The primary discovery command. Use it to see tracks, playlists, or folders matching a query. Add `--stats` to get aggregate statistics instead of a table.
 
-### `add`
-Links items from a source selection to one or more targets.
 ```bash
-djlt add rb/tracks genre:House --to "rb/playlists name:Summer"
-```
+# List tracks
+djlt ls rb/tracks artist:Four
 
-### `remove` (Alias: `rm`)
-Unlinks items matching a source selection from one or more origins.
-```bash
-djlt remove rb/tracks rating:0 --from "rb/playlists name:Inbox"
+# Show statistics for a selection
+djlt ls rb/tracks "genre:House && bpm:124..128" --stats
 ```
 
 ### `sync`
-Mirrors a source selection into a target, adding or removing items to ensure an exact match.
+Mirrors a source selection into a target, ensuring an exact match. Use `--append` to add without removing existing members (replaces the legacy `add` command).
+
 ```bash
-djlt sync rb/tracks rating:5 --to "rb/playlists name:Favorites"
+# Full sync (adds new, removes unmatched)
+djlt sync rb/tracks "rating:>=4" --to "rb/playlists name:Favorites"
+
+# Append-only (never removes existing tracks)
+djlt sync rb/tracks "genre:House" --to "rb/playlists name:Inbox" --append
 ```
 
-## Management Verbs
+### `create` (Alias: `mk`)
+Creates a new playlist or folder. Optionally pre-populate it using `--from`.
 
-### `create`
-Initializes a new resource (Playlist or Folder) and optionally populates it.
 ```bash
-djlt create rb/playlists "New Arrivals" --from rb/tracks added:today
-```
+# Create an empty playlist
+djlt create rb/playlists "New Arrivals"
 
-### `rename`
-Changes the name of a playlist or folder.
-```bash
-djlt rename rb/playlists Inbox --to "Inbox (Archived)"
+# Create and populate in one step
+djlt create rb/playlists "New Arrivals" --from "rb/tracks added:>2024-01-01"
 ```
 
 ### `move` (Alias: `mv`)
-Relocates resources (e.g. moving a playlist into a folder) or shifts tracks between playlists.
+Relocates resources between containers, or renames them in-place using `--name` (replaces the legacy `rename` command).
 
-### `delete` (Aliases: `del`, `rm`)
-Permanently removes a resource from the library.
+```bash
+# Move a playlist into a folder
+djlt mv rb/playlists name:Inbox --to "rb/folders name:Archive"
+
+# Rename a playlist
+djlt mv rb/playlists name:Inbox --name "Processed"
+
+# Move tracks between playlists
+djlt mv rb/tracks "bpm:>130" --from "rb/playlists name:Inbox" --to "rb/playlists name:'High Energy'"
+```
+
+### `remove` (Alias: `rm`)
+Handles two distinct operations depending on whether `--from` is present:
+
+- **Resource Deletion** (no `--from`): permanently removes a playlist or folder from the library.
+- **Membership Removal** (`--from` present): unlinks tracks from a playlist without deleting them from the collection.
+
+```bash
+# Delete a playlist entirely
+djlt rm rb/playlists name:Inbox
+
+# Remove specific tracks from a playlist
+djlt rm rb/tracks "rating:0" --from "rb/playlists name:Inbox"
+```
+
+### `config`
+View or update persistent application settings.
+
+```bash
+djlt config rekordbox.xml-path "/path/to/export.xml"
+djlt config --list
+```
+
+---
 
 ## Utility Verbs
-
-### `stat` (Alias: `stats`)
-Provides statistical analysis (BPM, Keys, Genres) for a track selection.
 
 ### `fix`
 Corrects common library issues, such as missing file extensions or broken metadata in M3U8 files.
 
 ### `update`
-Synchronizes metadata (like Beatgrids/Tempo markers) between different Rekordbox XML libraries.
+Synchronises metadata (like Beatgrids and Tempo markers) between two Rekordbox XML libraries.
 
 ---
 
-For a full list of flags and options, see the **[CLI Reference](../../commands/index.md)**.
+For full flag details, see the **[CLI Reference](../../commands/index.md)**.

@@ -75,10 +75,10 @@ djlt sync plex/playlists name:Summer --to "rb/playlists name:'Plex Sync'" \
 
 ## Library Statistics
 
-Get quick insights into any part of your library:
+Get quick insights into any part of your library using the `--stats` flag:
 
 ```bash
-djlt stat rb/tracks "rating:>=4"
+djlt ls rb/tracks "rating:>=4" --stats
 ```
 
 ---

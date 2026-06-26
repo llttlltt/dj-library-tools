@@ -6,6 +6,7 @@
 
 - `cmd/djlt/`: CLI entry points. Uses a **Verb-Centric** architecture.
 - `internal/`: UI-agnostic core logic.
+    - `cli/`: The **Surgical 6** verb implementations (`list`, `sync`, `create`, `move`, `remove`, `config`). Each verb is a single file; no provider-specific logic lives here.
     - `engine/`: Universal search and analysis engine. Abstracted via the `Library` and `WritableLibrary` interfaces. Works exclusively with neutral `models`.
     - `models/`: Central domain models (`Track`, `Node`, `Resource`) that provide a provider-agnostic language for the entire monorepo.
     - `provider/`: Capability-based plugins for library sources (Rekordbox, Plex).
@@ -18,6 +19,23 @@
     - `rekordbox/`: XML types and a **High-Fidelity Formatter**. This package ensures that any XML modified by `djlt` is indistinguishable from one exported by Rekordbox, preserving idiosyncratic attribute ordering and wrapping rules.
 
 ## Core Concepts
+
+### The Surgical 6
+
+The CLI exposes exactly six top-level verbs. Legacy commands (`add`, `remove`, `rename`, `stat`) have been absorbed into these verbs via flags:
+
+| Verb | Alias | Absorbed | Key Flag |
+| :--- | :---- | :------- | :------- |
+| `list` | `ls` | `stat` | `--stats` |
+| `sync` | — | `add` | `--append` |
+| `create` | `mk` | — | `--from` |
+| `move` | `mv` | `rename` | `--name` |
+| `remove` | `rm` | `remove` | `--from` |
+| `config` | — | — | — |
+
+The `remove` verb distinguishes two semantically different operations via `--from`:
+- **Resource Deletion** (`rm rb/playlists name:Inbox`): permanently removes the node from the library.
+- **Membership Removal** (`rm rb/tracks title:X --from "rb/playlists name:Inbox"`): unlinks tracks from a playlist without deleting them.
 
 ### High-Fidelity XML Formatting
 Rekordbox is sensitive to the structure of its XML. The `TokenStreamFormatter` in `pkg/rekordbox` implements several rules to match this:
@@ -40,3 +58,6 @@ The selection engine uses a recursive descent parser and a universal evaluator. 
 - **`Provider`**: Capability-based interface that unifies different sources (Rekordbox, Plex) into a single queryable and writable interface.
 - **`Resource`**: A universal interface for any item in a library (Track, Node), allowing for generic movement and listing logic.
 - **`sys.FileSystem` & `sys.Runner`**: Abstract the OS environment (Filesystem, FFmpeg), enabling side-effect-free testing of media and sync operations.
+
+### Cobra Flag Isolation in Tests
+Because `RootCmd` is a package-level singleton, cobra's `pflag` does **not** reset flag values or `Changed` state between successive `Execute()` calls. CLI tests must call `resetTestState(root)` at the top of each `executeCommand` invocation to zero all mutable flag vars and clear `Changed` bits across the full command tree. Any new cobra flag variable added to a verb must also be reset there.
