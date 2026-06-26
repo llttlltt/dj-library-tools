@@ -13,6 +13,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	listSort string
+)
+
 var listCmd = &cobra.Command{
 	Use:     "list [resource] [query]",
 	Aliases: []string{"ls"},
@@ -68,6 +72,7 @@ func listProvider(p provider.Provider, loc utils.Location) error {
 			return nil
 		}
 
+		sortNodes(results, listSort)
 		renderNodeTable(results, loc.Resource[:len(loc.Resource)-1])
 		return nil
 	}
@@ -92,10 +97,12 @@ func listProvider(p provider.Provider, loc utils.Location) error {
 		return nil
 	}
 
+	sortTracks(tracks, listSort)
 	renderTrackTable(tracks)
 	return nil
 }
 
 func init() {
+	listCmd.Flags().StringVar(&listSort, "sort", "", "Sort results by field (e.g. bpm, artist, title)")
 	RootCmd.AddCommand(listCmd)
 }
