@@ -106,7 +106,13 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 			sel.Items = append(sel.Items, t)
 		}
 	} else {
-		nodes, err := prov.GetPlaylists(loc.Query)
+		var nodes []models.Node
+		var err error
+		if loc.Resource == "folders" {
+			nodes, err = prov.GetFolders(loc.Query)
+		} else {
+			nodes, err = prov.GetPlaylists(loc.Query)
+		}
 		if err != nil {
 			return nil, err
 		}

@@ -145,6 +145,10 @@ func (p *PlexProvider) GetTracks(queryString string) ([]models.Track, error) {
 	return tracks, nil
 }
 
+func (p *PlexProvider) GetFolders(_ string) ([]models.Node, error) {
+	return nil, nil // Plex has no folder concept
+}
+
 func (p *PlexProvider) GetPlaylists(queryString string) ([]models.Node, error) {
 	ctx := context.Background()
 	baseURL, err := p.resolveBaseURL(ctx)
