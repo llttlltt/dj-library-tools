@@ -1,8 +1,24 @@
-# Syntax
+# Selection Syntax
 
-The query part of the selection URI supports a powerful set of operators and boolean logic.
+`djlt` uses a consistent selection syntax across all commands:
 
-## Operators
+`[provider/resource] [query]`
+
+## Providers & Resources
+
+Resources are identified by their provider prefix. If no resource is specified, a default is used based on the provider.
+
+- `rb/tracks` (Default for `rb`)
+- `rb/playlists`
+- `rb/folders`
+- `plex/playlists` (Default for `plex`)
+- `plex/tracks`
+
+## Query Syntax
+
+The query part supports a powerful set of operators and boolean logic.
+
+### Operators
 
 | Operator | Type | Example | Description |
 | :--- | :--- | :--- | :--- |
