@@ -166,6 +166,10 @@ func (e *Evaluator) resolveDateShorthand(val string) string {
 
 func (e *Evaluator) getFieldValue(track models.Track, playlists []string, field string) string {
 	switch strings.ToLower(field) {
+	case "id":
+		return track.ID
+	case "location":
+		return track.Location
 	case "playlists":
 		return strconv.Itoa(len(playlists))
 	case "title":
@@ -209,10 +213,6 @@ func (e *Evaluator) getFieldValue(track models.Track, playlists []string, field 
 		return strconv.Itoa(track.MemoryCues)
 	case "beatgrids":
 		return strconv.Itoa(track.BeatgridCount)
-	case "id":
-		return track.ID
-	case "location":
-		return track.Location
 	case "remixer":
 		return track.Remixer
 	case "mix":
