@@ -37,7 +37,7 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 	}
 
 	q := query.NewParser().Parse(queryString)
-	if err := q.Validate(); err != nil {
+	if err := q.ValidateWithFields(query.AllowedTrackFields); err != nil {
 		return nil, err
 	}
 
@@ -185,7 +185,7 @@ func (p *PlexProvider) GetPlaylists(queryString string) ([]NodeResult, error) {
 	}
 
 	q := query.NewParser().Parse(queryString)
-	if err := q.Validate(); err != nil {
+	if err := q.ValidateWithFields(query.AllowedNodeFields); err != nil {
 		return nil, err
 	}
 
