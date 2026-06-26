@@ -15,13 +15,14 @@ var (
 )
 
 var createCmd = &cobra.Command{
-	Use:   "create [resource] [name]",
-	Short: "Create a new playlist or folder",
+	Use:     "make [resource] [name]",
+	Aliases: []string{"mk", "create"},
+	Short:   "Create a new playlist or folder",
 	Long: `Create a new Rekordbox playlist or folder.
 You can optionally populate it immediately using items from a source.
 
 Example:
-  djlt create rb/playlists "New Arrivals" --from "rb/tracks added:>2024-01-01"`,
+  djlt mk rb/playlists "New Arrivals" --from "rb/tracks added:>2024-01-01"`,
 	Args: cobra.ExactArgs(2),
 	RunE: runCreateCmd,
 }

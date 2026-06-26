@@ -28,7 +28,7 @@ The CLI exposes exactly six top-level verbs. Legacy commands (`add`, `remove`, `
 | :--- | :---- | :------- | :------- |
 | `list` | `ls` | `stat` | `--stats` |
 | `sync` | — | `add` | `--append` |
-| `create` | `mk` | — | `--from` |
+| `make` | `mk`, `create` | — | `--from` |
 | `move` | `mv` | `rename` | `--name` |
 | `remove` | `rm` | `remove` | `--from` |
 | `config` | — | — | — |
