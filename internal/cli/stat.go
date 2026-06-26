@@ -12,9 +12,8 @@ import (
 )
 
 var statCmd = &cobra.Command{
-	Use:     "stat [resource] [query]",
-	Aliases: []string{"stats"},
-	Short:   "Show statistics for tracks matching the query",
+	Use:   "stat [resource] [query]",
+	Short: "Show statistics for tracks matching the query",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		rbXML, _, err := loadXMLFunc()
