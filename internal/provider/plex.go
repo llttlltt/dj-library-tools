@@ -72,7 +72,7 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 				return nil, err
 			}
 			for _, pl := range plexPlaylists {
-				if strings.EqualFold(pl.Title, playlistName) {
+				if strings.EqualFold(pl.Title, playlistName) || strings.Contains(strings.ToLower(pl.Title), strings.ToLower(playlistName)) {
 					playlistID = pl.RatingKey
 					break
 				}
