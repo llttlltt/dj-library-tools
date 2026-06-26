@@ -55,6 +55,26 @@ func (p *RekordboxProvider) RemoveTracks(target models.Node, tracks []models.Tra
 	return removed, nil
 }
 
+func (p *RekordboxProvider) CreateNode(parent models.Node, name string, nodeType int) (models.Node, error) {
+	p.Engine.Library.(engine.WritableLibrary).CreateFolder(parent.Name, name, -1)
+	return models.Node{Name: name, Type: nodeType}, nil
+}
+
+func (p *RekordboxProvider) DeleteNode(node models.Node) error {
+	p.Engine.Library.(engine.WritableLibrary).RemoveNode(node.Name, int32(node.Type))
+	return nil
+}
+
+func (p *RekordboxProvider) RenameNode(node models.Node, newName string) error {
+	p.Engine.Library.(engine.WritableLibrary).RenameNode(node.Name, newName, int32(node.Type))
+	return nil
+}
+
+func (p *RekordboxProvider) MoveNode(node models.Node, targetParent models.Node) error {
+	p.Engine.Library.(engine.WritableLibrary).MoveNode(node.Name, int32(node.Type), targetParent.Name)
+	return nil
+}
+
 func NewRekordboxProvider(eng *engine.Engine) *RekordboxProvider {
 	return &RekordboxProvider{Engine: eng}
 }

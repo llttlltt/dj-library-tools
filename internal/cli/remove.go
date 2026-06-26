@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
-	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
+	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/spf13/cobra"
 )
 
@@ -30,13 +31,6 @@ func runRemoveCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("at least one --from origin is required")
 	}
 
-	rbXML, path, err := loadXMLFunc()
-	if err != nil {
-		return err
-	}
-
-	syncEng := syncpkg.NewEngine(nil, engine.NewRekordboxLibrary(rbXML))
-
 	// 1. Resolve source
 	queryOverride := ""
 	if len(args) > 1 {
@@ -47,39 +41,50 @@ func runRemoveCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if src.Location.Provider != "rb" || src.Location.Resource != "tracks" {
-		return fmt.Errorf("currently only rb/tracks is supported as a source for remove")
-	}
-
-	var trackIDs []string
-	for _, t := range src.Tracks {
-		trackIDs = append(trackIDs, t.ID)
-	}
-
 	// 2. Resolve origins and apply
-	var originNames []string
+	var targetNodes []models.Node
+	var targetProv provider.WritableProvider
+
 	for _, originStr := range removeOrigins {
 		org, err := ResolveSelection(originStr, "")
 		if err != nil {
 			return err
 		}
-		if org.Location.Provider != "rb" || org.Location.Resource != "playlists" {
-			return fmt.Errorf("currently only rb/playlists is supported as an origin for remove, got %q", originStr)
+
+		wp, ok := org.Provider.(provider.WritableProvider)
+		if !ok {
+			return fmt.Errorf("provider %q does not support removing tracks", org.Location.Provider)
 		}
-		for _, o := range org.Nodes {
-			originNames = append(originNames, o.Name)
+		targetProv = wp
+
+		if org.Location.Resource != "playlists" {
+			return fmt.Errorf("can only remove from playlists, got %q", org.Location.Resource)
 		}
+		targetNodes = append(targetNodes, org.Nodes...)
 	}
 
-	RunBulkOperation("remove", originNames, trackIDs, func(targetName string, items []string) (bool, int) {
-		return syncEng.RemoveTracksFromPlaylist(targetName, items)
-	})
-
 	if dryRun {
+		for _, n := range targetNodes {
+			fmt.Printf("[Dry Run] Would remove %d tracks from playlist %q\n", len(src.Tracks), n.Name)
+		}
 		return nil
 	}
 
-	return syncEng.SaveXML(path)
+	for _, n := range targetNodes {
+		removed, err := targetProv.RemoveTracks(n, src.Tracks)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Removed %d tracks from %q\n", removed, n.Name)
+	}
+
+	// For Rekordbox we still need to save.
+	if rb, ok := targetProv.(*provider.RekordboxProvider); ok {
+		_, path, _ := loadXMLFunc()
+		return rb.Engine.Library.(engine.WritableLibrary).Save(path)
+	}
+
+	return nil
 }
 
 func init() {
