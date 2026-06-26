@@ -13,21 +13,21 @@ djlt list rb/tracks "beatgrids:1 && hotcues:<1 && memorycues:<1"
 Next, create an empty playlist in Rekordbox to hold these tracks.
 
 ```bash
-djlt create rb/playlists "name:'Inbox (Simple)'"
+djlt create rb/playlists "Inbox (Simple)"
 ```
 
 ### 3. Add the tracks
-Now, populate your new playlist with the tracks found in step 1.
+Now, populate your new playlist with the tracks found in step 1. Use `--append` so existing members are never removed.
 
 ```bash
-djlt add rb/tracks "beatgrids:1 && hotcues:<1 && memorycues:<1" \
-  --to "rb/playlists name:'Inbox (Simple)'"
+djlt sync rb/tracks "beatgrids:1 && hotcues:<1 && memorycues:<1" \
+  --to "rb/playlists name:'Inbox (Simple)'" --append
 ```
 
 !!! tip "All-in-one"
-    You can combine the creation and addition steps into a single command:
+    You can combine the creation and population steps into a single command:
     ```bash
-    djlt create rb/playlists "name:'Inbox (Simple)'" --from "rb/tracks beatgrids:1 && hotcues:<1 && memorycues:<1"
+    djlt create rb/playlists "Inbox (Simple)" --from "rb/tracks beatgrids:1 && hotcues:<1 && memorycues:<1"
     ```
 
 ### 4. Work in Rekordbox
@@ -55,7 +55,7 @@ djlt sync rb/tracks "beatgrids:1 && hotcues:<1 && memorycues:<1" \
 
 ---
 
-## Why use `--sync`?
-While you could just delete and recreate the playlist, the `--sync` command is **surgical**. It only adds or removes tracks that are relevant to the query. 
+## Why use `sync`?
+While you could delete and recreate the playlist each time, the `sync` command is **surgical**. It only adds or removes the tracks that are relevant to the query.
 
-If you have manually dragged other tracks into that playlist (like reference tracks or favorites), `--sync` will leave them alone, whereas creating a new playlist would delete them.
+If you have manually dragged other tracks into that playlist (like reference tracks or favourites), `sync` will leave them alone — whereas recreating the playlist would delete them.
