@@ -126,3 +126,37 @@ Use the following names to match the 16-color pad palette. Cues with no color se
     <td style="background:#FF127B; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>pink</code></td>
   </tr>
 </table>
+
+---
+
+## Examples
+
+### Tracks
+
+**High-energy House**
+```bash
+djlt ls rb/tracks "genre:House && bpm:124..128 && rating:>=4"
+```
+
+**Tracks not in any playlist**
+```bash
+djlt ls rb/tracks "playlists:0"
+```
+
+**Find a specific track by ID**
+```bash
+djlt ls rb/tracks "id:1234"
+```
+
+### Collection Tree
+
+**Find folders containing "Sets"**
+```bash
+djlt ls rb/folders "name:Sets"
+```
+
+**Find playlists with "2023" in the name**
+```bash
+djlt ls rb/playlists "name:2023"
+```
+
