@@ -61,6 +61,10 @@ Example:
 		target := targets[0]
 		nodeType := target.Node.Type
 
+		if verbose {
+			fmt.Printf("Renaming %s %q -> %q...\n", loc.Resource, target.Node.Name, renameTo)
+		}
+
 		if dryRun {
 			fmt.Printf("[Dry Run] Would rename %q to %q\n", target.Node.Name, renameTo)
 			return nil

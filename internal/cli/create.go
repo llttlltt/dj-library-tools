@@ -62,6 +62,12 @@ func runCreateCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	if loc.Resource == "playlists" {
+		if verbose {
+			fmt.Printf("Upserting playlist %q with %d tracks...\n", name, len(trackIDs))
+			for _, id := range trackIDs {
+				fmt.Printf("  + Track ID: %s\n", id)
+			}
+		}
 		result := syncEng.UpsertPlaylist(createIn, name, trackIDs, createAt)
 		if result.Updated {
 			fmt.Printf("Updated existing playlist %q (%d tracks)\n", result.PlaylistName, result.TracksInjected)
@@ -69,6 +75,9 @@ func runCreateCmd(cmd *cobra.Command, args []string) error {
 			fmt.Printf("Created playlist %q (%d tracks)\n", result.PlaylistName, result.TracksInjected)
 		}
 	} else if loc.Resource == "folders" {
+		if verbose {
+			fmt.Printf("Creating folder %q in %q...\n", name, createIn)
+		}
 		if !syncEng.CreateFolder(createIn, name, createAt) {
 			return fmt.Errorf("failed to create folder %q", name)
 		}
