@@ -10,33 +10,36 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	listSort  string
-	listStats bool
-)
+func newListCmd() *cobra.Command {
+	var listSort string
+	var listStats bool
 
-var listCmd = &cobra.Command{
-	Use:     "list [resource] [query]",
-	Aliases: []string{"ls"},
-	Short:   "List items from a location (e.g. rb/tracks title:Oceans)",
-	Args:    cobra.MinimumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		queryOverride := ""
-		if len(args) > 1 {
-			queryOverride = strings.Join(args[1:], " ")
-		}
+	cmd := &cobra.Command{
+		Use:     "list [resource] [query]",
+		Aliases: []string{"ls"},
+		Short:   "List items from a location (e.g. rb/tracks title:Oceans)",
+		Args:    cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			queryOverride := ""
+			if len(args) > 1 {
+				queryOverride = strings.Join(args[1:], " ")
+			}
 
-		sel, err := ResolveSelection(args[0], queryOverride)
-		if err != nil {
-			return err
-		}
+			sel, err := ResolveSelection(args[0], queryOverride)
+			if err != nil {
+				return err
+			}
 
-		if listStats {
-			return listProviderStats(sel)
-		}
+			if listStats {
+				return listProviderStats(sel)
+			}
 
-		return listProvider(sel)
-	},
+			return listProvider(sel, listSort)
+		},
+	}
+	cmd.Flags().StringVar(&listSort, "sort", "", "Sort results by field (e.g. bpm, artist, title)")
+	cmd.Flags().BoolVar(&listStats, "stats", false, "Show summary statistics for the selection")
+	return cmd
 }
 
 type StatResult struct {
@@ -107,7 +110,7 @@ func listProviderStats(sel *Selection) error {
 	return nil
 }
 
-func listProvider(sel *Selection) error {
+func listProvider(sel *Selection, listSort string) error {
 	if sel.Location.Resource == "playlists" || sel.Location.Resource == "folders" {
 		if jsonOutput {
 			data, _ := json.MarshalIndent(sel.Nodes, "", "  ")
@@ -135,7 +138,7 @@ func listProvider(sel *Selection) error {
 		return nil
 	}
 
-	sortTracks(sel.Tracks, listSort)
+	sortTracks(sel.Tracks, listSort) //nolint:staticcheck
 	renderTrackTable(sel.Tracks)
 	return nil
 }
@@ -172,8 +175,4 @@ func printTop(m map[string]int, title string, limit int) {
 	}
 }
 
-func init() {
-	listCmd.Flags().StringVar(&listSort, "sort", "", "Sort results by field (e.g. bpm, artist, title)")
-	listCmd.Flags().BoolVar(&listStats, "stats", false, "Show summary statistics for the selection")
-	RootCmd.AddCommand(listCmd)
-}
+

@@ -8,13 +8,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	createIn   string
-	createAt   int
-	createFrom string
-)
+func newMakeCmd() *cobra.Command {
+	var createIn, createFrom string
+	var createAt int
 
-var createCmd = &cobra.Command{
+	cmd := &cobra.Command{
 	Use:     "make [resource] [name]",
 	Aliases: []string{"mk", "create"},
 	Short:   "Create a new playlist or folder",
@@ -24,10 +22,17 @@ You can optionally populate it immediately using items from a source.
 Example:
   djlt mk rb/playlists "New Arrivals" --from "rb/tracks added:>2024-01-01"`,
 	Args: cobra.ExactArgs(2),
-	RunE: runCreateCmd,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runCreateCmd(cmd, args, createIn, createFrom, createAt)
+		},
+	}
+	cmd.Flags().StringVar(&createIn, "in", "", "Parent folder for the new resource")
+	cmd.Flags().IntVar(&createAt, "at", -1, "Insert at this 0-indexed position (-1 for end)")
+	cmd.Flags().StringVar(&createFrom, "from", "", "Initial items to populate the resource with")
+	return cmd
 }
 
-func runCreateCmd(cmd *cobra.Command, args []string) error {
+func runCreateCmd(cmd *cobra.Command, args []string, createIn, createFrom string, createAt int) error {
 	sel, err := ResolveSelection(args[0], "")
 	if err != nil {
 		return err
@@ -74,9 +79,4 @@ func runCreateCmd(cmd *cobra.Command, args []string) error {
 	return wp.Save(path)
 }
 
-func init() {
-	createCmd.Flags().StringVar(&createIn, "in", "", "Parent folder for the new resource")
-	createCmd.Flags().IntVar(&createAt, "at", -1, "Insert at this 0-indexed position (-1 for end)")
-	createCmd.Flags().StringVar(&createFrom, "from", "", "Initial items to populate the resource with")
-	RootCmd.AddCommand(createCmd)
-}
+

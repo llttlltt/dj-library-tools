@@ -10,17 +10,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var authPlexFlag bool
-
-var authCmd = &cobra.Command{
-	Use:   "auth [flags]",
-	Short: "Authenticate with third-party providers",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if !authPlexFlag {
-			return cmd.Help()
-		}
-		return runPlexAuth()
-	},
+func newAuthCmd() *cobra.Command {
+	var authPlexFlag bool
+	cmd := &cobra.Command{
+		Use:   "auth [flags]",
+		Short: "Authenticate with third-party providers",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if !authPlexFlag {
+				return cmd.Help()
+			}
+			return runPlexAuth()
+		},
+	}
+	cmd.Flags().BoolVar(&authPlexFlag, "plex", false, "Authenticate with Plex using PIN flow")
+	return cmd
 }
 
 func runPlexAuth() error {
@@ -65,7 +68,4 @@ func runPlexAuth() error {
 	}
 }
 
-func init() {
-	authCmd.Flags().BoolVar(&authPlexFlag, "plex", false, "Authenticate with Plex using PIN flow")
-	RootCmd.AddCommand(authCmd)
-}
+

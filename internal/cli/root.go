@@ -36,18 +36,37 @@ func loadXML() (*rekordbox.RekordboxLibraryXML, string, error) {
 	return rbXML, path, nil
 }
 
-var RootCmd = &cobra.Command{
-	Use:   "djlt",
-	Short: "DJ Library Tools CLI",
-	Long:  `A comprehensive CLI tool for managing DJ libraries and Rekordbox XMLs.`,
+// NewRootCmd builds and returns a fully wired root command. Each call
+// produces an independent command tree — verb-specific flag vars live in
+// closures so there is no shared mutable state between instances. Tests
+// call NewRootCmd() directly to get isolation without a reset helper.
+func NewRootCmd() *cobra.Command {
+	root := &cobra.Command{
+		Use:   "djlt",
+		Short: "DJ Library Tools CLI",
+		Long:  `A comprehensive CLI tool for managing DJ libraries and Rekordbox XMLs.`,
+	}
+	root.PersistentFlags().StringVarP(&xmlPath, "xml", "x", "", "Path to the Rekordbox XML library")
+	root.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Preview changes without writing")
+	root.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
+	root.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Output results in JSON format")
+
+	root.AddCommand(
+		newListCmd(),
+		newSyncCmd(),
+		newMakeCmd(),
+		newMoveCmd(),
+		newDeleteCmd(),
+		newAuthCmd(),
+		newConfigCmd(),
+		newFixCmd(),
+		newUpdateCmd(),
+	)
+	return root
 }
 
-func init() {
-	RootCmd.PersistentFlags().StringVarP(&xmlPath, "xml", "x", "", "Path to the Rekordbox XML library")
-	RootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Preview changes without writing")
-	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
-	RootCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Output results in JSON format")
-}
+// RootCmd is the singleton used by the production binary.
+var RootCmd = NewRootCmd()
 
 func Execute() error {
 	return RootCmd.Execute()
