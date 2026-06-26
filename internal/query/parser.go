@@ -243,7 +243,7 @@ func (p *Parser) parseAnd() Expression {
 
 func (p *Parser) isNextImplicitAnd() bool {
 	kind := p.peek().Kind
-	return kind == TokenValue || kind == TokenLParen || kind == TokenNot
+	return kind == TokenValue || kind == TokenLParen || kind == TokenNot || kind == TokenField
 }
 
 func (p *Parser) parsePrimary() Expression {
