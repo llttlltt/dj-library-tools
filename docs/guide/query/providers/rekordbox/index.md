@@ -6,9 +6,9 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 
 | Resource | Description | Example |
 | :--- | :--- | :--- |
-| `tracks` | The main track collection. | `rb/tracks:bpm:124` |
-| `playlists` | Individual playlist nodes. | `rb/playlists:title:Summer` |
-| `folders` | Folder nodes in the playlist tree. | `rb/folders:title:House` |
+| `tracks` | The main track collection. | `rb/tracks artist:Four` |
+| `playlists` | Individual playlist nodes. | `rb/playlists name:Inbox` |
+| `folders` | Folder nodes in the playlist tree. | `rb/folders name:House` |
 
 ## Fields
 
@@ -16,7 +16,7 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `title` | String | Track title. |
+| `title` | String | Track title (Default). |
 | `artist` | String | Artist name. |
 | `album` | String | Album name. |
 | `genre` | String | Genre name. |
@@ -44,7 +44,7 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `title` | String | Name of the node. |
+| `name` | String | Name of the node (Default). |
 | `parent` | String | Name of the parent folder. |
 | `entries` | Numeric | Number of tracks or sub-items. |
 | `type` | Numeric | `0` for folder, `1` for playlist. |
