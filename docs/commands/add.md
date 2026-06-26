@@ -17,6 +17,7 @@ djlt add [source-resource] [source-query] --to [target-resource] [target-query] 
 
 ```
       --dry-run      Preview changes without writing
+      --json         Output results in JSON format
   -v, --verbose      Enable verbose logging
   -x, --xml string   Path to the Rekordbox XML library
 ```
