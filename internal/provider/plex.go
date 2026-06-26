@@ -36,10 +36,6 @@ func (p *PlexProvider) CanTranscode() bool {
 	return true
 }
 
-func (p *PlexProvider) GetRawTracks(query string) (interface{}, error) {
-	return p.getRawTracksInternal(query)
-}
-
 func (p *PlexProvider) getRawTracksInternal(queryString string) ([]plex.Track, error) {
 	ctx := context.Background()
 	baseURL, err := p.resolveBaseURL(ctx)
