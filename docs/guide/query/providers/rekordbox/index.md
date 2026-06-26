@@ -1,6 +1,8 @@
-# Rekordbox (`rb`)
+# Rekordbox
 
 The Rekordbox provider interacts directly with your exported XML library. It allows you to query your track collection, playlists, and folder structure.
+
+### Provider Alias: `rb`
 
 ## Resources
 
