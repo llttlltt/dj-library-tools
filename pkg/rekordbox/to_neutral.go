@@ -50,9 +50,15 @@ func (t Track) ToNeutral() models.Track {
 }
 
 func (n Node) ToNeutral(parentFolder string) models.Node {
+	// Folders (Type=0) store their child-node count in Count;
+	// playlists (Type=1) store their track count in Entries.
+	entries := DerefInt32(n.Entries)
+	if n.Type == 0 {
+		entries = DerefInt32(n.Count)
+	}
 	return models.Node{
 		Name:         n.Name,
-		Entries:      int(DerefInt32(n.Entries)),
+		Entries:      int(entries),
 		ParentFolder: parentFolder,
 		Type:         int(n.Type),
 		Raw:          n,
