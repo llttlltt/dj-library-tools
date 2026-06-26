@@ -43,7 +43,7 @@ djlt ls plex/playlists name:Summer
 djlt sync plex/playlists name:Summer --to "rb/playlists name:'Plex Sync'"
 ```
 
-**Sync a Plex playlist to M3U8 (Planned)**
+**Sync a Plex playlist to M3U8**
 ```bash
 djlt sync plex/playlists name:Summer --to "m3u8:/path/to/playlist.m3u8"
 ```
