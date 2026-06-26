@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
-	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/spf13/cobra"
 )
 
@@ -27,13 +27,6 @@ Example:
 			return fmt.Errorf("--to new-name is required")
 		}
 
-		rbXML, path, err := loadXMLFunc()
-		if err != nil {
-			return err
-		}
-
-		syncEng := syncpkg.NewEngine(nil, engine.NewRekordboxLibrary(rbXML))
-
 		queryOverride := ""
 		if len(args) > 1 {
 			queryOverride = strings.Join(args[1:], " ")
@@ -41,6 +34,11 @@ Example:
 		sel, err := ResolveSelection(args[0], queryOverride)
 		if err != nil {
 			return err
+		}
+
+		wp, ok := sel.Provider.(provider.WritableProvider)
+		if !ok {
+			return fmt.Errorf("provider %q does not support renaming resources", sel.Location.Provider)
 		}
 
 		if sel.Location.Resource != "playlists" && sel.Location.Resource != "folders" {
@@ -55,11 +53,6 @@ Example:
 		}
 
 		target := sel.Nodes[0]
-		// Since we don't have nodeType in NodeResult yet, we'll assume based on Resource
-		nodeType := int32(1)
-		if sel.Location.Resource == "folders" {
-			nodeType = 0
-		}
 
 		if verbose {
 			fmt.Printf("Renaming %s %q -> %q...\n", sel.Location.Resource, target.Name, renameTo)
@@ -70,12 +63,19 @@ Example:
 			return nil
 		}
 
-		if !syncEng.RenameNode(target.Name, renameTo, nodeType) {
-			return fmt.Errorf("failed to rename %q", target.Name)
+		if err := wp.RenameNode(target, renameTo); err != nil {
+			return fmt.Errorf("failed to rename %q: %v", target.Name, err)
 		}
 
 		fmt.Printf("Renamed %q -> %q\n", target.Name, renameTo)
-		return syncEng.SaveXML(path)
+
+		// Save Rekordbox
+		if rb, ok := wp.(*provider.RekordboxProvider); ok {
+			_, path, _ := loadXMLFunc()
+			return rb.Engine.Library.(engine.WritableLibrary).Save(path)
+		}
+
+		return nil
 	},
 }
 

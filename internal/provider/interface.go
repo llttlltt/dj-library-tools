@@ -20,4 +20,8 @@ type WritableProvider interface {
 	Provider
 	AddTracks(target models.Node, tracks []models.Track) (int, error)
 	RemoveTracks(target models.Node, tracks []models.Track) (int, error)
+	CreateNode(parent models.Node, name string, nodeType int) (models.Node, error)
+	DeleteNode(node models.Node) error
+	RenameNode(node models.Node, newName string) error
+	MoveNode(node models.Node, targetParent models.Node) error
 }

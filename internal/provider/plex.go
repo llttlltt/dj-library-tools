@@ -179,6 +179,22 @@ func (p *PlexProvider) GetPlaylists(queryString string) ([]models.Node, error) {
 	return results, nil
 }
 
+func (p *PlexProvider) CreateNode(parent models.Node, name string, nodeType int) (models.Node, error) {
+	return models.Node{}, fmt.Errorf("plex does not support node creation via API")
+}
+
+func (p *PlexProvider) DeleteNode(node models.Node) error {
+	return fmt.Errorf("plex does not support node deletion via API")
+}
+
+func (p *PlexProvider) RenameNode(node models.Node, newName string) error {
+	return fmt.Errorf("plex does not support node renaming via API")
+}
+
+func (p *PlexProvider) MoveNode(node models.Node, targetParent models.Node) error {
+	return fmt.Errorf("plex does not support node moving via API")
+}
+
 func (p *PlexProvider) resolveBaseURL(ctx context.Context) (string, error) {
 	if p.host != "" {
 		port := p.port

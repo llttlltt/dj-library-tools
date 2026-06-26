@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
-	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/spf13/cobra"
 )
 
@@ -20,13 +20,6 @@ Example:
   djlt delete rb/playlists "name:'Old Mixes'"`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		rbXML, path, err := loadXMLFunc()
-		if err != nil {
-			return err
-		}
-
-		syncEng := syncpkg.NewEngine(nil, engine.NewRekordboxLibrary(rbXML))
-
 		queryOverride := ""
 		if len(args) > 1 {
 			queryOverride = strings.Join(args[1:], " ")
@@ -36,17 +29,13 @@ Example:
 			return err
 		}
 
-		if sel.Location.Resource == "tracks" {
-			return fmt.Errorf("deleting tracks from collection is not yet supported; use remove to unlink from playlists")
+		wp, ok := sel.Provider.(provider.WritableProvider)
+		if !ok {
+			return fmt.Errorf("provider %q does not support deleting resources", sel.Location.Provider)
 		}
 
-		var nodeType int
-		if sel.Location.Resource == "playlists" {
-			nodeType = 1
-		} else if sel.Location.Resource == "folders" {
-			nodeType = 0
-		} else {
-			return fmt.Errorf("delete only supports rb/playlists and rb/folders")
+		if sel.Location.Resource == "tracks" {
+			return fmt.Errorf("deleting tracks from collection is not yet supported; use remove to unlink from playlists")
 		}
 
 		if len(sel.Nodes) == 0 {
@@ -65,14 +54,20 @@ Example:
 			if verbose {
 				fmt.Printf("Deleting %s %q...\n", sel.Location.Resource, t.Name)
 			}
-			if !syncEng.RemoveNode(t.Name, int32(nodeType)) {
-				fmt.Printf("Warning: failed to delete %q\n", t.Name)
+			if err := wp.DeleteNode(t); err != nil {
+				fmt.Printf("Warning: failed to delete %q: %v\n", t.Name, err)
 				continue
 			}
 			fmt.Printf("Deleted %s %q\n", sel.Location.Resource, t.Name)
 		}
 
-		return syncEng.SaveXML(path)
+		// For Rekordbox we still need to save.
+		if rb, ok := wp.(*provider.RekordboxProvider); ok {
+			_, path, _ := loadXMLFunc()
+			return rb.Engine.Library.(engine.WritableLibrary).Save(path)
+		}
+
+		return nil
 	},
 }
 

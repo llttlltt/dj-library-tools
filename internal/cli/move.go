@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
-	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/spf13/cobra"
 )
 
@@ -34,40 +34,34 @@ func runMoveCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--to destination is required")
 	}
 
-	rbXML, path, err := loadXMLFunc()
-	if err != nil {
-		return err
-	}
-
-	syncEng := syncpkg.NewEngine(nil, engine.NewRekordboxLibrary(rbXML))
-
 	queryOverride := ""
 	if len(args) > 1 {
 		queryOverride = strings.Join(args[1:], " ")
 	}
-	sel, err := ResolveSelection(args[0], queryOverride)
+	src, err := ResolveSelection(args[0], queryOverride)
 	if err != nil {
 		return err
 	}
 
-	if sel.Location.Resource == "tracks" {
+	wp, ok := src.Provider.(provider.WritableProvider)
+	if !ok {
+		return fmt.Errorf("provider %q does not support moving resources", src.Location.Provider)
+	}
+
+	if src.Location.Resource == "tracks" {
 		if moveFrom == "" {
 			return fmt.Errorf("--from origin is required when moving tracks")
 		}
-		return runMoveTracks(syncEng, sel, path)
+		return runMoveTracks(wp, src)
 	}
 
-	return runMoveNodes(syncEng, sel, path)
+	return runMoveNodes(wp, src)
 }
 
-func runMoveTracks(syncEng *syncpkg.Engine, sel *Selection, path string) error {
-	if len(sel.Tracks) == 0 {
+func runMoveTracks(wp provider.WritableProvider, src *Selection) error {
+	if len(src.Tracks) == 0 {
 		fmt.Println("No tracks matched the source query.")
 		return nil
-	}
-	var trackIDs []string
-	for _, t := range sel.Tracks {
-		trackIDs = append(trackIDs, t.ID)
 	}
 
 	// 2. Resolve origin playlists
@@ -83,7 +77,7 @@ func runMoveTracks(syncEng *syncpkg.Engine, sel *Selection, path string) error {
 	}
 
 	if dryRun {
-		fmt.Printf("[Dry Run] Would move %d tracks from %d origins to %d targets\n", len(trackIDs), len(org.Nodes), len(tgt.Nodes))
+		fmt.Printf("[Dry Run] Would move %d tracks from %d origins to %d targets\n", len(src.Tracks), len(org.Nodes), len(tgt.Nodes))
 		return nil
 	}
 
@@ -92,52 +86,62 @@ func runMoveTracks(syncEng *syncpkg.Engine, sel *Selection, path string) error {
 		if verbose {
 			fmt.Printf("Removing tracks from origin playlist %q...\n", origin.Name)
 		}
-		syncEng.RemoveTracksFromPlaylist(origin.Name, trackIDs)
+		wp.RemoveTracks(origin, src.Tracks)
 	}
 	for _, target := range tgt.Nodes {
 		if verbose {
 			fmt.Printf("Adding tracks to target playlist %q...\n", target.Name)
 		}
-		syncEng.AddTracksToPlaylist(target.Name, trackIDs)
+		wp.AddTracks(target, src.Tracks)
 	}
 
-	return syncEng.SaveXML(path)
+	// Save Rekordbox
+	if rb, ok := wp.(*provider.RekordboxProvider); ok {
+		_, path, _ := loadXMLFunc()
+		return rb.Engine.Library.(engine.WritableLibrary).Save(path)
+	}
+
+	return nil
 }
 
-func runMoveNodes(syncEng *syncpkg.Engine, sel *Selection, path string) error {
-	var nodeType int
-	if sel.Location.Resource == "playlists" {
-		nodeType = 1
-	} else if sel.Location.Resource == "folders" {
-		nodeType = 0
-	} else {
-		return fmt.Errorf("move only supports rb/tracks, rb/playlists, and rb/folders")
-	}
-
-	if len(sel.Nodes) == 0 {
+func runMoveNodes(wp provider.WritableProvider, src *Selection) error {
+	if len(src.Nodes) == 0 {
 		fmt.Println("No resources found matching query.")
 		return nil
 	}
 
+	// Resolve target parent
+	tgt, err := ResolveSelection(moveTo, "")
+	if err != nil || len(tgt.Nodes) == 0 {
+		return fmt.Errorf("could not find target folder matching %q", moveTo)
+	}
+	targetParent := tgt.Nodes[0]
+
 	if dryRun {
-		for _, t := range sel.Nodes {
-			fmt.Printf("[Dry Run] Would move %s %q to folder %q\n", sel.Location.Resource, t.Name, moveTo)
+		for _, t := range src.Nodes {
+			fmt.Printf("[Dry Run] Would move %s %q to folder %q\n", src.Location.Resource, t.Name, targetParent.Name)
 		}
 		return nil
 	}
 
-	for _, t := range sel.Nodes {
+	for _, t := range src.Nodes {
 		if verbose {
-			fmt.Printf("Moving %s %q into folder %q...\n", sel.Location.Resource, t.Name, moveTo)
+			fmt.Printf("Moving %s %q into folder %q...\n", src.Location.Resource, t.Name, targetParent.Name)
 		}
-		if !syncEng.MoveNode(t.Name, int32(nodeType), moveTo) {
-			fmt.Printf("Warning: failed to move %q\n", t.Name)
+		if err := wp.MoveNode(t, targetParent); err != nil {
+			fmt.Printf("Warning: failed to move %q: %v\n", t.Name, err)
 			continue
 		}
-		fmt.Printf("Moved %s %q -> %q\n", sel.Location.Resource, t.Name, moveTo)
+		fmt.Printf("Moved %s %q -> %q\n", src.Location.Resource, t.Name, targetParent.Name)
 	}
 
-	return syncEng.SaveXML(path)
+	// Save Rekordbox
+	if rb, ok := wp.(*provider.RekordboxProvider); ok {
+		_, path, _ := loadXMLFunc()
+		return rb.Engine.Library.(engine.WritableLibrary).Save(path)
+	}
+
+	return nil
 }
 
 func init() {

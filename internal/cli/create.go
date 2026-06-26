@@ -4,14 +4,15 @@ import (
 	"fmt"
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
-	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
+	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/spf13/cobra"
 )
 
 var (
-	createIn     string
-	createAt     int
-	createFrom   string
+	createIn   string
+	createAt   int
+	createFrom string
 )
 
 var createCmd = &cobra.Command{
@@ -27,65 +28,55 @@ Example:
 }
 
 func runCreateCmd(cmd *cobra.Command, args []string) error {
-	rbXML, path, err := loadXMLFunc()
-	if err != nil {
-		return err
-	}
-
-	syncEng := syncpkg.NewEngine(nil, engine.NewRekordboxLibrary(rbXML))
-
 	sel, err := ResolveSelection(args[0], "")
 	if err != nil {
 		return err
 	}
 	name := args[1]
 
-	var trackIDs []string
+	wp, ok := sel.Provider.(provider.WritableProvider)
+	if !ok {
+		return fmt.Errorf("provider %q does not support creating resources", sel.Location.Provider)
+	}
+
+	var tracks []models.Track
 	if createFrom != "" {
 		src, err := ResolveSelection(createFrom, "")
 		if err != nil {
 			return err
 		}
-		if src.Location.Provider != "rb" || src.Location.Resource != "tracks" {
-			return fmt.Errorf("--from currently only supports rb/tracks for initial population")
-		}
-
-		for _, t := range src.Tracks {
-			trackIDs = append(trackIDs, t.ID)
-		}
+		tracks = src.Tracks
 	}
 
 	if dryRun {
-		fmt.Printf("[Dry Run] Would create %s %q in folder %q with %d tracks\n", sel.Location.Resource, name, createIn, len(trackIDs))
+		fmt.Printf("[Dry Run] Would create %s %q in folder %q with %d tracks\n", sel.Location.Resource, name, createIn, len(tracks))
 		return nil
 	}
 
-	if sel.Location.Resource == "playlists" {
-		if verbose {
-			fmt.Printf("Upserting playlist %q with %d tracks...\n", name, len(trackIDs))
-			for _, id := range trackIDs {
-				fmt.Printf("  + Track ID: %s\n", id)
-			}
-		}
-		result := syncEng.UpsertPlaylist(createIn, name, trackIDs, createAt)
-		if result.Updated {
-			fmt.Printf("Updated existing playlist %q (%d tracks)\n", result.PlaylistName, result.TracksInjected)
-		} else {
-			fmt.Printf("Created playlist %q (%d tracks)\n", result.PlaylistName, result.TracksInjected)
-		}
-	} else if sel.Location.Resource == "folders" {
-		if verbose {
-			fmt.Printf("Creating folder %q in %q...\n", name, createIn)
-		}
-		if !syncEng.CreateFolder(createIn, name, createAt) {
-			return fmt.Errorf("failed to create folder %q", name)
-		}
-		fmt.Printf("Created folder %q\n", name)
-	} else {
-		return fmt.Errorf("create only supports rb/playlists and rb/folders")
+	nodeType := 1
+	if sel.Location.Resource == "folders" {
+		nodeType = 0
 	}
 
-	return syncEng.SaveXML(path)
+	newNode, err := wp.CreateNode(models.Node{Name: createIn}, name, nodeType)
+	if err != nil {
+		return err
+	}
+
+	if len(tracks) > 0 {
+		added, _ := wp.AddTracks(newNode, tracks)
+		fmt.Printf("Created %s %q with %d tracks\n", sel.Location.Resource, name, added)
+	} else {
+		fmt.Printf("Created %s %q\n", sel.Location.Resource, name)
+	}
+
+	// Save Rekordbox
+	if rb, ok := wp.(*provider.RekordboxProvider); ok {
+		_, path, _ := loadXMLFunc()
+		return rb.Engine.Library.(engine.WritableLibrary).Save(path)
+	}
+
+	return nil
 }
 
 func init() {
