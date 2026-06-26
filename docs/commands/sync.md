@@ -19,6 +19,7 @@ djlt sync [source-resource] [source-query] --to [target-resource] [target-query]
 ### Inherited Options
 
 ```
+  -v, --verbose      Enable verbose logging
   -x, --xml string   Path to the Rekordbox XML library
 ```
 

@@ -7,6 +7,7 @@ DJ Library Tools CLI
 ```
       --dry-run      Preview changes without writing
   -h, --help         help for djlt
+  -v, --verbose      Enable verbose logging
   -x, --xml string   Path to the Rekordbox XML library
 ```
 

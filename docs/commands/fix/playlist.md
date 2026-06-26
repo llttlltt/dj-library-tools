@@ -15,13 +15,13 @@ djlt fix playlist [file...] [flags]
       --m3u8              Enrich playlist with M3U8 #EXTINF tags
   -o, --output string     Specific output path (optional)
   -r, --remove-original   Remove the original playlist file after processing
-  -v, --verbose           Enable verbose logging
 ```
 
 ### Inherited Options
 
 ```
       --dry-run      Preview changes without writing
+  -v, --verbose      Enable verbose logging
   -x, --xml string   Path to the Rekordbox XML library
 ```
 

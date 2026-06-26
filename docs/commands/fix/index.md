@@ -12,6 +12,7 @@ Fix library issues or resource metadata
 
 ```
       --dry-run      Preview changes without writing
+  -v, --verbose      Enable verbose logging
   -x, --xml string   Path to the Rekordbox XML library
 ```
 

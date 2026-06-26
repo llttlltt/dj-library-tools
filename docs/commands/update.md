@@ -20,6 +20,7 @@ djlt update [resource] [query] --from [source-xml] [flags]
 
 ```
       --dry-run      Preview changes without writing
+  -v, --verbose      Enable verbose logging
   -x, --xml string   Path to the Rekordbox XML library
 ```
 
