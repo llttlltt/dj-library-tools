@@ -14,30 +14,42 @@ func sortTracks(tracks []rekordbox.Track, field string) {
 		return
 	}
 
+	desc := false
+	if strings.HasPrefix(field, "-") {
+		desc = true
+		field = field[1:]
+	}
+
 	sort.Slice(tracks, func(i, j int) bool {
 		f := strings.ToLower(field)
+		res := false
 		switch f {
 		case "bpm":
 			bi, _ := strconv.ParseFloat(tracks[i].AverageBpm, 64)
 			bj, _ := strconv.ParseFloat(tracks[j].AverageBpm, 64)
-			return bi < bj
+			res = bi < bj
 		case "artist":
-			return strings.ToLower(tracks[i].Artist) < strings.ToLower(tracks[j].Artist)
+			res = strings.ToLower(tracks[i].Artist) < strings.ToLower(tracks[j].Artist)
 		case "title":
-			return strings.ToLower(tracks[i].Name) < strings.ToLower(tracks[j].Name)
+			res = strings.ToLower(tracks[i].Name) < strings.ToLower(tracks[j].Name)
 		case "album":
-			return strings.ToLower(tracks[i].Album) < strings.ToLower(tracks[j].Album)
+			res = strings.ToLower(tracks[i].Album) < strings.ToLower(tracks[j].Album)
 		case "key":
-			return tracks[i].Tonality < tracks[j].Tonality
+			res = tracks[i].Tonality < tracks[j].Tonality
 		case "rating":
-			return tracks[i].Rating < tracks[j].Rating
+			res = tracks[i].Rating < tracks[j].Rating
 		case "playcount":
-			return tracks[i].PlayCount < tracks[j].PlayCount
+			res = tracks[i].PlayCount < tracks[j].PlayCount
 		case "added":
-			return tracks[i].DateAdded < tracks[j].DateAdded
+			res = tracks[i].DateAdded < tracks[j].DateAdded
 		default:
 			return false
 		}
+
+		if desc {
+			return !res
+		}
+		return res
 	})
 }
 
@@ -46,15 +58,27 @@ func sortNodes(results []provider.NodeResult, field string) {
 		return
 	}
 
+	desc := false
+	if strings.HasPrefix(field, "-") {
+		desc = true
+		field = field[1:]
+	}
+
 	sort.Slice(results, func(i, j int) bool {
 		f := strings.ToLower(field)
+		res := false
 		switch f {
 		case "name":
-			return strings.ToLower(results[i].Name) < strings.ToLower(results[j].Name)
+			res = strings.ToLower(results[i].Name) < strings.ToLower(results[j].Name)
 		case "entries", "count":
-			return results[i].Entries < results[j].Entries
+			res = results[i].Entries < results[j].Entries
 		default:
 			return false
 		}
+
+		if desc {
+			return !res
+		}
+		return res
 	})
 }
