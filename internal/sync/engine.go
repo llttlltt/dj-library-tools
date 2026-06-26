@@ -1,9 +1,216 @@
 package sync
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/llttlltt/dj-library-tools/internal/engine"
+	"github.com/llttlltt/dj-library-tools/internal/media"
 	"github.com/llttlltt/dj-library-tools/internal/plex"
+	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
+	"github.com/vbauerster/mpb/v8"
+	"github.com/vbauerster/mpb/v8/decor"
 )
+
+type Orchestrator struct {
+	PlexClient *plex.Client
+	Library    engine.WritableLibrary
+	SyncEngine *Engine
+	DryRun     bool
+	Verbose    bool
+}
+
+func NewOrchestrator(plexClient *plex.Client, lib engine.WritableLibrary, dryRun, verbose bool) *Orchestrator {
+	return &Orchestrator{
+		PlexClient: plexClient,
+		Library:    lib,
+		SyncEngine: NewEngine(plexClient, lib),
+		DryRun:     dryRun,
+		Verbose:    verbose,
+	}
+}
+
+type SyncOptions struct {
+	ExportDest   string
+	ExportFormat string
+	PathMaps     map[string]string
+}
+
+func (o *Orchestrator) SyncPlexToRekordbox(tracks []plex.Track, playlistName string, opts SyncOptions) error {
+	// Setup Media Engine if export flag is set
+	var transcoder *media.Transcoder
+	if opts.ExportDest != "" {
+		cfgMedia := media.DefaultConfig()
+		cfgMedia.Dest = opts.ExportDest
+		cfgMedia.PathMaps = opts.PathMaps
+		if opts.ExportFormat != "" {
+			cfgMedia.Format = opts.ExportFormat
+		}
+		transcoder = media.NewTranscoder(cfgMedia)
+	}
+
+	var rbTrackIDs []string
+	type transcodeJob struct {
+		track plex.Track
+		rb    *rekordbox.Track
+	}
+	jobs := make(chan transcodeJob, len(tracks))
+	results := make(chan string, len(tracks))
+	errors := make(chan error, len(tracks))
+
+	// Progress bar setup
+	p := mpb.New(mpb.WithWidth(64))
+	totalBar := p.AddBar(int64(len(tracks)),
+		mpb.PrependDecorators(
+			decor.Name("Overall Sync", decor.WCSyncSpaceR),
+			decor.CountersNoUnit("%d / %d", decor.WCSyncSpace),
+		),
+		mpb.AppendDecorators(
+			decor.Percentage(decor.WCSyncSpace),
+			decor.OnComplete(decor.EwmaETA(decor.ET_STYLE_GO, 60), "done!"),
+		),
+	)
+
+	// Start workers
+	numWorkers := 4
+	for w := 1; w <= numWorkers; w++ {
+		go func() {
+			for job := range jobs {
+				track := job.track
+				rbTrack := job.rb
+
+				displayName := track.Title
+				if len(displayName) > 20 {
+					displayName = displayName[:17] + "..."
+				}
+				trackBar := p.AddBar(1,
+					mpb.BarRemoveOnComplete(),
+					mpb.PrependDecorators(
+						decor.Name(fmt.Sprintf("  -> %s", displayName), decor.WCSyncSpaceR),
+					),
+				)
+
+				if len(track.Media) == 0 || len(track.Media[0].Part) == 0 {
+					trackBar.Abort(false)
+					errors <- fmt.Errorf("no media file for: %s - %s", track.Artist, track.Title)
+					results <- ""
+					totalBar.Increment()
+					continue
+				}
+
+				if transcoder == nil {
+					trackBar.Increment()
+					if rbTrack != nil {
+						results <- fmt.Sprintf("%d", rbTrack.TrackID)
+					} else {
+						results <- ""
+					}
+					totalBar.Increment()
+					continue
+				}
+
+				destPath, err := transcoder.GetDestinationPath(media.PathMetadata{
+					Artist: track.Artist,
+					Album:  track.Album,
+					Title:  track.Title,
+				})
+				if err != nil {
+					trackBar.Abort(false)
+					errors <- fmt.Errorf("path error for %s: %v", track.Title, err)
+					results <- ""
+					totalBar.Increment()
+					continue
+				}
+
+				sourceFile := track.Media[0].Part[0].File
+				if _, err := os.Stat(transcoder.ApplyPathMap(sourceFile)); err != nil {
+					trackBar.Abort(false)
+					errors <- fmt.Errorf("source not found for %s: %s", track.Title, sourceFile)
+					results <- ""
+					totalBar.Increment()
+					continue
+				}
+
+				if o.DryRun {
+					trackBar.Increment()
+					if rbTrack != nil {
+						rbTrack.Location = "file://localhost" + destPath
+					}
+				} else {
+					if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+						trackBar.Abort(false)
+						errors <- fmt.Errorf("mkdir error for %s: %v", track.Title, err)
+						results <- ""
+						totalBar.Increment()
+						continue
+					}
+					if err := transcoder.Transcode(sourceFile, destPath); err != nil {
+						trackBar.Abort(false)
+						errors <- fmt.Errorf("transcode error for %s: %v", track.Title, err)
+						results <- ""
+						totalBar.Increment()
+						continue
+					}
+					trackBar.Increment()
+					if rbTrack != nil {
+						rbTrack.Location = "file://localhost" + destPath
+					}
+				}
+
+				if rbTrack != nil {
+					results <- fmt.Sprintf("%d", rbTrack.TrackID)
+				} else {
+					results <- ""
+				}
+				totalBar.Increment()
+			}
+		}()
+	}
+
+	// Feed jobs
+	for _, track := range tracks {
+		match := o.SyncEngine.Matcher.Match(track)
+		var rbTrack *rekordbox.Track
+
+		if match.RBTrack != nil && match.Confidence >= 0.8 {
+			rbTrack = match.RBTrack
+		}
+
+		jobs <- transcodeJob{track: track, rb: rbTrack}
+	}
+	close(jobs)
+
+	// Wait for progress bars to complete
+	p.Wait()
+
+	// Collect results
+	for i := 0; i < len(tracks); i++ {
+		res := <-results
+		if res != "" {
+			rbTrackIDs = append(rbTrackIDs, res)
+		}
+	}
+
+	// Report errors
+	close(errors)
+	for err := range errors {
+		fmt.Printf("  Error: %v\n", err)
+	}
+
+	if o.DryRun {
+		fmt.Printf("[Dry Run] Would inject playlist '%s' with %d tracks into XML\n", playlistName, len(rbTrackIDs))
+	} else {
+		result := o.SyncEngine.InjectPlaylist(playlistName, rbTrackIDs)
+		action := "Created"
+		if result.Updated {
+			action = "Updated"
+		}
+		fmt.Printf("%s playlist '%s' (%d tracks injected).\n", action, result.PlaylistName, result.TracksInjected)
+	}
+
+	return nil
+}
 
 // PlexSyncFolder is the top-level folder name injected into Rekordbox by djlt.
 const PlexSyncFolder = "Plex Sync"

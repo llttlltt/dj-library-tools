@@ -6,7 +6,6 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
 	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
-	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -34,34 +33,35 @@ func runCreateCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	eng := engine.NewEngine(engine.NewRekordboxLibrary(rbXML))
 	syncEng := syncpkg.NewEngine(nil, engine.NewRekordboxLibrary(rbXML))
 
-	loc := utils.ParseLocation(args[0], "")
+	sel, err := ResolveSelection(args[0], "")
+	if err != nil {
+		return err
+	}
 	name := args[1]
 
 	var trackIDs []string
 	if createFrom != "" {
-		src := utils.ParseLocation(createFrom, "")
-		if src.Provider != "rb" || src.Resource != "tracks" {
+		src, err := ResolveSelection(createFrom, "")
+		if err != nil {
+			return err
+		}
+		if src.Location.Provider != "rb" || src.Location.Resource != "tracks" {
 			return fmt.Errorf("--from currently only supports rb/tracks for initial population")
 		}
 
-		tracks, err := eng.Ls(src.Query)
-		if err != nil {
-			return fmt.Errorf("failed to resolve source tracks: %w", err)
-		}
-		for _, t := range tracks {
+		for _, t := range src.Tracks {
 			trackIDs = append(trackIDs, strconv.Itoa(t.TrackID))
 		}
 	}
 
-		if dryRun {
-		fmt.Printf("[Dry Run] Would create %s %q in folder %q with %d tracks\n", loc.Resource, name, createIn, len(trackIDs))
+	if dryRun {
+		fmt.Printf("[Dry Run] Would create %s %q in folder %q with %d tracks\n", sel.Location.Resource, name, createIn, len(trackIDs))
 		return nil
 	}
 
-	if loc.Resource == "playlists" {
+	if sel.Location.Resource == "playlists" {
 		if verbose {
 			fmt.Printf("Upserting playlist %q with %d tracks...\n", name, len(trackIDs))
 			for _, id := range trackIDs {
@@ -74,7 +74,7 @@ func runCreateCmd(cmd *cobra.Command, args []string) error {
 		} else {
 			fmt.Printf("Created playlist %q (%d tracks)\n", result.PlaylistName, result.TracksInjected)
 		}
-	} else if loc.Resource == "folders" {
+	} else if sel.Location.Resource == "folders" {
 		if verbose {
 			fmt.Printf("Creating folder %q in %q...\n", name, createIn)
 		}

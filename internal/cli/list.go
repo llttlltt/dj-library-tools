@@ -6,10 +6,6 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/llttlltt/dj-library-tools/internal/config"
-	"github.com/llttlltt/dj-library-tools/internal/provider"
-	"github.com/llttlltt/dj-library-tools/internal/utils"
-	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 	"github.com/spf13/cobra"
 )
 
@@ -23,82 +19,50 @@ var listCmd = &cobra.Command{
 	Short:   "List items from a location (e.g. rb/tracks title:Oceans)",
 	Args:    cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var loc utils.Location
+		queryOverride := ""
 		if len(args) > 1 {
-			loc = utils.ParseLocation(args[0], strings.Join(args[1:], " "))
-		} else {
-			loc = utils.ParseLocation(args[0], "")
+			queryOverride = strings.Join(args[1:], " ")
 		}
 
-		if loc.Resource == "" {
-			return fmt.Errorf("resource must be specified (e.g. %s/tracks or %s/playlists)", loc.Provider, loc.Provider)
-		}
-
-		cfg, _ := config.LoadAppConfig()
-		var rbXML *rekordbox.RekordboxLibraryXML
-		if loc.Provider == "rb" || loc.Provider == "rekordbox" {
-			var err error
-			rbXML, _, err = loadXMLFunc()
-			if err != nil {
-				return err
-			}
-		}
-
-		prov, err := provider.NewProvider(loc.Provider, rbXML, cfg)
+		sel, err := ResolveSelection(args[0], queryOverride)
 		if err != nil {
 			return err
 		}
 
-		return listProvider(prov, loc)
+		return listProvider(sel)
 	},
 }
 
-func listProvider(p provider.Provider, loc utils.Location) error {
-	if loc.Resource == "playlists" || loc.Resource == "folders" {
-		results, err := p.GetPlaylists(loc.Query)
-		if err != nil {
-			return fmt.Errorf("ls failed: %w", err)
-		}
+func listProvider(sel *Selection) error {
+	if sel.Location.Resource == "playlists" || sel.Location.Resource == "folders" {
 		if jsonOutput {
-			data, _ := json.MarshalIndent(results, "", "  ")
+			data, _ := json.MarshalIndent(sel.Nodes, "", "  ")
 			fmt.Println(string(data))
 			return nil
 		}
-		if verbose {
-			fmt.Printf("Query %q matched %d %s\n", loc.Query, len(results), loc.Resource)
-		}
-		if len(results) == 0 {
-			color.Yellow("No %s matched the query.", loc.Resource)
+		if len(sel.Nodes) == 0 {
+			color.Yellow("No %s matched the query.", sel.Location.Resource)
 			return nil
 		}
 
-		sortNodes(results, listSort)
-		renderNodeTable(results, loc.Resource[:len(loc.Resource)-1])
+		sortNodes(sel.Nodes, listSort)
+		renderNodeTable(sel.Nodes, sel.Location.Resource[:len(sel.Location.Resource)-1])
 		return nil
 	}
 
-	tracks, err := p.GetTracks(loc.Query)
-	if err != nil {
-		return fmt.Errorf("ls failed: %w", err)
-	}
-
 	if jsonOutput {
-		data, _ := json.MarshalIndent(tracks, "", "  ")
+		data, _ := json.MarshalIndent(sel.Tracks, "", "  ")
 		fmt.Println(string(data))
 		return nil
 	}
 
-	if verbose {
-		fmt.Printf("Query %q matched %d tracks\n", loc.Query, len(tracks))
-	}
-
-	if len(tracks) == 0 {
+	if len(sel.Tracks) == 0 {
 		color.Yellow("No tracks matched the query.")
 		return nil
 	}
 
-	sortTracks(tracks, listSort)
-	renderTrackTable(tracks)
+	sortTracks(sel.Tracks, listSort)
+	renderTrackTable(sel.Tracks)
 	return nil
 }
 

@@ -28,6 +28,10 @@ func (p *PlexProvider) Name() string {
 	return "plex"
 }
 
+func (p *PlexProvider) Client() *plex.Client {
+	return p.client
+}
+
 func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) {
 	ctx := context.Background()
 	baseURL, err := p.resolveBaseURL(ctx)
@@ -144,6 +148,111 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 		}
 	}
 
+	return tracks, nil
+}
+
+func (p *PlexProvider) GetRawTracks(queryString string) (interface{}, error) {
+	ctx := context.Background()
+	baseURL, err := p.resolveBaseURL(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	q := query.NewParser().Parse(queryString)
+	if err := q.ValidateWithFields(query.AllowedTrackFields); err != nil {
+		return nil, err
+	}
+
+	playlistIDs := []string{}
+	if queryString != "" {
+		if q.Root == nil {
+			return nil, fmt.Errorf("query must specify a field (e.g. playlist:%q or id:%q)", queryString, queryString)
+		}
+
+		// 1. Resolve Playlist Contexts
+		var playlistName string
+		var playlistOp query.Operator
+		var walkResolve func(expr query.Expression)
+		walkResolve = func(expr query.Expression) {
+			switch v := expr.(type) {
+			case query.Comparison:
+				f := strings.ToLower(v.Field)
+				if f == "id" || f == "ratingkey" {
+					playlistIDs = append(playlistIDs, v.Value)
+				} else if f == "playlist" {
+					playlistName = v.Value
+					playlistOp = v.Operator
+				}
+			case query.Logical:
+				walkResolve(v.Left)
+				walkResolve(v.Right)
+			}
+		}
+		walkResolve(q.Root)
+
+		if len(playlistIDs) == 0 && playlistName != "" {
+			plexPlaylists, err := p.client.GetPlaylists(ctx, baseURL)
+			if err != nil {
+				return nil, err
+			}
+			for _, pl := range plexPlaylists {
+				match := false
+				if playlistOp == query.OpExact {
+					match = pl.Title == playlistName
+				} else {
+					match = strings.Contains(strings.ToLower(pl.Title), strings.ToLower(playlistName))
+				}
+
+				if match {
+					playlistIDs = append(playlistIDs, pl.RatingKey)
+				}
+			}
+			
+			if len(playlistIDs) == 0 {
+				return []plex.Track{}, nil
+			}
+		}
+	}
+
+	var plexTracks []plex.Track
+	if len(playlistIDs) > 0 {
+		seen := make(map[string]bool)
+		for _, id := range playlistIDs {
+			path := "/playlists/" + id + "/items"
+			pt, err := p.client.GetPlaylistTracks(ctx, baseURL, path)
+			if err != nil {
+				continue
+			}
+			for _, t := range pt {
+				if !seen[t.RatingKey] {
+					plexTracks = append(plexTracks, t)
+					seen[t.RatingKey] = true
+				}
+			}
+		}
+	} else {
+		plexTracks, err = p.client.GetAllTracks(ctx, baseURL)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	var tracks []plex.Track
+	eval := query.NewEvaluator(q)
+	for _, pt := range plexTracks {
+		// Evaluator needs a rekordbox.Track, so we map just for evaluation
+		t := rekordbox.Track{
+			Name:       pt.Title,
+			Artist:     pt.Artist,
+			Album:      pt.Album,
+			Tonality:   pt.KeyTag,
+			AverageBpm: fmt.Sprintf("%.2f", pt.BPM),
+		}
+		if eval.Matches(t) {
+			tracks = append(tracks, pt)
+		}
+	}
 	return tracks, nil
 }
 

@@ -6,7 +6,6 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
 	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
-	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -26,52 +25,51 @@ Example:
 			return err
 		}
 
-		eng := engine.NewEngine(engine.NewRekordboxLibrary(rbXML))
 		syncEng := syncpkg.NewEngine(nil, engine.NewRekordboxLibrary(rbXML))
 
-		query := ""
+		queryOverride := ""
 		if len(args) > 1 {
-			query = strings.Join(args[1:], " ")
+			queryOverride = strings.Join(args[1:], " ")
 		}
-		loc := utils.ParseLocation(args[0], query)
+		sel, err := ResolveSelection(args[0], queryOverride)
+		if err != nil {
+			return err
+		}
 
-		if loc.Resource == "tracks" {
+		if sel.Location.Resource == "tracks" {
 			return fmt.Errorf("deleting tracks from collection is not yet supported; use remove to unlink from playlists")
 		}
 
-		var targets []engine.NodeResult
 		var nodeType int
-		if loc.Resource == "playlists" {
-			targets, _ = eng.LsPlaylists(loc.Query)
+		if sel.Location.Resource == "playlists" {
 			nodeType = 1
-		} else if loc.Resource == "folders" {
-			targets, _ = eng.LsFolders(loc.Query)
+		} else if sel.Location.Resource == "folders" {
 			nodeType = 0
 		} else {
 			return fmt.Errorf("delete only supports rb/playlists and rb/folders")
 		}
 
-		if len(targets) == 0 {
+		if len(sel.Nodes) == 0 {
 			fmt.Println("No resources found matching query.")
 			return nil
 		}
 
 		if dryRun {
-			for _, t := range targets {
-				fmt.Printf("[Dry Run] Would delete %s %q\n", loc.Resource, t.Node.Name)
+			for _, t := range sel.Nodes {
+				fmt.Printf("[Dry Run] Would delete %s %q\n", sel.Location.Resource, t.Name)
 			}
 			return nil
 		}
 
-		for _, t := range targets {
+		for _, t := range sel.Nodes {
 			if verbose {
-				fmt.Printf("Deleting %s %q...\n", loc.Resource, t.Node.Name)
+				fmt.Printf("Deleting %s %q...\n", sel.Location.Resource, t.Name)
 			}
-			if !syncEng.RemoveNode(t.Node.Name, int32(nodeType)) {
-				fmt.Printf("Warning: failed to delete %q\n", t.Node.Name)
+			if !syncEng.RemoveNode(t.Name, int32(nodeType)) {
+				fmt.Printf("Warning: failed to delete %q\n", t.Name)
 				continue
 			}
-			fmt.Printf("Deleted %s %q\n", loc.Resource, t.Node.Name)
+			fmt.Printf("Deleted %s %q\n", sel.Location.Resource, t.Name)
 		}
 
 		return syncEng.SaveXML(path)

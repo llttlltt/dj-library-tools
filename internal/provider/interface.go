@@ -12,6 +12,8 @@ type Provider interface {
 	GetTracks(query string) ([]rekordbox.Track, error)
 	// GetPlaylists resolves playlists matching the query.
 	GetPlaylists(query string) ([]NodeResult, error)
+	// GetRawTracks returns provider-specific track models (e.g. []plex.Track)
+	GetRawTracks(query string) (interface{}, error)
 }
 
 // NodeResult is a matched playlist or folder node along with its parent info.

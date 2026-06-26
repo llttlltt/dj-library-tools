@@ -7,7 +7,6 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
 	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
-	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -38,51 +37,39 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	eng := engine.NewEngine(engine.NewRekordboxLibrary(rbXML))
 	syncEng := syncpkg.NewEngine(nil, engine.NewRekordboxLibrary(rbXML))
 
 	// 1. Resolve source
-	sourceQuery := ""
+	queryOverride := ""
 	if len(args) > 1 {
-		sourceQuery = strings.Join(args[1:], " ")
+		queryOverride = strings.Join(args[1:], " ")
 	}
-	src := utils.ParseLocation(args[0], sourceQuery)
+	src, err := ResolveSelection(args[0], queryOverride)
+	if err != nil {
+		return err
+	}
 
-	if src.Provider != "rb" || src.Resource != "tracks" {
+	if src.Location.Provider != "rb" || src.Location.Resource != "tracks" {
 		return fmt.Errorf("currently only rb/tracks is supported as a source for add")
 	}
 
-	tracks, err := eng.Ls(src.Query)
-	if err != nil {
-		return fmt.Errorf("failed to resolve source tracks: %w", err)
-	}
-	if len(tracks) == 0 {
-		fmt.Println("No source tracks found matching query.")
-		return nil
-	}
-
 	var trackIDs []string
-	for _, t := range tracks {
+	for _, t := range src.Tracks {
 		trackIDs = append(trackIDs, strconv.Itoa(t.TrackID))
 	}
 
 	// 2. Resolve targets and apply
 	var targetNames []string
 	for _, targetStr := range addTargets {
-		tgt := utils.ParseLocation(targetStr, "")
-		if tgt.Provider != "rb" || tgt.Resource != "playlists" {
+		tgt, err := ResolveSelection(targetStr, "")
+		if err != nil {
+			return err
+		}
+		if tgt.Location.Provider != "rb" || tgt.Location.Resource != "playlists" {
 			return fmt.Errorf("currently only rb/playlists is supported as a target for add, got %q", targetStr)
 		}
-
-		targets, err := eng.LsPlaylists(tgt.Query)
-		if err != nil {
-			return fmt.Errorf("failed to resolve target playlists: %w", err)
-		}
-		if len(targets) == 0 {
-			return fmt.Errorf("no target playlists matched query %q", tgt.Query)
-		}
-		for _, t := range targets {
-			targetNames = append(targetNames, t.Node.Name)
+		for _, n := range tgt.Nodes {
+			targetNames = append(targetNames, n.Name)
 		}
 	}
 
