@@ -6,7 +6,7 @@
 
 - `cmd/djlt/`: CLI entry points. Uses a **Verb-Centric** architecture.
 - `internal/`: UI-agnostic core logic.
-    - `engine/`: Query engine and library orchestration. Abstracted via the `Library` interface.
+    - `engine/`: Query engine and library orchestration. Abstracted via the `Library` and `WritableLibrary` interfaces.
     - `provider/`: Unified interface for library sources (Rekordbox, Plex).
     - `plex/`: Parallel prober and API client for Plex.
     - `query/`: Lexer/Parser for selection syntax.
