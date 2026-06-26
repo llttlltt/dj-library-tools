@@ -42,6 +42,11 @@ var syncCmd = &cobra.Command{
 
 		for _, targetStr := range syncTo {
 			tgt := utils.ParseLocation(targetStr, "")
+			
+			if src.Resource == "" || tgt.Resource == "" {
+				return fmt.Errorf("resource must be specified for both source and target (e.g. plex/playlists and rb/playlists)")
+			}
+
 			if src.Provider == "plex" && tgt.Provider == "rb" {
 				if err := syncPlexToRekordbox(src, tgt); err != nil {
 					return err

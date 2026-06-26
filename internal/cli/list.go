@@ -31,8 +31,14 @@ var listCmd = &cobra.Command{
 
 		switch loc.Provider {
 		case "rb", "rekordbox":
+			if loc.Resource == "" {
+				return fmt.Errorf("resource must be specified (e.g. rb/tracks or rb/playlists)")
+			}
 			return listRekordbox(loc)
 		case "plex":
+			if loc.Resource == "" {
+				return fmt.Errorf("resource must be specified (e.g. plex/playlists)")
+			}
 			return listPlex(loc)
 		default:
 			return fmt.Errorf("unknown provider: %s", loc.Provider)
