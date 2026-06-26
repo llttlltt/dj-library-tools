@@ -61,6 +61,9 @@ nav:
     - Workflows:
       - guide/workflows/index.md
       - Automating Playlists: guide/workflows/automating-playlists.md
+      - Cleaning Up: guide/workflows/cleaning-up.md
+      - Performance Prep: guide/workflows/performance-prep.md
+      - Metadata Hardening: guide/workflows/metadata-hardening.md
     - Commands:
       - guide/commands/index.md
       - Reference:

@@ -3,10 +3,10 @@
 This workflow shows how to use the `sync` command to manage a "to-do" playlist that stays in sync with your track criteria.
 
 ### 1. Verify your query
-Before doing anything else, use the `list` command to see which tracks currently need work. This ensures your query is selecting exactly what you expect.
+Before doing anything else, use the `ls` command to see which tracks currently need work. This ensures your query is selecting exactly what you expect.
 
 ```bash
-djlt list rb/tracks "beatgrids:1 && hotcues:<1 && memorycues:<1"
+djlt ls rb/tracks "beatgrids:1 && hotcues:<1 && memorycues:<1"
 ```
 
 ### 2. Create the playlist

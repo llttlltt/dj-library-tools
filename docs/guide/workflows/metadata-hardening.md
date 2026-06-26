@@ -1,0 +1,45 @@
+# Metadata Hardening
+
+A "hardened" library is one where every track is fully analyzed, cue-pointed, and correctly tagged. This workflow helps you identify gaps in your metadata and fix them in bulk.
+
+### 1. Identify Missing Beatgrids
+Analyze which tracks are missing beatgrid information (Tempo markers). These are tracks you haven't "locked in" for syncing yet.
+
+```bash
+# Find tracks with zero beatgrids
+djlt ls rb/tracks "beatgrids:0"
+```
+
+### 2. Standardize Color Coding
+Use color coding to flag tracks that need specific types of work. For example, use **Red** for tracks that have broken metadata and **Green** for those that are "Performance Ready".
+
+```bash
+# Find all "Red" tracks that you've since analyzed (have hotcues)
+# and need to be marked as "Green"
+djlt ls rb/tracks "color:red && hotcues:>3"
+```
+
+### 3. Verify Comments
+Many DJs use the `comment` field for energy levels or custom tags. Find tracks that are missing these vital clues.
+
+```bash
+# Find tracks with no comments
+djlt ls rb/tracks "comment:none"
+```
+
+### 4. Bulk Fixing
+If you find a group of tracks that are missing a specific tag, you can move them into a temporary "To Tag" folder to process them in Rekordbox.
+
+```bash
+# Move all un-tagged tracks into a processing folder
+djlt mv rb/tracks "comment:none" --from "rb/playlists name:Inbox" --to "rb/folders name:'To Tag'"
+```
+
+---
+
+## The analyze-tag loop
+The most effective way to harden your library is the query-fix loop:
+1. Run `ls` with a specific metadata gap (e.g. `hotcues:0`).
+2. Move those tracks to a specific folder using `mv`.
+3. Open Rekordbox, process the tracks in that folder.
+4. Repeat until the query returns zero results.
