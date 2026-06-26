@@ -4,7 +4,7 @@
 
 ## Directory Structure
 
-- `cmd/djlt/`: CLI entry points. Uses a **God Command** pattern (one command per resource, flags as verbs).
+- `cmd/djlt/`: CLI entry points. Uses a **Verb-Centric** architecture (top-level commands are actions, flags are modifiers).
 - `internal/`: UI-agnostic core logic.
     - `engine/`: Query engine and Rekordbox tree management.
     - `plex/`: Parallel prober and API client for Plex.
@@ -29,9 +29,9 @@ The selection engine uses a recursive descent parser. It supports:
 - Numeric operators: `>`, `<`, `..` (range), `:` (exact equality for numeric fields)
 - Field mapping: `bpm`, `rating`, `hotcues`, `playlistcount`, etc.
 
-### God Command Pattern
+### Verb-Centric Commands
 All commands follow a consistent pattern:
-`djlt [resource] --[verb] [arguments]`
+`djlt [verb] [resource] [query] --to/--from [target]`
 
 Example:
-`djlt playlist --new "My New Playlist"`
+`djlt create rb/playlists "My New Playlist"`
