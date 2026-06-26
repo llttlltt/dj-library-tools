@@ -18,6 +18,7 @@ var listCmd = &cobra.Command{
 	Aliases: []string{"ls"},
 	Short:   "List items from a location (e.g. rb/tracks title:Oceans)",
 	Args:    cobra.MinimumNArgs(1),
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var loc utils.Location
 		if len(args) > 1 {
