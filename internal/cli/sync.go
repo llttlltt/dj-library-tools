@@ -30,8 +30,8 @@ var syncCmd = &cobra.Command{
 	Short: "Sync items between a source and target",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		src := utils.ParseLocation(args[0])
-		tgt := utils.ParseLocation(args[1])
+		src := utils.ParseLocation(args[0], "")
+		tgt := utils.ParseLocation(args[1], "")
 
 		if src.Provider == "plex" && tgt.Provider == "rb" {
 			return syncPlexToRekordbox(src, tgt)

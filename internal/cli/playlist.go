@@ -89,7 +89,7 @@ func runPlaylistCmd(cmd *cobra.Command, args []string) error {
 	// Resolve playlist query when provided.
 	var targets []engine.NodeResult
 	if len(args) > 0 {
-		loc := utils.ParseLocation(args[0])
+		loc := utils.ParseLocation(args[0], "")
 		if loc.Provider != "rb" || loc.Resource != "playlists" {
 			return fmt.Errorf("playlist query must use rb/playlists: syntax, got %q", args[0])
 		}
@@ -124,9 +124,9 @@ func runPlaylistCmd(cmd *cobra.Command, args []string) error {
 func runPlaylistNew(syncEng *syncpkg.Engine, eng *engine.Engine, path string) error {
 	var trackIDs []string
 	if plAddFlag != "" {
-		loc := utils.ParseLocation(plAddFlag)
+		loc := utils.ParseLocation(plAddFlag, "")
 		if loc.Provider != "rb" || loc.Resource != "tracks" {
-			return fmt.Errorf("--add must use rb/tracks: syntax, got %q", plAddFlag)
+			return fmt.Errorf("--add must use rb/tracks syntax, got %q", plAddFlag)
 		}
 		tracks, err := eng.Ls(loc.Query)
 		if err != nil {
@@ -152,9 +152,9 @@ func runPlaylistNew(syncEng *syncpkg.Engine, eng *engine.Engine, path string) er
 }
 
 func runPlaylistAdd(syncEng *syncpkg.Engine, eng *engine.Engine, targets []engine.NodeResult, path string) error {
-	loc := utils.ParseLocation(plAddFlag)
+	loc := utils.ParseLocation(plAddFlag, "")
 	if loc.Provider != "rb" || loc.Resource != "tracks" {
-		return fmt.Errorf("--add must use rb/tracks: syntax, got %q", plAddFlag)
+		return fmt.Errorf("--add must use rb/tracks syntax, got %q", plAddFlag)
 	}
 	tracks, err := eng.Ls(loc.Query)
 	if err != nil {
@@ -220,9 +220,9 @@ func runPlaylistMove(syncEng *syncpkg.Engine, targets []engine.NodeResult, path 
 }
 
 func runPlaylistRemoveTracks(syncEng *syncpkg.Engine, eng *engine.Engine, targets []engine.NodeResult, path string) error {
-	loc := utils.ParseLocation(plRemoveFlag)
+	loc := utils.ParseLocation(plRemoveFlag, "")
 	if loc.Provider != "rb" || loc.Resource != "tracks" {
-		return fmt.Errorf("--remove must use rb/tracks: syntax, got %q", plRemoveFlag)
+		return fmt.Errorf("--remove must use rb/tracks syntax, got %q", plRemoveFlag)
 	}
 	tracks, err := eng.Ls(loc.Query)
 	if err != nil {
@@ -252,9 +252,9 @@ func runPlaylistRemoveTracks(syncEng *syncpkg.Engine, eng *engine.Engine, target
 }
 
 func runPlaylistSync(syncEng *syncpkg.Engine, eng *engine.Engine, targets []engine.NodeResult, path string) error {
-	loc := utils.ParseLocation(plSyncFlag)
+	loc := utils.ParseLocation(plSyncFlag, "")
 	if loc.Provider != "rb" || loc.Resource != "tracks" {
-		return fmt.Errorf("--sync must use rb/tracks: syntax, got %q", plSyncFlag)
+		return fmt.Errorf("--sync must use rb/tracks syntax, got %q", plSyncFlag)
 	}
 	tracks, err := eng.Ls(loc.Query)
 	if err != nil {

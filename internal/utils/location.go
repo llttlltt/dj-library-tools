@@ -11,25 +11,24 @@ type Location struct {
 	Query    string
 }
 
-// ParseLocation parses a string in the format provider/resource:query.
-// Defaults:
-// - If no resource is specified (e.g., "plex"), it defaults based on provider.
-// - If no query is specified, it's empty.
-func ParseLocation(input string) Location {
-	loc := Location{}
+// ParseLocation parses a provider/resource string and an optional query.
+func ParseLocation(locStr string, query string) Location {
+	loc := Location{
+		Query: query,
+	}
 
-	// Split query part
-	parts := strings.SplitN(input, ":", 2)
-	base := parts[0]
-	if len(parts) > 1 {
+	// If query is empty, check if locStr contains a space-separated query
+	if loc.Query == "" && strings.Contains(locStr, " ") {
+		parts := strings.SplitN(locStr, " ", 2)
+		locStr = parts[0]
 		loc.Query = parts[1]
 	}
 
 	// Split provider/resource
-	baseParts := strings.SplitN(base, "/", 2)
-	loc.Provider = baseParts[0]
-	if len(baseParts) > 1 {
-		loc.Resource = baseParts[1]
+	parts := strings.SplitN(locStr, "/", 2)
+	loc.Provider = parts[0]
+	if len(parts) > 1 {
+		loc.Resource = parts[1]
 	}
 
 	// Apply defaults
@@ -39,6 +38,8 @@ func ParseLocation(input string) Location {
 			loc.Resource = "playlists"
 		case "rb", "rekordbox":
 			loc.Resource = "tracks"
+		case "m3u8":
+			loc.Resource = "file"
 		}
 	}
 
