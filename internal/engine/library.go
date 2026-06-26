@@ -1,17 +1,16 @@
 package engine
 
 import (
+	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 )
 
 // Library defines the interface for a music library source.
-// This allows the Engine to operate on any source (Rekordbox XML, SQL, Mock)
-// without being coupled to a specific implementation.
 type Library interface {
-	// GetTracks returns all tracks in the library.
-	GetTracks() []rekordbox.Track
-	// GetPlaylists returns the root nodes of the playlist tree.
-	GetPlaylists() []rekordbox.Node
+	// GetTracks returns all tracks in the library in a neutral format.
+	GetTracks() []models.Track
+	// GetPlaylists returns the nodes of the playlist tree in a neutral format.
+	GetPlaylists() []models.Node
 }
 
 // WritableLibrary extends Library with operations to modify the playlist tree.
@@ -42,12 +41,22 @@ type RekordboxLibrary struct {
 	XML *rekordbox.RekordboxLibraryXML
 }
 
-func (r *RekordboxLibrary) GetTracks() []rekordbox.Track {
-	return r.XML.Collection.TRACK
+func (r *RekordboxLibrary) GetTracks() []models.Track {
+	rbTracks := r.XML.Collection.TRACK
+	tracks := make([]models.Track, len(rbTracks))
+	for i, rt := range rbTracks {
+		tracks[i] = rt.ToNeutral()
+	}
+	return tracks
 }
 
-func (r *RekordboxLibrary) GetPlaylists() []rekordbox.Node {
-	return r.XML.Playlists.Node.Node
+func (r *RekordboxLibrary) GetPlaylists() []models.Node {
+	nodes := r.XML.Playlists.Node.Node
+	results := make([]models.Node, len(nodes))
+	for i, n := range nodes {
+		results[i] = n.ToNeutral("")
+	}
+	return results
 }
 
 func (r *RekordboxLibrary) AddPlaylist(folder, name string, trackIDs []string, position int) {

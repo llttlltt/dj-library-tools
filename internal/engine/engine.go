@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/query"
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 )
@@ -11,45 +12,40 @@ import (
 // Engine performs operations on a library using queries
 type Engine struct {
 	Library  Library
-	trackMap map[int][]string // Map TrackID to list of playlist names
+	trackMap map[string][]string // Map Track ID string to list of playlist names
 }
 
 func NewEngine(lib Library) *Engine {
 	e := &Engine{
 		Library:  lib,
-		trackMap: make(map[int][]string),
+		trackMap: make(map[string][]string),
 	}
 	e.indexPlaylists()
 	return e
 }
 
 func (e *Engine) indexPlaylists() {
-	e.walkPlaylists(e.Library.GetPlaylists())
+	// For Rekordbox specifically, we need to index membership.
+	if r, ok := e.Library.(*RekordboxLibrary); ok {
+		e.walkRekordboxPlaylists(r.XML.Playlists.Node.Node)
+	}
 }
 
-func (e *Engine) walkPlaylists(nodes []rekordbox.Node) {
+func (e *Engine) walkRekordboxPlaylists(nodes []rekordbox.Node) {
 	for _, node := range nodes {
-		if node.Type == 1 { // Playlist
+		if node.Type == 1 {
 			for _, t := range node.TRACK {
-				// Record this track is in this playlist
-				// Note: In fixture KeyType="0" means TrackID
-				// If we encounter KeyType="1" we might need to handle Location mapping
-				var id int
-				_, err := fmt.Sscanf(t.Key, "%d", &id)
-				if err == nil {
-					e.trackMap[id] = append(e.trackMap[id], node.Name)
-				}
+				e.trackMap[t.Key] = append(e.trackMap[t.Key], node.Name)
 			}
 		}
-		// Always walk children, folders have node.Node
 		if len(node.Node) > 0 {
-			e.walkPlaylists(node.Node)
+			e.walkRekordboxPlaylists(node.Node)
 		}
 	}
 }
 
 // Ls returns all tracks that match the given query string
-func (e *Engine) Ls(queryString string) ([]rekordbox.Track, error) {
+func (e *Engine) Ls(queryString string) ([]models.Track, error) {
 	parser := query.NewParser()
 	q := parser.Parse(queryString)
 	if err := q.ValidateWithFields(query.AllowedTrackFields); err != nil {
@@ -57,9 +53,9 @@ func (e *Engine) Ls(queryString string) ([]rekordbox.Track, error) {
 	}
 	eval := query.NewEvaluator(q)
 
-	var matched []rekordbox.Track
+	var matched []models.Track
 	for _, track := range e.Library.GetTracks() {
-		if eval.MatchesWithPlaylists(track.ToNeutral(), e.trackMap[track.TrackID]) {
+		if eval.MatchesWithPlaylists(track, e.trackMap[track.ID]) {
 			matched = append(matched, track)
 		}
 	}
@@ -103,17 +99,13 @@ func (e *Engine) Stat(queryString string) (*StatResult, error) {
 		if t.Label != "" {
 			res.Labels[t.Label]++
 		}
-		if t.Tonality != "" {
-			res.Keys[t.Tonality]++
+		if t.Key != "" {
+			res.Keys[t.Key]++
 		}
 		if t.Artist != "" {
 			res.Artists[t.Artist]++
 		}
-		if len(t.Tempo) > 0 {
-			if bpm, err := strconv.ParseFloat(t.Tempo[0].Bpm, 64); err == nil {
-				res.TotalTempo += bpm
-			}
-		}
+		res.TotalTempo += t.BPM
 	}
 	res.AvgBPM = res.TotalTempo / float64(len(tracks))
 
@@ -122,16 +114,23 @@ func (e *Engine) Stat(queryString string) (*StatResult, error) {
 
 // Modify applies changes to matched tracks
 func (e *Engine) Modify(queryString string, changes map[string]string) (int, error) {
+	// This still requires the underlying writable library to save back.
+	// For now we'll only support this on RekordboxLibrary.
+	lib, ok := e.Library.(*RekordboxLibrary)
+	if !ok {
+		return 0, fmt.Errorf("modify only supported on rekordbox-backed libraries")
+	}
+
 	parser := query.NewParser()
 	q := parser.Parse(queryString)
 	eval := query.NewEvaluator(q)
 
 	modifyCount := 0
-	tracks := e.Library.GetTracks()
+	tracks := lib.XML.Collection.TRACK
 	for i := range tracks {
-		track := tracks[i]
-		if eval.MatchesWithPlaylists(track.ToNeutral(), e.trackMap[track.TrackID]) {
-			e.applyChanges(&tracks[i], changes)
+		rt := &tracks[i]
+		if eval.MatchesWithPlaylists(rt.ToNeutral(), e.trackMap[strconv.Itoa(rt.TrackID)]) {
+			e.applyChanges(rt, changes)
 			modifyCount++
 		}
 	}
