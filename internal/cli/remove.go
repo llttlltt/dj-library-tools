@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
@@ -54,7 +53,7 @@ func runRemoveCmd(cmd *cobra.Command, args []string) error {
 
 	var trackIDs []string
 	for _, t := range src.Tracks {
-		trackIDs = append(trackIDs, strconv.Itoa(t.TrackID))
+		trackIDs = append(trackIDs, t.ID)
 	}
 
 	// 2. Resolve origins and apply

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/plex"
 	"github.com/llttlltt/dj-library-tools/internal/query"
-	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 )
 
 type PlexProvider struct {
@@ -32,126 +32,11 @@ func (p *PlexProvider) Client() *plex.Client {
 	return p.client
 }
 
-func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) {
-	ctx := context.Background()
-	baseURL, err := p.resolveBaseURL(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	q := query.NewParser().Parse(queryString)
-	if err := q.ValidateWithFields(query.AllowedTrackFields); err != nil {
-		return nil, err
-	}
-
-	playlistIDs := []string{}
-	if queryString != "" {
-		if q.Root == nil {
-			return nil, fmt.Errorf("query must specify a field (e.g. playlist:%q or id:%q)", queryString, queryString)
-		}
-
-		// 1. Resolve Playlist Contexts
-		var playlistName string
-		var playlistOp query.Operator
-		var walkResolve func(expr query.Expression)
-		walkResolve = func(expr query.Expression) {
-			switch v := expr.(type) {
-			case query.Comparison:
-				f := strings.ToLower(v.Field)
-				if f == "id" || f == "ratingkey" {
-					playlistIDs = append(playlistIDs, v.Value)
-				} else if f == "playlist" {
-					playlistName = v.Value
-					playlistOp = v.Operator
-				}
-			case query.Logical:
-				walkResolve(v.Left)
-				walkResolve(v.Right)
-			}
-		}
-		walkResolve(q.Root)
-
-		if len(playlistIDs) == 0 && playlistName != "" {
-			plexPlaylists, err := p.client.GetPlaylists(ctx, baseURL)
-			if err != nil {
-				return nil, err
-			}
-			for _, pl := range plexPlaylists {
-				match := false
-				if playlistOp == query.OpExact {
-					match = pl.Title == playlistName
-				} else {
-					match = strings.Contains(strings.ToLower(pl.Title), strings.ToLower(playlistName))
-				}
-
-				if match {
-					playlistIDs = append(playlistIDs, pl.RatingKey)
-				}
-			}
-			
-			// If we specifically asked for a playlist but found none, return empty
-			if len(playlistIDs) == 0 {
-				return []rekordbox.Track{}, nil
-			}
-		}
-	}
-
-	var plexTracks []plex.Track
-	if len(playlistIDs) > 0 {
-		// Aggregate tracks from all matching playlists
-		seen := make(map[string]bool)
-		for _, id := range playlistIDs {
-			path := "/playlists/" + id + "/items"
-			pt, err := p.client.GetPlaylistTracks(ctx, baseURL, path)
-			if err != nil {
-				continue // Skip failing playlists
-			}
-			for _, t := range pt {
-				if !seen[t.RatingKey] {
-					plexTracks = append(plexTracks, t)
-					seen[t.RatingKey] = true
-				}
-			}
-		}
-	} else {
-		// Global search
-		plexTracks, err = p.client.GetAllTracks(ctx, baseURL)
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	var tracks []rekordbox.Track
-	eval := query.NewEvaluator(q)
-
-	for _, pt := range plexTracks {
-		// Map Plex Track to Rekordbox Track for the Evaluator
-		t := rekordbox.Track{
-			TrackID:    0, // Plex doesn't have an integer TrackID in the same way
-			Name:       pt.Title,
-			Artist:     pt.Artist,
-			Album:      pt.Album,
-			Tonality:   pt.KeyTag,
-			AverageBpm: fmt.Sprintf("%.2f", pt.BPM),
-		}
-		if pt.BPM > 0 {
-			t.Tempo = []rekordbox.Tempo{{Bpm: fmt.Sprintf("%.2f", pt.BPM)}}
-		}
-		if len(pt.Media) > 0 && len(pt.Media[0].Part) > 0 {
-			t.Location = pt.Media[0].Part[0].File
-		}
-
-		// Use the standard Evaluator!
-		if eval.Matches(t) {
-			tracks = append(tracks, t)
-		}
-	}
-
-	return tracks, nil
+func (p *PlexProvider) GetRawTracks(queryString string) (interface{}, error) {
+	return p.getRawTracksInternal(queryString)
 }
 
-func (p *PlexProvider) GetRawTracks(queryString string) (interface{}, error) {
+func (p *PlexProvider) getRawTracksInternal(queryString string) ([]plex.Track, error) {
 	ctx := context.Background()
 	baseURL, err := p.resolveBaseURL(ctx)
 	if err != nil {
@@ -169,7 +54,6 @@ func (p *PlexProvider) GetRawTracks(queryString string) (interface{}, error) {
 			return nil, fmt.Errorf("query must specify a field (e.g. playlist:%q or id:%q)", queryString, queryString)
 		}
 
-		// 1. Resolve Playlist Contexts
 		var playlistName string
 		var playlistOp query.Operator
 		var walkResolve func(expr query.Expression)
@@ -207,7 +91,7 @@ func (p *PlexProvider) GetRawTracks(queryString string) (interface{}, error) {
 					playlistIDs = append(playlistIDs, pl.RatingKey)
 				}
 			}
-			
+
 			if len(playlistIDs) == 0 {
 				return []plex.Track{}, nil
 			}
@@ -241,22 +125,27 @@ func (p *PlexProvider) GetRawTracks(queryString string) (interface{}, error) {
 	var tracks []plex.Track
 	eval := query.NewEvaluator(q)
 	for _, pt := range plexTracks {
-		// Evaluator needs a rekordbox.Track, so we map just for evaluation
-		t := rekordbox.Track{
-			Name:       pt.Title,
-			Artist:     pt.Artist,
-			Album:      pt.Album,
-			Tonality:   pt.KeyTag,
-			AverageBpm: fmt.Sprintf("%.2f", pt.BPM),
-		}
-		if eval.Matches(t) {
+		if eval.Matches(pt.ToNeutral()) {
 			tracks = append(tracks, pt)
 		}
 	}
 	return tracks, nil
 }
 
-func (p *PlexProvider) GetPlaylists(queryString string) ([]NodeResult, error) {
+func (p *PlexProvider) GetTracks(queryString string) ([]models.Track, error) {
+	raw, err := p.getRawTracksInternal(queryString)
+	if err != nil {
+		return nil, err
+	}
+
+	var tracks []models.Track
+	for _, pt := range raw {
+		tracks = append(tracks, pt.ToNeutral())
+	}
+	return tracks, nil
+}
+
+func (p *PlexProvider) GetPlaylists(queryString string) ([]models.Node, error) {
 	ctx := context.Background()
 	baseURL, err := p.resolveBaseURL(ctx)
 	if err != nil {
@@ -273,23 +162,13 @@ func (p *PlexProvider) GetPlaylists(queryString string) ([]NodeResult, error) {
 		return nil, err
 	}
 
-	var results []NodeResult
+	var results []models.Node
 	eval := query.NewEvaluator(q)
 
 	for _, pl := range plexPlaylists {
-		// Mock a rekordbox.Node for the Evaluator
-		n := rekordbox.Node{
-			Name:    pl.Title,
-			Type:    1,
-			Entries: rekordbox.PtrInt32(int32(pl.LeafCount)),
-		}
-
-		if eval.MatchesNode(n, "") {
-			results = append(results, NodeResult{
-				Name:    pl.Title,
-				Entries: pl.LeafCount,
-				Raw:     pl,
-			})
+		n := pl.ToNeutralNode()
+		if eval.MatchesNode(n) {
+			results = append(results, n)
 		}
 	}
 
@@ -305,9 +184,6 @@ func (p *PlexProvider) resolveBaseURL(ctx context.Context) (string, error) {
 		return fmt.Sprintf("http://%s:%d", p.host, port), nil
 	}
 
-	// If no host provided, we need to find the best server connection.
-	// This is a bit complex as Plex has multiple servers.
-	// For simplicity, we'll look for the first available server.
 	resources, err := p.client.GetResources(ctx)
 	if err != nil {
 		return "", err
@@ -317,7 +193,6 @@ func (p *PlexProvider) resolveBaseURL(ctx context.Context) (string, error) {
 		if res.Provides != "server" {
 			continue
 		}
-		// Probe best connection for this server
 		probe, err := p.client.ProbeBestConnection(res)
 		if err == nil {
 			return probe.BaseURL, nil

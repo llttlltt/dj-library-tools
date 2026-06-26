@@ -4,10 +4,9 @@ import (
 	"fmt"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
-	"github.com/llttlltt/dj-library-tools/internal/plex"
+	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
-	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 	"github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"
 )
@@ -71,11 +70,10 @@ func RunBulkOperation(verb string, targetNames []string, itemIDs []string, actio
 
 // Selection represents a resolved set of tracks or nodes from a provider.
 type Selection struct {
-	Tracks     []rekordbox.Track
-	Nodes      []provider.NodeResult
-	Location   utils.Location
-	RawTracks  interface{} // Holds provider-specific raw track models (e.g. []plex.Track)
-	PlexClient *plex.Client
+	Tracks   []models.Track
+	Nodes    []models.Node
+	Location utils.Location
+	Provider provider.Provider // Carry the provider that created this selection
 }
 
 // ResolveSelection resolves a location string into a Selection.
@@ -86,35 +84,20 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 	}
 
 	cfg, _ := config.LoadAppConfig()
-	var rbXML *rekordbox.RekordboxLibraryXML
-	if loc.Provider == "rb" || loc.Provider == "rekordbox" {
-		var err error
-		rbXML, _, err = loadXMLFunc()
-		if err != nil {
-			return nil, err
-		}
-	}
+	var rbXML, _, _ = loadXMLFunc() // We don't need path here
 
 	prov, err := provider.NewProvider(loc.Provider, rbXML, cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	sel := &Selection{Location: loc}
+	sel := &Selection{Location: loc, Provider: prov}
 	if loc.Resource == "tracks" {
 		tracks, err := prov.GetTracks(loc.Query)
 		if err != nil {
 			return nil, err
 		}
 		sel.Tracks = tracks
-
-		raw, err := prov.GetRawTracks(loc.Query)
-		if err == nil {
-			sel.RawTracks = raw
-		}
-		if p, ok := prov.(*provider.PlexProvider); ok {
-			sel.PlexClient = p.Client() // We'll add this getter
-		}
 	} else {
 		nodes, err := prov.GetPlaylists(loc.Query)
 		if err != nil {
