@@ -56,6 +56,8 @@ type Track struct {
 	Summary   string `json:"summary"`
 	Artist    string `json:"grandparentTitle"`
 	Album     string `json:"parentTitle"`
+	BPM       float64 `json:"bpm"`
+	KeyTag    string `json:"key"`
 	Media     []Media `json:"Media"`
 }
 
