@@ -31,22 +31,5 @@ func ParseLocation(locStr string, query string) Location {
 		loc.Resource = parts[1]
 	}
 
-	// Apply defaults
-	if loc.Resource == "" {
-		switch loc.Provider {
-		case "plex":
-			loc.Resource = "playlists"
-		case "rb", "rekordbox":
-			loc.Resource = "tracks"
-		case "m3u8":
-			loc.Resource = "file"
-		}
-	}
-	
-	// Ensure provider is specified
-	if loc.Provider == "" {
-		// No default provider for now to ensure explicitness
-	}
-
 	return loc
 }
