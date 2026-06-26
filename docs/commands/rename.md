@@ -8,7 +8,6 @@ djlt rename [resource] [query] --to [new-name] [flags]
 ### Options
 
 ```
-      --dry-run     Preview changes without writing
   -h, --help        help for rename
       --to string   The new name for the resource
 ```
@@ -16,6 +15,7 @@ djlt rename [resource] [query] --to [new-name] [flags]
 ### Inherited Options
 
 ```
+      --dry-run      Preview changes without writing
   -x, --xml string   Path to the Rekordbox XML library
 ```
 

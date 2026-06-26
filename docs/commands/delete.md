@@ -8,13 +8,13 @@ djlt delete [resource] [query] [flags]
 ### Options
 
 ```
-      --dry-run   Preview changes without writing
-  -h, --help      help for delete
+  -h, --help   help for delete
 ```
 
 ### Inherited Options
 
 ```
+      --dry-run      Preview changes without writing
   -x, --xml string   Path to the Rekordbox XML library
 ```
 

@@ -9,7 +9,6 @@ djlt fix playlist [file...] [flags]
 ### Options
 
 ```
-      --dry-run           Show what would be done without modifying files
   -e, --ext strings       Priority list of file extensions (comma-separated)
   -f, --force             Force overwrite if output file exists
   -h, --help              help for playlist
@@ -22,6 +21,7 @@ djlt fix playlist [file...] [flags]
 ### Inherited Options
 
 ```
+      --dry-run      Preview changes without writing
   -x, --xml string   Path to the Rekordbox XML library
 ```
 

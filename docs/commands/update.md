@@ -19,6 +19,7 @@ djlt update [resource] [query] --from [source-xml] [flags]
 ### Inherited Options
 
 ```
+      --dry-run      Preview changes without writing
   -x, --xml string   Path to the Rekordbox XML library
 ```
 

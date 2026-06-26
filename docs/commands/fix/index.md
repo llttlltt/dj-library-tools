@@ -11,6 +11,7 @@ Fix library issues or resource metadata
 ### Inherited Options
 
 ```
+      --dry-run      Preview changes without writing
   -x, --xml string   Path to the Rekordbox XML library
 ```
 

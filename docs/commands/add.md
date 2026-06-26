@@ -8,7 +8,6 @@ djlt add [source-resource] [source-query] --to [target-resource] [target-query] 
 ### Options
 
 ```
-      --dry-run      Preview changes without writing
       --force        Allow adding duplicates (if supported by target)
   -h, --help         help for add
       --to strings   Target resource(s) to add to (repeatable)
@@ -17,6 +16,7 @@ djlt add [source-resource] [source-query] --to [target-resource] [target-query] 
 ### Inherited Options
 
 ```
+      --dry-run      Preview changes without writing
   -x, --xml string   Path to the Rekordbox XML library
 ```
 
