@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
-	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
+	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/spf13/cobra"
 )
 
@@ -31,13 +32,6 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("at least one --to target is required")
 	}
 
-	rbXML, path, err := loadXMLFunc()
-	if err != nil {
-		return err
-	}
-
-	syncEng := syncpkg.NewEngine(nil, engine.NewRekordboxLibrary(rbXML))
-
 	// 1. Resolve source
 	queryOverride := ""
 	if len(args) > 1 {
@@ -48,44 +42,55 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if src.Location.Provider != "rb" || src.Location.Resource != "tracks" {
-		return fmt.Errorf("currently only rb/tracks is supported as a source for add")
-	}
-
-	var trackIDs []string
-	for _, t := range src.Tracks {
-		trackIDs = append(trackIDs, t.ID)
-	}
-
 	// 2. Resolve targets and apply
-	var targetNames []string
+	var targetNodes []models.Node
+	var targetProv provider.WritableProvider
+
 	for _, targetStr := range addTargets {
 		tgt, err := ResolveSelection(targetStr, "")
 		if err != nil {
 			return err
 		}
-		if tgt.Location.Provider != "rb" || tgt.Location.Resource != "playlists" {
-			return fmt.Errorf("currently only rb/playlists is supported as a target for add, got %q", targetStr)
+
+		wp, ok := tgt.Provider.(provider.WritableProvider)
+		if !ok {
+			return fmt.Errorf("provider %q does not support adding tracks", tgt.Location.Provider)
 		}
-		for _, n := range tgt.Nodes {
-			targetNames = append(targetNames, n.Name)
+		targetProv = wp
+
+		if tgt.Location.Resource != "playlists" {
+			return fmt.Errorf("can only add to playlists, got %q", tgt.Location.Resource)
 		}
+		targetNodes = append(targetNodes, tgt.Nodes...)
 	}
 
-	RunBulkOperation("add", targetNames, trackIDs, func(targetName string, items []string) (bool, int) {
-		return syncEng.AddTracksToPlaylist(targetName, items)
-	})
-
 	if dryRun {
+		for _, n := range targetNodes {
+			fmt.Printf("[Dry Run] Would add %d tracks to playlist %q\n", len(src.Tracks), n.Name)
+		}
 		return nil
 	}
 
-	return syncEng.SaveXML(path)
+	for _, n := range targetNodes {
+		added, err := targetProv.AddTracks(n, src.Tracks)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Added %d tracks to %q\n", added, n.Name)
+	}
+
+	// For Rekordbox we still need to save.
+	if rb, ok := targetProv.(*provider.RekordboxProvider); ok {
+		_, path, _ := loadXMLFunc()
+		return rb.Engine.Library.(engine.WritableLibrary).Save(path)
+	}
+
+	return nil
 }
 
 func init() {
 	addCmd.Flags().StringSliceVar(&addTargets, "to", []string{}, "Target resource(s) to add to (repeatable)")
 	addCmd.Flags().BoolVar(&addForce, "force", false, "Allow adding duplicates (if supported by target)")
-	
+
 	RootCmd.AddCommand(addCmd)
 }

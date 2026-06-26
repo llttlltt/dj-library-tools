@@ -4,14 +4,20 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/models"
 )
 
-// Provider defines the interface for a music library provider (Rekordbox, Plex, etc.)
+// Provider defines the interface for a music library provider.
 type Provider interface {
-	// Name returns the provider's name (e.g. "rb", "plex")
 	Name() string
-	// GetTracks resolves tracks matching the query.
 	GetTracks(query string) ([]models.Track, error)
-	// GetPlaylists resolves playlists matching the query.
 	GetPlaylists(query string) ([]models.Node, error)
-	// GetRawTracks returns provider-specific track models (e.g. []plex.Track)
 	GetRawTracks(query string) (interface{}, error)
+	
+	// Capabilities
+	CanTranscode() bool // Can this provider provide raw audio for transcoding?
+}
+
+// WritableProvider extends Provider with modification capabilities.
+type WritableProvider interface {
+	Provider
+	AddTracks(target models.Node, tracks []models.Track) (int, error)
+	RemoveTracks(target models.Node, tracks []models.Track) (int, error)
 }

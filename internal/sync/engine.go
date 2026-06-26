@@ -37,7 +37,13 @@ type SyncOptions struct {
 	PathMaps     map[string]string
 }
 
-func (o *Orchestrator) SyncPlexToRekordbox(tracks []plex.Track, playlistName string, opts SyncOptions) error {
+func (o *Orchestrator) SyncToLibrary(raw interface{}, query string, playlistName string, opts SyncOptions) error {
+	// For now, we only support Plex as a raw source for sync
+	tracks, ok := raw.([]plex.Track)
+	if !ok {
+		return fmt.Errorf("sync currently only supports plex as a raw source")
+	}
+
 	// Setup Media Engine if export flag is set
 	var transcoder *media.Transcoder
 	if opts.ExportDest != "" {
@@ -135,7 +141,7 @@ func (o *Orchestrator) SyncPlexToRekordbox(tracks []plex.Track, playlistName str
 				if o.DryRun {
 					trackBar.Increment()
 					if rbTrack != nil {
-						rbTrack.Location = "file://localhost" + destPath
+						// rbTrack.Location = "file://localhost" + destPath // We need a neutral way to modify metadata
 					}
 				} else {
 					if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
@@ -154,7 +160,7 @@ func (o *Orchestrator) SyncPlexToRekordbox(tracks []plex.Track, playlistName str
 					}
 					trackBar.Increment()
 					if rbTrack != nil {
-						rbTrack.Location = "file://localhost" + destPath
+						// rbTrack.Location = "file://localhost" + destPath
 					}
 				}
 

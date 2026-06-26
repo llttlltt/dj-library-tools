@@ -2,12 +2,10 @@ package cli
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/engine"
-	"github.com/llttlltt/dj-library-tools/internal/plex"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
@@ -67,7 +65,6 @@ func syncPlexToRekordbox(src, tgt *Selection) error {
 		return err
 	}
 
-	// For Sync, we still need the Plex client and raw tracks
 	plexProv, ok := src.Provider.(*provider.PlexProvider)
 	if !ok {
 		return fmt.Errorf("source must be a plex provider for this sync direction")
@@ -75,13 +72,12 @@ func syncPlexToRekordbox(src, tgt *Selection) error {
 
 	orch := sync.NewOrchestrator(plexProv.Client(), engine.NewRekordboxLibrary(rbXML), dryRun, verbose)
 
-	// We'll add a way to get raw tracks or just cast if we know they are plex
 	raw, err := src.Provider.GetRawTracks(src.Location.Query)
 	if err != nil {
 		return err
 	}
 
-	err = orch.SyncPlexToRekordbox(raw.([]plex.Track), src.Location.Query, sync.SyncOptions{
+	err = orch.SyncToLibrary(raw, src.Location.Query, src.Location.Query, sync.SyncOptions{
 		ExportDest:   exportDest,
 		ExportFormat: exportFormat,
 		PathMaps:     cfg.PathMaps,
@@ -97,17 +93,6 @@ func syncPlexToRekordbox(src, tgt *Selection) error {
 }
 
 func syncPlexToM3U8(src, tgt utils.Location) error {
-	cfg, _ := config.LoadAppConfig()
-	token := os.Getenv("PLEX_TOKEN")
-	if token == "" {
-		token = cfg.PlexToken
-	}
-	if token == "" {
-		return fmt.Errorf("Plex token not found. Run 'djlt auth plex' or set PLEX_TOKEN env var")
-	}
-
-	// We'll reuse our Selection logic here in a future pass
-	// For now, let's just make it compile.
 	fmt.Printf("M3U8 sync not yet refactored to Orchestrator\n")
 	return nil
 }
