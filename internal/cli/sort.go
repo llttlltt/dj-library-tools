@@ -65,8 +65,8 @@ func sortNodes(results []models.Node, field string) {
 		switch f {
 		case "name":
 			res = strings.ToLower(results[i].Name) < strings.ToLower(results[j].Name)
-		case "entries", "count":
-			res = results[i].Entries < results[j].Entries
+		case "items":
+			res = results[i].Items < results[j].Items
 		default:
 			return false
 		}

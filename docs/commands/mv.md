@@ -1,15 +1,15 @@
-# move
+# mv
 
 Move items between locations
 
 ```
-djlt move [resource] [query] --to [destination] [--from origin] [flags]
+djlt mv [resource] [query] --to [destination] [--from origin] [flags]
 ```
 ### Options
 
 ```
       --from string   Origin playlist (required for tracks)
-  -h, --help          help for move
+  -h, --help          help for mv
       --name string   New name for the resource (renames)
       --to string     Destination playlist or folder
 ```

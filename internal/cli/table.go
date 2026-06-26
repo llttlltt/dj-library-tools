@@ -58,7 +58,7 @@ func (t *Table) Render() {
 				rendered = color.HiMagentaString("%-*s", widths[i], val)
 			case header == "title" || header == "name":
 				rendered = color.HiWhiteString("%-*s", widths[i], val)
-			case header == "entries" || header == "count":
+			case header == "items":
 				rendered = color.CyanString("%*s", widths[i], val)
 			default:
 				rendered = fmt.Sprintf("%-*s", widths[i], val)
@@ -93,7 +93,7 @@ func renderTrackTable(tracks []models.Track) {
 
 func renderNodeTable(results []models.Node, resourceType string) {
 	table := Table{
-		Headers: []string{"Entries", stringsTitle(resourceType)},
+		Headers: []string{"Items", stringsTitle(resourceType)},
 	}
 
 	for _, res := range results {
@@ -102,7 +102,7 @@ func renderNodeTable(results []models.Node, resourceType string) {
 			name = res.ParentFolder + "/" + name
 		}
 		table.Rows = append(table.Rows, []string{
-			strconv.Itoa(res.Entries),
+			strconv.Itoa(res.Items),
 			name,
 		})
 	}

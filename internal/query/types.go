@@ -30,6 +30,7 @@ type Comparison struct {
 	Field    string
 	Operator Operator
 	Value    string
+	Quoted   bool
 }
 
 func (c Comparison) isExpression() {}

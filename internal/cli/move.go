@@ -12,8 +12,7 @@ func newMoveCmd() *cobra.Command {
 	var moveTo, moveFrom, moveName string
 
 	cmd := &cobra.Command{
-		Use:     "move [resource] [query] --to [destination] [--from origin]",
-		Aliases: []string{"mv"},
+		Use:     "mv [resource] [query] --to [destination] [--from origin]",
 		Short:   "Move items between locations",
 		Long: `Move items between locations.
 For tracks, both --from and --to are required.

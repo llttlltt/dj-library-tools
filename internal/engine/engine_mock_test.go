@@ -19,8 +19,8 @@ func makeMockLibrary() *MockLibrary {
 			{ID: "2", Title: "Track 2", Artist: "Artist B", BPM: 128.0},
 		},
 		Playlists: []models.Node{
-			{Name: "Inbox", Type: 1, Entries: 2},
-			{Name: "Sets", Type: 0, Entries: 0},
+			{Name: "Inbox", Type: 1, Items: 2},
+			{Name: "Sets", Type: 0, Items: 0},
 		},
 	}
 }

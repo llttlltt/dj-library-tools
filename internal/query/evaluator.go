@@ -10,19 +10,20 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 )
 
 // AllowedTrackFields is a list of valid fields for track queries.
 var AllowedTrackFields = []string{
-	"playlistcount", "title", "artist", "album", "bpm", "key", "genre", "comment",
-	"year", "label", "rating", "playcount", "added", "modified", "color", "bitrate",
+	"playlists", "title", "artist", "album", "bpm", "key", "genre", "comment",
+	"year", "label", "rating", "plays", "added", "modified", "color", "bitrate",
 	"samplerate", "size", "beatgrids", "hotcues", "memorycues", "id", "location",
-	"remixer", "mix", "playlist",
+	"remixer", "mix",
 }
 
 // AllowedNodeFields is a list of valid fields for playlist and folder queries.
 var AllowedNodeFields = []string{
-	"name", "parent", "folder", "entries", "count", "type",
+	"name", "parent", "folder", "items", "type",
 }
 
 type Evaluator struct {
@@ -61,8 +62,8 @@ func (e *Evaluator) eval(expr Expression, track models.Track, playlists []string
 
 func isNumericField(field string) bool {
 	switch strings.ToLower(field) {
-	case "playlistcount", "hotcues", "memorycues", "beatgrids", "rating", "playcount", "year",
-		"bpm", "bitrate", "samplerate", "size", "entries", "count", "type":
+	case "playlists", "hotcues", "memorycues", "beatgrids", "rating", "plays", "year",
+		"bpm", "bitrate", "samplerate", "size", "items", "type":
 		return true
 	}
 	return false
@@ -75,8 +76,42 @@ func (e *Evaluator) matchComparison(track models.Track, playlists []string, c Co
 		targetValue = e.resolveDateShorthand(c.Value)
 	}
 
-	if field == "playlist" {
-		return e.matchPlaylist(playlists, c)
+	// Membership domain: handles both "how many?" and "is in?"
+	if field == "playlists" {
+		// If range or comparison operator, force numeric evaluation
+		if c.Operator == OpRange {
+			return e.matchRange(strconv.Itoa(len(playlists)), targetValue)
+		}
+		if c.Operator != OpSubstring && c.Operator != OpExact {
+			return e.matchNumericComparison(strconv.Itoa(len(playlists)), targetValue, c.Operator)
+		}
+		// If substring/exact match, check if it's a number (unless quoted)
+		if !c.Quoted {
+			if _, err := strconv.Atoi(targetValue); err == nil {
+				// This matches our "Type-Inference" precedence: raw numbers are counts
+				return e.matchNumericComparison(strconv.Itoa(len(playlists)), targetValue, c.Operator)
+			}
+		}
+		// Otherwise, search playlist names
+		return e.matchPlaylistStrings(playlists, c)
+	}
+
+	// Cue domains: handles both "how many?" and properties
+	if field == "hotcues" || field == "memorycues" {
+		// If comparison or range, or numeric exact match, it's a count
+		if c.Operator == OpRange {
+			return e.matchRange(e.getFieldValue(track, playlists, field), targetValue)
+		}
+		if c.Operator != OpSubstring && c.Operator != OpExact {
+			return e.matchNumericComparison(e.getFieldValue(track, playlists, field), targetValue, c.Operator)
+		}
+		if !c.Quoted {
+			if _, err := strconv.Atoi(targetValue); err == nil {
+				return e.matchNumericComparison(e.getFieldValue(track, playlists, field), targetValue, c.Operator)
+			}
+		}
+		// Otherwise, searching cue properties (regex/exact/substring on color/comment)
+		return e.matchCueProperties(track, field, c)
 	}
 
 	fieldValue := e.getFieldValue(track, playlists, c.Field)
@@ -131,7 +166,7 @@ func (e *Evaluator) resolveDateShorthand(val string) string {
 
 func (e *Evaluator) getFieldValue(track models.Track, playlists []string, field string) string {
 	switch strings.ToLower(field) {
-	case "playlistcount":
+	case "playlists":
 		return strconv.Itoa(len(playlists))
 	case "title":
 		return track.Title
@@ -153,8 +188,8 @@ func (e *Evaluator) getFieldValue(track models.Track, playlists []string, field 
 		return track.Label
 	case "rating":
 		return strconv.Itoa(track.Rating)
-	case "playcount":
-		return strconv.Itoa(track.PlayCount)
+	case "plays":
+		return strconv.Itoa(track.Plays)
 	case "added":
 		return track.DateAdded
 	case "modified":
@@ -210,22 +245,109 @@ func (e *Evaluator) getTrackColorName(hex string) string {
 	return hex
 }
 
-func (e *Evaluator) matchPlaylist(playlists []string, c Comparison) bool {
+func (e *Evaluator) matchPlaylistStrings(playlists []string, c Comparison) bool {
 	for _, p := range playlists {
 		switch c.Operator {
-		case OpExact: if strings.EqualFold(p, c.Value) { return true }
-		case OpSubstring: if strings.Contains(strings.ToLower(p), strings.ToLower(c.Value)) { return true }
+		case OpExact:
+			if strings.EqualFold(p, c.Value) {
+				return true
+			}
+		case OpSubstring:
+			if strings.Contains(strings.ToLower(p), strings.ToLower(c.Value)) {
+				return true
+			}
 		case OpRegex:
 			re, _ := regexp.Compile(c.Value)
-			if re != nil && re.MatchString(p) { return true }
+			if re != nil && re.MatchString(p) {
+				return true
+			}
 		}
 	}
 	return false
 }
 
+func (e *Evaluator) matchCueProperties(track models.Track, field string, c Comparison) bool {
+	// Reconstruct the full value including ID targeting if it was a double-colon style query
+	// (though the parser currently flattens it)
+	target := strings.ToLower(c.Value)
+
+	// Rekordbox specific: extracting cue data from Raw if present
+	if rt, ok := track.Raw.(rekordbox.Track); ok {
+		if field == "hotcues" {
+			for _, pm := range rt.PositionMark {
+				if pm.Num == -1 {
+					continue
+				} // skip memory cues
+				if e.matchCueMetadata(pm, target, c.Operator) {
+					return true
+				}
+			}
+		} else {
+			for _, pm := range rt.PositionMark {
+				if pm.Num != -1 {
+					continue
+				} // skip hot cues
+				if e.matchCueMetadata(pm, target, c.Operator) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func (e *Evaluator) matchCueMetadata(pm rekordbox.PositionMark, target string, op Operator) bool {
+	// Match by name/comment
+	if op == OpExact {
+		if strings.EqualFold(pm.Name, target) {
+			return true
+		}
+	} else if strings.Contains(strings.ToLower(pm.Name), target) {
+		return true
+	}
+
+	// Match by color name (Rekordbox hex map)
+	colorName := strings.ToLower(e.getHotCueColorName(pm))
+	if op == OpExact {
+		if colorName == target {
+			return true
+		}
+	} else if strings.Contains(colorName, target) {
+		return true
+	}
+
+	return false
+}
+
+func (e *Evaluator) getHotCueColorName(pm rekordbox.PositionMark) string {
+	// Simple map for pad colors
+	rgb := fmt.Sprintf("%02X%02X%02X", pm.Red, pm.Green, pm.Blue)
+	switch rgb {
+	case "E62828":
+		return "red"
+	case "DE44CF":
+		return "hotpink"
+	case "FFFF00", "B4BE04", "C3AF04":
+		return "yellow"
+	case "28E214", "10B176":
+		return "green"
+	case "00E0FF", "50B4FF":
+		return "aqua"
+	case "305AFF", "6473FF":
+		return "blue"
+	case "B432FF", "AA72FF":
+		return "purple"
+	case "E0641B", "FFA500":
+		return "orange"
+	}
+	return ""
+}
+
 func (e *Evaluator) matchRange(fieldValue string, rangeValue string) bool {
 	parts := strings.Split(rangeValue, "..")
-	if len(parts) != 2 { return false }
+	if len(parts) != 2 {
+		return false
+	}
 	val, _ := strconv.ParseFloat(fieldValue, 64)
 	min, _ := strconv.ParseFloat(parts[0], 64)
 	max, _ := strconv.ParseFloat(parts[1], 64)
@@ -236,26 +358,38 @@ func (e *Evaluator) matchNumericComparison(fieldValue string, targetValue string
 	f, _ := strconv.ParseFloat(fieldValue, 64)
 	t, _ := strconv.ParseFloat(targetValue, 64)
 	switch op {
-	case OpGt: return f > t
-	case OpGte: return f >= t
-	case OpLt: return f < t
-	case OpLte: return f <= t
+	case OpGt:
+		return f > t
+	case OpGte:
+		return f >= t
+	case OpLt:
+		return f < t
+	case OpLte:
+		return f <= t
+	case OpExact, OpSubstring:
+		return f == t
 	}
 	return false
 }
 
 func (e *Evaluator) MatchesNode(node models.Node) bool {
-	if e.Query.Root == nil { return true }
+	if e.Query.Root == nil {
+		return true
+	}
 	return e.evalNode(e.Query.Root, node)
 }
 
 func (e *Evaluator) evalNode(expr Expression, node models.Node) bool {
 	switch v := expr.(type) {
-	case Comparison: return e.matchNodeComparison(node, v)
+	case Comparison:
+		return e.matchNodeComparison(node, v)
 	case Logical:
-		if v.Op == "AND" { return e.evalNode(v.Left, node) && e.evalNode(v.Right, node) }
+		if v.Op == "AND" {
+			return e.evalNode(v.Left, node) && e.evalNode(v.Right, node)
+		}
 		return e.evalNode(v.Left, node) || e.evalNode(v.Right, node)
-	case Not: return !e.evalNode(v.Expr, node)
+	case Not:
+		return !e.evalNode(v.Expr, node)
 	}
 	return false
 }
@@ -263,14 +397,21 @@ func (e *Evaluator) evalNode(expr Expression, node models.Node) bool {
 func (e *Evaluator) matchNodeComparison(node models.Node, c Comparison) bool {
 	val := ""
 	switch strings.ToLower(c.Field) {
-	case "name": val = node.Name
-	case "parent", "folder": val = node.ParentFolder
-	case "entries", "count": val = strconv.Itoa(node.Entries) // count is an alias; both map to Entries (which holds Count for folders)
-	case "type": val = strconv.Itoa(node.Type)
+	case "name":
+		val = node.Name
+	case "parent", "folder":
+		val = node.ParentFolder
+	case "items":
+		val = strconv.Itoa(node.Items)
+	case "type":
+		val = strconv.Itoa(node.Type)
 	}
-	if c.Operator == OpRange { return e.matchRange(val, c.Value) }
+	if c.Operator == OpRange {
+		return e.matchRange(val, c.Value)
+	}
 	switch c.Operator {
-	case OpExact: return strings.EqualFold(val, c.Value)
+	case OpExact:
+		return strings.EqualFold(val, c.Value)
 	case OpSubstring:
 		if isNumericField(c.Field) {
 			fv, _ := strconv.ParseFloat(val, 64)
@@ -278,6 +419,8 @@ func (e *Evaluator) matchNodeComparison(node models.Node, c Comparison) bool {
 			return fv == tv
 		}
 		return strings.Contains(strings.ToLower(val), strings.ToLower(c.Value))
+	case OpGt, OpGte, OpLt, OpLte:
+		return e.matchNumericComparison(val, c.Value, c.Operator)
 	}
 	return false
 }

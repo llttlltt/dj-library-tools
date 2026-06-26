@@ -9,7 +9,7 @@ djlt list rb/tracks "genre:House && bpm:124..128 && rating:>=4"
 
 **Tracks not in any playlist**
 ```bash
-djlt list rb/tracks "playlistcount:0"
+djlt list rb/tracks "playlists:0"
 ```
 
 **Find a specific track by ID**

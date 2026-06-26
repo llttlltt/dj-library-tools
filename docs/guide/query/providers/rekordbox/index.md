@@ -22,9 +22,8 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 | `genre` | String | Genre name. |
 | `bpm` | Numeric | Beats per minute. |
 | `rating` | Numeric | Star rating (0-5 stars). |
-| `playcount` | Numeric | Number of times played. |
-| `playlist` | String | Matches tracks in a specific playlist. |
-| `playlistcount` | Numeric | Number of playlists a track belongs to. |
+| `plays` | Numeric | Number of times played. |
+| `playlists` | Mixed | Match by playlist name (String) or number of memberships (Numeric). |
 | `year` | Numeric | Release year. |
 | `key` | String | Musical key (Tonality). |
 | `comment` | String | Track comments. |
@@ -46,8 +45,7 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 | :--- | :--- | :--- |
 | `name` | String | Name of the node. |
 | `parent` | String | Name of the parent folder. |
-| `entries` | Numeric | Number of tracks in a playlist, or number of child nodes in a folder. |
-| `count` | Numeric | Alias for `entries`. |
+| `items` | Numeric | Number of tracks in a playlist, or child nodes in a folder. |
 | `type` | Numeric | `0` for folder, `1` for playlist. |
 
 ## Cue Filtering
@@ -63,14 +61,14 @@ You can query tracks based on their HotCues and MemoryCues using specific count 
 
 ### Specific Cue Properties
 
-You can target a specific cue by its ID and check its properties.
+You can target a specific cue by its ID and check its properties using the same plural field name.
 
 **Syntax**: `field:ID[:Property[:Value]]`
 
 | Resource | IDs | Example |
 | :--- | :--- | :--- |
-| `hotcue` | `a` through `h` | `hotcue:a:red` |
-| `memorycue` | `1`, `2`, ... | `memorycue:1:comment:Break` |
+| `hotcues` | `a` through `h` | `hotcues:a:red` |
+| `memorycues` | `1`, `2`, ... | `memorycues:1:comment:Break` |
 
 ### Available Properties
 

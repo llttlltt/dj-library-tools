@@ -21,8 +21,8 @@ type Track struct {
 	Year          int
 	Location      string
 	Duration      int
-	Rating        int     // 0-5
-	PlayCount     int
+	Rating        int // 0-5
+	Plays         int
 	DateAdded     string
 	DateModified  string
 	Color         string
@@ -31,13 +31,13 @@ type Track struct {
 	Size          int64
 	Remixer       string
 	Mix           string
-	
+
 	// Advanced DJ Metadata
 	HotCues       int
 	MemoryCues    int
 	BeatgridCount int
-	
-	Raw           interface{}
+
+	Raw interface{}
 }
 
 func (t Track) GetID() string   { return t.ID }
@@ -48,7 +48,7 @@ func (t Track) GetKind() string { return "track" }
 type Node struct {
 	ID           string
 	Name         string
-	Entries      int
+	Items        int
 	ParentFolder string
 	Type         int // 0: Folder, 1: Playlist
 	Raw          interface{}

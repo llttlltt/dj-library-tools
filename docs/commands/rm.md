@@ -1,15 +1,15 @@
-# remove
+# rm
 
 Remove a resource or membership from the library
 
 ```
-djlt remove [resource] [query] [flags]
+djlt rm [resource] [query] [flags]
 ```
 ### Options
 
 ```
       --from strings   Origin resource(s) to remove from (repeatable)
-  -h, --help           help for remove
+  -h, --help           help for rm
 ```
 
 ### Inherited Options
