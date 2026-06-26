@@ -13,8 +13,7 @@ func newMakeCmd() *cobra.Command {
 	var createAt int
 
 	cmd := &cobra.Command{
-	Use:     "make [resource] [name]",
-	Aliases: []string{"mk", "create"},
+	Use:     "mk [resource] [name]",
 	Short:   "Create a new playlist or folder",
 	Long: `Create a new Rekordbox playlist or folder.
 You can optionally populate it immediately using items from a source.

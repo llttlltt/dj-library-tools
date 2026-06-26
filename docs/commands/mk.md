@@ -1,16 +1,16 @@
-# make
+# mk
 
 Create a new playlist or folder
 
 ```
-djlt make [resource] [name] [flags]
+djlt mk [resource] [name] [flags]
 ```
 ### Options
 
 ```
       --at int        Insert at this 0-indexed position (-1 for end) (default -1)
       --from string   Initial items to populate the resource with
-  -h, --help          help for make
+  -h, --help          help for mk
       --in string     Parent folder for the new resource
 ```
 

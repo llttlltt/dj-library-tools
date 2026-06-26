@@ -15,8 +15,7 @@ func newListCmd() *cobra.Command {
 	var listStats bool
 
 	cmd := &cobra.Command{
-		Use:     "list [resource] [query]",
-		Aliases: []string{"ls"},
+		Use:     "ls [resource] [query]",
 		Short:   "List items from a location (e.g. rb/tracks title:Oceans)",
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

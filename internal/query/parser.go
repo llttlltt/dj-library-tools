@@ -20,8 +20,9 @@ const (
 )
 
 type Token struct {
-	Kind  TokenKind
-	Value string
+	Kind   TokenKind
+	Value  string
+	Quoted bool
 }
 
 type Parser struct {
@@ -146,9 +147,9 @@ func (p *Parser) tokenize(input string) []Token {
 			quote := r
 			val, end := p.readQuoted(runes, i, quote)
 			if val == "" {
-				tokens = append(tokens, Token{Kind: TokenValue, Value: `""`})
+				tokens = append(tokens, Token{Kind: TokenValue, Value: `""`, Quoted: true})
 			} else {
-				tokens = append(tokens, Token{Kind: TokenValue, Value: val})
+				tokens = append(tokens, Token{Kind: TokenValue, Value: val, Quoted: true})
 			}
 			i = end
 		default:
@@ -263,24 +264,35 @@ func (p *Parser) parsePrimary() Expression {
 		return expr
 	case TokenField:
 		opToken := p.next()
-		
+
 		op := OpSubstring
 		switch opToken.Value {
-		case "=": op = OpExact
-		case "!=": op = OpNeq
-		case "::": op = OpRegex
-		case "..": op = OpRange
-		case ">": op = OpGt
-		case ">=": op = OpGte
-		case "<": op = OpLt
-		case "<=": op = OpLte
+		case "=":
+			op = OpExact
+		case "!=":
+			op = OpNeq
+		case "::":
+			op = OpRegex
+		case "..":
+			op = OpRange
+		case ">":
+			op = OpGt
+		case ">=":
+			op = OpGte
+		case "<":
+			op = OpLt
+		case "<=":
+			op = OpLte
 		}
-		
+
 		val := ""
+		quoted := false
 		if p.peek().Kind == TokenValue {
-			val = p.next().Value
+			tok := p.next()
+			val = tok.Value
+			quoted = tok.Quoted
 		}
-		
+
 		isCueField := strings.HasPrefix(strings.ToLower(token.Value), "hotcue") || strings.HasPrefix(strings.ToLower(token.Value), "memorycue")
 
 		for {
@@ -290,10 +302,17 @@ func (p *Parser) parsePrimary() Expression {
 			}
 			if val == "" || val == `""` {
 				val = peek.Value
+				quoted = peek.Quoted
 			} else if isCueField {
 				val += ":" + peek.Value
+				if peek.Quoted {
+					quoted = true
+				}
 			} else {
 				val += " " + peek.Value
+				if peek.Quoted {
+					quoted = true
+				}
 			}
 			p.next()
 		}
@@ -301,14 +320,14 @@ func (p *Parser) parsePrimary() Expression {
 		if strings.Contains(val, "..") {
 			op = OpRange
 		}
-		
+
 		if val == `""` {
 			val = ""
 		}
-		
-		return Comparison{Field: token.Value, Operator: op, Value: val}
+
+		return Comparison{Field: token.Value, Operator: op, Value: val, Quoted: quoted}
 	case TokenValue:
-		return Comparison{Field: "", Operator: OpSubstring, Value: token.Value}
+		return Comparison{Field: "", Operator: OpSubstring, Value: token.Value, Quoted: token.Quoted}
 	}
 	return nil
 }

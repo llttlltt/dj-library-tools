@@ -8,9 +8,9 @@ import (
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 )
 
-// TestPlaylistCountMatching verifies that playlistcount uses exact numeric equality,
-// not substring matching, to prevent false positives.
-func TestPlaylistCountMatching(t *testing.T) {
+// TestPlaylistMembershipMatching verifies that 'playlists' handles both
+// numeric count matching and string name matching.
+func TestPlaylistMembershipMatching(t *testing.T) {
 	track := rekordbox.Track{Name: "Test Track"}.ToNeutral()
 	parser := NewParser()
 
@@ -20,15 +20,23 @@ func TestPlaylistCountMatching(t *testing.T) {
 		playlists []string
 		want      bool
 	}{
-		{"exact zero match", "playlistcount:0", nil, true},
-		{"exact zero no false positive from 10", "playlistcount:0", makePlaylists(10), false},
-		{"exact two match", "playlistcount:2", makePlaylists(2), true},
-		{"exact two mismatch", "playlistcount:2", makePlaylists(3), false},
-		{"gt operator", "playlistcount:>3", makePlaylists(4), true},
-		{"gt operator no match", "playlistcount:>3", makePlaylists(3), false},
-		{"gte operator", "playlistcount:>=3", makePlaylists(3), true},
-		{"range operator", "playlistcount:2..4", makePlaylists(3), true},
-		{"range no match", "playlistcount:2..4", makePlaylists(1), false},
+		// Numeric (Count) logic
+		{"exact zero match", "playlists:0", nil, true},
+		{"exact zero no false positive from 10", "playlists:0", makePlaylists(10), false},
+		{"exact two match", "playlists:2", makePlaylists(2), true},
+		{"exact two mismatch", "playlists:2", makePlaylists(3), false},
+		{"gt operator", "playlists:>3", makePlaylists(4), true},
+		{"gt operator no match", "playlists:>3", makePlaylists(3), false},
+		{"gte operator", "playlists:>=3", makePlaylists(3), true},
+		{"range operator", "playlists:2..4", makePlaylists(3), true},
+		{"range no match", "playlists:2..4", makePlaylists(1), false},
+
+		// String (Name) logic
+		{"name substring match", "playlists:Summer", []string{"Summer Vibes"}, true},
+		{"name exact match (quoted number)", "playlists:'101'", []string{"101"}, true},
+		{"name exact mismatch (quoted number)", "playlists:'101'", []string{"102"}, false},
+		{"name no match", "playlists:Winter", []string{"Summer Vibes"}, false},
+		{"mixed case match", "playlists:summer", []string{"Summer Vibes"}, true},
 	}
 
 	for _, tt := range tests {
@@ -37,7 +45,7 @@ func TestPlaylistCountMatching(t *testing.T) {
 			eval := NewEvaluator(q)
 			got := eval.MatchesWithPlaylists(track, tt.playlists)
 			if got != tt.want {
-				t.Errorf("query %q playlists=%d: got %v, want %v", tt.query, len(tt.playlists), got, tt.want)
+				t.Errorf("query %q playlists=%v: got %v, want %v", tt.query, tt.playlists, got, tt.want)
 			}
 		})
 	}
@@ -105,7 +113,7 @@ func TestQueryEvaluator(t *testing.T) {
 		{"Bitrate match", "bitrate:320", true},
 		{"Samplerate match", "samplerate:44100", true},
 		{"Comment match", "comment:Great", true},
-		{"Playcount match", "playcount:10", true},
+		{"Plays match", "plays:10", true},
 		{"Rating match (stars)", "rating:5", true},
 		{"Location match", "location:track.mp3", true},
 		{"Remixer match", "remixer:Four", true},
@@ -153,18 +161,18 @@ func TestEvaluatorMatchesNode(t *testing.T) {
 	parser := NewParser()
 
 	tests := []struct {
-		name         string
-		query        string
-		node         models.Node
-		want         bool
+		name  string
+		query string
+		node  models.Node
+		want  bool
 	}{
 		{"name substring match", "name:Summer", summerVibes, true},
 		{"name no match", "name:Winter", summerVibes, false},
 		{"parent match", "parent:'My Sets'", summerVibes, true},
 		{"parent no match", "parent:Other", summerVibes, false},
-		{"entries range", "entries:10..15", summerVibes, true},
-		{"entries exact", "entries:12", summerVibes, true},
-		{"entries no match", "entries:5", summerVibes, false},
+		{"items range", "items:10..15", summerVibes, true},
+		{"items exact", "items:12", summerVibes, true},
+		{"items no match", "items:5", summerVibes, false},
 		{"type playlist", "type:1", summerVibes, true},
 		{"type folder match", "type:0", wintersFolder, true},
 		{"type folder no match", "type:1", wintersFolder, false},

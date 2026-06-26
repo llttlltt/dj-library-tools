@@ -18,9 +18,9 @@ A comprehensive CLI tool for managing DJ libraries and Rekordbox XMLs.
 * [djlt auth](auth.md)	 - Authenticate with third-party providers
 * [djlt config](config.md)	 - View or update application configuration
 * [djlt fix](fix/index.md)	 - Fix library issues or resource metadata
-* [djlt list](list.md)	 - List items from a location (e.g. rb/tracks title:Oceans)
-* [djlt make](make.md)	 - Create a new playlist or folder
-* [djlt move](move.md)	 - Move items between locations
-* [djlt remove](remove.md)	 - Remove a resource or membership from the library
+* [djlt ls](ls.md)	 - List items from a location (e.g. rb/tracks title:Oceans)
+* [djlt mk](mk.md)	 - Create a new playlist or folder
+* [djlt mv](mv.md)	 - Move items between locations
+* [djlt rm](rm.md)	 - Remove a resource or membership from the library
 * [djlt sync](sync.md)	 - Sync items between a source and one or more targets
 * [djlt update](update.md)	 - Update track metadata or merge markers between libraries

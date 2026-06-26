@@ -4,7 +4,7 @@
 
 ## The Surgical 6
 
-### `list` (Alias: `ls`)
+### `ls`
 The primary discovery command. Use it to see tracks, playlists, or folders matching a query. Add `--stats` to get aggregate statistics instead of a table.
 
 ```bash
@@ -26,7 +26,7 @@ djlt sync rb/tracks "rating:>=4" --to "rb/playlists name:Favorites"
 djlt sync rb/tracks "genre:House" --to "rb/playlists name:Inbox" --append
 ```
 
-### `make` (Aliases: `mk`, `create`)
+### `mk`
 Creates a new playlist or folder. Optionally pre-populate it using `--from`.
 
 ```bash
@@ -37,7 +37,7 @@ djlt mk rb/playlists "New Arrivals"
 djlt mk rb/playlists "New Arrivals" --from "rb/tracks added:>2024-01-01"
 ```
 
-### `move` (Alias: `mv`)
+### `mv`
 Relocates resources between containers, or renames them in-place using `--name` (replaces the legacy `rename` command).
 
 ```bash
@@ -51,7 +51,7 @@ djlt mv rb/playlists name:Inbox --name "Processed"
 djlt mv rb/tracks "bpm:>130" --from "rb/playlists name:Inbox" --to "rb/playlists name:'High Energy'"
 ```
 
-### `remove` (Alias: `rm`)
+### `rm`
 Handles two distinct operations depending on whether `--from` is present:
 
 - **Resource Deletion** (no `--from`): permanently removes a playlist or folder from the library.

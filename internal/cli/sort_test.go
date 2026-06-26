@@ -37,9 +37,9 @@ func TestSortTracks(t *testing.T) {
 
 func TestSortNodes(t *testing.T) {
 	nodes := []models.Node{
-		{Name: "Z", Entries: 10},
-		{Name: "A", Entries: 50},
-		{Name: "M", Entries: 5},
+		{Name: "Z", Items: 10},
+		{Name: "A", Items: 50},
+		{Name: "M", Items: 5},
 	}
 
 	t.Run("sort by name ascending", func(t *testing.T) {
@@ -49,10 +49,10 @@ func TestSortNodes(t *testing.T) {
 		}
 	})
 
-	t.Run("sort by entries descending", func(t *testing.T) {
-		sortNodes(nodes, "-entries")
+	t.Run("sort by items descending", func(t *testing.T) {
+		sortNodes(nodes, "-items")
 		if nodes[0].Name != "A" {
-			t.Errorf("expected A (50 entries), got %s", nodes[0].Name)
+			t.Errorf("expected A (50 items), got %s", nodes[0].Name)
 		}
 	})
 }

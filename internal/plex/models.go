@@ -102,7 +102,7 @@ func (t Track) ToNeutral() models.Track {
 func (p Playlist) ToNeutralNode() models.Node {
 	return models.Node{
 		Name:    p.Title,
-		Entries: p.LeafCount,
+		Items:   p.LeafCount,
 		Type:    1,
 		Raw:     p,
 	}

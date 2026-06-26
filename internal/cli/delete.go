@@ -13,8 +13,7 @@ func newDeleteCmd() *cobra.Command {
 	var removeOrigins []string
 
 	cmd := &cobra.Command{
-		Use:     "remove [resource] [query]",
-		Aliases: []string{"rm", "del", "delete"},
+		Use:     "rm [resource] [query]",
 		Short:   "Remove a resource or membership from the library",
 		Long: `Permanently delete resources or remove track membership from playlists.
 

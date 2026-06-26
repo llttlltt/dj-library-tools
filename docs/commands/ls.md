@@ -1,15 +1,15 @@
-# list
+# ls
 
 List items from a location (e.g. rb/tracks title:Oceans)
 
 ```
-djlt list [resource] [query] [flags]
+djlt ls [resource] [query] [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help          help for list
+  -h, --help          help for ls
       --sort string   Sort results by field (e.g. bpm, artist, title)
       --stats         Show summary statistics for the selection
 ```

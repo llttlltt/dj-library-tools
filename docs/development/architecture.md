@@ -50,7 +50,7 @@ The selection engine uses a recursive descent parser and a universal evaluator. 
 - Numeric operators: `>`, `<`, `..` (range), `:` (exact equality for numeric fields)
 - Exact match: `=` (case-sensitive)
 - Regex match: `::`
-- Field mapping: `bpm`, `rating`, `hotcues`, `playlistcount`, etc.
+- Field mapping: `bpm`, `rating`, `hotcues`, `playlists`, etc.
 
 ### Test Boundaries and Interfaces
 `djlt` uses explicit interfaces to decouple core logic from external dependencies:
