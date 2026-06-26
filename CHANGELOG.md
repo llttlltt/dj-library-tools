@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.0](https://github.com/llttlltt/dj-library-tools/compare/v1.2.0...v1.3.0) (2026-06-26)
+
+
+### Features
+
+* **rb:** sync with rekordbox xml spec and standardize query engine ([db25650](https://github.com/llttlltt/dj-library-tools/commit/db25650478c1355895dd7131ed0e68701c89f72c))
+* **rb:** sync with rekordbox xml spec and standardize query engine ([5883dc1](https://github.com/llttlltt/dj-library-tools/commit/5883dc1e50df36fca8ad6208e210f78461349f8b))
+* **rekordbox:** implement high-fidelity XML emission and comprehensive testing ([cfaeebe](https://github.com/llttlltt/dj-library-tools/commit/cfaeebeb1fa11e9ee6c4eca3e40841d667701ff2))
+
+
+### Bug Fixes
+
+* **rekordbox:** repair surgical XML write and optional node attributes ([d3b5def](https://github.com/llttlltt/dj-library-tools/commit/d3b5def84bf41499bcce2066b3f335e4234052f1))
+
 ## [1.2.0](https://github.com/llttlltt/dj-library-tools/compare/v1.1.0...v1.2.0) (2026-06-24)
 
 
