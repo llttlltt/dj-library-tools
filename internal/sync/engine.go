@@ -7,8 +7,8 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
 	"github.com/llttlltt/dj-library-tools/internal/media"
+	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/plex"
-	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 	"github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"
 )
@@ -53,7 +53,7 @@ func (o *Orchestrator) SyncPlexToRekordbox(tracks []plex.Track, playlistName str
 	var rbTrackIDs []string
 	type transcodeJob struct {
 		track plex.Track
-		rb    *rekordbox.Track
+		rb    *models.Track
 	}
 	jobs := make(chan transcodeJob, len(tracks))
 	results := make(chan string, len(tracks))
@@ -102,7 +102,7 @@ func (o *Orchestrator) SyncPlexToRekordbox(tracks []plex.Track, playlistName str
 				if transcoder == nil {
 					trackBar.Increment()
 					if rbTrack != nil {
-						results <- fmt.Sprintf("%d", rbTrack.TrackID)
+						results <- rbTrack.ID
 					} else {
 						results <- ""
 					}
@@ -159,7 +159,7 @@ func (o *Orchestrator) SyncPlexToRekordbox(tracks []plex.Track, playlistName str
 				}
 
 				if rbTrack != nil {
-					results <- fmt.Sprintf("%d", rbTrack.TrackID)
+					results <- rbTrack.ID
 				} else {
 					results <- ""
 				}
@@ -171,7 +171,7 @@ func (o *Orchestrator) SyncPlexToRekordbox(tracks []plex.Track, playlistName str
 	// Feed jobs
 	for _, track := range tracks {
 		match := o.SyncEngine.Matcher.Match(track)
-		var rbTrack *rekordbox.Track
+		var rbTrack *models.Track
 
 		if match.RBTrack != nil && match.Confidence >= 0.8 {
 			rbTrack = match.RBTrack
