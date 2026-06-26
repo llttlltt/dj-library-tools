@@ -6,6 +6,7 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/engine"
+	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
@@ -42,12 +43,14 @@ func newSyncCmd() *cobra.Command {
 				}
 
 				if _, ok := tgt.Provider.(provider.WritableProvider); ok {
-					if err := syncToRekordbox(src, tgt, exportDest, exportFormat, syncAppend); err != nil {
-						return err
-					}
-				} else if tgt.Location.Provider == "m3u8" {
-					if err := syncPlexToM3U8(src.Location, tgt.Location); err != nil {
-						return err
+					if tgt.Location.Provider == "m3u" || tgt.Location.Provider == "m3u8" {
+						if err := syncToM3U(src, tgt); err != nil {
+							return err
+						}
+					} else {
+						if err := syncToRekordbox(src, tgt, exportDest, exportFormat, syncAppend); err != nil {
+							return err
+						}
 					}
 				} else {
 					return fmt.Errorf("unsupported sync target: %s → %s", src.Location.Provider, tgt.Location.Provider)
@@ -90,6 +93,27 @@ func syncToRekordbox(src, tgt *Selection, exportDest, exportFormat string, appen
 		return engine.NewRekordboxLibrary(rbXML).Save(path)
 	}
 	return nil
+}
+
+func syncToM3U(src, tgt *Selection) error {
+	tracks, err := src.Provider.GetTracks(src.Location.Query)
+	if err != nil {
+		return err
+	}
+
+	if dryRun {
+		fmt.Printf("[Dry Run] Would sync %d tracks to %s\n", len(tracks), tgt.Location.Resource)
+		return nil
+	}
+
+	wp := tgt.Provider.(provider.WritableProvider)
+	added, err := wp.AddTracks(models.Node{}, tracks)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Synced %d tracks to %s\n", added, tgt.Location.Resource)
+	return wp.Save(tgt.Location.Resource)
 }
 
 func syncPlexToM3U8(src, tgt utils.Location) error {
