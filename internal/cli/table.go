@@ -39,7 +39,7 @@ func (t *Table) Render() {
 	for i, h := range t.Headers {
 		fmt.Print(headerFmt("%-*s", widths[i], h))
 		if i < len(t.Headers)-1 {
-			fmt.Print("  ")
+			fmt.Print(" ")
 		}
 	}
 	fmt.Println()
@@ -67,7 +67,7 @@ func (t *Table) Render() {
 			
 			fmt.Print(rendered)
 			if i < len(row)-1 {
-				fmt.Print("  ")
+				fmt.Print(" ")
 			}
 		}
 		fmt.Println()
