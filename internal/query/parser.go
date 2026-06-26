@@ -308,9 +308,6 @@ func (p *Parser) parsePrimary() Expression {
 		
 		return Comparison{Field: token.Value, Operator: op, Value: val}
 	case TokenValue:
-		// If a bare value is provided without a field (e.g. djlt list rb/tracks "My Song"),
-		// we return a Comparison with an empty field. The evaluator will fail to match
-		// this as it won't find a field named "", effectively making the query invalid.
 		return Comparison{Field: "", Operator: OpSubstring, Value: token.Value}
 	}
 	return nil
