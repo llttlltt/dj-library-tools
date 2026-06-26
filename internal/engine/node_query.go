@@ -27,6 +27,9 @@ func (e *Engine) LsFolders(queryString string) ([]NodeResult, error) {
 func (e *Engine) lsNodes(queryString string, nodeType int32) ([]NodeResult, error) {
 	parser := query.NewParser()
 	q := parser.Parse(queryString)
+	if err := q.Validate(); err != nil {
+		return nil, err
+	}
 	eval := query.NewEvaluator(q)
 
 	var matched []NodeResult
