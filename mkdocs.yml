@@ -52,18 +52,15 @@ nav:
     - Syntax: guide/syntax.md
     - Providers:
       - Overview: guide/query/providers/index.md
-      - Rekordbox:
-        - guide/query/providers/rekordbox/index.md
-        - Examples: guide/query/providers/rekordbox/examples.md
-      - Plex:
-        - guide/query/providers/plex/index.md
-        - Examples: guide/query/providers/plex/examples.md
+      - Rekordbox: guide/query/providers/rekordbox/index.md
+      - Plex: guide/query/providers/plex/index.md
     - Workflows:
       - guide/workflows/index.md
       - Automating Playlists: guide/workflows/automating-playlists.md
       - Cleaning Up: guide/workflows/cleaning-up.md
       - Performance Prep: guide/workflows/performance-prep.md
       - Metadata Hardening: guide/workflows/metadata-hardening.md
+      - Syncing to Mobile: guide/workflows/syncing-to-mobile.md
     - Commands:
       - guide/commands/index.md
       - Reference:
