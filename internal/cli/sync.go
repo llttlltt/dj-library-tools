@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
+	"github.com/llttlltt/dj-library-tools/internal/engine"
 	"github.com/llttlltt/dj-library-tools/internal/media"
 	"github.com/llttlltt/dj-library-tools/internal/plex"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
@@ -147,7 +148,7 @@ func syncPlexToRekordbox(src, tgt utils.Location) error {
 		fmt.Printf("Exporting files to: %s (format: %s)\n", exportDest, cfgMedia.Format)
 	}
 
-	syncEng := sync.NewEngine(serverClient, rbXML)
+	syncEng := sync.NewEngine(serverClient, engine.NewRekordboxLibrary(rbXML))
 	var rbTrackIDs []string
 
 	type transcodeJob struct {

@@ -9,8 +9,6 @@ import (
 	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/spf13/cobra"
-	"github.com/vbauerster/mpb/v8"
-	"github.com/vbauerster/mpb/v8/decor"
 )
 
 var (
@@ -40,7 +38,7 @@ func runRemoveCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	eng := engine.NewEngine(engine.NewRekordboxLibrary(rbXML))
-	syncEng := syncpkg.NewEngine(nil, rbXML)
+	syncEng := syncpkg.NewEngine(nil, engine.NewRekordboxLibrary(rbXML))
 
 	// 1. Resolve source
 	sourceQuery := ""
@@ -68,6 +66,7 @@ func runRemoveCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// 2. Resolve origins and apply
+	var originNames []string
 	for _, originStr := range removeOrigins {
 		org := utils.ParseLocation(originStr, "")
 		if org.Provider != "rb" || org.Resource != "playlists" {
@@ -81,54 +80,14 @@ func runRemoveCmd(cmd *cobra.Command, args []string) error {
 		if len(origins) == 0 {
 			return fmt.Errorf("no origin playlists matched query %q", org.Query)
 		}
-
-		if dryRun {
-			for _, origin := range origins {
-				fmt.Printf("[Dry Run] Would remove %d tracks from playlist %q\n", len(trackIDs), origin.Node.Name)
-			}
-			continue
-		}
-
-		p := mpb.New(mpb.WithWidth(64))
-		for _, origin := range origins {
-			bar := p.AddBar(int64(len(trackIDs)),
-				mpb.PrependDecorators(
-					decor.Name(fmt.Sprintf("Removing from %q", origin.Node.Name), decor.WCSyncSpaceR),
-					decor.CountersNoUnit("%d / %d", decor.WCSyncSpace),
-				),
-				mpb.AppendDecorators(decor.Percentage(decor.WCSyncSpace)),
-			)
-
-			if verbose {
-				fmt.Printf("Removing %d tracks from playlist %q...\n", len(trackIDs), origin.Node.Name)
-			}
-
-			// We process in chunks to show progress
-			chunkSize := 10
-			if len(trackIDs) < chunkSize {
-				chunkSize = len(trackIDs)
-			}
-
-			totalRemoved := 0
-			for i := 0; i < len(trackIDs); i += chunkSize {
-				end := i + chunkSize
-				if end > len(trackIDs) {
-					end = len(trackIDs)
-				}
-				chunk := trackIDs[i:end]
-				found, removed := syncEng.RemoveTracksFromPlaylist(origin.Node.Name, chunk)
-				if !found {
-					fmt.Printf("Warning: playlist %q not found during remove\n", origin.Node.Name)
-					bar.Abort(false)
-					break
-				}
-				totalRemoved += removed
-				bar.IncrBy(len(chunk))
-			}
-			p.Wait()
-			fmt.Printf("Removed %d tracks from %q\n", totalRemoved, origin.Node.Name)
+		for _, o := range origins {
+			originNames = append(originNames, o.Node.Name)
 		}
 	}
+
+	RunBulkOperation("remove", originNames, trackIDs, func(targetName string, items []string) (bool, int) {
+		return syncEng.RemoveTracksFromPlaylist(targetName, items)
+	})
 
 	if dryRun {
 		return nil

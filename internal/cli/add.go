@@ -9,8 +9,6 @@ import (
 	syncpkg "github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/spf13/cobra"
-	"github.com/vbauerster/mpb/v8"
-	"github.com/vbauerster/mpb/v8/decor"
 )
 
 var (
@@ -41,7 +39,7 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	eng := engine.NewEngine(engine.NewRekordboxLibrary(rbXML))
-	syncEng := syncpkg.NewEngine(nil, rbXML)
+	syncEng := syncpkg.NewEngine(nil, engine.NewRekordboxLibrary(rbXML))
 
 	// 1. Resolve source
 	sourceQuery := ""
@@ -69,6 +67,7 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// 2. Resolve targets and apply
+	var targetNames []string
 	for _, targetStr := range addTargets {
 		tgt := utils.ParseLocation(targetStr, "")
 		if tgt.Provider != "rb" || tgt.Resource != "playlists" {
@@ -82,54 +81,14 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 		if len(targets) == 0 {
 			return fmt.Errorf("no target playlists matched query %q", tgt.Query)
 		}
-
-		if dryRun {
-			for _, target := range targets {
-				fmt.Printf("[Dry Run] Would add %d tracks to playlist %q\n", len(trackIDs), target.Node.Name)
-			}
-			continue
-		}
-
-		p := mpb.New(mpb.WithWidth(64))
-		for _, target := range targets {
-			bar := p.AddBar(int64(len(trackIDs)),
-				mpb.PrependDecorators(
-					decor.Name(fmt.Sprintf("Adding to %q", target.Node.Name), decor.WCSyncSpaceR),
-					decor.CountersNoUnit("%d / %d", decor.WCSyncSpace),
-				),
-				mpb.AppendDecorators(decor.Percentage(decor.WCSyncSpace)),
-			)
-
-			if verbose {
-				fmt.Printf("Adding %d tracks to playlist %q...\n", len(trackIDs), target.Node.Name)
-			}
-
-			// We process in chunks to show progress
-			chunkSize := 10
-			if len(trackIDs) < chunkSize {
-				chunkSize = len(trackIDs)
-			}
-
-			totalAdded := 0
-			for i := 0; i < len(trackIDs); i += chunkSize {
-				end := i + chunkSize
-				if end > len(trackIDs) {
-					end = len(trackIDs)
-				}
-				chunk := trackIDs[i:end]
-				found, added := syncEng.AddTracksToPlaylist(target.Node.Name, chunk)
-				if !found {
-					fmt.Printf("Warning: playlist %q not found during add\n", target.Node.Name)
-					bar.Abort(false)
-					break
-				}
-				totalAdded += added
-				bar.IncrBy(len(chunk))
-			}
-			p.Wait()
-			fmt.Printf("Added %d tracks to %q\n", totalAdded, target.Node.Name)
+		for _, t := range targets {
+			targetNames = append(targetNames, t.Node.Name)
 		}
 	}
+
+	RunBulkOperation("add", targetNames, trackIDs, func(targetName string, items []string) (bool, int) {
+		return syncEng.AddTracksToPlaylist(targetName, items)
+	})
 
 	if dryRun {
 		return nil

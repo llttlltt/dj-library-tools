@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/llttlltt/dj-library-tools/internal/engine"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 	"github.com/spf13/cobra"
@@ -66,7 +67,8 @@ Example:
 			return nil
 		}
 
-		if err := rekordbox.WriteRekordboxLibrary(outputPath, mergedLibrary); err != nil {
+		destLibWrapper := engine.NewRekordboxLibrary(mergedLibrary)
+		if err := destLibWrapper.Save(outputPath); err != nil {
 			return fmt.Errorf("error writing merged library to %q: %w", outputPath, err)
 		}
 		fmt.Printf("Successfully updated library: %s\n", outputPath)
