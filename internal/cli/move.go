@@ -97,12 +97,7 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 		wp.AddTracks(target, src.Tracks)
 	}
 
-	savePath := ""
-	if src.Location.Provider == "rb" || src.Location.Provider == "rekordbox" {
-		_, p, _ := loadXMLFunc()
-		savePath = p
-	}
-	return wp.Save(savePath)
+	return wp.Save("")
 }
 
 func runMoveNodes(wp provider.WritableProvider, src *Selection, moveTo string) error {
@@ -135,12 +130,7 @@ func runMoveNodes(wp provider.WritableProvider, src *Selection, moveTo string) e
 		fmt.Printf("Moved %s %q -> %q\n", src.Location.Resource, t.Name, targetParent.Name)
 	}
 
-	savePath := ""
-	if src.Location.Provider == "rb" || src.Location.Provider == "rekordbox" {
-		_, p, _ := loadXMLFunc()
-		savePath = p
-	}
-	return wp.Save(savePath)
+	return wp.Save("")
 }
 
 func runRenameNodes(wp provider.WritableProvider, src *Selection, newName string) error {
@@ -167,10 +157,5 @@ func runRenameNodes(wp provider.WritableProvider, src *Selection, newName string
 
 	fmt.Printf("Renamed %q -> %q\n", target.Name, newName)
 
-	savePath := ""
-	if src.Location.Provider == "rb" || src.Location.Provider == "rekordbox" {
-		_, p, _ := loadXMLFunc()
-		savePath = p
-	}
-	return wp.Save(savePath)
+	return wp.Save("")
 }

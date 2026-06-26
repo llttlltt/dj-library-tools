@@ -7,6 +7,7 @@ import (
 
 type RekordboxProvider struct {
 	Engine *engine.Engine
+	path   string
 }
 
 func (p *RekordboxProvider) Name() string {
@@ -68,9 +69,12 @@ func (p *RekordboxProvider) MoveNode(node models.Node, targetParent models.Node)
 }
 
 func (p *RekordboxProvider) Save(path string) error {
+	if path == "" {
+		path = p.path
+	}
 	return p.Engine.Library.(engine.WritableLibrary).Save(path)
 }
 
-func NewRekordboxProvider(eng *engine.Engine) *RekordboxProvider {
-	return &RekordboxProvider{Engine: eng}
+func NewRekordboxProvider(eng *engine.Engine, path string) *RekordboxProvider {
+	return &RekordboxProvider{Engine: eng, path: path}
 }

@@ -76,12 +76,7 @@ Example:
 				fmt.Printf("Deleted %s %q\n", sel.Location.Resource, t.Name)
 			}
 
-			if sel.Location.Provider == "m3u" || sel.Location.Provider == "m3u8" {
-				return nil
-			}
-
-			_, path, _ := loadXMLFunc()
-			return wp.Save(path)
+			return wp.Save("")
 		},
 	}
 	cmd.Flags().StringSliceVar(&removeOrigins, "from", []string{}, "Origin resource(s) to remove from (repeatable)")
@@ -117,6 +112,5 @@ func runRemoveMembership(wp provider.WritableProvider, src *Selection, removeOri
 		fmt.Printf("Removed %d tracks from %q\n", removed, n.Name)
 	}
 
-	_, path, _ := loadXMLFunc()
-	return wp.Save(path)
+	return wp.Save("")
 }
