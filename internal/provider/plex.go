@@ -57,7 +57,7 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 				f := strings.ToLower(v.Field)
 				if f == "id" || f == "ratingkey" {
 					playlistID = v.Value
-				} else if f == "name" || f == "playlist" {
+				} else if f == "playlist" {
 					playlistName = v.Value
 					playlistOp = v.Operator
 				}
@@ -87,7 +87,9 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 				}
 			}
 			if playlistID == "" {
-				return nil, fmt.Errorf("plex playlist %q not found", playlistName)
+				// If a playlist was explicitly requested but not found, 
+				// we return an empty list rather than a fatal error.
+				return []rekordbox.Track{}, nil
 			}
 		}
 	}
@@ -122,7 +124,7 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 					
 					val := ""
 					switch f {
-					case "title": val = pt.Title
+					case "title", "name": val = pt.Title
 					case "artist": val = pt.Artist
 					case "album": val = pt.Album
 					}
