@@ -2,7 +2,11 @@
 
 The Plex provider interacts with your Plex Media Server via its API using the parallel prober for fast response times.
 
-### Provider Alias: `plex`
+## Provider
+
+| Alias | Description |
+| :--- | :--- |
+| `plex` | Plex Media Server provider. |
 
 ## Resources
 
