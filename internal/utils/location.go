@@ -17,12 +17,26 @@ func ParseLocation(locStr string, query string) Location {
 		Query: query,
 	}
 
-	// For file-based providers (m3u/m3u8), the path might contain slashes.
-	// We want to detect the provider prefix but keep the rest as the resource path.
+	// For file-based providers (m3u/m3u8), the path might follow a colon or a slash.
+	// Documentation uses m3u8:/path/to/file, but we also support m3u8/path/to/file.
+	prefix := ""
 	if strings.HasPrefix(locStr, "m3u/") || strings.HasPrefix(locStr, "m3u8/") {
-		parts := strings.SplitN(locStr, "/", 2)
-		loc.Provider = parts[0]
-		loc.Resource = parts[1]
+		prefix = "m3u"
+		if strings.HasPrefix(locStr, "m3u8/") {
+			prefix = "m3u8"
+		}
+	} else if strings.HasPrefix(locStr, "m3u:") || strings.HasPrefix(locStr, "m3u8:") {
+		prefix = "m3u"
+		if strings.HasPrefix(locStr, "m3u8:") {
+			prefix = "m3u8"
+		}
+	}
+
+	if prefix != "" {
+		loc.Provider = prefix
+		// Resource is everything after the first / or :
+		sepIdx := strings.IndexAny(locStr, "/:")
+		loc.Resource = locStr[sepIdx+1:]
 	} else {
 		// If query is empty, check if locStr contains a space-separated query
 		if loc.Query == "" && strings.Contains(locStr, " ") {
