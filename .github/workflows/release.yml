@@ -7,6 +7,7 @@ on:
       - completed
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -30,7 +31,7 @@ jobs:
   docs:
     name: Deploy Docs
     needs: release-please
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.release-please.outputs.release_created }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
