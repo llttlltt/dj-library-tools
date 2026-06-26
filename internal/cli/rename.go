@@ -11,8 +11,7 @@ import (
 )
 
 var (
-	renameTo     string
-	renameDryRun bool
+	renameTo string
 )
 
 var renameCmd = &cobra.Command{
@@ -62,7 +61,7 @@ Example:
 		target := targets[0]
 		nodeType := target.Node.Type
 
-		if renameDryRun {
+		if dryRun {
 			fmt.Printf("[Dry Run] Would rename %q to %q\n", target.Node.Name, renameTo)
 			return nil
 		}
@@ -78,6 +77,5 @@ Example:
 
 func init() {
 	renameCmd.Flags().StringVar(&renameTo, "to", "", "The new name for the resource")
-	renameCmd.Flags().BoolVar(&renameDryRun, "dry-run", false, "Preview changes without writing")
 	RootCmd.AddCommand(renameCmd)
 }

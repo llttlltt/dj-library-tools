@@ -13,7 +13,6 @@ import (
 
 var (
 	addTargets []string
-	addDryRun  bool
 	addForce   bool
 )
 
@@ -82,7 +81,7 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("no target playlists matched query %q", tgt.Query)
 		}
 
-		if addDryRun {
+		if dryRun {
 			for _, target := range targets {
 				fmt.Printf("[Dry Run] Would add %d tracks to playlist %q\n", len(trackIDs), target.Node.Name)
 			}
@@ -99,7 +98,7 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if addDryRun {
+	if dryRun {
 		return nil
 	}
 
@@ -108,7 +107,6 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 
 func init() {
 	addCmd.Flags().StringSliceVar(&addTargets, "to", []string{}, "Target resource(s) to add to (repeatable)")
-	addCmd.Flags().BoolVar(&addDryRun, "dry-run", false, "Preview changes without writing")
 	addCmd.Flags().BoolVar(&addForce, "force", false, "Allow adding duplicates (if supported by target)")
 	
 	RootCmd.AddCommand(addCmd)

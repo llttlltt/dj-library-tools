@@ -14,7 +14,6 @@ var (
 	createIn     string
 	createAt     int
 	createFrom   string
-	createDryRun bool
 )
 
 var createCmd = &cobra.Command{
@@ -57,7 +56,7 @@ func runCreateCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-		if createDryRun {
+		if dryRun {
 		fmt.Printf("[Dry Run] Would create %s %q in folder %q with %d tracks\n", loc.Resource, name, createIn, len(trackIDs))
 		return nil
 	}
@@ -85,6 +84,5 @@ func init() {
 	createCmd.Flags().StringVar(&createIn, "in", "", "Parent folder for the new resource")
 	createCmd.Flags().IntVar(&createAt, "at", -1, "Insert at this 0-indexed position (-1 for end)")
 	createCmd.Flags().StringVar(&createFrom, "from", "", "Initial items to populate the resource with")
-	createCmd.Flags().BoolVar(&createDryRun, "dry-run", false, "Preview changes without writing")
 	RootCmd.AddCommand(createCmd)
 }
