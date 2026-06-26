@@ -3,41 +3,40 @@ package cli
 import (
 	"testing"
 
-	"github.com/llttlltt/dj-library-tools/internal/provider"
-	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
+	"github.com/llttlltt/dj-library-tools/internal/models"
 )
 
 func TestSortTracks(t *testing.T) {
-	tracks := []rekordbox.Track{
-		{Name: "C", AverageBpm: "128", Artist: "Z"},
-		{Name: "A", AverageBpm: "120", Artist: "X"},
-		{Name: "B", AverageBpm: "124", Artist: "Y"},
+	tracks := []models.Track{
+		{Title: "C", BPM: 128, Artist: "Z"},
+		{Title: "A", BPM: 120, Artist: "X"},
+		{Title: "B", BPM: 124, Artist: "Y"},
 	}
 
 	t.Run("sort by bpm ascending", func(t *testing.T) {
 		sortTracks(tracks, "bpm")
-		if tracks[0].Name != "A" {
-			t.Errorf("expected A, got %s", tracks[0].Name)
+		if tracks[0].Title != "A" {
+			t.Errorf("expected A, got %s", tracks[0].Title)
 		}
 	})
 
 	t.Run("sort by bpm descending", func(t *testing.T) {
 		sortTracks(tracks, "-bpm")
-		if tracks[0].Name != "C" {
-			t.Errorf("expected C, got %s", tracks[0].Name)
+		if tracks[0].Title != "C" {
+			t.Errorf("expected C, got %s", tracks[0].Title)
 		}
 	})
 
 	t.Run("sort by artist ascending", func(t *testing.T) {
 		sortTracks(tracks, "artist")
-		if tracks[0].Name != "A" {
-			t.Errorf("expected A (Artist X), got %s", tracks[0].Name)
+		if tracks[0].Title != "A" {
+			t.Errorf("expected A (Artist X), got %s", tracks[0].Title)
 		}
 	})
 }
 
 func TestSortNodes(t *testing.T) {
-	nodes := []provider.NodeResult{
+	nodes := []models.Node{
 		{Name: "Z", Entries: 10},
 		{Name: "A", Entries: 50},
 		{Name: "M", Entries: 5},

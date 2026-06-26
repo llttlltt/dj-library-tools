@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/engine"
@@ -68,7 +67,7 @@ func runMoveTracks(syncEng *syncpkg.Engine, sel *Selection, path string) error {
 	}
 	var trackIDs []string
 	for _, t := range sel.Tracks {
-		trackIDs = append(trackIDs, strconv.Itoa(t.TrackID))
+		trackIDs = append(trackIDs, t.ID)
 	}
 
 	// 2. Resolve origin playlists

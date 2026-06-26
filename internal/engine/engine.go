@@ -59,7 +59,7 @@ func (e *Engine) Ls(queryString string) ([]rekordbox.Track, error) {
 
 	var matched []rekordbox.Track
 	for _, track := range e.Library.GetTracks() {
-		if eval.MatchesWithPlaylists(track, e.trackMap[track.TrackID]) {
+		if eval.MatchesWithPlaylists(track.ToNeutral(), e.trackMap[track.TrackID]) {
 			matched = append(matched, track)
 		}
 	}
@@ -130,7 +130,7 @@ func (e *Engine) Modify(queryString string, changes map[string]string) (int, err
 	tracks := e.Library.GetTracks()
 	for i := range tracks {
 		track := tracks[i]
-		if eval.MatchesWithPlaylists(track, e.trackMap[track.TrackID]) {
+		if eval.MatchesWithPlaylists(track.ToNeutral(), e.trackMap[track.TrackID]) {
 			e.applyChanges(&tracks[i], changes)
 			modifyCount++
 		}

@@ -8,6 +8,7 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/engine"
 	"github.com/llttlltt/dj-library-tools/internal/plex"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/spf13/cobra"
@@ -66,9 +67,21 @@ func syncPlexToRekordbox(src, tgt *Selection) error {
 		return err
 	}
 
-	orch := sync.NewOrchestrator(src.PlexClient, engine.NewRekordboxLibrary(rbXML), dryRun, verbose)
+	// For Sync, we still need the Plex client and raw tracks
+	plexProv, ok := src.Provider.(*provider.PlexProvider)
+	if !ok {
+		return fmt.Errorf("source must be a plex provider for this sync direction")
+	}
 
-	err = orch.SyncPlexToRekordbox(src.RawTracks.([]plex.Track), src.Location.Query, sync.SyncOptions{
+	orch := sync.NewOrchestrator(plexProv.Client(), engine.NewRekordboxLibrary(rbXML), dryRun, verbose)
+
+	// We'll add a way to get raw tracks or just cast if we know they are plex
+	raw, err := src.Provider.GetRawTracks(src.Location.Query)
+	if err != nil {
+		return err
+	}
+
+	err = orch.SyncPlexToRekordbox(raw.([]plex.Track), src.Location.Query, sync.SyncOptions{
 		ExportDest:   exportDest,
 		ExportFormat: exportFormat,
 		PathMaps:     cfg.PathMaps,

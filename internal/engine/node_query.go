@@ -43,7 +43,7 @@ func (e *Engine) lsNodes(queryString string, nodeType int32) ([]NodeResult, erro
 func (e *Engine) collectNodes(nodes []rekordbox.Node, eval *query.Evaluator, nodeType int32, parentFolder string, out *[]NodeResult) {
 	for _, node := range nodes {
 		if node.Type == nodeType {
-			if eval.MatchesNode(node, parentFolder) {
+			if eval.MatchesNode(node.ToNeutral(parentFolder)) {
 				*out = append(*out, NodeResult{Node: node, ParentFolder: parentFolder})
 			}
 		}
