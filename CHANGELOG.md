@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.5.0](https://github.com/llttlltt/dj-library-tools/compare/v1.4.0...v1.5.0) (2026-06-26)
+
+
+### Features
+
+* **cli:** add command aliases (ls, mv, rm, del, stats) ([c3619b7](https://github.com/llttlltt/dj-library-tools/commit/c3619b706fac2e4924c5141a1ec065c27375dd4b))
+* **cli:** add detailed verbose output for add and remove commands ([a82c275](https://github.com/llttlltt/dj-library-tools/commit/a82c2756f0e9fd5cd1aa2c474163217b4aa60b26))
+* **cli:** add global --json flag for list and stat commands ([3f0825f](https://github.com/llttlltt/dj-library-tools/commit/3f0825f1748697beaae24142552b168916a880ad))
+* **cli:** add visual progress bars for bulk add and remove operations ([f09f010](https://github.com/llttlltt/dj-library-tools/commit/f09f01016aaa55eb14ce94f89a6d0155694e803a))
+* **cli:** expand verbose output to all core commands ([5ed106a](https://github.com/llttlltt/dj-library-tools/commit/5ed106a3f1dca47f9348fc4bf711d839ce3b3997))
+* **cli:** finalize global dry-run support for all modifying commands ([aa0a2a0](https://github.com/llttlltt/dj-library-tools/commit/aa0a2a0b153334fc59fc6d6cbf0115484e79bc82))
+* **cli:** move dry-run to global persistent flag ([85adf39](https://github.com/llttlltt/dj-library-tools/commit/85adf396e0286ab34d5d80e2ef7912caf859ee9a))
+* **cli:** move verbose to global persistent flag ([80c54c0](https://github.com/llttlltt/dj-library-tools/commit/80c54c0059d8dd177c487d8397d49c5d9ab8049e))
+* **engine:** add mock engine test demonstrating Library boundary ([3fad172](https://github.com/llttlltt/dj-library-tools/commit/3fad172e84198da8a58719eaa7d07acca540a56b))
+* **engine:** introduce Library interface and decouple from Rekordbox XML ([ff69614](https://github.com/llttlltt/dj-library-tools/commit/ff696142ce5f6fc39a2e4040494bf25ba8e66e0f))
+* **provider:** introduce Provider interface and refactor list command for RB ([d31786f](https://github.com/llttlltt/dj-library-tools/commit/d31786fca3c13bf020b313464fefd99cad83c3e4))
+* **query:** add query validation and helpful error for bare values ([001093a](https://github.com/llttlltt/dj-library-tools/commit/001093a76f980d846b64d6ecc65bf70db506f3f9))
+* **query:** implement strict field validation and typo detection ([536c6e2](https://github.com/llttlltt/dj-library-tools/commit/536c6e22b93253139db5914bb2d19b28629dc3f8))
+* **query:** improve bare value error message with reconstructed query ([3f12fb9](https://github.com/llttlltt/dj-library-tools/commit/3f12fb9f0223ef133f1ae590397321592c0bf5eb))
+* **sys:** introduce system abstractions for filesystem and command execution ([c4b0795](https://github.com/llttlltt/dj-library-tools/commit/c4b07950c60f1859aa1f9b454b59b8b8a1f3fdaf))
+
 ## [1.4.0](https://github.com/llttlltt/dj-library-tools/compare/v1.3.0...v1.4.0) (2026-06-26)
 
 
