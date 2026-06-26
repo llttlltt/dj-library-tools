@@ -20,6 +20,7 @@ func makeMockLibrary() *MockLibrary {
 		},
 		Playlists: []models.Node{
 			{Name: "Inbox", Type: 1, Entries: 2},
+			{Name: "Sets", Type: 0, Entries: 0},
 		},
 	}
 }

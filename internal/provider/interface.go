@@ -9,6 +9,7 @@ type Provider interface {
 	Name() string
 	GetTracks(query string) ([]models.Track, error)
 	GetPlaylists(query string) ([]models.Node, error)
+	GetFolders(query string) ([]models.Node, error)
 	// CanTranscode reports whether this provider can supply raw audio for transcoding.
 	CanTranscode() bool
 }

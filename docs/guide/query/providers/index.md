@@ -10,4 +10,12 @@
 ---
 
 ### Selection Pattern
-`<provider>/<resource>:<query>`
+`djlt VERB [provider/resource] [query]`
+
+The resource and query are space-separated positional arguments — the query is **not** colon-joined to the resource path. For example:
+
+```bash
+djlt ls rb/tracks "genre:House && bpm:124..128"
+djlt ls rb/playlists "name:Inbox"
+djlt ls rb/folders "name:Shows"
+```

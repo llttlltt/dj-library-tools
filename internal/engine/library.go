@@ -50,13 +50,23 @@ func (r *RekordboxLibrary) GetTracks() []models.Track {
 	return tracks
 }
 
+// GetPlaylists returns a flattened view of every node (playlist and folder)
+// in the entire tree. Callers filter by Type to get only playlists or
+// only folders. The flat representation preserves ParentFolder so that
+// queries like name: and parent: work at any nesting depth.
 func (r *RekordboxLibrary) GetPlaylists() []models.Node {
-	nodes := r.XML.Playlists.Node.Node
-	results := make([]models.Node, len(nodes))
-	for i, n := range nodes {
-		results[i] = n.ToNeutral("")
-	}
+	var results []models.Node
+	collectAllNodes(r.XML.Playlists.Node.Node, "", &results)
 	return results
+}
+
+func collectAllNodes(nodes []rekordbox.Node, parent string, out *[]models.Node) {
+	for _, n := range nodes {
+		*out = append(*out, n.ToNeutral(parent))
+		if len(n.Node) > 0 {
+			collectAllNodes(n.Node, n.Name, out)
+		}
+	}
 }
 
 func (r *RekordboxLibrary) AddPlaylist(folder, name string, trackIDs []string, position int) {

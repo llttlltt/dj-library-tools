@@ -21,6 +21,10 @@ func (p *RekordboxProvider) GetPlaylists(query string) ([]models.Node, error) {
 	return p.Engine.LsPlaylists(query)
 }
 
+func (p *RekordboxProvider) GetFolders(query string) ([]models.Node, error) {
+	return p.Engine.LsFolders(query)
+}
+
 func (p *RekordboxProvider) CanTranscode() bool {
 	return true
 }
