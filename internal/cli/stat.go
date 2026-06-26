@@ -6,38 +6,34 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/engine"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
-	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 	"github.com/spf13/cobra"
 )
 
 var statCmd = &cobra.Command{
-	Use:   "stat [query]",
+	Use:   "stat [resource] [query]",
 	Short: "Show statistics for tracks matching the query",
+	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, _ := config.LoadAppConfig()
-		path := utils.ExpandPath(xmlPath)
-		if path == "" {
-			path = utils.ExpandPath(cfg.RekordboxXMLPath)
-		}
-		if path == "" {
-			return fmt.Errorf("Rekordbox XML path not found. Use --xml or run 'djlt config rekordbox --xml PATH'")
-		}
-
-		lib, err := rekordbox.ReadRekordboxLibrary(path)
+		rbXML, _, err := loadXML()
 		if err != nil {
-			return fmt.Errorf("failed to read XML: %w", err)
+			return err
 		}
 
-		eng := engine.NewEngine(lib)
+		eng := engine.NewEngine(rbXML)
+		
 		queryStr := ""
-		if len(args) > 0 {
-			queryStr = strings.Join(args, " ")
+		if len(args) > 1 {
+			queryStr = strings.Join(args[1:], " ")
+		}
+		loc := utils.ParseLocation(args[0], queryStr)
+
+		if loc.Provider != "rb" || loc.Resource != "tracks" {
+			return fmt.Errorf("stat currently only supports rb/tracks")
 		}
 
-		res, err := eng.Stat(queryStr)
+		res, err := eng.Stat(loc.Query)
 		if err != nil {
 			return fmt.Errorf("stat failed: %w", err)
 		}
