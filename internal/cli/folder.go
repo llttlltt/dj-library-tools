@@ -59,7 +59,7 @@ func runFolderCmd(cmd *cobra.Command, args []string) error {
 
 	var targets []engine.NodeResult
 	if len(args) > 0 {
-		loc := utils.ParseLocation(args[0])
+		loc := utils.ParseLocation(args[0], "")
 		if loc.Provider != "rb" || loc.Resource != "folders" {
 			return fmt.Errorf("folder query must use rb/folders: syntax, got %q", args[0])
 		}

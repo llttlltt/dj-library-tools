@@ -22,13 +22,10 @@ var listCmd = &cobra.Command{
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var loc utils.Location
-		if len(args) == 1 && strings.Contains(args[0], ":") {
-			loc = utils.ParseLocation(args[0])
+		if len(args) > 1 {
+			loc = utils.ParseLocation(args[0], strings.Join(args[1:], " "))
 		} else {
-			loc = utils.ParseLocation(args[0])
-			if len(args) > 1 {
-				loc.Query = strings.Join(args[1:], " ")
-			}
+			loc = utils.ParseLocation(args[0], "")
 		}
 
 		switch loc.Provider {
