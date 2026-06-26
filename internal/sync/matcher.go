@@ -2,11 +2,11 @@ package sync
 
 import (
 	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/llttlltt/dj-library-tools/internal/plex"
 )
 
+// MatchResult holds the outcome of matching a source track against the RB collection.
 type MatchResult struct {
-	PlexTrack  plex.Track
+	Track      models.Track
 	RBTrack    *models.Track
 	Confidence float64
 }
@@ -19,12 +19,12 @@ func NewMatcher(collection []models.Track) *Matcher {
 	return &Matcher{collection: collection}
 }
 
-func (m *Matcher) Match(t plex.Track) MatchResult {
-	// Simple matching logic for now
+// Match finds the best RB collection entry for the given neutral track.
+func (m *Matcher) Match(t models.Track) MatchResult {
 	for _, rt := range m.collection {
 		if rt.Title == t.Title && rt.Artist == t.Artist {
-			return MatchResult{PlexTrack: t, RBTrack: &rt, Confidence: 1.0}
+			return MatchResult{Track: t, RBTrack: &rt, Confidence: 1.0}
 		}
 	}
-	return MatchResult{PlexTrack: t, RBTrack: nil, Confidence: 0}
+	return MatchResult{Track: t, RBTrack: nil, Confidence: 0}
 }

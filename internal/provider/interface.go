@@ -9,10 +9,8 @@ type Provider interface {
 	Name() string
 	GetTracks(query string) ([]models.Track, error)
 	GetPlaylists(query string) ([]models.Node, error)
-	GetRawTracks(query string) (interface{}, error)
-	
-	// Capabilities
-	CanTranscode() bool // Can this provider provide raw audio for transcoding?
+	// CanTranscode reports whether this provider can supply raw audio for transcoding.
+	CanTranscode() bool
 }
 
 // WritableProvider extends Provider with modification capabilities.

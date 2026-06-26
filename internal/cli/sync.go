@@ -6,7 +6,6 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/engine"
-	"github.com/llttlltt/dj-library-tools/internal/plex"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
@@ -44,16 +43,16 @@ var syncCmd = &cobra.Command{
 				return err
 			}
 
-			if (src.Location.Provider == "plex" || src.Location.Provider == "rb") && tgt.Location.Provider == "rb" {
+			if _, ok := tgt.Provider.(provider.WritableProvider); ok {
 				if err := syncToRekordbox(src, tgt); err != nil {
 					return err
 				}
-			} else if src.Location.Provider == "plex" && tgt.Location.Provider == "m3u8" {
+			} else if tgt.Location.Provider == "m3u8" {
 				if err := syncPlexToM3U8(src.Location, tgt.Location); err != nil {
 					return err
 				}
 			} else {
-				return fmt.Errorf("unsupported sync direction: %s to %s", src.Location.Provider, tgt.Location.Provider)
+				return fmt.Errorf("unsupported sync target: %s → %s", src.Location.Provider, tgt.Location.Provider)
 			}
 		}
 		return nil
@@ -67,19 +66,14 @@ func syncToRekordbox(src, tgt *Selection) error {
 		return err
 	}
 
-	var plexClient *plex.Client
-	if plexProv, ok := src.Provider.(*provider.PlexProvider); ok {
-		plexClient = plexProv.Client()
-	}
+	orch := sync.NewOrchestrator(nil, engine.NewRekordboxLibrary(rbXML), dryRun, verbose)
 
-	orch := sync.NewOrchestrator(plexClient, engine.NewRekordboxLibrary(rbXML), dryRun, verbose)
-
-	raw, err := src.Provider.GetRawTracks(src.Location.Query)
+	tracks, err := src.Provider.GetTracks(src.Location.Query)
 	if err != nil {
 		return err
 	}
 
-	err = orch.SyncToLibrary(raw, src.Location.Query, tgt.Location.Query, sync.SyncOptions{
+	err = orch.SyncToLibrary(tracks, src.Location.Query, tgt.Location.Query, sync.SyncOptions{
 		ExportDest:   exportDest,
 		ExportFormat: exportFormat,
 		PathMaps:     cfg.PathMaps,
