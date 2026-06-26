@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.1](https://github.com/llttlltt/dj-library-tools/compare/v1.7.0...v1.7.1) (2026-06-26)
+
+
+### Bug Fixes
+
+* **query:** implement missing remixer and mix fields in evaluator ([7aef494](https://github.com/llttlltt/dj-library-tools/commit/7aef494eca1cef369058e6fb19800284543bb0b7))
+* **utils:** support colon separator in m3u locations ([5a946d2](https://github.com/llttlltt/dj-library-tools/commit/5a946d20264a9f95b6595e4cdb2f61ae1e07f94a))
+
 ## [1.7.0](https://github.com/llttlltt/dj-library-tools/compare/v1.6.0...v1.7.0) (2026-06-26)
 
 
