@@ -68,12 +68,13 @@ func RunBulkOperation(verb string, targetNames []string, itemIDs []string, actio
 	}
 }
 
-// Selection represents a resolved set of tracks or nodes from a provider.
+// Selection represents a resolved set of resources from a provider.
 type Selection struct {
-	Tracks   []models.Track
-	Nodes    []models.Node
+	Items    []models.Resource
+	Tracks   []models.Track // Convenience helpers
+	Nodes    []models.Node  // Convenience helpers
 	Location utils.Location
-	Provider provider.Provider // Carry the provider that created this selection
+	Provider provider.Provider
 }
 
 // ResolveSelection resolves a location string into a Selection.
@@ -84,7 +85,7 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 	}
 
 	cfg, _ := config.LoadAppConfig()
-	var rbXML, _, _ = loadXMLFunc() // We don't need path here
+	var rbXML, _, _ = loadXMLFunc()
 
 	prov, err := provider.NewProvider(loc.Provider, rbXML, cfg)
 	if err != nil {
@@ -98,12 +99,18 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 			return nil, err
 		}
 		sel.Tracks = tracks
+		for _, t := range tracks {
+			sel.Items = append(sel.Items, t)
+		}
 	} else {
 		nodes, err := prov.GetPlaylists(loc.Query)
 		if err != nil {
 			return nil, err
 		}
 		sel.Nodes = nodes
+		for _, n := range nodes {
+			sel.Items = append(sel.Items, n)
+		}
 	}
 
 	return sel, nil
