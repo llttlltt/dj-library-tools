@@ -21,10 +21,10 @@ var deleteCmd = &cobra.Command{
 Warning: This is destructive to the resource, but does not delete tracks from the collection.
 
 Example:
-  djlt delete rb/playlists "Old Mixes"`,
+  djlt delete rb/playlists "name:'Old Mixes'"`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		rbXML, path, err := loadXML()
+		rbXML, path, err := loadXMLFunc()
 		if err != nil {
 			return err
 		}

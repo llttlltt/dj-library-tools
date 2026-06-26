@@ -22,14 +22,14 @@ var renameCmd = &cobra.Command{
 The target must resolve to a single resource.
 
 Example:
-  djlt rename rb/playlists Inbox --to "Inbox (Processed)"`,
+  djlt rename rb/playlists name:Inbox --to "Inbox (Processed)"`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if renameTo == "" {
 			return fmt.Errorf("--to new-name is required")
 		}
 
-		rbXML, path, err := loadXML()
+		rbXML, path, err := loadXMLFunc()
 		if err != nil {
 			return err
 		}

@@ -23,7 +23,7 @@ var removeCmd = &cobra.Command{
 Currently supports removing tracks (rb/tracks) from playlists (rb/playlists).
 
 Example:
-  djlt remove rb/tracks artist:Four --from "rb/playlists Inbox"`,
+  djlt remove rb/tracks artist:Four --from "rb/playlists name:Inbox"`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: runRemoveCmd,
 }
@@ -33,7 +33,7 @@ func runRemoveCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("at least one --from origin is required")
 	}
 
-	rbXML, path, err := loadXML()
+	rbXML, path, err := loadXMLFunc()
 	if err != nil {
 		return err
 	}

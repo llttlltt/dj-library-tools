@@ -23,7 +23,7 @@ Remove items matching a source selection from one or more origin resources.
 Currently supports removing tracks (rb/tracks) from playlists (rb/playlists).
 
 Example:
-  djlt remove rb/tracks artist:Four --from "rb/playlists Inbox"
+  djlt remove rb/tracks artist:Four --from "rb/playlists name:Inbox"
 
 ## See also
 

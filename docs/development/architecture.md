@@ -34,4 +34,4 @@ All commands follow a consistent pattern:
 `djlt [verb] [resource] [query] --to/--from [target]`
 
 Example:
-`djlt create rb/playlists "My New Playlist"`
+`djlt create rb/playlists "name:'My New Playlist'"`

@@ -12,6 +12,8 @@ import (
 
 var (
 	xmlPath string
+	// loadXMLFunc allows overriding the XML loading logic for testing.
+	loadXMLFunc = loadXML
 )
 
 // loadXML resolves and loads the Rekordbox XML library, preferring --xml flag over config.
