@@ -33,6 +33,28 @@ func (p *RekordboxProvider) GetRawTracks(query string) (interface{}, error) {
 	return raw, nil
 }
 
+func (p *RekordboxProvider) CanTranscode() bool {
+	return true
+}
+
+func (p *RekordboxProvider) AddTracks(target models.Node, tracks []models.Track) (int, error) {
+	var ids []string
+	for _, t := range tracks {
+		ids = append(ids, t.ID)
+	}
+	_, added := p.Engine.Library.(engine.WritableLibrary).AddTracksToPlaylist(target.Name, ids)
+	return added, nil
+}
+
+func (p *RekordboxProvider) RemoveTracks(target models.Node, tracks []models.Track) (int, error) {
+	var ids []string
+	for _, t := range tracks {
+		ids = append(ids, t.ID)
+	}
+	_, removed := p.Engine.Library.(engine.WritableLibrary).RemoveTracksFromPlaylist(target.Name, ids)
+	return removed, nil
+}
+
 func NewRekordboxProvider(eng *engine.Engine) *RekordboxProvider {
 	return &RekordboxProvider{Engine: eng}
 }

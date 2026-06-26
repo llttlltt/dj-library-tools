@@ -32,8 +32,12 @@ func (p *PlexProvider) Client() *plex.Client {
 	return p.client
 }
 
-func (p *PlexProvider) GetRawTracks(queryString string) (interface{}, error) {
-	return p.getRawTracksInternal(queryString)
+func (p *PlexProvider) CanTranscode() bool {
+	return true
+}
+
+func (p *PlexProvider) GetRawTracks(query string) (interface{}, error) {
+	return p.getRawTracksInternal(query)
 }
 
 func (p *PlexProvider) getRawTracksInternal(queryString string) ([]plex.Track, error) {
