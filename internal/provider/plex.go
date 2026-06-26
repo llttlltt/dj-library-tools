@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/plex"
@@ -120,62 +119,17 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 	}
 
 	var tracks []rekordbox.Track
+	eval := query.NewEvaluator(q)
+
 	for _, pt := range plexTracks {
-		// Apply remaining filters from the query
-		if queryString != "" {
-			matched := false
-			var walk func(expr query.Expression) bool
-			walk = func(expr query.Expression) bool {
-				switch v := expr.(type) {
-				case query.Comparison:
-					f := strings.ToLower(v.Field)
-					// Skip playlist/id fields as they were used for initial resolution
-					if f == "playlist" || f == "name" || f == "id" || f == "ratingkey" {
-						return true
-					}
-					
-					val := ""
-					switch f {
-					case "title": val = pt.Title
-					case "artist": val = pt.Artist
-					case "album": val = pt.Album
-					}
-
-					switch v.Operator {
-					case query.OpExact:
-						return val == v.Value
-					case query.OpRegex:
-						re, err := regexp.Compile(v.Value)
-						if err != nil {
-							return true // Ignore invalid regex
-						}
-						return re.MatchString(val)
-					case query.OpGt, query.OpGte, query.OpLt, query.OpLte, query.OpRange:
-						return false // TODO: implement numeric for Plex
-					default: // query.OpSubstring (":")
-						return strings.Contains(strings.ToLower(val), strings.ToLower(v.Value))
-					}
-				case query.Logical:
-					if v.Op == "AND" {
-						return walk(v.Left) && walk(v.Right)
-					}
-					return walk(v.Left) || walk(v.Right)
-				case query.Not:
-					return !walk(v.Expr)
-				}
-				return true
-			}
-			matched = walk(q.Root)
-			if !matched {
-				continue
-			}
-		}
-
+		// Map Plex Track to Rekordbox Track for the Evaluator
 		t := rekordbox.Track{
-			Name:     pt.Title,
-			Artist:   pt.Artist,
-			Album:    pt.Album,
-			Tonality: pt.KeyTag,
+			TrackID:    0, // Plex doesn't have an integer TrackID in the same way
+			Name:       pt.Title,
+			Artist:     pt.Artist,
+			Album:      pt.Album,
+			Tonality:   pt.KeyTag,
+			AverageBpm: fmt.Sprintf("%.2f", pt.BPM),
 		}
 		if pt.BPM > 0 {
 			t.Tempo = []rekordbox.Tempo{{Bpm: fmt.Sprintf("%.2f", pt.BPM)}}
@@ -183,7 +137,11 @@ func (p *PlexProvider) GetTracks(queryString string) ([]rekordbox.Track, error) 
 		if len(pt.Media) > 0 && len(pt.Media[0].Part) > 0 {
 			t.Location = pt.Media[0].Part[0].File
 		}
-		tracks = append(tracks, t)
+
+		// Use the standard Evaluator!
+		if eval.Matches(t) {
+			tracks = append(tracks, t)
+		}
 	}
 
 	return tracks, nil
@@ -207,42 +165,23 @@ func (p *PlexProvider) GetPlaylists(queryString string) ([]NodeResult, error) {
 	}
 
 	var results []NodeResult
+	eval := query.NewEvaluator(q)
+
 	for _, pl := range plexPlaylists {
-		if queryString != "" {
-			matched := false
-			// Simple evaluator for playlists
-			var walk func(expr query.Expression) bool
-			walk = func(expr query.Expression) bool {
-				switch v := expr.(type) {
-				case query.Comparison:
-					f := strings.ToLower(v.Field)
-					if f == "name" || f == "title" {
-						return strings.Contains(strings.ToLower(pl.Title), strings.ToLower(v.Value))
-					}
-					if f == "id" || f == "ratingkey" {
-						return pl.RatingKey == v.Value
-					}
-					return false
-				case query.Logical:
-					if v.Op == "AND" {
-						return walk(v.Left) && walk(v.Right)
-					}
-					return walk(v.Left) || walk(v.Right)
-				case query.Not:
-					return !walk(v.Expr)
-				}
-				return true
-			}
-			matched = walk(q.Root)
-			if !matched {
-				continue
-			}
-		}
-		results = append(results, NodeResult{
+		// Mock a rekordbox.Node for the Evaluator
+		n := rekordbox.Node{
 			Name:    pl.Title,
-			Entries: pl.LeafCount,
-			Raw:     pl,
-		})
+			Type:    1,
+			Entries: rekordbox.PtrInt32(int32(pl.LeafCount)),
+		}
+
+		if eval.MatchesNode(n, "") {
+			results = append(results, NodeResult{
+				Name:    pl.Title,
+				Entries: pl.LeafCount,
+				Raw:     pl,
+			})
+		}
 	}
 
 	return results, nil
