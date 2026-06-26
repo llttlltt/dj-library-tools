@@ -9,7 +9,6 @@ djlt create [resource] [name] [flags]
 
 ```
       --at int        Insert at this 0-indexed position (-1 for end) (default -1)
-      --dry-run       Preview changes without writing
       --from string   Initial items to populate the resource with
   -h, --help          help for create
       --in string     Parent folder for the new resource
@@ -18,6 +17,7 @@ djlt create [resource] [name] [flags]
 ### Inherited Options
 
 ```
+      --dry-run      Preview changes without writing
   -x, --xml string   Path to the Rekordbox XML library
 ```
 

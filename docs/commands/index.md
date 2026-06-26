@@ -5,6 +5,7 @@ DJ Library Tools CLI
 ### Options
 
 ```
+      --dry-run      Preview changes without writing
   -h, --help         help for djlt
   -x, --xml string   Path to the Rekordbox XML library
 ```
@@ -18,7 +19,7 @@ A comprehensive CLI tool for managing DJ libraries and Rekordbox XMLs.
 * [djlt create](create.md)	 - Create a new playlist or folder
 * [djlt delete](delete.md)	 - Delete a resource from the library (destructive)
 * [djlt fix](fix/index.md)	 - Fix library issues or resource metadata
-* [djlt list](list.md)	 - List items from a location (e.g. plex/playlists:Summer)
+* [djlt list](list.md)	 - List items from a location (e.g. rb/tracks title:Oceans)
 * [djlt move](move.md)	 - Move items between locations
 * [djlt remove](remove.md)	 - Remove items from one or more origins
 * [djlt rename](rename.md)	 - Rename a playlist or folder

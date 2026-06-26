@@ -6,12 +6,12 @@
 
 ## Providers & Resources
 
-Resources are identified by their provider prefix. If no resource is specified, a default is used based on the provider.
+Resources are identified by their provider and type. Both parts must be specified.
 
-- `rb/tracks` (Default for `rb`)
+- `rb/tracks`
 - `rb/playlists`
 - `rb/folders`
-- `plex/playlists` (Default for `plex`)
+- `plex/playlists`
 - `plex/tracks`
 
 ## Query Syntax

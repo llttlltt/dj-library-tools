@@ -8,7 +8,6 @@ djlt move [resource] [query] --to [destination] [--from origin] [flags]
 ### Options
 
 ```
-      --dry-run       Preview changes without writing
       --from string   Origin playlist (required for tracks)
   -h, --help          help for move
       --to string     Destination playlist or folder
@@ -17,6 +16,7 @@ djlt move [resource] [query] --to [destination] [--from origin] [flags]
 ### Inherited Options
 
 ```
+      --dry-run      Preview changes without writing
   -x, --xml string   Path to the Rekordbox XML library
 ```
 

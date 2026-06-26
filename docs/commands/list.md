@@ -1,9 +1,9 @@
 # list
 
-List items from a location (e.g. plex/playlists:Summer)
+List items from a location (e.g. rb/tracks title:Oceans)
 
 ```
-djlt list [location] [flags]
+djlt list [resource] [query] [flags]
 ```
 
 ### Options
@@ -15,6 +15,7 @@ djlt list [location] [flags]
 ### Inherited Options
 
 ```
+      --dry-run      Preview changes without writing
   -x, --xml string   Path to the Rekordbox XML library
 ```
 

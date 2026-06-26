@@ -8,7 +8,6 @@ djlt remove [source-resource] [source-query] --from [origin-resource] [origin-qu
 ### Options
 
 ```
-      --dry-run        Preview changes without writing
       --from strings   Origin resource(s) to remove from (repeatable)
   -h, --help           help for remove
 ```
@@ -16,6 +15,7 @@ djlt remove [source-resource] [source-query] --from [origin-resource] [origin-qu
 ### Inherited Options
 
 ```
+      --dry-run      Preview changes without writing
   -x, --xml string   Path to the Rekordbox XML library
 ```
 

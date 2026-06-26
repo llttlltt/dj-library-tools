@@ -6,7 +6,7 @@ The Plex provider interacts with your Plex Media Server via its API using the pa
 
 | Resource | Description | Example |
 | :--- | :--- | :--- |
-| `playlists` | Your Plex music playlists. | `plex/playlists:Summer` |
+| `playlists` | Your Plex music playlists. | `plex/playlists name:Summer` |
 
 ## Authentication
 
