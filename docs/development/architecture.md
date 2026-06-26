@@ -6,7 +6,7 @@
 
 - `cmd/djlt/`: CLI entry points. Uses a **Verb-Centric** architecture.
 - `internal/`: UI-agnostic core logic.
-    - `cli/`: The **Surgical 6** verb implementations (`list`, `sync`, `create`, `move`, `remove`, `config`). Each verb is a single file; no provider-specific logic lives here.
+    - `cli/`: The **Surgical 6** verb implementations (`list`, `sync`, `make`, `move`, `remove`, `config`). Each verb is a single file; no provider-specific logic lives here.
     - `engine/`: Universal search and analysis engine. Abstracted via the `Library` and `WritableLibrary` interfaces. Works exclusively with neutral `models`.
     - `models/`: Central domain models (`Track`, `Node`, `Resource`) that provide a provider-agnostic language for the entire monorepo.
     - `provider/`: Capability-based plugins for library sources (Rekordbox, Plex).
