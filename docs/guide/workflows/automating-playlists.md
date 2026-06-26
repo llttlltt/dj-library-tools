@@ -13,7 +13,7 @@ djlt list rb/tracks "beatgrids:1 && hotcues:<1 && memorycues:<1"
 Next, create an empty playlist in Rekordbox to hold these tracks.
 
 ```bash
-djlt create rb/playlists "Inbox (Simple)"
+djlt create rb/playlists "name:'Inbox (Simple)'"
 ```
 
 ### 3. Add the tracks
@@ -27,7 +27,7 @@ djlt add rb/tracks "beatgrids:1 && hotcues:<1 && memorycues:<1" \
 !!! tip "All-in-one"
     You can combine the creation and addition steps into a single command:
     ```bash
-    djlt create rb/playlists "Inbox (Simple)" --from "rb/tracks beatgrids:1 && hotcues:<1 && memorycues:<1"
+    djlt create rb/playlists "name:'Inbox (Simple)'" --from "rb/tracks beatgrids:1 && hotcues:<1 && memorycues:<1"
     ```
 
 ### 4. Work in Rekordbox
@@ -39,7 +39,7 @@ Whenever you want to refresh your list, run the `sync` command. `djlt` will comp
 !!! tip "Dry Run first"
     It's a good habit to use the `--dry-run` flag first to see exactly how many tracks will be added or removed before committing the changes to your XML:
     ```bash
-    djlt sync rb/tracks "..." --to "rb/playlists Inbox" --dry-run
+    djlt sync rb/tracks "..." --to "rb/playlists name:Inbox" --dry-run
     ```
 
 ```bash

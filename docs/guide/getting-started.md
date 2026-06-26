@@ -62,14 +62,14 @@ One of the most powerful features of `djlt` is its ability to sync data between 
 To take a playlist from Plex and inject it into your Rekordbox tree:
 
 ```bash
-djlt sync plex/playlists Summer --to "rb/playlists 'Plex Sync'"
+djlt sync plex/playlists name:Summer --to "rb/playlists name:'Plex Sync'"
 ```
 
 ### Export and Transcode
 You can also export files to a local directory while syncing:
 
 ```bash
-djlt sync plex/playlists Summer --to "rb/playlists 'Plex Sync'" \
+djlt sync plex/playlists name:Summer --to "rb/playlists name:'Plex Sync'" \
   --dest ~/Music/Export --format mp3
 ```
 

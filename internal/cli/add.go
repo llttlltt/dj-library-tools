@@ -24,7 +24,7 @@ var addCmd = &cobra.Command{
 Currently supports adding tracks (rb/tracks) to playlists (rb/playlists).
 
 Example:
-  djlt add rb/tracks artist:Four --to "rb/playlists Inbox"`,
+  djlt add rb/tracks artist:Four --to "rb/playlists name:Inbox"`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: runAddCmd,
 }
@@ -34,7 +34,7 @@ func runAddCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("at least one --to target is required")
 	}
 
-	rbXML, path, err := loadXML()
+	rbXML, path, err := loadXMLFunc()
 	if err != nil {
 		return err
 	}

@@ -22,7 +22,7 @@ Permanently delete playlists or folders from the Rekordbox XML.
 Warning: This is destructive to the resource, but does not delete tracks from the collection.
 
 Example:
-  djlt delete rb/playlists "Old Mixes"
+  djlt delete rb/playlists "name:'Old Mixes'"
 
 ## See also
 

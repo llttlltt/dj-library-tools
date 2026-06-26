@@ -16,7 +16,7 @@ var statCmd = &cobra.Command{
 	Short: "Show statistics for tracks matching the query",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		rbXML, _, err := loadXML()
+		rbXML, _, err := loadXMLFunc()
 		if err != nil {
 			return err
 		}

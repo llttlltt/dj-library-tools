@@ -23,7 +23,7 @@ Rename a Rekordbox playlist or folder.
 The target must resolve to a single resource.
 
 Example:
-  djlt rename rb/playlists Inbox --to "Inbox (Processed)"
+  djlt rename rb/playlists name:Inbox --to "Inbox (Processed)"
 
 ## See also
 

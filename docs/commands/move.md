@@ -25,8 +25,8 @@ For tracks, both --from and --to are required.
 For playlists and folders, only --to (the parent folder) is required.
 
 Example:
-  djlt move rb/tracks "bpm:>130" --from "Inbox" --to "High Energy"
-  djlt move rb/playlists "Deep House" --to "Genres"
+  djlt move rb/tracks "bpm:>130" --from "name:Inbox" --to "name:'High Energy'"
+  djlt move rb/playlists "name:'Deep House'" --to "name:Genres"
 
 ## See also
 

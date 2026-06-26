@@ -25,8 +25,8 @@ For tracks, both --from and --to are required.
 For playlists and folders, only --to (the parent folder) is required.
 
 Example:
-  djlt move rb/tracks "bpm:>130" --from "Inbox" --to "High Energy"
-  djlt move rb/playlists "Deep House" --to "Genres"`,
+  djlt move rb/tracks "bpm:>130" --from "name:Inbox" --to "name:'High Energy'"
+  djlt move rb/playlists "name:'Deep House'" --to "name:Genres"`,
 	Args: cobra.MinimumNArgs(1),
 	RunE: runMoveCmd,
 }
@@ -36,7 +36,7 @@ func runMoveCmd(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--to destination is required")
 	}
 
-	rbXML, path, err := loadXML()
+	rbXML, path, err := loadXMLFunc()
 	if err != nil {
 		return err
 	}

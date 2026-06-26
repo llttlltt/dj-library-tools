@@ -30,7 +30,7 @@ Example:
 }
 
 func runCreateCmd(cmd *cobra.Command, args []string) error {
-	rbXML, path, err := loadXML()
+	rbXML, path, err := loadXMLFunc()
 	if err != nil {
 		return err
 	}

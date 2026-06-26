@@ -24,7 +24,7 @@ Add items from a source selection to one or more target resources.
 Currently supports adding tracks (rb/tracks) to playlists (rb/playlists).
 
 Example:
-  djlt add rb/tracks artist:Four --to "rb/playlists Inbox"
+  djlt add rb/tracks artist:Four --to "rb/playlists name:Inbox"
 
 ## See also
 

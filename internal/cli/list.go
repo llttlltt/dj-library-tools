@@ -40,18 +40,9 @@ var listCmd = &cobra.Command{
 }
 
 func listRekordbox(loc utils.Location) error {
-	cfg, _ := config.LoadAppConfig()
-	path := utils.ExpandPath(xmlPath)
-	if path == "" {
-		path = utils.ExpandPath(cfg.RekordboxXMLPath)
-	}
-	if path == "" {
-		return fmt.Errorf("Rekordbox XML path not found. Use --xml or run 'djlt config rekordbox --xml PATH'")
-	}
-
-	lib, err := rekordbox.ReadRekordboxLibrary(path)
+	lib, _, err := loadXMLFunc()
 	if err != nil {
-		return fmt.Errorf("failed to read XML: %w", err)
+		return err
 	}
 
 	eng := engine.NewEngine(lib)

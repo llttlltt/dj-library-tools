@@ -30,7 +30,7 @@ Example:
 		}
 
 		// Load primary library (the one we are updating)
-		destLibrary, destPath, err := loadXML()
+		destLibrary, destPath, err := loadXMLFunc()
 		if err != nil {
 			return err
 		}
