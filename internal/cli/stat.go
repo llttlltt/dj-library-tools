@@ -22,7 +22,7 @@ var statCmd = &cobra.Command{
 			return err
 		}
 
-		eng := engine.NewEngine(rbXML)
+		eng := engine.NewEngine(engine.NewRekordboxLibrary(rbXML))
 		
 		queryStr := ""
 		if len(args) > 1 {

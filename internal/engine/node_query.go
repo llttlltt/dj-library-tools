@@ -33,7 +33,7 @@ func (e *Engine) lsNodes(queryString string, nodeType int32) ([]NodeResult, erro
 	eval := query.NewEvaluator(q)
 
 	var matched []NodeResult
-	e.collectNodes(e.Library.Playlists.Node.Node, eval, nodeType, "", &matched)
+	e.collectNodes(e.Library.GetPlaylists(), eval, nodeType, "", &matched)
 	return matched, nil
 }
 

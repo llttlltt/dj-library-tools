@@ -8,13 +8,13 @@ import (
 	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
 )
 
-// Engine performs operations on a Rekordbox library using queries
+// Engine performs operations on a library using queries
 type Engine struct {
-	Library   *rekordbox.RekordboxLibraryXML
-	trackMap  map[int][]string // Map TrackID to list of playlist names
+	Library  Library
+	trackMap map[int][]string // Map TrackID to list of playlist names
 }
 
-func NewEngine(lib *rekordbox.RekordboxLibraryXML) *Engine {
+func NewEngine(lib Library) *Engine {
 	e := &Engine{
 		Library:  lib,
 		trackMap: make(map[int][]string),
@@ -24,7 +24,7 @@ func NewEngine(lib *rekordbox.RekordboxLibraryXML) *Engine {
 }
 
 func (e *Engine) indexPlaylists() {
-	e.walkPlaylists(e.Library.Playlists.Node.Node)
+	e.walkPlaylists(e.Library.GetPlaylists())
 }
 
 func (e *Engine) walkPlaylists(nodes []rekordbox.Node) {
@@ -58,7 +58,7 @@ func (e *Engine) Ls(queryString string) ([]rekordbox.Track, error) {
 	eval := query.NewEvaluator(q)
 
 	var matched []rekordbox.Track
-	for _, track := range e.Library.Collection.TRACK {
+	for _, track := range e.Library.GetTracks() {
 		if eval.MatchesWithPlaylists(track, e.trackMap[track.TrackID]) {
 			matched = append(matched, track)
 		}
@@ -121,17 +121,17 @@ func (e *Engine) Stat(queryString string) (*StatResult, error) {
 }
 
 // Modify applies changes to matched tracks
-// Example: modifyQuery: "artist:Four", changes: map[string]string{"comment": "Verified"}
 func (e *Engine) Modify(queryString string, changes map[string]string) (int, error) {
 	parser := query.NewParser()
 	q := parser.Parse(queryString)
 	eval := query.NewEvaluator(q)
 
 	modifyCount := 0
-	for i := range e.Library.Collection.TRACK {
-		track := e.Library.Collection.TRACK[i]
+	tracks := e.Library.GetTracks()
+	for i := range tracks {
+		track := tracks[i]
 		if eval.MatchesWithPlaylists(track, e.trackMap[track.TrackID]) {
-			e.applyChanges(&e.Library.Collection.TRACK[i], changes)
+			e.applyChanges(&tracks[i], changes)
 			modifyCount++
 		}
 	}

@@ -34,7 +34,7 @@ func runCreateCmd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	eng := engine.NewEngine(rbXML)
+	eng := engine.NewEngine(engine.NewRekordboxLibrary(rbXML))
 	syncEng := syncpkg.NewEngine(nil, rbXML)
 
 	loc := utils.ParseLocation(args[0], "")

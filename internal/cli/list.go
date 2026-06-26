@@ -53,7 +53,7 @@ func listRekordbox(loc utils.Location) error {
 		return err
 	}
 
-	eng := engine.NewEngine(lib)
+	eng := engine.NewEngine(engine.NewRekordboxLibrary(lib))
 	
 	if loc.Resource == "playlists" {
 		results, err := eng.LsPlaylists(loc.Query)

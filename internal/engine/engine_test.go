@@ -14,7 +14,7 @@ func TestEnginePrimitives(t *testing.T) {
 		t.Fatalf("Failed to read fixture: %v", err)
 	}
 
-	eng := NewEngine(lib)
+	eng := NewEngine(NewRekordboxLibrary(lib))
 
 	t.Run("Ls Primitive", func(t *testing.T) {
 		tracks, err := eng.Ls("bpm:120..130")

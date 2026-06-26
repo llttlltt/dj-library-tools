@@ -14,7 +14,7 @@ func TestPlaylistQuery(t *testing.T) {
 		t.Fatalf("Failed to read fixture: %v", err)
 	}
 
-	eng := NewEngine(lib)
+	eng := NewEngine(NewRekordboxLibrary(lib))
 
 	t.Run("Match track in playlist", func(t *testing.T) {
 		// "House" playlist has track 261282774
