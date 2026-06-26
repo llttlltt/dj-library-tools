@@ -12,9 +12,8 @@ import (
 )
 
 var (
-	moveTo     string
-	moveFrom   string
-	moveDryRun bool
+	moveTo   string
+	moveFrom string
 )
 
 var moveCmd = &cobra.Command{
@@ -89,7 +88,7 @@ func runMoveTracks(eng *engine.Engine, syncEng *syncpkg.Engine, sourceQuery, pat
 		return fmt.Errorf("could not find target playlist(s) matching %q", moveTo)
 	}
 
-	if moveDryRun {
+	if dryRun {
 		fmt.Printf("[Dry Run] Would move %d tracks from %d origins to %d targets\n", len(trackIDs), len(origins), len(targets))
 		return nil
 	}
@@ -123,7 +122,7 @@ func runMoveNodes(eng *engine.Engine, syncEng *syncpkg.Engine, loc utils.Locatio
 		return nil
 	}
 
-	if moveDryRun {
+	if dryRun {
 		for _, t := range targets {
 			fmt.Printf("[Dry Run] Would move %s %q to folder %q\n", loc.Resource, t.Node.Name, moveTo)
 		}
@@ -144,6 +143,5 @@ func runMoveNodes(eng *engine.Engine, syncEng *syncpkg.Engine, loc utils.Locatio
 func init() {
 	moveCmd.Flags().StringVar(&moveTo, "to", "", "Destination playlist or folder")
 	moveCmd.Flags().StringVar(&moveFrom, "from", "", "Origin playlist (required for tracks)")
-	moveCmd.Flags().BoolVar(&moveDryRun, "dry-run", false, "Preview changes without writing")
 	RootCmd.AddCommand(moveCmd)
 }

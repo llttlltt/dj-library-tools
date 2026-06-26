@@ -12,6 +12,7 @@ import (
 
 var (
 	xmlPath string
+	dryRun  bool
 	// loadXMLFunc allows overriding the XML loading logic for testing.
 	loadXMLFunc = loadXML
 )
@@ -41,6 +42,7 @@ var RootCmd = &cobra.Command{
 
 func init() {
 	RootCmd.PersistentFlags().StringVarP(&xmlPath, "xml", "x", "", "Path to the Rekordbox XML library")
+	RootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Preview changes without writing")
 }
 
 func Execute() error {

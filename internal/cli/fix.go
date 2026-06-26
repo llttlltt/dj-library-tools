@@ -16,7 +16,6 @@ var (
 	forceOverwrite bool
 	outputFileFlag string
 	verboseFixFlag bool
-	dryRunFixFlag  bool
 )
 
 var fixCmd = &cobra.Command{
@@ -37,7 +36,7 @@ var fixPlaylistCmd = &cobra.Command{
 				Force:          forceOverwrite,
 				OutputPath:     outputFileFlag,
 				Verbose:        verboseFixFlag,
-				DryRun:         dryRunFixFlag,
+				DryRun:         dryRun,
 			}
 
 			if len(args) > 1 && outputFileFlag != "" {
@@ -51,7 +50,7 @@ var fixPlaylistCmd = &cobra.Command{
 				continue
 			}
 
-			if opts.DryRun {
+			if dryRun {
 				fmt.Printf("DRY RUN: Would process '%s' -> '%s'\n", inputPath, result.OutputPath)
 			} else {
 				fmt.Printf("Successfully processed '%s' -> '%s'\n", inputPath, result.OutputPath)
@@ -68,7 +67,7 @@ var fixPlaylistCmd = &cobra.Command{
 				}
 			}
 
-			if !opts.DryRun && removeOriginal && inputPath != result.OutputPath {
+			if !dryRun && removeOriginal && inputPath != result.OutputPath {
 				fmt.Printf("\nRemove original file '%s'? (y/N): ", inputPath)
 				var response string
 				fmt.Scanln(&response)
@@ -94,7 +93,6 @@ func init() {
 	fixPlaylistCmd.Flags().BoolVarP(&forceOverwrite, "force", "f", false, "Force overwrite if output file exists")
 	fixPlaylistCmd.Flags().StringVarP(&outputFileFlag, "output", "o", "", "Specific output path (optional)")
 	fixPlaylistCmd.Flags().BoolVarP(&verboseFixFlag, "verbose", "v", false, "Enable verbose logging")
-	fixPlaylistCmd.Flags().BoolVar(&dryRunFixFlag, "dry-run", false, "Show what would be done without modifying files")
 
 	fixCmd.AddCommand(fixPlaylistCmd)
 	RootCmd.AddCommand(fixCmd)

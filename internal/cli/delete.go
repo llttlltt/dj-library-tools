@@ -10,10 +10,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	deleteDryRun bool
-)
-
 var deleteCmd = &cobra.Command{
 	Use:   "delete [resource] [query]",
 	Short: "Delete a resource from the library (destructive)",
@@ -59,7 +55,7 @@ Example:
 			return nil
 		}
 
-		if deleteDryRun {
+		if dryRun {
 			for _, t := range targets {
 				fmt.Printf("[Dry Run] Would delete %s %q\n", loc.Resource, t.Node.Name)
 			}
@@ -79,6 +75,5 @@ Example:
 }
 
 func init() {
-	deleteCmd.Flags().BoolVar(&deleteDryRun, "dry-run", false, "Preview changes without writing")
 	RootCmd.AddCommand(deleteCmd)
 }

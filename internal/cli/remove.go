@@ -13,7 +13,6 @@ import (
 
 var (
 	removeOrigins []string
-	removeDryRun  bool
 )
 
 var removeCmd = &cobra.Command{
@@ -81,7 +80,7 @@ func runRemoveCmd(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("no origin playlists matched query %q", org.Query)
 		}
 
-		if removeDryRun {
+		if dryRun {
 			for _, origin := range origins {
 				fmt.Printf("[Dry Run] Would remove %d tracks from playlist %q\n", len(trackIDs), origin.Node.Name)
 			}
@@ -98,7 +97,7 @@ func runRemoveCmd(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if removeDryRun {
+	if dryRun {
 		return nil
 	}
 
@@ -107,7 +106,5 @@ func runRemoveCmd(cmd *cobra.Command, args []string) error {
 
 func init() {
 	removeCmd.Flags().StringSliceVar(&removeOrigins, "from", []string{}, "Origin resource(s) to remove from (repeatable)")
-	removeCmd.Flags().BoolVar(&removeDryRun, "dry-run", false, "Preview changes without writing")
-	
 	RootCmd.AddCommand(removeCmd)
 }
