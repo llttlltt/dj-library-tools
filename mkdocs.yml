@@ -1,4 +1,4 @@
-site_name: djlt (DJ Library Tools)
+site_name: DJ Library Tools
 site_description: DJ library management and Rekordbox XML manipulation.
 repo_url: https://github.com/llttlltt/dj-library-tools
 edit_uri: edit/main/docs/
@@ -46,7 +46,6 @@ extra:
   generator: false
 
 nav:
-  - index.md
   - Guide:
     - Getting Started: guide/getting-started.md
     - Configuration: guide/configuration.md
@@ -64,17 +63,21 @@ nav:
       - Automating Playlists: guide/workflows/automating-playlists.md
     - Commands:
       - guide/commands/index.md
-      - djlt:
+      - CLI Reference:
         - commands/index.md
+        - add: commands/add.md
+        - remove: commands/remove.md
+        - sync: commands/sync.md
+        - move: commands/move.md
+        - rename: commands/rename.md
+        - create: commands/create.md
+        - delete: commands/delete.md
+        - update: commands/update.md
+        - stat: commands/stat.md
         - auth: commands/auth.md
         - config: commands/config.md
-        - folder: commands/folder.md
-        - list: commands/list.md
-        - metadata: commands/metadata.md
-        - playlist:
-          - commands/playlist/index.md
-          - fix: commands/playlist/fix.md
-        - stat: commands/stat.md
-        - sync: commands/sync.md
+        - fix: 
+          - commands/fix/index.md
+          - playlist: commands/fix/playlist.md
   - Development:
     - Architecture: development/architecture.md
