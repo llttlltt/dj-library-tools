@@ -44,6 +44,7 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 | `bitrate` | Numeric | Audio bitrate. |
 | `samplerate` | Numeric | Sample rate in Hz. |
 | `size` | Numeric | File size in bytes. |
+| `beatgrids` | Numeric | Number of beatgrid markers. |
 
 ### Playlist & Folder Fields
 

@@ -22,5 +22,5 @@ A comprehensive CLI tool for managing DJ libraries and Rekordbox XMLs.
 * [djlt mk](mk.md)	 - Create a new playlist or folder
 * [djlt mv](mv.md)	 - Move items between locations
 * [djlt rm](rm.md)	 - Remove a resource or membership from the library
-* [djlt sync](sync.md)	 - Sync items between a source and one or more targets
+* [djlt sync](sync.md)	 - Keep a playlist in sync with a track query
 * [djlt update](update.md)	 - Update track metadata or merge markers between libraries

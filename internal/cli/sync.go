@@ -20,8 +20,24 @@ func newSyncCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "sync [source-resource] [source-query] --to [target-resource] [target-query]",
-		Short: "Sync items between a source and one or more targets",
-		Args:  cobra.MinimumNArgs(1),
+		Short: "Keep a playlist in sync with a track query",
+		Long: `Synchronizes a target (like a Rekordbox playlist or M3U file) with a source query.
+
+The sync command is "surgical"—it only adds or removes tracks necessary to make the target
+match the source. By default, it removes tracks from the target that no longer match the query.
+
+### Examples
+
+**Keep an "Inbox" playlist matched to specific criteria:**
+  djlt sync "rb/tracks added:>today" --to "rb/playlists name:Inbox"
+
+**Add new tracks to a playlist without removing existing ones:**
+  djlt sync "rb/tracks rating:5" --to "rb/playlists name:Favorites" --append
+
+**Sync a query to an external M3U playlist file:**
+  djlt sync "rb/tracks genre:House" --to "m3u/path/to/playlist.m3u"
+`,
+		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(syncTo) == 0 {
 				return fmt.Errorf("at least one --to target is required")
