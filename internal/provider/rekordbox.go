@@ -49,7 +49,11 @@ func (p *RekordboxProvider) RemoveTracks(target models.Node, tracks []models.Tra
 }
 
 func (p *RekordboxProvider) CreateNode(parent models.Node, name string, nodeType int) (models.Node, error) {
-	p.Engine.Library.(engine.WritableLibrary).CreateFolder(parent.Name, name, -1)
+	if nodeType == 0 {
+		p.Engine.Library.(engine.WritableLibrary).CreateFolder(parent.Name, name, -1)
+	} else {
+		p.Engine.Library.(engine.WritableLibrary).AddPlaylist(parent.Name, name, nil, -1)
+	}
 	return models.Node{Name: name, Type: nodeType}, nil
 }
 
