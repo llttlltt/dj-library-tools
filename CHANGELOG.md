@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.2](https://github.com/llttlltt/dj-library-tools/compare/v1.7.1...v1.7.2) (2026-06-27)
+
+
+### Bug Fixes
+
+* **provider/rb:** correctly create playlists vs folders in CreateNode ([f6161b2](https://github.com/llttlltt/dj-library-tools/commit/f6161b282ff8f4a3cb3f67c0c5a18171fc622fb4))
+
 ## [1.7.1](https://github.com/llttlltt/dj-library-tools/compare/v1.7.0...v1.7.1) (2026-06-26)
 
 
