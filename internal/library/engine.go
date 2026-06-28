@@ -40,7 +40,6 @@ func (e *Engine) Ls(queryString string, matcher query.CustomMatcher) ([]models.T
 func (e *Engine) LsGroups(queryString string) ([]models.ResourceGroup, error) {
 	parser := query.NewParser()
 	q := parser.Parse(queryString)
-	// We allow AllowedNodeFields here. The query package will handle the 'type' field.
 	if err := q.ValidateWithFields(query.AllowedNodeFields); err != nil {
 		return nil, err
 	}
@@ -53,4 +52,19 @@ func (e *Engine) LsGroups(queryString string) ([]models.ResourceGroup, error) {
 		}
 	}
 	return matched, nil
+}
+
+// Modify applies changes to matched tracks
+func (e *Engine) Modify(queryString string, matcher query.CustomMatcher, action func(track models.Track, changes map[string]string) error, changes map[string]string) (int, error) {
+	tracks, err := e.Ls(queryString, matcher)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, t := range tracks {
+		if err := action(t, changes); err != nil {
+			return 0, err
+		}
+	}
+	return len(tracks), nil
 }

@@ -60,7 +60,7 @@ func (p *PlexProvider) CanTranscode() bool {
 	return true
 }
 
-func (p *PlexProvider) getRawTracksInternal(ctx provider.ExecutionContext, queryString string) ([]plex.Track, error) {
+func (p *PlexProvider) getRawTracksInternal(_ provider.ExecutionContext, queryString string) ([]plex.Track, error) {
 	goCtx := context.Background()
 	baseURL, err := p.resolveBaseURL(goCtx)
 	if err != nil {
@@ -85,9 +85,10 @@ func (p *PlexProvider) getRawTracksInternal(ctx provider.ExecutionContext, query
 			switch v := expr.(type) {
 			case query.Comparison:
 				f := strings.ToLower(v.Field)
-				if f == "id" || f == "ratingkey" {
+				switch f {
+				case "id", "ratingkey":
 					playlistIDs = append(playlistIDs, v.Value)
-				} else if f == "playlist" {
+				case "playlist":
 					playlistName = v.Value
 					playlistOp = v.Operator
 				}
@@ -169,7 +170,7 @@ func (p *PlexProvider) GetTracks(ctx provider.ExecutionContext, queryString stri
 	return tracks, nil
 }
 
-func (p *PlexProvider) GetFolders(ctx provider.ExecutionContext, _ string) ([]models.ResourceGroup, error) {
+func (p *PlexProvider) GetFolders(_ provider.ExecutionContext, _ string) ([]models.ResourceGroup, error) {
 	return nil, nil // Plex has no folder concept
 }
 
@@ -203,20 +204,20 @@ func (p *PlexProvider) GetPlaylists(ctx provider.ExecutionContext, queryString s
 	return results, nil
 }
 
-func (p *PlexProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
-	return models.ResourceGroup{}, fmt.Errorf("plex does not support node creation via API")
+func (p *PlexProvider) CreateGroup(_ provider.ExecutionContext, _ models.ResourceGroup, _ string, _ int, _ int) (models.ResourceGroup, error) {
+	return models.ResourceGroup{}, fmt.Errorf("plex does not support group creation via API")
 }
 
-func (p *PlexProvider) DeleteGroup(ctx provider.ExecutionContext, node models.ResourceGroup) error {
-	return fmt.Errorf("plex does not support node deletion via API")
+func (p *PlexProvider) DeleteGroup(_ provider.ExecutionContext, _ models.ResourceGroup) error {
+	return fmt.Errorf("plex does not support group deletion via API")
 }
 
-func (p *PlexProvider) RenameGroup(ctx provider.ExecutionContext, node models.ResourceGroup, newName string) error {
-	return fmt.Errorf("plex does not support node renaming via API")
+func (p *PlexProvider) RenameGroup(_ provider.ExecutionContext, _ models.ResourceGroup, _ string) error {
+	return fmt.Errorf("plex does not support group renaming via API")
 }
 
-func (p *PlexProvider) MoveGroup(ctx provider.ExecutionContext, node models.ResourceGroup, targetParent models.ResourceGroup) error {
-	return fmt.Errorf("plex does not support node moving via API")
+func (p *PlexProvider) MoveGroup(_ provider.ExecutionContext, _ models.ResourceGroup, _ models.ResourceGroup) error {
+	return fmt.Errorf("plex does not support group moving via API")
 }
 
 func (p *PlexProvider) resolveBaseURL(ctx context.Context) (string, error) {
@@ -246,6 +247,26 @@ func (p *PlexProvider) resolveBaseURL(ctx context.Context) (string, error) {
 	return "", fmt.Errorf("could not find an active Plex server")
 }
 
-func (p *PlexProvider) Sync(ctx provider.ExecutionContext, tracks []models.Track, sourceQuery string, targetQuery string, options provider.SyncOptions) error {
+func (p *PlexProvider) Sync(_ provider.ExecutionContext, _ []models.Track, _ string, _ string, _ provider.SyncOptions) error {
 	return fmt.Errorf("sync not supported for plex")
+}
+
+func (p *PlexProvider) ModifyTracks(_ provider.ExecutionContext, _ string, _ map[string]string) (int, error) {
+	return 0, fmt.Errorf("plex provider does not support metadata modification")
+}
+
+func (p *PlexProvider) ValidateAddTracks(_ models.ResourceGroup) error {
+	return fmt.Errorf("plex provider is read-only")
+}
+
+func (p *PlexProvider) ValidateMoveGroup(_ models.ResourceGroup, _ models.ResourceGroup) error {
+	return fmt.Errorf("plex provider is read-only")
+}
+
+func (p *PlexProvider) ValidateCreateGroup(_ models.ResourceGroup, _ models.GroupType) error {
+	return fmt.Errorf("plex provider is read-only")
+}
+
+func (p *PlexProvider) Save(_ provider.ExecutionContext, _ string) error {
+	return nil
 }
