@@ -105,7 +105,7 @@ func (p *RekordboxProvider) AddTracks(ctx provider.ExecutionContext, target mode
 	for _, t := range tracks {
 		ids = append(ids, t.ID)
 	}
-	return p.Engine.Library.(library.WritableLibrary).LinkTracks(target.Name, ids)
+	return p.Engine.Library.(library.WritableLibrary).LinkTracks(target.ID, ids)
 }
 
 func (p *RekordboxProvider) RemoveTracks(ctx provider.ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error) {
@@ -113,29 +113,29 @@ func (p *RekordboxProvider) RemoveTracks(ctx provider.ExecutionContext, target m
 	for _, t := range tracks {
 		ids = append(ids, t.ID)
 	}
-	return p.Engine.Library.(library.WritableLibrary).UnlinkTracks(target.Name, ids)
+	return p.Engine.Library.(library.WritableLibrary).UnlinkTracks(target.ID, ids)
 }
 
 func (p *RekordboxProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, groupType models.GroupType, position int) (models.ResourceGroup, error) {
 	if err := p.ValidateCreateGroup(parent, groupType); err != nil {
 		return models.ResourceGroup{}, err
 	}
-	return p.Engine.Library.(library.WritableLibrary).CreateGroup(parent.Name, name, groupType, position)
+	return p.Engine.Library.(library.WritableLibrary).CreateGroup(parent.ID, name, groupType, position)
 }
 
 func (p *RekordboxProvider) DeleteGroup(ctx provider.ExecutionContext, node models.ResourceGroup) error {
-	return p.Engine.Library.(library.WritableLibrary).DeleteGroup(node.Name, node.Type)
+	return p.Engine.Library.(library.WritableLibrary).DeleteGroup(node.ID, node.Type)
 }
 
-func (p *RekordboxProvider) RenameGroup(ctx provider.ExecutionContext, node models.ResourceGroup, newName string) error {
-	return p.Engine.Library.(library.WritableLibrary).RenameGroup(node.Name, newName, node.Type)
+func (p *RekordboxProvider) RenameGroup(ctx provider.ExecutionContext, node models.ResourceGroup, newName string, groupType models.GroupType) error {
+	return p.Engine.Library.(library.WritableLibrary).RenameGroup(node.ID, newName, groupType)
 }
 
 func (p *RekordboxProvider) MoveGroup(ctx provider.ExecutionContext, node models.ResourceGroup, targetParent models.ResourceGroup) error {
 	if err := p.ValidateMoveGroup(node, targetParent); err != nil {
 		return err
 	}
-	return p.Engine.Library.(library.WritableLibrary).MoveGroup(node.Name, node.Type, targetParent.Name)
+	return p.Engine.Library.(library.WritableLibrary).MoveGroup(node.ID, node.Type, targetParent.ID)
 }
 
 func (p *RekordboxProvider) Save(ctx provider.ExecutionContext, path string) error {

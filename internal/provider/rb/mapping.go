@@ -51,6 +51,12 @@ func ToNeutralTrack(t rekordbox.Track) models.Track {
 }
 
 func ToNeutralGroup(n rekordbox.Node, parentFolder string) models.ResourceGroup {
+	// Construction of the ID: use full path to ensure uniqueness
+	id := n.Name
+	if parentFolder != "" {
+		id = parentFolder + "/" + n.Name
+	}
+
 	// Folders (Type=0) store their child-node count in Count;
 	// playlists (Type=1) store their track count in Entries.
 	items := rekordbox.DerefInt32(n.Entries)
@@ -58,6 +64,7 @@ func ToNeutralGroup(n rekordbox.Node, parentFolder string) models.ResourceGroup 
 		items = rekordbox.DerefInt32(n.Count)
 	}
 	return models.ResourceGroup{
+		ID:           id,
 		Name:         n.Name,
 		Items:        int(items),
 		ParentFolder: parentFolder,
