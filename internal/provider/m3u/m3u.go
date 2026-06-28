@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/llttlltt/dj-library-tools/internal/playlist"
+	"github.com/llttlltt/dj-library-tools/internal/m3u"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/provider/factory"
 	"github.com/llttlltt/dj-library-tools/internal/query"
@@ -52,7 +52,7 @@ func (p *M3UProvider) load() error {
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
-	var currentMeta playlist.AudioMetadata
+	var currentMeta m3u.AudioMetadata
 	var tracks []models.Track
 
 	for scanner.Scan() {
@@ -93,7 +93,7 @@ func (p *M3UProvider) load() error {
 			Artist:   currentMeta.Artist,
 			Location: trackPath,
 		})
-		currentMeta = playlist.AudioMetadata{}
+		currentMeta = m3u.AudioMetadata{}
 	}
 
 	p.tracks = tracks
@@ -267,25 +267,25 @@ func (p *M3UProvider) Save(ctx provider.ExecutionContext, path string) error {
 	}
 	defer f.Close()
 
-	if err := playlist.WriteM3U8Header(f); err != nil {
+	if err := m3u.WriteM3U8Header(f); err != nil {
 		return err
 	}
 
 	for _, t := range p.tracks {
 		// Self-healing: if track is missing metadata, try to probe it
 		if t.Artist == "" || t.Title == "" {
-			if meta, probeErr := playlist.ExtractMetadata(t.Location); probeErr == nil {
+			if meta, probeErr := m3u.ExtractMetadata(t.Location); probeErr == nil {
 				t.Artist = meta.Artist
 				t.Title = meta.Title
 			}
 		}
 
-		meta := playlist.AudioMetadata{
+		meta := m3u.AudioMetadata{
 			Artist: t.Artist,
 			Title:  t.Title,
 			Album:  t.Album,
 		}
-		if err := playlist.WriteM3U8Entry(f, meta, t.Location, float64(t.Duration)); err != nil {
+		if err := m3u.WriteM3U8Entry(f, meta, t.Location, float64(t.Duration)); err != nil {
 			return err
 		}
 	}
