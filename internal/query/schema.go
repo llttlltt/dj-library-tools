@@ -2,86 +2,61 @@ package query
 
 import (
 	"fmt"
-	"reflect"
 	"strconv"
-	"strings"
+
+	"github.com/llttlltt/dj-library-tools/internal/models"
 )
 
-// ReflectSchema extracts queryable fields and their types from a struct using 'query' tags.
-func ReflectSchema(v interface{}) (map[string]FieldType, []string) {
-	schema := make(map[string]FieldType)
-	var allowed []string
+// TrackAccessor is a function that extracts a string value from a neutral Track.
+type TrackAccessor func(models.Track) string
 
-	val := reflect.ValueOf(v)
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
-	}
-	typ := val.Type()
+// GroupAccessor is a function that extracts a string value from a ResourceGroup.
+type GroupAccessor func(models.ResourceGroup) string
 
-	for i := 0; i < typ.NumField(); i++ {
-		field := typ.Field(i)
-		tag := field.Tag.Get("query")
-		if tag == "" || tag == "-" {
-			continue
-		}
-
-		parts := strings.Split(tag, ",")
-		name := parts[0]
-		allowed = append(allowed, name)
-
-		fType := TypeString
-		if len(parts) > 1 && parts[1] == "numeric" {
-			fType = TypeNumeric
-		}
-		schema[name] = fType
-	}
-
-	return schema, allowed
+// TrackAccessors maps query field names to their extraction logic.
+var TrackAccessors = map[string]TrackAccessor{
+	"id":         func(t models.Track) string { return t.ID },
+	"title":      func(t models.Track) string { return t.Title },
+	"artist":     func(t models.Track) string { return t.Artist },
+	"album":      func(t models.Track) string { return t.Album },
+	"genre":      func(t models.Track) string { return t.Genre },
+	"comment":    func(t models.Track) string { return t.Comment },
+	"label":      func(t models.Track) string { return t.Label },
+	"year":       func(t models.Track) string { return strconv.Itoa(t.Year) },
+	"color":      func(t models.Track) string { return t.Color },
+	"bpm":        func(t models.Track) string { return fmt.Sprintf("%.2f", t.BPM) },
+	"key":        func(t models.Track) string { return t.Key },
+	"location":   func(t models.Track) string { return t.Location },
+	"display":    func(t models.Track) string { return t.Display },
+	"rating":     func(t models.Track) string { return strconv.Itoa(t.Rating) },
+	"plays":      func(t models.Track) string { return strconv.Itoa(t.Plays) },
+	"added":      func(t models.Track) string { return t.DateAdded },
+	"modified":   func(t models.Track) string { return t.DateModified },
+	"bitrate":    func(t models.Track) string { return strconv.Itoa(t.Bitrate) },
+	"samplerate": func(t models.Track) string { return strconv.Itoa(t.SampleRate) },
+	"size":       func(t models.Track) string { return strconv.FormatInt(t.Size, 10) },
+	"remixer":    func(t models.Track) string { return t.Remixer },
+	"mix":        func(t models.Track) string { return t.Mix },
+	"hotcues":    func(t models.Track) string { return strconv.Itoa(countCues(t, models.CueTypeHot)) },
+	"memorycues": func(t models.Track) string { return strconv.Itoa(countCues(t, models.CueTypeMemory)) },
+	"beatgrids":  func(t models.Track) string { return strconv.Itoa(len(t.TempoMarkers)) },
 }
 
-// GetFieldValue uses reflection or a custom interface to extract a field's value as a string.
-func GetFieldValue(obj interface{}, fieldName string) string {
-	// 1. Try Custom Interface (for derived fields like cue counts)
-	if getter, ok := obj.(interface{ GetQueryValue(string) (string, bool) }); ok {
-		if val, ok := getter.GetQueryValue(fieldName); ok {
-			return val
-		}
-	}
-
-	// 2. Try Reflection
-	val := reflect.ValueOf(obj)
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
-	}
-	typ := val.Type()
-
-	for i := 0; i < typ.NumField(); i++ {
-		field := typ.Field(i)
-		tag := field.Tag.Get("query")
-		if tag == "" || tag == "-" {
-			continue
-		}
-		parts := strings.Split(tag, ",")
-		if parts[0] == fieldName {
-			fVal := val.Field(i)
-			return formatReflectedValue(fVal)
-		}
-	}
-
-	return ""
+// GroupAccessors maps query field names to their extraction logic.
+var GroupAccessors = map[string]GroupAccessor{
+	"name":   func(g models.ResourceGroup) string { return g.Name },
+	"parent": func(g models.ResourceGroup) string { return g.ParentFolder },
+	"folder": func(g models.ResourceGroup) string { return g.ParentFolder },
+	"items":  func(g models.ResourceGroup) string { return strconv.Itoa(g.Items) },
+	"kind":   func(g models.ResourceGroup) string { return string(g.Kind) },
 }
 
-func formatReflectedValue(v reflect.Value) string {
-	switch v.Kind() {
-	case reflect.String:
-		return v.String()
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return strconv.FormatInt(v.Int(), 10)
-	case reflect.Float32, reflect.Float64:
-		return fmt.Sprintf("%g", v.Float())
-	case reflect.Bool:
-		return strconv.FormatBool(v.Bool())
-	default:
-		return fmt.Sprintf("%v", v.Interface())
+func countCues(t models.Track, cueType models.CueType) int {
+	count := 0
+	for _, cp := range t.CuePoints {
+		if cp.Type == cueType {
+			count++
+		}
 	}
+	return count
 }
