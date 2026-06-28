@@ -25,7 +25,7 @@ func loadXML() (*rekordbox.RekordboxLibraryXML, string, error) {
 	cfg, _ := config.LoadAppConfig()
 	path := utils.ExpandPath(filePath)
 	if path == "" {
-		path = utils.ExpandPath(cfg.PrimaryFilePath)
+		path = utils.ExpandPath(cfg.Rekordbox.PrimaryFilePath)
 	}
 	if path == "" {
 		return nil, "", fmt.Errorf("library path required; use --file or run 'djlt config rekordbox --file PATH'")

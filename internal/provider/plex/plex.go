@@ -15,12 +15,12 @@ func init() {
 	factory.Register("plex", func(opts factory.ProviderOptions) (provider.Provider, error) {
 		token := ""
 		if opts.Config != nil {
-			token = opts.Config.PlexToken
+			token = opts.Config.Plex.Token
 		}
 		if token == "" {
 			token = "PLEX_TOKEN"
 		}
-		return NewPlexProvider(token, opts.Config.PlexHost, opts.Config.PlexPort), nil
+		return NewPlexProvider(token, opts.Config.Plex.Host, opts.Config.Plex.Port), nil
 	})
 }
 

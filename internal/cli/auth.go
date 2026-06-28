@@ -55,7 +55,7 @@ func runPlexAuth() error {
 				fmt.Printf("Successfully authenticated!\n")
 
 				cfg, _ := config.LoadAppConfig()
-				cfg.PlexToken = status.AuthToken
+				cfg.Plex.Token = status.AuthToken
 				if err := config.SaveAppConfig(cfg); err != nil {
 					fmt.Printf("Warning: failed to save token to config: %v\n", err)
 				} else {
