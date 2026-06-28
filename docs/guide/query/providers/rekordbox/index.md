@@ -53,90 +53,39 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 | `items` | Numeric | Number of tracks in a playlist, or child ResourceGroups in a folder. |
 | `kind` | String | `folder` or `playlist`. |
 
-## Cue Filtering
+## Deep Metadata (Path Queries)
 
-You can query tracks based on their HotCues and MemoryCues using numeric count filters or custom color matches.
+Rekordbox supports advanced path-based queries for deep analysis of cues and beatgrids.
 
-### Cue Counts
+**Syntax**: `Collection . Index / Property - Stat`
 
-| Field | Description | Example |
-| :--- | :--- | :--- |
-| `hotcues` | Number of HotCues. | `hotcues:>3` |
-| `memorycues` | Number of MemoryCues. | `memorycues:0` |
+### Beatgrids
 
-### Custom Color Matching
+Find tracks that might need re-analysis (many markers but no BPM change):
+`rb/tracks "beatgrids/bpm-drift:<0.1 && beatgrids-count:>10"`
 
-You can search for Hot Cues by color name using the `hotcues` field.
+Find "busy" variable grids:
+`rb/tracks "beatgrids-density:>60"`
 
-| Example | Description |
+| Path | Description |
 | :--- | :--- |
-### Specific Cue Properties
+| `beatgrids-count` | Total number of markers. |
+| `beatgrids-density` | Markers per minute of track duration. |
+| `beatgrids/bpm-drift` | Difference between Max and Min BPM markers. |
+| `beatgrids.N/bpm` | BPM value of the Nth marker. |
+| `beatgrids.N/position` | Position (seconds) of the Nth marker. |
 
-You can target a specific cue by its ID or Index and check its properties.
+### Cues (HotCues & MemoryCues)
 
-**Syntax**: `field:[ID|Index]:[Property:]Value`
+Search for specific pad colors or named sections:
+`rb/tracks "hotcues.1/color:red && memorycues/name:Break"`
 
-| Resource | IDs | Example | Description |
-| :--- | :--- | :--- | :--- |
-| `hotcues` | `a-h` or `0-7` | `hotcues:a:red` | Match Hot Cue A if it is Red. |
-| `hotcues` | — | `hotcues:red` | Match if ANY hot cue is Red. |
-| `memorycues` | `0, 1, ...` | `memorycues:0:Drop` | Match the first memory cue if it contains "Drop". |
-
-### Available Properties
-
-| Property | Value | Description |
-| :--- | :--- | :--- |
-| `color` | `Color Name` | Match by cue color (Hot Cues only). |
-| `name` | `Text` | Substring match on the cue name/comment. |
-
-### Color Palettes
-
-Different palettes are used for Tracks and Cues to match Rekordbox's UI.
-
-#### Track Colors
-
-The following colors are available for track-level filtering:
-
-- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#FF007F;margin-right:5px;"></span> `pink`
-- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#FF0000;margin-right:5px;"></span> `red`
-- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#FFA500;margin-right:5px;"></span> `orange`
-- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#FFFF00;margin-right:5px;"></span> `yellow`
-- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#00FF00;margin-right:5px;"></span> `green`
-- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#25FDE9;margin-right:5px;"></span> `aqua`
-- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#0000FF;margin-right:5px;"></span> `blue`
-- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#660099;margin-right:5px;"></span> `purple`
-- <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:transparent;margin-right:5px;"></span> `none`
-
-#### Hot Cue Colors
-
-Use the following names to match the 16-color pad palette. Cues with no color set match `none`.
-
-<table style="border-collapse: separate; border-spacing: 5px;">
-  <tr>
-    <td style="background:#DE44CF; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>hotpink</code></td>
-    <td style="background:#B432FF; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>purple</code></td>
-    <td style="background:#AA72FF; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>violet</code></td>
-    <td style="background:#6473FF; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>indigo</code></td>
-  </tr>
-  <tr>
-    <td style="background:#305AFF; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>blue</code></td>
-    <td style="background:#50B4FF; color:black; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>skyblue</code></td>
-    <td style="background:#00E0FF; color:black; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>aqua</code></td>
-    <td style="background:#1FA392; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>darkgreen</code></td>
-  </tr>
-  <tr>
-    <td style="background:#10B176; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>brightgreen</code></td>
-    <td style="background:#28E214; color:black; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>green</code></td>
-    <td style="background:#A5E116; color:black; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>yellowgreen</code></td>
-    <td style="background:#B4BE04; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>yellow</code></td>
-  </tr>
-  <tr>
-    <td style="background:#C3AF04; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>orange</code></td>
-    <td style="background:#E0641B; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>darkorange</code></td>
-    <td style="background:#E62828; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>red</code></td>
-    <td style="background:#FF127B; color:white; padding:10px; text-align:center; border-radius:4px; width:25%;"><code>pink</code></td>
-  </tr>
-</table>
+| Path | Description |
+| :--- | :--- |
+| `hotcues-count` | Total number of hotcues. |
+| `hotcues/color` | Match if ANY hotcue has this color. |
+| `hotcues.N/color` | Color of the Nth hotcue. |
+| `hotcues.N/name` | Name of the Nth hotcue. |
 
 ---
 
