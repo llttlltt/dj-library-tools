@@ -256,13 +256,11 @@ func (s *rekordboxSystemService) Sync(ctx provider.ExecutionContext, tracks []mo
 		rbLib = rekordbox.NewLibrary(rbXML)
 	}
 
-	orch := sync.NewOrchestrator(rbLib, ctx.DryRun, ctx.Verbose)
-
-	err := orch.SyncToLibrary(tracks, sourceQuery, targetQuery, sync.SyncOptions{
+	err := sync.SyncToLibrary(rbLib, tracks, sourceQuery, targetQuery, sync.SyncOptions{
 		ExportDest:   options.ExportDest,
 		ExportFormat: options.ExportFormat,
 		PathMaps:     options.PathMaps,
-	}, options.AppendOnly)
+	}, ctx.DryRun, ctx.Verbose, options.AppendOnly)
 	
 	if err != nil {
 		return err
