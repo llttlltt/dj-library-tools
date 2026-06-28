@@ -53,16 +53,17 @@ type Playlist struct {
 }
 
 type Track struct {
-	RatingKey string  `json:"ratingKey"`
-	Key       string  `json:"key"`
-	Type      string  `json:"type"`
-	Title     string  `json:"title"`
-	Summary   string  `json:"summary"`
-	Artist    string  `json:"grandparentTitle"`
-	Album     string  `json:"parentTitle"`
-	BPM       float64 `json:"bpm"`
-	KeyTag    string  `json:"key"`
-	Media     []Media `json:"Media"`
+	RatingKey      string  `json:"ratingKey"`
+	Key            string  `json:"key"`
+	Type           string  `json:"type"`
+	Title          string  `json:"title"`
+	Summary        string  `json:"summary"`
+	Artist         string  `json:"grandparentTitle"`
+	Album          string  `json:"parentTitle"`
+	BPM            float64 `json:"bpm"`
+	KeyTag         string  `json:"key"`
+	UserRating     float64 `json:"userRating"` // Plex usually 0-10 or 0-5
+	Media          []Media `json:"Media"`
 }
 
 type Media struct {
@@ -91,6 +92,7 @@ func (t Track) ToNeutral() models.Track {
 		Album:  t.Album,
 		BPM:    t.BPM,
 		Key:    t.KeyTag,
+		Rating: models.NormalizeRating(t.UserRating, 10.0), // Plex uses a 10-point internal scale
 		Raw:    t,
 	}
 	if len(t.Media) > 0 && len(t.Media[0].Part) > 0 {
