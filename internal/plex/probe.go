@@ -7,10 +7,8 @@ import (
 )
 
 type ConnectionResult struct {
-	BaseURL   string
-	Playlists []Playlist
-	Tracks    []Track
-	Err       error
+	BaseURL string
+	Err     error
 }
 
 // ProbeBestConnection tries all connections in parallel and returns the first successful result.
@@ -27,10 +25,10 @@ func (c *Client) ProbeBestConnection(resource Resource) (*ConnectionResult, erro
 			defer wg.Done()
 			
 			// Try to get playlists as a health check
-			playlists, err := c.GetPlaylists(ctx, uri)
+			_, err := c.GetPlaylists(ctx, uri)
 			if err == nil {
 				select {
-				case results <- &ConnectionResult{BaseURL: uri, Playlists: playlists}:
+				case results <- &ConnectionResult{BaseURL: uri}:
 					cancel() // Cancel other probes once we have a winner
 				case <-ctx.Done():
 				}
