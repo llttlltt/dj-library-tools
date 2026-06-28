@@ -41,5 +41,9 @@ func NewProvider(name string, opts ProviderOptions) (provider.Provider, error) {
 	if !ok {
 		return nil, fmt.Errorf("unknown provider: %s (ensure it is registered)", name)
 	}
-	return factory(opts)
+	prov, err := factory(opts)
+	if err != nil {
+		return nil, err
+	}
+	return &provider.GatedProvider{Base: prov}, nil
 }
