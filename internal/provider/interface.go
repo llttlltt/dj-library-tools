@@ -105,3 +105,13 @@ type SyncOptions struct {
 	PathMaps     map[string]string
 	AppendOnly   bool
 }
+
+func ToTrackSlice(res []models.Resource) []models.Track {
+	var tracks []models.Track
+	for _, r := range res {
+		if t, ok := r.(models.Track); ok {
+			tracks = append(tracks, t)
+		}
+	}
+	return tracks
+}
