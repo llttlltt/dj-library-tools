@@ -44,6 +44,8 @@ type BaseProvider interface {
 	CustomMatch(track models.Track, field string, op query.Operator, value string) bool
 	CanTranscode() bool
 	SupportedResources() []string
+	// MetadataCapabilities returns a list of fields this provider can serve/update.
+	MetadataCapabilities() []string
 }
 
 // ReadableProvider extends BaseProvider with read operations.
@@ -74,6 +76,13 @@ type WritableProvider interface {
 	MoveGroup(ctx ExecutionContext, node models.ResourceGroup, targetParent models.ResourceGroup) error
 	
 	Sync(ctx ExecutionContext, tracks []models.Track, sourceQuery string, targetQuery string, options SyncOptions) error
+	
+	// UpdateMetadata applies specific field updates to matched tracks.
+	UpdateMetadata(ctx ExecutionContext, matches []models.MetadataMatch, fields []string) error
+
+	// Fix performs provider-specific health/formatting repairs (e.g. M3U tag enrichment).
+	Fix(ctx ExecutionContext, resource string, query string) error
+
 	ModifyTracks(ctx ExecutionContext, query string, changes map[string]string) (int, error)
 
 	// Validation methods for pre-flight checks

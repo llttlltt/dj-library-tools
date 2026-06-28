@@ -323,3 +323,16 @@ func (p *M3UProvider) IdentifyGroup(_ string, _ models.GroupType) string {
 func (p *M3UProvider) SupportedResources() []string {
 	return []string{"tracks", "playlists"}
 }
+
+func (p *M3UProvider) MetadataCapabilities() []string {
+	return []string{"title", "artist", "duration"}
+}
+
+func (p *M3UProvider) UpdateMetadata(_ provider.ExecutionContext, _ []models.MetadataMatch, _ []string) error {
+	return fmt.Errorf("m3u does not support deep metadata updates")
+}
+
+func (p *M3UProvider) Fix(ctx provider.ExecutionContext, resource string, query string) error {
+	// Transfer logic from fix.go
+	return nil
+}

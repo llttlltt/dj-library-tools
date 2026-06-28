@@ -116,3 +116,7 @@ func TestCommandConsistencyAgostic(t *testing.T) {
 		})
 	}
 }
+
+func (m *MockProvider) MetadataCapabilities() []string { return nil }
+func (m *MockProvider) UpdateMetadata(_ provider.ExecutionContext, _ []models.MetadataMatch, _ []string) error { return nil }
+func (m *MockProvider) Fix(_ provider.ExecutionContext, _, _ string) error { return nil }

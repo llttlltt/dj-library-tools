@@ -312,3 +312,15 @@ func (p *PlexProvider) IdentifyGroup(_ string, _ models.GroupType) string {
 func (p *PlexProvider) SupportedResources() []string {
 	return []string{"tracks", "playlists"}
 }
+
+func (p *PlexProvider) MetadataCapabilities() []string {
+	return []string{"rating", "plays"}
+}
+
+func (p *PlexProvider) UpdateMetadata(_ provider.ExecutionContext, _ []models.MetadataMatch, _ []string) error {
+	return provider.ErrReadOnly
+}
+
+func (p *PlexProvider) Fix(_ provider.ExecutionContext, _ string, _ string) error {
+	return provider.ErrReadOnly
+}

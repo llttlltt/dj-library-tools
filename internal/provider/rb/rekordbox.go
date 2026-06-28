@@ -293,3 +293,16 @@ func (p *RekordboxProvider) IdentifyGroup(name string, groupType models.GroupTyp
 func (p *RekordboxProvider) SupportedResources() []string {
 	return []string{"tracks", "playlists", "folders"}
 }
+
+func (p *RekordboxProvider) MetadataCapabilities() []string {
+	return []string{"bpm", "key", "rating", "comment", "genre", "label", "color", "beatgrids"}
+}
+
+func (p *RekordboxProvider) UpdateMetadata(ctx provider.ExecutionContext, matches []models.MetadataMatch, fields []string) error {
+	// Transfer logic from update.go
+	return nil
+}
+
+func (p *RekordboxProvider) Fix(ctx provider.ExecutionContext, resource string, query string) error {
+	return nil
+}
