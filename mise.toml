@@ -6,5 +6,5 @@ python = "3.12"
 build-cli = "go build -o bin/  ./cmd/djlt"
 build-gui = "go build -o bin/djlt-gui ./cmd/djlt-gui"
 test = "go test ./..."
-gen-docs = "rm -rf docs/commands/*.md && go run scripts/gen_docs/main.go"
+gen-docs = "go run scripts/gen_docs/main.go"
 docs = { depends = ["gen-docs"], run = "pip install -r requirements.txt && mkdocs serve" }
