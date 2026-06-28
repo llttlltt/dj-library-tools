@@ -20,13 +20,13 @@ The M3U provider allows you to read from and write to standard music playlist fi
 
 ### Track Fields
 
-The M3U provider parses metadata from `#EXTINF` tags.
+The M3U provider parses metadata from native `#EXTINF` tags.
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `title` | String | Track title. Extracted from `#EXTINF` or filename. |
-| `artist` | String | Artist name. Extracted from `#EXTINF`. |
-| `location` | String | Full path to the audio file. |
+| `display` | String | The raw display name string from the `#EXTINF` tag. |
+| `location` | String | The physical path to the audio file. |
+| `duration` | Numeric | Track duration in seconds. |
 
 ### Playlist Fields
 
@@ -39,7 +39,7 @@ The M3U provider parses metadata from `#EXTINF` tags.
 
 - **File-Based**: M3U providers are strictly file-based and require the `--file` (`-f`) flag for initialization.
 - **Relative Paths**: When an M3U file is loaded, any relative paths are automatically resolved against the directory containing the `.m3u` file.
-- **UTF-8 Support**: Using the `m3u8` alias ensures that UTF-8 encoding is handled correctly for non-ASCII characters in file paths or metadata.
+- **UTF-8 Support**: Using the `m3u8` alias ensures that UTF-8 encoding is handled correctly for non-ASCII characters.
 - **Save Operation**: Modifications (adding/removing tracks) are not written to disk until the provider's `Save` method is called. This is handled automatically by commands like `sync`.
 
 ## Examples
@@ -51,9 +51,9 @@ The M3U provider parses metadata from `#EXTINF` tags.
 djlt ls m3u8/tracks --file ~/Music/Favorites.m3u8
 ```
 
-**Filter tracks within a file**
+**Filter tracks by part of the filename**
 ```bash
-djlt ls m3u8/tracks --file ./Techno.m3u8 "artist:Derrick"
+djlt ls m3u8/tracks --file ./Techno.m3u8 "location:Techno"
 ```
 
 ### Management
@@ -63,7 +63,7 @@ djlt ls m3u8/tracks --file ./Techno.m3u8 "artist:Derrick"
 djlt sync "rb/tracks genre:Techno" --to "m3u8/tracks" --to-file "./Techno.m3u8"
 ```
 
-**Remove specific tracks from an M3U8 file**
+**Remove specific tracks from an M3U8 file by display name**
 ```bash
-djlt rm m3u8/tracks --file ./list.m3u8 "artist:Unknown"
+djlt rm m3u8/tracks --file ./list.m3u8 "display:Unknown"
 ```
