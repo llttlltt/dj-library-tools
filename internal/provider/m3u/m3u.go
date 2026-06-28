@@ -1,4 +1,4 @@
-package provider
+package m3u
 
 import (
 	"bufio"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/playlist"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/query"
 )
 
@@ -27,6 +28,29 @@ func NewM3UProvider(path string) (*M3UProvider, error) {
 		}
 	}
 	return p, nil
+}
+
+func (p *M3UProvider) Capabilities() provider.ProviderCapabilities {
+	return provider.ProviderCapabilities{
+		CanWrite:          true,
+		CanManageGroups:   false,
+		CanUpdateMetadata: false,
+		SupportsCues:      false,
+		SupportsBeatgrids: false,
+		IsFileBased:       true,
+	}
+}
+
+func (p *M3UProvider) GetContainmentPolicy() provider.ContainmentPolicy {
+	return provider.ContainmentPolicy{
+		AllowTracksInFolders:    false,
+		AllowFoldersInPlaylists: false,
+		AllowNestedFolders:      false,
+	}
+}
+
+func (p *M3UProvider) CustomMatch(track models.Track, field string, op string, value string) bool {
+	return false
 }
 
 func (p *M3UProvider) Name() string {

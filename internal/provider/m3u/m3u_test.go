@@ -1,4 +1,5 @@
-package provider
+package m3u
+
 
 import (
 	"os"
