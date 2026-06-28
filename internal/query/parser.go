@@ -69,7 +69,7 @@ func (p *Parser) parsePart(word string) []Token {
 		op = "!="
 		val = rest[2:]
 	case strings.HasPrefix(rest, "=="):
-		op = "="
+		op = ":="
 		val = rest[2:]
 	case strings.HasPrefix(rest, ":>="):
 		op = ">="
@@ -102,11 +102,8 @@ func (p *Parser) parsePart(word string) []Token {
 		op = "!="
 		val = strings.TrimPrefix(strings.TrimPrefix(rest, ":"), "ne")
 	case strings.HasPrefix(rest, "eq") || strings.HasPrefix(rest, ":eq"):
-		op = "="
+		op = ":="
 		val = strings.TrimPrefix(strings.TrimPrefix(rest, ":"), "eq")
-	case strings.HasPrefix(rest, "="):
-		op = "="
-		val = rest[1:]
 	}
 
 	if strings.Contains(val, "..") {
@@ -271,8 +268,6 @@ func (p *Parser) parsePrimary() Expression {
 		op := OpSubstring
 		switch opToken.Value {
 		case ":=":
-			op = OpExact
-		case "=": // Legacy support or alias for exact
 			op = OpExact
 		case "!=":
 			op = OpNeq
