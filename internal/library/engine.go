@@ -7,10 +7,10 @@ import (
 
 // Engine performs operations on a library using queries
 type Engine struct {
-	Library Library
+	Library ReadableLibrary
 }
 
-func NewEngine(lib Library) *Engine {
+func NewEngine(lib ReadableLibrary) *Engine {
 	return &Engine{
 		Library: lib,
 	}
@@ -28,7 +28,9 @@ func (e *Engine) Ls(queryString string, matcher query.CustomMatcher) ([]models.T
 	membership := e.Library.GetMembershipMap()
 
 	var matched []models.Track
-	for _, track := range e.Library.GetTracks() {
+	resources := e.Library.GetResources("track")
+	for _, res := range resources {
+		track := res.(models.Track)
 		if eval.MatchesWithPlaylists(track, membership[track.ID]) {
 			matched = append(matched, track)
 		}
@@ -46,25 +48,12 @@ func (e *Engine) LsGroups(queryString string) ([]models.ResourceGroup, error) {
 	eval := query.NewEvaluator(q)
 
 	var matched []models.ResourceGroup
-	for _, group := range e.Library.GetPlaylists() {
+	resources := e.Library.GetResources("group")
+	for _, res := range resources {
+		group := res.(models.ResourceGroup)
 		if eval.MatchesGroup(group) {
 			matched = append(matched, group)
 		}
 	}
 	return matched, nil
-}
-
-// Modify applies changes to matched tracks
-func (e *Engine) Modify(queryString string, matcher query.CustomMatcher, action func(track models.Track, changes map[string]string) error, changes map[string]string) (int, error) {
-	tracks, err := e.Ls(queryString, matcher)
-	if err != nil {
-		return 0, err
-	}
-
-	for _, t := range tracks {
-		if err := action(t, changes); err != nil {
-			return 0, err
-		}
-	}
-	return len(tracks), nil
 }

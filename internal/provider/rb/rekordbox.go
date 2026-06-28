@@ -87,8 +87,7 @@ func (p *RekordboxProvider) AddTracks(ctx provider.ExecutionContext, target mode
 	for _, t := range tracks {
 		ids = append(ids, t.ID)
 	}
-	_, added := p.Engine.Library.(library.WritableLibrary).AddTracksToGroup(target.Name, ids)
-	return added, nil
+	return p.Engine.Library.(library.WritableLibrary).LinkTracks(target.Name, ids)
 }
 
 func (p *RekordboxProvider) RemoveTracks(ctx provider.ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error) {
@@ -96,38 +95,29 @@ func (p *RekordboxProvider) RemoveTracks(ctx provider.ExecutionContext, target m
 	for _, t := range tracks {
 		ids = append(ids, t.ID)
 	}
-	_, removed := p.Engine.Library.(library.WritableLibrary).RemoveTracksFromGroup(target.Name, ids)
-	return removed, nil
+	return p.Engine.Library.(library.WritableLibrary).UnlinkTracks(target.Name, ids)
 }
 
 func (p *RekordboxProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, groupType models.GroupType, position int) (models.ResourceGroup, error) {
 	if err := p.ValidateCreateGroup(parent, groupType); err != nil {
 		return models.ResourceGroup{}, err
 	}
-	if groupType == models.GroupTypeFolder {
-		p.Engine.Library.(library.WritableLibrary).CreateContainer(parent.Name, name, position)
-	} else {
-		p.Engine.Library.(library.WritableLibrary).AddGroup(parent.Name, name, nil, position)
-	}
-	return models.ResourceGroup{Name: name, Type: groupType}, nil
+	return p.Engine.Library.(library.WritableLibrary).CreateGroup(parent.Name, name, groupType, position)
 }
 
 func (p *RekordboxProvider) DeleteGroup(ctx provider.ExecutionContext, node models.ResourceGroup) error {
-	p.Engine.Library.(library.WritableLibrary).RemoveGroup(node.Name, int32(node.Type))
-	return nil
+	return p.Engine.Library.(library.WritableLibrary).DeleteGroup(node.Name, node.Type)
 }
 
 func (p *RekordboxProvider) RenameGroup(ctx provider.ExecutionContext, node models.ResourceGroup, newName string) error {
-	p.Engine.Library.(library.WritableLibrary).RenameGroup(node.Name, newName, int32(node.Type))
-	return nil
+	return p.Engine.Library.(library.WritableLibrary).RenameGroup(node.Name, newName, node.Type)
 }
 
 func (p *RekordboxProvider) MoveGroup(ctx provider.ExecutionContext, node models.ResourceGroup, targetParent models.ResourceGroup) error {
 	if err := p.ValidateMoveGroup(node, targetParent); err != nil {
 		return err
 	}
-	p.Engine.Library.(library.WritableLibrary).MoveGroup(node.Name, int32(node.Type), targetParent.Name)
-	return nil
+	return p.Engine.Library.(library.WritableLibrary).MoveGroup(node.Name, node.Type, targetParent.Name)
 }
 
 func (p *RekordboxProvider) Save(ctx provider.ExecutionContext, path string) error {
@@ -278,11 +268,10 @@ func (p *RekordboxProvider) ValidateCreateGroup(parent models.ResourceGroup, gro
 	return nil
 }
 
-func (p *RekordboxProvider) SupportedResources() []string {
-	return []string{"tracks", "playlists", "folders"}
+func (p *RekordboxProvider) IdentifyGroup(name string, groupType models.GroupType) string {
+	return name
 }
 
-func (p *RekordboxProvider) IdentifyGroup(name string, groupType models.GroupType) string {
-	// Rekordbox uses names as unique IDs within a parent context for XML interaction
-	return name
+func (p *RekordboxProvider) SupportedResources() []string {
+	return []string{"tracks", "playlists", "folders"}
 }

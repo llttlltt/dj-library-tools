@@ -11,8 +11,16 @@ type MockLibrary struct {
 	Playlists []models.ResourceGroup
 }
 
-func (m *MockLibrary) GetTracks() []models.Track            { return m.Tracks }
-func (m *MockLibrary) GetPlaylists() []models.ResourceGroup { return m.Playlists }
+func (m *MockLibrary) GetResources(kind string) []models.Resource {
+	var items []models.Resource
+	if kind == "track" {
+		for _, t := range m.Tracks { items = append(items, t) }
+	} else if kind == "group" {
+		for _, p := range m.Playlists { items = append(items, p) }
+	}
+	return items
+}
+
 func (m *MockLibrary) GetMembershipMap() map[string][]string { return nil }
 
 func TestEngine_Ls(t *testing.T) {

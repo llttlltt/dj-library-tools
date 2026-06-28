@@ -187,10 +187,16 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, query string, playli
 		fmt.Printf("[Dry Run] Would %s playlist %q with %d tracks into XML\n", action, playlistName, len(trackIDs))
 	} else {
 		if appendOnly {
-			o.SyncEngine.AddTracksToGroup(playlistName, trackIDs)
+			_, err := o.SyncEngine.LinkTracks(playlistName, trackIDs)
+			if err != nil {
+				return err
+			}
 			fmt.Printf("Appended %d tracks to %q\n", len(trackIDs), playlistName)
 		} else {
-			result := o.SyncEngine.InjectPlaylist(playlistName, trackIDs)
+			result, err := o.SyncEngine.InjectPlaylist(playlistName, trackIDs)
+			if err != nil {
+				return err
+			}
 			fmt.Printf("Synced playlist %q (%d tracks).\n", result.PlaylistName, result.TracksInjected)
 		}
 	}
@@ -209,9 +215,14 @@ type Engine struct {
 
 // NewEngine creates a sync Engine backed by the given library.
 func NewEngine(lib library.WritableLibrary) *Engine {
+	var tracks []models.Track
+	resources := lib.GetResources("track")
+	for _, r := range resources {
+		tracks = append(tracks, r.(models.Track))
+	}
 	return &Engine{
 		Library: lib,
-		Matcher: NewMatcher(lib.GetTracks()),
+		Matcher: NewMatcher(tracks),
 	}
 }
 
@@ -225,55 +236,57 @@ type SyncResult struct {
 
 // UpsertPlaylist creates or replaces a named playlist inside folder.
 // When folder is empty the playlist is placed at the root level.
-// position is the 0-indexed position in the folder. -1 appends to the end.
-func (e *Engine) UpsertPlaylist(folder, name string, trackIDs []string, position int) *SyncResult {
-	updated := e.Library.UpdateGroup(name, trackIDs)
+func (e *Engine) UpsertPlaylist(folder, name string, trackIDs []string, position int) (*SyncResult, error) {
+	err := e.Library.UpdateGroup(name, trackIDs)
+	updated := err == nil
 	if !updated {
-		e.Library.AddGroup(folder, name, trackIDs, position)
+		_, err = e.Library.CreateGroup(folder, name, models.GroupTypePlaylist, position)
+		if err != nil {
+			return nil, err
+		}
+		err = e.Library.UpdateGroup(name, trackIDs)
 	}
 
 	return &SyncResult{
 		PlaylistName:   name,
 		TracksInjected: len(trackIDs),
 		Updated:        updated,
-	}
+	}, err
 }
 
 // InjectPlaylist upserts a named playlist under DefaultSyncFolder.
-func (e *Engine) InjectPlaylist(name string, trackIDs []string) *SyncResult {
+func (e *Engine) InjectPlaylist(name string, trackIDs []string) (*SyncResult, error) {
 	return e.UpsertPlaylist(DefaultSyncFolder, name, trackIDs, -1)
 }
 
-// AddTracksToGroup appends trackIDs to a named playlist anywhere in the tree.
-// Returns (true, addedCount) if the playlist was found, (false, 0) otherwise.
-func (e *Engine) AddTracksToGroup(name string, trackIDs []string) (bool, int) {
-	return e.Library.AddTracksToGroup(name, trackIDs)
+// LinkTracks adds trackIDs to a named playlist anywhere in the tree.
+func (e *Engine) LinkTracks(name string, trackIDs []string) (int, error) {
+	return e.Library.LinkTracks(name, trackIDs)
 }
 
-// RemoveTracksFromGroup removes all trackIDs present in the given slice from a named playlist.
-// Returns (true, removedCount) if the playlist was found, (false, 0) otherwise.
-func (e *Engine) RemoveTracksFromGroup(name string, trackIDs []string) (bool, int) {
-	return e.Library.RemoveTracksFromGroup(name, trackIDs)
+// UnlinkTracks removes all trackIDs present in the given slice from a named playlist.
+func (e *Engine) UnlinkTracks(name string, trackIDs []string) (int, error) {
+	return e.Library.UnlinkTracks(name, trackIDs)
 }
 
 // CreateContainer creates a new folder node at the specified position.
-func (e *Engine) CreateContainer(folder, name string, position int) bool {
-	return e.Library.CreateContainer(folder, name, position)
+func (e *Engine) CreateContainer(folder, name string, position int) (models.ResourceGroup, error) {
+	return e.Library.CreateGroup(folder, name, models.GroupTypeFolder, position)
 }
 
-// RenameGroup renames the first node matching name and nodeType anywhere in the tree.
-func (e *Engine) RenameGroup(name, newName string, nodeType int32) bool {
-	return e.Library.RenameGroup(name, newName, nodeType)
+// RenameGroup renames the first node matching name and groupType anywhere in the tree.
+func (e *Engine) RenameGroup(name, newName string, groupType models.GroupType) error {
+	return e.Library.RenameGroup(name, newName, groupType)
 }
 
-// MoveGroup detaches the first node matching name and nodeType from its current location.
-func (e *Engine) MoveGroup(name string, nodeType int32, targetFolder string) bool {
-	return e.Library.MoveGroup(name, nodeType, targetFolder)
+// MoveGroup detaches the first node matching name and groupType from its current location.
+func (e *Engine) MoveGroup(name string, groupType models.GroupType, targetFolder string) error {
+	return e.Library.MoveGroup(name, groupType, targetFolder)
 }
 
-// RemoveGroup removes the first node matching name and nodeType from anywhere in the tree.
-func (e *Engine) RemoveGroup(name string, nodeType int32) bool {
-	return e.Library.RemoveGroup(name, nodeType)
+// DeleteGroup removes the first node matching name and groupType from anywhere in the tree.
+func (e *Engine) DeleteGroup(name string, groupType models.GroupType) error {
+	return e.Library.DeleteGroup(name, groupType)
 }
 
 // MatchTracks matches a slice of neutral tracks against the collection.
