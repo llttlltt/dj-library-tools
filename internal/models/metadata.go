@@ -54,6 +54,31 @@ var TrackFields = map[string]FieldDefinition[Track]{
 	"playlists":  {Kind: KindNumeric, RequiredCap: CapNone, Accessor: func(t Track) string { return "0" }},
 }
 
+// CollectionFields defines the properties available within specific track collections.
+var CollectionFields = map[string]map[string]FieldKind{
+	"hotcues": {
+		"color":    KindString,
+		"name":     KindString,
+		"position": KindNumeric,
+	},
+	"memorycues": {
+		"color":    KindString,
+		"name":     KindString,
+		"position": KindNumeric,
+	},
+	"beatgrids": {
+		"bpm":      KindNumeric,
+		"position": KindNumeric,
+	},
+}
+
+// CollectionCapabilities maps collections to the required capability to use them.
+var CollectionCapabilities = map[string]Capability{
+	"hotcues":    CapCues,
+	"memorycues": CapCues,
+	"beatgrids":  CapBeatgrids,
+}
+
 // GroupFields is the single source of truth for queryable group metadata.
 var GroupFields = map[string]FieldDefinition[ResourceGroup]{
 	"id":     {Kind: KindString, RequiredCap: CapNone, Accessor: func(g ResourceGroup) string { return g.ID }},
