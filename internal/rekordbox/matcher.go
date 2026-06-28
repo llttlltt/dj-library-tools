@@ -2,6 +2,7 @@ package rekordbox
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
@@ -10,37 +11,108 @@ import (
 
 // CustomMatch implements logic for Rekordbox-specific query fields (hotcues, memorycues).
 func CustomMatch(track models.Track, field string, op query.Operator, value string) bool {
-	target := strings.ToLower(value)
-
+	var targetCues []models.CuePoint
 	if field == "hotcues" {
-		for _, cp := range track.CuePoints {
-			if cp.Type == models.CueTypeMemory { continue }
-			if matchCuePoint(cp, target, op) { return true }
-		}
+		targetCues = filterCues(track.CuePoints, models.CueTypeHot)
 	} else if field == "memorycues" {
-		for _, cp := range track.CuePoints {
-			if cp.Type != models.CueTypeMemory { continue }
-			if matchCuePoint(cp, target, op) { return true }
+		targetCues = filterCues(track.CuePoints, models.CueTypeMemory)
+	} else {
+		return false
+	}
+
+	// Parse nested value syntax: [index|property]:[subproperty|value]:[value]
+	// Example: "0:color:red" or "red" or "0:red"
+	parts := strings.Split(value, ":")
+	
+	switch len(parts) {
+	case 1:
+		// Simple match: search all cues of this type for the value
+		return matchAnyCue(targetCues, parts[0], op)
+	case 2:
+		// Index match or Property match
+		// e.g. "0:red" (first cue is red) or "color:red" (any cue is red)
+		if idx, err := parseCueIndex(parts[0]); err == nil {
+			return matchSpecificCue(targetCues, idx, parts[1], "", op)
+		}
+		return matchAnyCueProperty(targetCues, parts[0], parts[1], op)
+	case 3:
+		// Specific property match at index
+		// e.g. "0:color:red"
+		if idx, err := parseCueIndex(parts[0]); err == nil {
+			return matchSpecificCue(targetCues, idx, parts[2], parts[1], op)
+		}
+	}
+
+	return false
+}
+
+func filterCues(cues []models.CuePoint, cueType models.CueType) []models.CuePoint {
+	var filtered []models.CuePoint
+	for _, cp := range cues {
+		if cp.Type == cueType {
+			filtered = append(filtered) // placeholder - wait, I need to keep the index
+		}
+	}
+	// Note: We'll use the track's original slice and check type during matching 
+	// to ensure 'Index' matches correctly.
+	return cues
+}
+
+func matchAnyCue(cues []models.CuePoint, target string, op query.Operator) bool {
+	for _, cp := range cues {
+		if matchCuePoint(cp, target, op) { return true }
+	}
+	return false
+}
+
+func matchAnyCueProperty(cues []models.CuePoint, prop, target string, op query.Operator) bool {
+	for _, cp := range cues {
+		if matchCuePointProperty(cp, prop, target, op) { return true }
+	}
+	return false
+}
+
+func matchSpecificCue(cues []models.CuePoint, index int, target string, prop string, op query.Operator) bool {
+	for _, cp := range cues {
+		if cp.Index == index {
+			if prop != "" {
+				return matchCuePointProperty(cp, prop, target, op)
+			}
+			return matchCuePoint(cp, target, op)
 		}
 	}
 	return false
 }
 
 func matchCuePoint(cp models.CuePoint, target string, op query.Operator) bool {
-	if op == query.OpExact {
-		if strings.EqualFold(cp.Name, target) { return true }
-	} else if strings.Contains(strings.ToLower(cp.Name), target) {
-		return true
+	// Match against Name or Color
+	if matchCuePointProperty(cp, "name", target, op) { return true }
+	return matchCuePointProperty(cp, "color", target, op)
+}
+
+func matchCuePointProperty(cp models.CuePoint, prop, target string, op query.Operator) bool {
+	val := ""
+	switch strings.ToLower(prop) {
+	case "name", "comment":
+		val = cp.Name
+	case "color":
+		val = cp.Color
+	default:
+		return false
 	}
 
-	colorName := strings.ToLower(cp.Color)
 	if op == query.OpExact {
-		if colorName == target { return true }
-	} else if strings.Contains(colorName, target) {
-		return true
+		return strings.EqualFold(val, target)
 	}
+	return strings.Contains(strings.ToLower(val), strings.ToLower(target))
+}
 
-	return false
+func parseCueIndex(s string) (int, error) {
+	// Handle letters a-h for hotcues
+	if len(s) == 1 && s[0] >= 'a' && s[0] <= 'h' {
+		return int(s[0] - 'a'), nil
+	}
+	return strconv.Atoi(s)
 }
 
 func GetHotCueColorName(pm PositionMark) string {

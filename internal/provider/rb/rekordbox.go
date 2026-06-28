@@ -11,7 +11,6 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
-	"github.com/fatih/color"
 )
 
 func init() {
@@ -101,9 +100,6 @@ func (s *rekordboxTrackService) Add(ctx provider.ExecutionContext, tracks []mode
 	var ids []string
 	for _, t := range tracks {
 		ids = append(ids, t.ID)
-		if ctx.Verbose {
-			fmt.Printf("  %s %s - %s\n", color.GreenString("+"), t.Artist, t.Title)
-		}
 	}
 	return s.engine.Library.(library.WritableLibrary).AddTracks(target.ID, ids)
 }
@@ -112,9 +108,6 @@ func (s *rekordboxTrackService) Remove(ctx provider.ExecutionContext, tracks []m
 	var ids []string
 	for _, t := range tracks {
 		ids = append(ids, t.ID)
-		if ctx.Verbose {
-			fmt.Printf("  %s %s - %s\n", color.RedString("-"), t.Artist, t.Title)
-		}
 	}
 	return s.engine.Library.(library.WritableLibrary).RemoveTracks(group.ID, ids)
 }
