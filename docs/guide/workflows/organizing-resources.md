@@ -20,15 +20,23 @@ djlt mv rb/playlists 'name:"Inbox (Simple)"' --to "rb/folders name:Sorting"
 djlt mv rb/playlists "name:Beatgrids" --to "rb/folders name:Sorting"
 ```
 
-### 3. Nesting Folders
-You can also move folders into other folders to create deeper hierarchies.
+### 3. Nesting Folders & Deep Creation
+You can create a whole folder hierarchy at once using the `--parents` flag.
 
 ```bash
-# Move the "Archive" folder into the "Sorting" folder
-djlt mv rb/folders "name:Archive" --to "rb/folders name:Sorting"
+# Create a deep folder path in one go
+djlt mk rb/folders "Archive/2024/Jan" --parents
 ```
 
-### 4. Renaming while moving
+### 4. Recursive Cleanup
+To remove a folder and all its contents (playlists and sub-folders), use the `rm` command with the `--recursive` flag.
+
+```bash
+# Delete a folder and everything inside it
+djlt rm rb/folders "name:Old Archives" --recursive
+```
+
+### 5. Renaming while moving
 You can combine a move with a rename by using the `--name` flag.
 
 ```bash

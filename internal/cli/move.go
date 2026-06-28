@@ -79,13 +79,6 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 		return fmt.Errorf("could not find target playlist(s) matching %q", moveTo)
 	}
 
-	// Agnostic Pre-flight Validation
-	for _, target := range tgt.Groups {
-		if err := wp.ValidateAddTracks(target); err != nil {
-			return HandleError(err)
-		}
-	}
-
 	ctx := getExecContext()
 
 	if dryRun {
@@ -93,19 +86,18 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 		return nil
 	}
 
+	totalMoved := 0
 	for _, origin := range org.Groups {
-		if verbose {
-			fmt.Printf("Removing tracks from origin playlist %q...\n", origin.Name)
+		for _, target := range tgt.Groups {
+			moved, err := wp.MoveTracks(ctx, origin, target, src.Tracks)
+			if err != nil {
+				return HandleError(err)
+			}
+			totalMoved += moved
 		}
-		wp.RemoveTracks(ctx, origin, src.Tracks)
-	}
-	for _, target := range tgt.Groups {
-		if verbose {
-			fmt.Printf("Adding tracks to target playlist %q...\n", target.Name)
-		}
-		wp.AddTracks(ctx, target, src.Tracks)
 	}
 
+	fmt.Printf("Successfully moved %d tracks.\n", totalMoved)
 	return wp.Save(ctx, "")
 }
 
@@ -171,7 +163,7 @@ func runRenameGroups(wp provider.WritableProvider, src *Selection, newName strin
 		return nil
 	}
 
-	if err := wp.RenameGroup(ctx, target, newName); err != nil {
+	if err := wp.RenameGroup(ctx, target, newName, target.Type); err != nil {
 		return fmt.Errorf("failed to rename %q: %v", target.Name, err)
 	}
 

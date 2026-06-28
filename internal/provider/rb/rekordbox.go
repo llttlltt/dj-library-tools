@@ -157,6 +157,35 @@ func (p *RekordboxProvider) MoveGroup(ctx provider.ExecutionContext, node models
 	return p.Engine.Library.(library.WritableLibrary).MoveGroup(node.ID, node.Type, targetParent.ID)
 }
 
+func (p *RekordboxProvider) MoveTracks(ctx provider.ExecutionContext, source models.ResourceGroup, target models.ResourceGroup, tracks []models.Track) (int, error) {
+	if err := p.ValidateAddTracks(target); err != nil {
+		return 0, err
+	}
+	
+	ids := make([]string, len(tracks))
+	for i, t := range tracks {
+		ids[i] = t.ID
+	}
+
+	if ctx.Verbose {
+		fmt.Printf("Moving %d tracks from %q to %q\n", len(tracks), source.Name, target.Name)
+	}
+
+	if !ctx.DryRun {
+		added, err := p.Engine.Library.(library.WritableLibrary).LinkTracks(target.ID, ids)
+		if err != nil {
+			return 0, err
+		}
+		removed, err := p.Engine.Library.(library.WritableLibrary).UnlinkTracks(source.ID, ids)
+		if err != nil {
+			return added, err
+		}
+		return removed, nil // Return number of tracks successfully moved
+	}
+
+	return len(tracks), nil
+}
+
 func (p *RekordboxProvider) Save(ctx provider.ExecutionContext, path string) error {
 	if path == "" {
 		path = p.path

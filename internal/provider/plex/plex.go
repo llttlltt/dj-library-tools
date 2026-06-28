@@ -251,6 +251,10 @@ func (p *PlexProvider) MoveGroup(_ provider.ExecutionContext, _ models.ResourceG
 	return provider.ErrReadOnly
 }
 
+func (p *PlexProvider) MoveTracks(_ provider.ExecutionContext, _ models.ResourceGroup, _ models.ResourceGroup, _ []models.Track) (int, error) {
+	return 0, provider.ErrReadOnly
+}
+
 func (p *PlexProvider) resolveBaseURL(ctx context.Context) (string, error) {
 	if p.host != "" {
 		port := p.port

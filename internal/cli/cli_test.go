@@ -15,7 +15,9 @@ import (
 // MockProvider for CLI testing
 type MockProvider struct{}
 
-func (m *MockProvider) Name() string { return "rb" }
+var _ provider.WritableProvider = (*MockProvider)(nil)
+
+func (m *MockProvider) Name() string { return "mock" }
 func (m *MockProvider) Capabilities() provider.ProviderCapabilities {
 	return provider.ProviderCapabilities{CanWrite: true, CanManageGroups: true}
 }
@@ -42,9 +44,18 @@ func (m *MockProvider) CreateGroup(_ provider.ExecutionContext, _ models.Resourc
 	return models.ResourceGroup{Name: name, Type: gt}, nil
 }
 func (m *MockProvider) DeleteGroup(_ provider.ExecutionContext, _ models.ResourceGroup) error { return nil }
-func (m *MockProvider) RenameGroup(_ provider.ExecutionContext, _ models.ResourceGroup, _ string) error { return nil }
-func (m *MockProvider) MoveGroup(_ provider.ExecutionContext, _ models.ResourceGroup, _ models.ResourceGroup) error { return nil }
-func (m *MockProvider) Sync(_ provider.ExecutionContext, _ []models.Track, _, _ string, _ provider.SyncOptions) error { return nil }
+func (m *MockProvider) RenameGroup(_ provider.ExecutionContext, _ models.ResourceGroup, _ string, _ models.GroupType) error {
+	return nil
+}
+func (m *MockProvider) MoveGroup(_ provider.ExecutionContext, _ models.ResourceGroup, _ models.ResourceGroup) error {
+	return nil
+}
+func (m *MockProvider) MoveTracks(_ provider.ExecutionContext, _ models.ResourceGroup, _ models.ResourceGroup, _ []models.Track) (int, error) {
+	return 1, nil
+}
+func (m *MockProvider) Sync(_ provider.ExecutionContext, _ []models.Track, _, _ string, _ provider.SyncOptions) error {
+	return nil
+}
 func (m *MockProvider) ModifyTracks(_ provider.ExecutionContext, _ string, _ map[string]string) (int, error) { return 0, nil }
 func (m *MockProvider) ValidateAddTracks(_ models.ResourceGroup) error { return nil }
 func (m *MockProvider) ValidateMoveGroup(_, _ models.ResourceGroup) error { return nil }

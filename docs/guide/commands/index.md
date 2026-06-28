@@ -1,8 +1,8 @@
 # Command Overview
 
-`djlt` uses an action-centric (verb-centric) command structure. There are six top-level verbs — the **Surgical 6** — each with a short alias for terminal use.
+`djlt` uses an action-centric (verb-centric) command structure.
 
-## The Surgical 6
+## The Core Commands
 
 ### `ls`
 The primary discovery command. Use it to see tracks, playlists, or folders matching a query. Add `--stats` to get aggregate statistics instead of a table.
@@ -16,7 +16,7 @@ djlt ls rb/tracks "genre:House && bpm:124..128" --stats
 ```
 
 ### `sync`
-Mirrors a source selection into a target, ensuring an exact match. Use `--append` to add without removing existing members (replaces the legacy `add` command).
+Mirrors a source selection into a target, ensuring an exact match. Use `--append` to add without removing existing members.
 
 ```bash
 # Full sync (adds new, removes unmatched)
@@ -26,6 +26,20 @@ djlt sync rb/tracks "rating:>=4" --to "rb/playlists name:Favorites"
 djlt sync rb/tracks "genre:House" --to "rb/playlists name:Inbox" --append
 ```
 
+### `edit`
+A unified command for modifying resource state. It replaces the legacy `modify` and `fix` commands.
+
+```bash
+# Set metadata in bulk
+djlt edit rb/tracks "rating:0" --set "rating:3"
+
+# Repair missing file paths
+djlt edit rb/tracks --missing --relocate "/Volumes/Music"
+
+# Run provider-specific repairs
+djlt edit rb/playlists --repair
+```
+
 ### `mk`
 Creates a new playlist or folder. Optionally pre-populate it using `--from`.
 
@@ -33,33 +47,30 @@ Creates a new playlist or folder. Optionally pre-populate it using `--from`.
 # Create an empty playlist
 djlt mk rb/playlists "New Arrivals"
 
-# Create and populate in one step
-djlt mk rb/playlists "New Arrivals" --from "rb/tracks added:>2024-01-01"
+# Create a folder hierarchy
+djlt mk rb/folders "2024/Jan/Sorting" --parents
 ```
 
 ### `mv`
-Relocates resources between containers, or renames them in-place using `--name` (replaces the legacy `rename` command).
+Relocates resources between containers, or renames them in-place using `--name`.
 
 ```bash
 # Move a playlist into a folder
 djlt mv rb/playlists name:Inbox --to "rb/folders name:Archive"
-
-# Rename a playlist
-djlt mv rb/playlists name:Inbox --name "Processed"
 
 # Move tracks between playlists
 djlt mv rb/tracks "bpm:>130" --from "rb/playlists name:Inbox" --to "rb/playlists name:'High Energy'"
 ```
 
 ### `rm`
-Handles two distinct operations depending on whether `--from` is present:
-
-- **Resource Deletion** (no `--from`): permanently removes a playlist or folder from the library.
-- **Membership Removal** (`--from` present): unlinks tracks from a playlist without deleting them from the collection.
+Removes resources or track membership.
 
 ```bash
 # Delete a playlist entirely
 djlt rm rb/playlists name:Inbox
+
+# Delete a folder and everything inside
+djlt rm rb/folders name:OldSets --recursive
 
 # Remove specific tracks from a playlist
 djlt rm rb/tracks "rating:0" --from "rb/playlists name:Inbox"
@@ -69,19 +80,9 @@ djlt rm rb/tracks "rating:0" --from "rb/playlists name:Inbox"
 View or update persistent application settings.
 
 ```bash
-djlt config rekordbox.xml-path "/path/to/export.xml"
+djlt config primary-file-path "/path/to/export.xml"
 djlt config --list
 ```
-
----
-
-## Utility Verbs
-
-### `fix`
-Corrects common library issues, such as missing file extensions or broken metadata in M3U8 files.
-
-### `update`
-Synchronises metadata (like Beatgrids and Tempo markers) between two Rekordbox XML libraries.
 
 ---
 

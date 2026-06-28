@@ -244,6 +244,10 @@ func (p *M3UProvider) MoveGroup(ctx provider.ExecutionContext, node models.Resou
 	return fmt.Errorf("m3u provider does not support move")
 }
 
+func (p *M3UProvider) MoveTracks(ctx provider.ExecutionContext, source models.ResourceGroup, target models.ResourceGroup, tracks []models.Track) (int, error) {
+	return 0, fmt.Errorf("m3u provider does not support move")
+}
+
 func (p *M3UProvider) Save(ctx provider.ExecutionContext, path string) error {
 	if path == "playlists" || path == "tracks" {
 		path = ""
