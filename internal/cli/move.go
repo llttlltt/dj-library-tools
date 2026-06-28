@@ -80,10 +80,16 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 		return fmt.Errorf("could not find target playlist(s) matching %q", moveTo)
 	}
 
-	// Validation: Tracks can only be moved to Playlists, not Folders
+	policy := wp.GetContainmentPolicy()
+
+	// Validation: Check if tracks can be moved to the chosen target(s)
 	for _, node := range tgt.Nodes {
-		if node.Type == models.GroupTypeFolder {
+		if node.Type == models.GroupTypeFolder && !policy.AllowTracksInFolders {
 			return fmt.Errorf("invalid move: cannot move tracks to folder %q (tracks must live in playlists)", node.Name)
+		}
+		if node.Type == models.GroupTypePlaylist && policy.AllowFoldersInPlaylists {
+			// This part is conceptually reversed, but we're checking if the destination 
+			// is a playlist and the source is tracks. Usually true.
 		}
 	}
 
@@ -119,23 +125,31 @@ func runMoveNodes(wp provider.WritableProvider, src *Selection, moveTo string) e
 		return fmt.Errorf("could not find target folder matching %q", moveTo)
 	}
 	targetParent := tgt.Nodes[0]
+	policy := wp.GetContainmentPolicy()
 
 	if dryRun {
 		for _, t := range src.Nodes {
 			fmt.Printf("[Dry Run] Would move %s %q to folder %q\n", src.Location.Resource, t.Name, targetParent.Name)
 			// Validation: Folders/Playlists can only be moved to Folders, not Playlists
-			if targetParent.Type == 1 {
+			if targetParent.Type == models.GroupTypePlaylist && !policy.AllowFoldersInPlaylists {
 				return fmt.Errorf("invalid move: cannot move %s to playlist %q (containers must live in folders)", src.Location.Resource, targetParent.Name)
+			}
+			if t.Type == models.GroupTypeFolder && targetParent.Type == models.GroupTypeFolder && !policy.AllowNestedFolders {
+				return fmt.Errorf("invalid move: cannot move folder %q into folder %q (provider does not support nested folders)", t.Name, targetParent.Name)
 			}
 		}
 		return nil
 	}
 
 	for _, t := range src.Nodes {
-		// Validation: Folders/Playlists can only be moved to Folders, not Playlists
-		if targetParent.Type == 1 {
+		// Validation
+		if targetParent.Type == models.GroupTypePlaylist && !policy.AllowFoldersInPlaylists {
 			return fmt.Errorf("invalid move: cannot move %s to playlist %q (containers must live in folders)", src.Location.Resource, targetParent.Name)
 		}
+		if t.Type == models.GroupTypeFolder && targetParent.Type == models.GroupTypeFolder && !policy.AllowNestedFolders {
+			return fmt.Errorf("invalid move: cannot move folder %q into folder %q (provider does not support nested folders)", t.Name, targetParent.Name)
+		}
+
 		if verbose {
 			fmt.Printf("Moving %s %q into folder %q...\n", src.Location.Resource, t.Name, targetParent.Name)
 		}

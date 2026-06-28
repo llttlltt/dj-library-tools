@@ -52,26 +52,28 @@ func runCreateCmd(cmd *cobra.Command, args []string, createIn, createFrom string
 		tracks = src.Tracks
 	}
 
-	nodeType := 1
+	nodeType := models.GroupTypePlaylist
 	if sel.Location.Resource == "folders" {
-		nodeType = 0
+		nodeType = models.GroupTypeFolder
 	}
+
+	policy := wp.GetContainmentPolicy()
 
 	if dryRun {
 		fmt.Printf("[Dry Run] Would create %s %q in folder %q with %d tracks\n", sel.Location.Resource, name, createIn, len(tracks))
-		// Validation: Tracks can only be populated into Playlists, not Folders
-		if len(tracks) > 0 && nodeType == 0 {
+		// Validation: Tracks can only be populated into resources that allow them
+		if len(tracks) > 0 && nodeType == models.GroupTypeFolder && !policy.AllowTracksInFolders {
 			return fmt.Errorf("invalid operation: cannot populate folder %q with tracks (tracks must live in playlists)", name)
 		}
 		return nil
 	}
 
-	// Validation: Tracks can only be populated into Playlists, not Folders
-	if len(tracks) > 0 && nodeType == 0 {
+	// Validation
+	if len(tracks) > 0 && nodeType == models.GroupTypeFolder && !policy.AllowTracksInFolders {
 		return fmt.Errorf("invalid operation: cannot populate folder %q with tracks (tracks must live in playlists)", name)
 	}
 
-	newNode, err := wp.CreateNode(models.ResourceGroup{Name: createIn}, name, nodeType)
+	newNode, err := wp.CreateNode(models.ResourceGroup{Name: createIn}, name, int(nodeType))
 	if err != nil {
 		return err
 	}
