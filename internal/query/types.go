@@ -10,7 +10,7 @@ type Operator string
 
 const (
 	OpSubstring Operator = ":"  // artist:Four
-	OpExact     Operator = "="  // artist=Four Tet
+	OpExact     Operator = ":=" // artist:=Four Tet
 	OpRegex     Operator = "::" // artist::"^Four"
 	OpRange     Operator = ".." // bpm:120..140
 	OpGt        Operator = ">"  // rating:>3

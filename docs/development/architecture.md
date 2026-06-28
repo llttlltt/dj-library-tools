@@ -77,7 +77,7 @@ The selection engine uses a recursive descent parser and a generic evaluator. It
 - **Source of Truth**: The evaluator asks objects for their string representation via a `Value(key)` method. This allows any struct to be queryable without changing the engine.
 - **Logic vs. Data**: The query engine owns the logic of boolean evaluation and numeric/string semantics, while the models own the data representation.
 - **Performance**: Uses direct accessor mapping instead of reflection for O(1) property extraction in search loops.
-- **Operators**: Supports `&&`, `||`, `!`, `>`, `<`, `..` (range), `:` (exact), `=` (case-sensitive), and `::` (regex).
+- **Operators**: Supports `&&`, `||`, `!`, `>`, `<`, `..` (range), `:` (substring), `:=` (exact), and `::` (regex).
 
 ### Test Boundaries and Interfaces
 `djlt` uses explicit interfaces to decouple core logic from external dependencies:

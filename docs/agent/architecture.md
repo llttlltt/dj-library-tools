@@ -13,6 +13,8 @@ The system follows a nested, resource-oriented service structure:
 - **`System()`**: Handles global maintenance (Save, Fix, Sync).
 
 ## Hard Boundaries
+- **Models as Source of Truth**: Neutral models (`Track`, `ResourceGroup`) are the sole authorities on their queryable data. They must implement a `Value(key string) string` method to represent their properties.
+- **Generic Query Logic**: The `internal/query` package must remain 100% generic logic. It must not have knowledge of specific fields like "Artist" or "BPM."
 - **Strict Agnosticism**: Core packages (`models`, `library`, `query`, `sync`, `utils`) must NEVER import specific implementation packages.
 - **Implementation Authority**: Implementation packages (`rekordbox`, `plex`, `m3u`) are the sole authorities on their data formats. They must handle their own mapping to neutral models (e.g., `ToNeutralTrack`).
 - **Provider Registry**: All providers must self-register via `init()` in their respective packages under `internal/provider/`.
