@@ -19,21 +19,21 @@ Before using `djlt`, you need to tell it where your Rekordbox XML library is loc
 
 1. **Set your XML path:**
    ```bash
-   djlt config rekordbox.xml-path "/path/to/your/export.xml"
+   djlt config rb file "/path/to/your/export.xml"
    ```
    This path is used by default for most commands.
 
 2. **Authenticate with Plex (Optional):**
    If you want to sync playlists from Plex, run the authentication flow:
    ```bash
-   djlt auth --plex
+   djlt config plex auth
    ```
    Follow the link and enter the PIN provided in your terminal.
 
 3. **Verify your setup:**
    Check that everything is configured correctly:
    ```bash
-   djlt config --list
+   djlt config list
    ```
 
 ## Seeing Your Music

@@ -18,8 +18,7 @@ DJ Library Tools CLI
 A comprehensive CLI tool for managing DJ libraries across multiple providers.
 ## See also
 
-* [djlt auth](auth.md)	 - Authenticate with third-party providers
-* [djlt config](config.md)	 - View or update application configuration
+* [djlt config](config.md)	 - Manage application and provider settings
 * [djlt edit](edit.md)	 - Update metadata, repair paths, or fix library issues
 * [djlt ls](ls.md)	 - List items from a location (e.g. rb/tracks title:Oceans)
 * [djlt mk](mk.md)	 - Create a new playlist or folder
