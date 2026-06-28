@@ -139,7 +139,7 @@ func TestQueryEvaluator(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			q := parser.Parse(tt.query)
-			eval := NewEvaluator(q)
+			eval := NewEvaluatorWithMatcher(q, MockMatcher{})
 			if eval.Matches(track) != tt.matches {
 				t.Errorf("Query '%s' match expected %v, got %v", tt.query, tt.matches, !tt.matches)
 			}
@@ -190,4 +190,16 @@ func TestEvaluatorMatchesNode(t *testing.T) {
 			}
 		})
 	}
+}
+
+type MockMatcher struct{}
+func (m MockMatcher) CustomMatch(track models.Track, field string, op Operator, value string) bool {
+	if field == "beatgrids" || field == "hotcues" || field == "memorycues" {
+		return true // Mock behavior for test
+	}
+	return false
+}
+func (m MockMatcher) GetTrackColorName(hex string) string {
+	if hex == "0xFF007F" { return "pink" }
+	return hex
 }

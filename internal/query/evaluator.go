@@ -10,7 +10,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 )
 
 // AllowedTrackFields is a list of valid fields for track queries.
@@ -26,12 +25,21 @@ var AllowedNodeFields = []string{
 	"name", "parent", "folder", "items", "type",
 }
 
+type CustomMatcher interface {
+	CustomMatch(track models.Track, field string, op Operator, value string) bool
+}
+
 type Evaluator struct {
-	Query Query
+	Query   Query
+	Matcher CustomMatcher
 }
 
 func NewEvaluator(q Query) *Evaluator {
 	return &Evaluator{Query: q}
+}
+
+func NewEvaluatorWithMatcher(q Query, m CustomMatcher) *Evaluator {
+	return &Evaluator{Query: q, Matcher: m}
 }
 
 func (e *Evaluator) Matches(track models.Track) bool {
@@ -76,42 +84,33 @@ func (e *Evaluator) matchComparison(track models.Track, playlists []string, c Co
 		targetValue = e.resolveDateShorthand(c.Value)
 	}
 
-	// Membership domain: handles both "how many?" and "is in?"
+	// Membership domain
 	if field == "playlists" {
-		// If range or comparison operator, force numeric evaluation
 		if c.Operator == OpRange {
 			return e.matchRange(strconv.Itoa(len(playlists)), targetValue)
 		}
 		if c.Operator != OpSubstring && c.Operator != OpExact {
 			return e.matchNumericComparison(strconv.Itoa(len(playlists)), targetValue, c.Operator)
 		}
-		// If substring/exact match, check if it's a number (unless quoted)
 		if !c.Quoted {
 			if _, err := strconv.Atoi(targetValue); err == nil {
-				// This matches our "Type-Inference" precedence: raw numbers are counts
 				return e.matchNumericComparison(strconv.Itoa(len(playlists)), targetValue, c.Operator)
 			}
 		}
-		// Otherwise, search playlist names
 		return e.matchPlaylistStrings(playlists, c)
 	}
 
-	// Cue domains: handles both "how many?" and properties
-	if field == "hotcues" || field == "memorycues" {
-		// If comparison or range, or numeric exact match, it's a count
-		if c.Operator == OpRange {
-			return e.matchRange(e.getFieldValue(track, playlists, field), targetValue)
-		}
-		if c.Operator != OpSubstring && c.Operator != OpExact {
-			return e.matchNumericComparison(e.getFieldValue(track, playlists, field), targetValue, c.Operator)
-		}
-		if !c.Quoted {
-			if _, err := strconv.Atoi(targetValue); err == nil {
-				return e.matchNumericComparison(e.getFieldValue(track, playlists, field), targetValue, c.Operator)
+	// Delegated custom fields
+	if e.Matcher != nil {
+		switch field {
+		case "hotcues", "memorycues", "beatgrids":
+			if !c.Quoted {
+				if _, err := strconv.Atoi(targetValue); err == nil || c.Operator == OpRange || c.Operator == OpGt || c.Operator == OpLt {
+					return e.matchNumericCount(track, playlists, c)
+				}
 			}
+			return e.Matcher.CustomMatch(track, c.Field, c.Operator, c.Value)
 		}
-		// Otherwise, searching cue properties (regex/exact/substring on color/comment)
-		return e.matchCueProperties(track, field, c)
 	}
 
 	fieldValue := e.getFieldValue(track, playlists, c.Field)
@@ -141,6 +140,14 @@ func (e *Evaluator) matchComparison(track models.Track, playlists []string, c Co
 		return re.MatchString(fieldValue)
 	}
 	return false
+}
+
+func (e *Evaluator) matchNumericCount(track models.Track, playlists []string, c Comparison) bool {
+	fieldValue := e.getFieldValue(track, playlists, c.Field)
+	if c.Operator == OpRange {
+		return e.matchRange(fieldValue, c.Value)
+	}
+	return e.matchNumericComparison(fieldValue, c.Value, c.Operator)
 }
 
 func (e *Evaluator) resolveDateShorthand(val string) string {
@@ -199,8 +206,10 @@ func (e *Evaluator) getFieldValue(track models.Track, playlists []string, field 
 	case "modified":
 		return track.DateModified
 	case "color":
-		if name := e.getTrackColorName(track.Color); name != track.Color {
-			return name
+		if e.Matcher != nil {
+			if cm, ok := e.Matcher.(interface{ GetTrackColorName(string) string }); ok {
+				return cm.GetTrackColorName(track.Color)
+			}
 		}
 		return track.Color
 	case "bitrate":
@@ -223,28 +232,6 @@ func (e *Evaluator) getFieldValue(track models.Track, playlists []string, field 
 	return ""
 }
 
-func (e *Evaluator) getTrackColorName(hex string) string {
-	switch strings.ToUpper(hex) {
-	case "0XFF007F":
-		return "pink"
-	case "0XFF0000":
-		return "red"
-	case "0XFFA500":
-		return "orange"
-	case "0XFFFF00":
-		return "yellow"
-	case "0X00FF00":
-		return "green"
-	case "0X25FDE9":
-		return "aqua"
-	case "0X0000FF":
-		return "blue"
-	case "0X660099":
-		return "purple"
-	}
-	return hex
-}
-
 func (e *Evaluator) matchPlaylistStrings(playlists []string, c Comparison) bool {
 	for _, p := range playlists {
 		switch c.Operator {
@@ -264,83 +251,6 @@ func (e *Evaluator) matchPlaylistStrings(playlists []string, c Comparison) bool 
 		}
 	}
 	return false
-}
-
-func (e *Evaluator) matchCueProperties(track models.Track, field string, c Comparison) bool {
-	// Reconstruct the full value including ID targeting if it was a double-colon style query
-	// (though the parser currently flattens it)
-	target := strings.ToLower(c.Value)
-
-	// Rekordbox specific: extracting cue data from Raw if present
-	if rt, ok := track.Raw.(rekordbox.Track); ok {
-		if field == "hotcues" {
-			for _, pm := range rt.PositionMark {
-				if pm.Num == -1 {
-					continue
-				} // skip memory cues
-				if e.matchCueMetadata(pm, target, c.Operator) {
-					return true
-				}
-			}
-		} else {
-			for _, pm := range rt.PositionMark {
-				if pm.Num != -1 {
-					continue
-				} // skip hot cues
-				if e.matchCueMetadata(pm, target, c.Operator) {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-func (e *Evaluator) matchCueMetadata(pm rekordbox.PositionMark, target string, op Operator) bool {
-	// Match by name/comment
-	if op == OpExact {
-		if strings.EqualFold(pm.Name, target) {
-			return true
-		}
-	} else if strings.Contains(strings.ToLower(pm.Name), target) {
-		return true
-	}
-
-	// Match by color name (Rekordbox hex map)
-	colorName := strings.ToLower(e.getHotCueColorName(pm))
-	if op == OpExact {
-		if colorName == target {
-			return true
-		}
-	} else if strings.Contains(colorName, target) {
-		return true
-	}
-
-	return false
-}
-
-func (e *Evaluator) getHotCueColorName(pm rekordbox.PositionMark) string {
-	// Simple map for pad colors
-	rgb := fmt.Sprintf("%02X%02X%02X", pm.Red, pm.Green, pm.Blue)
-	switch rgb {
-	case "E62828":
-		return "red"
-	case "DE44CF":
-		return "hotpink"
-	case "FFFF00", "B4BE04", "C3AF04":
-		return "yellow"
-	case "28E214", "10B176":
-		return "green"
-	case "00E0FF", "50B4FF":
-		return "aqua"
-	case "305AFF", "6473FF":
-		return "blue"
-	case "B432FF", "AA72FF":
-		return "purple"
-	case "E0641B", "FFA500":
-		return "orange"
-	}
-	return ""
 }
 
 func (e *Evaluator) matchRange(fieldValue string, rangeValue string) bool {
