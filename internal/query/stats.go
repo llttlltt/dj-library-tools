@@ -97,7 +97,7 @@ var Stats = map[string]StatFunction{
 			}
 			prev = curr
 		}
-		return fmt.Sprintf("%.2f", float64(matches)/float64(len(values)-1))
+		return fmt.Sprintf("%.0f", (float64(matches)/float64(len(values)-1))*100.0)
 	},
 	"stability": func(values []string) string {
 		if len(values) < 2 {
