@@ -27,7 +27,7 @@ func ToNeutralTrack(t Track) models.Track {
 		Size:         t.Size,
 		Remixer:      t.Remixer,
 		Mix:          t.Mix,
-		Raw:          t,
+		ImplementationState: t,
 	}
 
 	if t.AverageBpm != "" {
@@ -35,11 +35,16 @@ func ToNeutralTrack(t Track) models.Track {
 	}
 
 	for _, pm := range t.PositionMark {
+		cueType := models.CueTypeMemory
+		if pm.Num != -1 {
+			cueType = models.CueTypeHot
+		}
 		mt.CuePoints = append(mt.CuePoints, models.CuePoint{
 			Name:     pm.Name,
 			Position: parsePosition(pm.Start),
 			Color:    GetHotCueColorName(pm),
-			Num:      int(pm.Num),
+			Type:     cueType,
+			Index:    int(pm.Num),
 		})
 	}
 
@@ -79,11 +84,11 @@ func ToNeutralGroup(n Node, parentFolder string) models.ResourceGroup {
 		items = DerefInt32(n.Count)
 	}
 	return models.ResourceGroup{
-		ID:           id,
-		Name:         n.Name,
-		Items:        int(items),
-		ParentFolder: parentFolder,
-		Type:         models.GroupType(n.Type),
-		Raw:          n,
+		ID:                  id,
+		Name:                n.Name,
+		Items:               int(items),
+		ParentFolder:        parentFolder,
+		Type:                models.GroupType(n.Type),
+		ImplementationState: n,
 	}
 }
