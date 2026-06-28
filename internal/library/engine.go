@@ -36,30 +36,20 @@ func (e *Engine) Ls(queryString string, matcher query.CustomMatcher) ([]models.T
 	return matched, nil
 }
 
-// LsPlaylists returns all playlist nodes matching the given query string.
-func (e *Engine) LsPlaylists(queryString string) ([]models.ResourceGroup, error) {
-	return e.lsNodes(queryString, models.GroupTypePlaylist)
-}
-
-// LsFolders returns all folder nodes matching the given query string.
-func (e *Engine) LsFolders(queryString string) ([]models.ResourceGroup, error) {
-	return e.lsNodes(queryString, models.GroupTypeFolder)
-}
-
-func (e *Engine) lsNodes(queryString string, nodeType models.GroupType) ([]models.ResourceGroup, error) {
+// LsGroups returns all resource groups matching the given query string.
+func (e *Engine) LsGroups(queryString string) ([]models.ResourceGroup, error) {
 	parser := query.NewParser()
 	q := parser.Parse(queryString)
+	// We allow AllowedNodeFields here. The query package will handle the 'type' field.
 	if err := q.ValidateWithFields(query.AllowedNodeFields); err != nil {
 		return nil, err
 	}
 	eval := query.NewEvaluator(q)
 
 	var matched []models.ResourceGroup
-	for _, node := range e.Library.GetPlaylists() {
-		if node.Type == nodeType {
-			if eval.MatchesGroup(node) {
-				matched = append(matched, node)
-			}
+	for _, group := range e.Library.GetPlaylists() {
+		if eval.MatchesGroup(group) {
+			matched = append(matched, group)
 		}
 	}
 	return matched, nil
