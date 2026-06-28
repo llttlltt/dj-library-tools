@@ -45,7 +45,7 @@ Example:
 			}
 
 			if moveName != "" {
-				return runRenameNodes(wp, src, moveName)
+				return runRenameGroups(wp, src, moveName)
 			}
 
 			if src.Location.Resource == "tracks" {
@@ -55,7 +55,7 @@ Example:
 				return runMoveTracks(wp, src, moveFrom, moveTo)
 			}
 
-			return runMoveNodes(wp, src, moveTo)
+			return runMoveGroups(wp, src, moveTo)
 		},
 	}
 	cmd.Flags().StringVar(&moveTo, "to", "", "Destination playlist or folder")
@@ -114,7 +114,7 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 	return wp.Save("")
 }
 
-func runMoveNodes(wp provider.WritableProvider, src *Selection, moveTo string) error {
+func runMoveGroups(wp provider.WritableProvider, src *Selection, moveTo string) error {
 	if len(src.Nodes) == 0 {
 		fmt.Println("No resources found matching query.")
 		return nil
@@ -153,7 +153,7 @@ func runMoveNodes(wp provider.WritableProvider, src *Selection, moveTo string) e
 		if verbose {
 			fmt.Printf("Moving %s %q into folder %q...\n", src.Location.Resource, t.Name, targetParent.Name)
 		}
-		if err := wp.MoveNode(t, targetParent); err != nil {
+		if err := wp.MoveGroup(t, targetParent); err != nil {
 			fmt.Printf("Warning: failed to move %q: %v\n", t.Name, err)
 			continue
 		}
@@ -163,7 +163,7 @@ func runMoveNodes(wp provider.WritableProvider, src *Selection, moveTo string) e
 	return wp.Save("")
 }
 
-func runRenameNodes(wp provider.WritableProvider, src *Selection, newName string) error {
+func runRenameGroups(wp provider.WritableProvider, src *Selection, newName string) error {
 	if len(src.Nodes) == 0 {
 		return fmt.Errorf("no resources found matching query %q", src.Location.Query)
 	}
@@ -181,7 +181,7 @@ func runRenameNodes(wp provider.WritableProvider, src *Selection, newName string
 		return nil
 	}
 
-	if err := wp.RenameNode(target, newName); err != nil {
+	if err := wp.RenameGroup(target, newName); err != nil {
 		return fmt.Errorf("failed to rename %q: %v", target.Name, err)
 	}
 

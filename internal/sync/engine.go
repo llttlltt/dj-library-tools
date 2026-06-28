@@ -261,19 +261,19 @@ func (e *Engine) CreateFolder(folder, name string, position int) bool {
 	return e.Library.CreateFolder(folder, name, position)
 }
 
-// RenameNode renames the first node matching name and nodeType anywhere in the tree.
-func (e *Engine) RenameNode(name, newName string, nodeType int32) bool {
-	return e.Library.RenameNode(name, newName, nodeType)
+// RenameGroup renames the first node matching name and nodeType anywhere in the tree.
+func (e *Engine) RenameGroup(name, newName string, nodeType int32) bool {
+	return e.Library.RenameGroup(name, newName, nodeType)
 }
 
-// MoveNode detaches the first node matching name and nodeType from its current location.
-func (e *Engine) MoveNode(name string, nodeType int32, targetFolder string) bool {
-	return e.Library.MoveNode(name, nodeType, targetFolder)
+// MoveGroup detaches the first node matching name and nodeType from its current location.
+func (e *Engine) MoveGroup(name string, nodeType int32, targetFolder string) bool {
+	return e.Library.MoveGroup(name, nodeType, targetFolder)
 }
 
-// RemoveNode removes the first node matching name and nodeType from anywhere in the tree.
-func (e *Engine) RemoveNode(name string, nodeType int32) bool {
-	return e.Library.RemoveNode(name, nodeType)
+// RemoveGroup removes the first node matching name and nodeType from anywhere in the tree.
+func (e *Engine) RemoveGroup(name string, nodeType int32) bool {
+	return e.Library.RemoveGroup(name, nodeType)
 }
 
 // MatchTracks matches a slice of neutral tracks against the collection.

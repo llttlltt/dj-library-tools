@@ -75,7 +75,7 @@ func (p *RekordboxProvider) RemoveTracks(target models.ResourceGroup, tracks []m
 	return removed, nil
 }
 
-func (p *RekordboxProvider) CreateNode(parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
+func (p *RekordboxProvider) CreateGroup(parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
 	if nodeType == 0 {
 		p.Engine.Library.(library.WritableLibrary).CreateFolder(parent.Name, name, -1)
 	} else {
@@ -84,18 +84,18 @@ func (p *RekordboxProvider) CreateNode(parent models.ResourceGroup, name string,
 	return models.ResourceGroup{Name: name, Type: models.GroupType(nodeType)}, nil
 }
 
-func (p *RekordboxProvider) DeleteNode(node models.ResourceGroup) error {
-	p.Engine.Library.(library.WritableLibrary).RemoveNode(node.Name, int32(node.Type))
+func (p *RekordboxProvider) DeleteGroup(node models.ResourceGroup) error {
+	p.Engine.Library.(library.WritableLibrary).RemoveGroup(node.Name, int32(node.Type))
 	return nil
 }
 
-func (p *RekordboxProvider) RenameNode(node models.ResourceGroup, newName string) error {
-	p.Engine.Library.(library.WritableLibrary).RenameNode(node.Name, newName, int32(node.Type))
+func (p *RekordboxProvider) RenameGroup(node models.ResourceGroup, newName string) error {
+	p.Engine.Library.(library.WritableLibrary).RenameGroup(node.Name, newName, int32(node.Type))
 	return nil
 }
 
-func (p *RekordboxProvider) MoveNode(node models.ResourceGroup, targetParent models.ResourceGroup) error {
-	p.Engine.Library.(library.WritableLibrary).MoveNode(node.Name, int32(node.Type), targetParent.Name)
+func (p *RekordboxProvider) MoveGroup(node models.ResourceGroup, targetParent models.ResourceGroup) error {
+	p.Engine.Library.(library.WritableLibrary).MoveGroup(node.Name, int32(node.Type), targetParent.Name)
 	return nil
 }
 

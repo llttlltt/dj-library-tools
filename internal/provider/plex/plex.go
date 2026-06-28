@@ -195,7 +195,7 @@ func (p *PlexProvider) GetPlaylists(queryString string) ([]models.ResourceGroup,
 
 	for _, pl := range plexPlaylists {
 		n := pl.ToNeutralNode()
-		if eval.MatchesNode(n) {
+		if eval.MatchesGroup(n) {
 			results = append(results, n)
 		}
 	}
@@ -203,19 +203,19 @@ func (p *PlexProvider) GetPlaylists(queryString string) ([]models.ResourceGroup,
 	return results, nil
 }
 
-func (p *PlexProvider) CreateNode(parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
+func (p *PlexProvider) CreateGroup(parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
 	return models.ResourceGroup{}, fmt.Errorf("plex does not support node creation via API")
 }
 
-func (p *PlexProvider) DeleteNode(node models.ResourceGroup) error {
+func (p *PlexProvider) DeleteGroup(node models.ResourceGroup) error {
 	return fmt.Errorf("plex does not support node deletion via API")
 }
 
-func (p *PlexProvider) RenameNode(node models.ResourceGroup, newName string) error {
+func (p *PlexProvider) RenameGroup(node models.ResourceGroup, newName string) error {
 	return fmt.Errorf("plex does not support node renaming via API")
 }
 
-func (p *PlexProvider) MoveNode(node models.ResourceGroup, targetParent models.ResourceGroup) error {
+func (p *PlexProvider) MoveGroup(node models.ResourceGroup, targetParent models.ResourceGroup) error {
 	return fmt.Errorf("plex does not support node moving via API")
 }
 

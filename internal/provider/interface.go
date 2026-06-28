@@ -47,10 +47,10 @@ type WritableProvider interface {
 	Provider
 	AddTracks(target models.ResourceGroup, tracks []models.Track) (int, error)
 	RemoveTracks(target models.ResourceGroup, tracks []models.Track) (int, error)
-	CreateNode(parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error)
-	DeleteNode(node models.ResourceGroup) error
-	RenameNode(node models.ResourceGroup, newName string) error
-	MoveNode(node models.ResourceGroup, targetParent models.ResourceGroup) error
+	CreateGroup(parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error)
+	DeleteGroup(node models.ResourceGroup) error
+	RenameGroup(node models.ResourceGroup, newName string) error
+	MoveGroup(node models.ResourceGroup, targetParent models.ResourceGroup) error
 	// Sync tracks to a specific target within this provider.
 	Sync(tracks []models.Track, sourceQuery string, targetQuery string, options SyncOptions) error
 

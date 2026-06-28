@@ -142,7 +142,7 @@ func (p *M3UProvider) GetPlaylists(queryString string) ([]models.ResourceGroup, 
 
 	q := query.NewParser().Parse(queryString)
 	eval := query.NewEvaluator(q)
-	if eval.MatchesNode(n) {
+	if eval.MatchesGroup(n) {
 		return []models.ResourceGroup{n}, nil
 	}
 	return nil, nil
@@ -192,7 +192,7 @@ func (p *M3UProvider) RemoveTracks(target models.ResourceGroup, tracks []models.
 	return removed, nil
 }
 
-func (p *M3UProvider) CreateNode(parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
+func (p *M3UProvider) CreateGroup(parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
 	if nodeType == 0 {
 		return models.ResourceGroup{}, fmt.Errorf("m3u provider does not support folders")
 	}
@@ -201,11 +201,11 @@ func (p *M3UProvider) CreateNode(parent models.ResourceGroup, name string, nodeT
 	return models.ResourceGroup{Name: name, Type: models.GroupTypePlaylist}, nil
 }
 
-func (p *M3UProvider) DeleteNode(node models.ResourceGroup) error {
+func (p *M3UProvider) DeleteGroup(node models.ResourceGroup) error {
 	return os.Remove(p.path)
 }
 
-func (p *M3UProvider) RenameNode(node models.ResourceGroup, newName string) error {
+func (p *M3UProvider) RenameGroup(node models.ResourceGroup, newName string) error {
 	newPath := filepath.Join(filepath.Dir(p.path), newName)
 	if err := os.Rename(p.path, newPath); err != nil {
 		return err
@@ -214,7 +214,7 @@ func (p *M3UProvider) RenameNode(node models.ResourceGroup, newName string) erro
 	return nil
 }
 
-func (p *M3UProvider) MoveNode(node models.ResourceGroup, targetParent models.ResourceGroup) error {
+func (p *M3UProvider) MoveGroup(node models.ResourceGroup, targetParent models.ResourceGroup) error {
 	return fmt.Errorf("m3u provider does not support move")
 }
 

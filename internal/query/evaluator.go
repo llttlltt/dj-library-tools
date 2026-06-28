@@ -280,7 +280,7 @@ func (e *Evaluator) matchNumericComparison(fieldValue string, targetValue string
 	return false
 }
 
-func (e *Evaluator) MatchesNode(node models.ResourceGroup) bool {
+func (e *Evaluator) MatchesGroup(node models.ResourceGroup) bool {
 	if e.Query.Root == nil {
 		return true
 	}
