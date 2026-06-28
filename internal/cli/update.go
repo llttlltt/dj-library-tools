@@ -14,7 +14,7 @@ func newUpdateCmd() *cobra.Command {
 	var updateMerge, updateForce bool
 
 	cmd := &cobra.Command{
-		Use:   "update [resource] [query] --from [source-xml]",
+		Use:   "update [resource] [query] --from [source-file]",
 		Short: "Update track metadata or merge markers between libraries",
 		Long: `Update metadata for tracks in the library using another Rekordbox XML as a source.
 Currently supports updating/merging Tempo markers (Beatgrids).
@@ -23,7 +23,7 @@ Example:
   djlt update rb/tracks --from other_library.xml`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if updateFrom == "" {
-				return fmt.Errorf("--from source-xml is required")
+				return fmt.Errorf("--from source-file is required")
 			}
 
 			destLibrary, destPath, err := loadXMLFunc()
