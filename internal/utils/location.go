@@ -12,45 +12,26 @@ type Location struct {
 }
 
 // ParseLocation parses a provider/resource string and an optional query.
+// It is strictly syntactic and does not contain provider-specific logic.
 func ParseLocation(locStr string, query string) Location {
 	loc := Location{
 		Query: query,
 	}
 
-	// For file-based providers (m3u/m3u8), the path might follow a colon or a slash.
-	// Documentation uses m3u8:/path/to/file, but we also support m3u8/path/to/file.
-	prefix := ""
-	if strings.HasPrefix(locStr, "m3u/") || strings.HasPrefix(locStr, "m3u8/") {
-		prefix = "m3u"
-		if strings.HasPrefix(locStr, "m3u8/") {
-			prefix = "m3u8"
-		}
-	} else if strings.HasPrefix(locStr, "m3u:") || strings.HasPrefix(locStr, "m3u8:") {
-		prefix = "m3u"
-		if strings.HasPrefix(locStr, "m3u8:") {
-			prefix = "m3u8"
-		}
+	// 1. Split by query if not already provided
+	if loc.Query == "" && strings.Contains(locStr, " ") {
+		parts := strings.SplitN(locStr, " ", 2)
+		locStr = parts[0]
+		loc.Query = parts[1]
 	}
 
-	if prefix != "" {
-		loc.Provider = prefix
-		// Resource is everything after the first / or :
-		sepIdx := strings.IndexAny(locStr, "/:")
+	// 2. Resolve Provider and Resource via / or : separator
+	sepIdx := strings.IndexAny(locStr, "/:")
+	if sepIdx != -1 {
+		loc.Provider = locStr[:sepIdx]
 		loc.Resource = locStr[sepIdx+1:]
 	} else {
-		// If query is empty, check if locStr contains a space-separated query
-		if loc.Query == "" && strings.Contains(locStr, " ") {
-			parts := strings.SplitN(locStr, " ", 2)
-			locStr = parts[0]
-			loc.Query = parts[1]
-		}
-
-		// Split provider/resource
-		parts := strings.SplitN(locStr, "/", 2)
-		loc.Provider = parts[0]
-		if len(parts) > 1 {
-			loc.Resource = parts[1]
-		}
+		loc.Provider = locStr
 	}
 
 	return loc
