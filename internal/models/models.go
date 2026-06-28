@@ -1,5 +1,6 @@
 package models
 
+
 // Resource is the interface for any item in a music library (Track, Playlist, Folder).
 type Resource interface {
 	GetID() string
@@ -21,7 +22,7 @@ type Track struct {
 	Year          int
 	Location      string
 	Duration      int
-	Rating        int // 0-5
+	Rating        int // 0-255
 	Plays         int
 	DateAdded     string
 	DateModified  string
@@ -61,13 +62,17 @@ const (
 	GroupTypePlaylist GroupType = 1
 )
 
-func (n ResourceGroup) GetID() string   { return n.ID }
-func (n ResourceGroup) GetName() string { return n.Name }
-func (n ResourceGroup) GetKind() string {
-	if n.Type == GroupTypeFolder {
+func (g GroupType) String() string {
+	if g == GroupTypeFolder {
 		return "folder"
 	}
 	return "playlist"
+}
+
+func (n ResourceGroup) GetID() string   { return n.ID }
+func (n ResourceGroup) GetName() string { return n.Name }
+func (n ResourceGroup) GetKind() string {
+	return n.Type.String()
 }
 
 // MetadataMatch pairs a source track with a target track for reconciliation.

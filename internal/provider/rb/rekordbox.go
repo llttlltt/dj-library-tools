@@ -12,6 +12,7 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
+	"github.com/fatih/color"
 )
 
 func init() {
@@ -104,6 +105,9 @@ func (p *RekordboxProvider) AddTracks(ctx provider.ExecutionContext, target mode
 	var ids []string
 	for _, t := range tracks {
 		ids = append(ids, t.ID)
+		if ctx.Verbose {
+			fmt.Printf("  %s %s - %s\n", color.GreenString("+"), t.Artist, t.Title)
+		}
 	}
 	return p.Engine.Library.(library.WritableLibrary).LinkTracks(target.ID, ids)
 }
@@ -112,6 +116,9 @@ func (p *RekordboxProvider) RemoveTracks(ctx provider.ExecutionContext, target m
 	var ids []string
 	for _, t := range tracks {
 		ids = append(ids, t.ID)
+		if ctx.Verbose {
+			fmt.Printf("  %s %s - %s\n", color.RedString("-"), t.Artist, t.Title)
+		}
 	}
 	return p.Engine.Library.(library.WritableLibrary).UnlinkTracks(target.ID, ids)
 }
@@ -120,14 +127,23 @@ func (p *RekordboxProvider) CreateGroup(ctx provider.ExecutionContext, parent mo
 	if err := p.ValidateCreateGroup(parent, groupType); err != nil {
 		return models.ResourceGroup{}, err
 	}
+	if ctx.Verbose {
+		fmt.Printf("Creating %s %q in %q\n", groupType, name, parent.Name)
+	}
 	return p.Engine.Library.(library.WritableLibrary).CreateGroup(parent.ID, name, groupType, position)
 }
 
 func (p *RekordboxProvider) DeleteGroup(ctx provider.ExecutionContext, node models.ResourceGroup) error {
+	if ctx.Verbose {
+		fmt.Printf("Deleting %s %q\n", node.GetKind(), node.Name)
+	}
 	return p.Engine.Library.(library.WritableLibrary).DeleteGroup(node.ID, node.Type)
 }
 
 func (p *RekordboxProvider) RenameGroup(ctx provider.ExecutionContext, node models.ResourceGroup, newName string, groupType models.GroupType) error {
+	if ctx.Verbose {
+		fmt.Printf("Renaming %q -> %q\n", node.Name, newName)
+	}
 	return p.Engine.Library.(library.WritableLibrary).RenameGroup(node.ID, newName, groupType)
 }
 
@@ -135,12 +151,18 @@ func (p *RekordboxProvider) MoveGroup(ctx provider.ExecutionContext, node models
 	if err := p.ValidateMoveGroup(node, targetParent); err != nil {
 		return err
 	}
+	if ctx.Verbose {
+		fmt.Printf("Moving %q into %q\n", node.Name, targetParent.Name)
+	}
 	return p.Engine.Library.(library.WritableLibrary).MoveGroup(node.ID, node.Type, targetParent.ID)
 }
 
 func (p *RekordboxProvider) Save(ctx provider.ExecutionContext, path string) error {
 	if path == "" {
 		path = p.path
+	}
+	if ctx.Verbose {
+		fmt.Printf("Saving Rekordbox XML to %s\n", path)
 	}
 	return p.Engine.Library.(library.WritableLibrary).Save(path)
 }
@@ -244,6 +266,10 @@ func (p *RekordboxProvider) Sync(ctx provider.ExecutionContext, tracks []models.
 	}
 
 	orch := sync.NewOrchestrator(rbLib, ctx.DryRun, ctx.Verbose)
+	if ctx.Verbose {
+		// In a real app we'd attach a listener here, 
+		// but we'll let orchestrator print for now or use the generic listener we built.
+	}
 
 	err := orch.SyncToLibrary(tracks, sourceQuery, targetQuery, sync.SyncOptions{
 		ExportDest:   options.ExportDest,
@@ -299,7 +325,61 @@ func (p *RekordboxProvider) MetadataCapabilities() []string {
 }
 
 func (p *RekordboxProvider) UpdateMetadata(ctx provider.ExecutionContext, matches []models.MetadataMatch, fields []string) error {
-	// Transfer logic from update.go
+	rbXML, err := rekordbox.ReadRekordboxLibrary(p.path)
+	if err != nil {
+		return err
+	}
+
+	fieldMap := make(map[string]bool)
+	for _, f := range fields {
+		fieldMap[f] = true
+	}
+
+	blue := color.New(color.FgCyan).SprintFunc()
+	yellow := color.New(color.FgYellow).SprintFunc()
+
+	updateCount := 0
+	for _, match := range matches {
+		for i := range rbXML.Collection.TRACK {
+			target := &rbXML.Collection.TRACK[i]
+			if fmt.Sprintf("%d", target.TrackID) == match.Target.ID {
+				if ctx.Verbose {
+					fmt.Printf("[%s]\n", blue(match.Target.Artist+" - "+match.Target.Title))
+				}
+
+				if fieldMap["beatgrids"] {
+					if rt, ok := match.Source.Raw.(rekordbox.Track); ok {
+						if ctx.Verbose {
+							fmt.Printf("  %s Beatgrids: %d -> %d\n", yellow("~"), len(target.Tempo), len(rt.Tempo))
+						}
+						target.Tempo = rt.Tempo
+					}
+				}
+				if fieldMap["rating"] {
+					if ctx.Verbose {
+						fmt.Printf("  %s Rating: %d -> %d\n", yellow("~"), target.Rating, match.Source.Rating)
+					}
+					target.Rating = int32(match.Source.Rating)
+				}
+				if fieldMap["comment"] {
+					if ctx.Verbose {
+						fmt.Printf("  %s Comment: %q -> %q\n", yellow("~"), target.Comments, match.Source.Comment)
+					}
+					target.Comments = match.Source.Comment
+				}
+				updateCount++
+				break
+			}
+		}
+	}
+
+	if ctx.Verbose {
+		fmt.Printf("\nSuccessfully updated %d tracks.\n", updateCount)
+	}
+
+	if !ctx.DryRun {
+		return rekordbox.WriteRekordboxLibrary(p.path, rbXML)
+	}
 	return nil
 }
 
