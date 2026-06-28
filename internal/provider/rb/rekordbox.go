@@ -244,7 +244,7 @@ func (s *rekordboxSystemService) Fix(ctx provider.ExecutionContext, resource str
 	return nil
 }
 
-func (s *rekordboxSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, sourceQuery string, targetQuery string, options provider.SyncOptions) error {
+func (s *rekordboxSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, targetQuery string, options provider.SyncOptions) error {
 	var rbLib *rekordbox.Library
 	if s.rbXML != nil {
 		rbLib = rekordbox.NewLibrary(s.rbXML)
@@ -256,7 +256,7 @@ func (s *rekordboxSystemService) Sync(ctx provider.ExecutionContext, tracks []mo
 		rbLib = rekordbox.NewLibrary(rbXML)
 	}
 
-	err := sync.SyncToLibrary(rbLib, tracks, sourceQuery, targetQuery, sync.SyncOptions{
+	err := sync.SyncToLibrary(rbLib, tracks, targetQuery, sync.SyncOptions{
 		ExportDest:   options.ExportDest,
 		ExportFormat: options.ExportFormat,
 		PathMaps:     options.PathMaps,

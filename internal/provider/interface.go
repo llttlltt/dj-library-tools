@@ -108,7 +108,7 @@ type SystemService interface {
 	Fix(ctx ExecutionContext, resource string, query string) error
 
 	// Sync orchestrates a full library sync.
-	Sync(ctx ExecutionContext, tracks []models.Track, sourceQuery string, targetQuery string, options SyncOptions) error
+	Sync(ctx ExecutionContext, tracks []models.Track, targetQuery string, options SyncOptions) error
 
 	// Identify returns a provider-specific ID for a name.
 	Identify(name string, groupType models.GroupType) string

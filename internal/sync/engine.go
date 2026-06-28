@@ -55,9 +55,9 @@ type SyncOptions struct {
 }
 
 // SyncToLibrary is a high-level helper that coordinates a full sync from source tracks to a target library.
-func SyncToLibrary(lib library.WritableLibrary, tracks []models.Track, sourceQuery string, targetQuery string, options SyncOptions, dryRun, verbose bool, appendOnly bool) error {
+func SyncToLibrary(lib library.WritableLibrary, tracks []models.Track, targetQuery string, options SyncOptions, dryRun, verbose bool, appendOnly bool) error {
 	orch := NewOrchestrator(lib, dryRun, verbose)
-	return orch.SyncToLibrary(tracks, sourceQuery, targetQuery, options, appendOnly)
+	return orch.SyncToLibrary(tracks, targetQuery, options, appendOnly)
 }
 
 // Join matches source tracks against the target library using the specified keys.
@@ -106,7 +106,7 @@ func (o *Orchestrator) Relocate(tracks []models.Track, searchDir string, matchFi
 	return relocated
 }
 
-func (o *Orchestrator) SyncToLibrary(tracks []models.Track, sourceQuery string, playlistName string, opts SyncOptions, appendOnly bool) error {
+func (o *Orchestrator) SyncToLibrary(tracks []models.Track, playlistName string, opts SyncOptions, appendOnly bool) error {
 	var transcoder *media.Transcoder
 	if opts.ExportDest != "" {
 		cfgMedia := media.DefaultConfig()
