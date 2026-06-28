@@ -240,6 +240,11 @@ func (r *Library) MoveGroup(groupID string, groupKind models.GroupKind, targetPa
 	return nil
 }
 
+func (r *Library) UpdateMetadata(matches []models.MetadataMatch, fields []string) error {
+	UpdateBatch(r.XML, matches, fields)
+	return nil
+}
+
 func (r *Library) Save(path string) error {
 	return WriteRekordboxLibrary(path, r.XML)
 }

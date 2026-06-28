@@ -43,20 +43,39 @@ func NewOrchestrator(lib library.WritableLibrary, apply, verbose bool) *Orchestr
 	}
 }
 
-func (o *Orchestrator) WithMatcher(m *Matcher) *Orchestrator {
-	o.Matcher = m
-	return o
+func (o *Orchestrator) getExistingTracks() []models.Track {
+	resources := o.Library.GetResources("track")
+	var tracks []models.Track
+	for _, r := range resources {
+		tracks = append(tracks, r.(models.Track))
+	}
+	return tracks
 }
 
 type SyncOptions struct {
-	ExportDest   string
-	ExportFormat string
-	PathMaps     map[string]string
+	ExportDest     string
+	ExportFormat   string
+	PathMaps       map[string]string
+	MetadataFields []string
+	MatchFields    []string
 }
 
 // SyncToLibrary is a high-level helper that coordinates a full sync from source tracks to a target library.
 func SyncToLibrary(lib library.WritableLibrary, tracks []models.Track, targetQuery string, options SyncOptions, apply, verbose bool, appendOnly bool) error {
 	orch := NewOrchestrator(lib, apply, verbose)
+	
+	// Perform metadata reconciliation if requested
+	if len(options.MetadataFields) > 0 {
+		orch.Matcher = NewMatcher(orch.getExistingTracks()).WithKeys(options.MatchFields)
+		matches := orch.Join(tracks, options.MatchFields)
+		
+		if err := orch.Library.(interface {
+			UpdateMetadata(matches []models.MetadataMatch, fields []string) error
+		}).UpdateMetadata(matches, options.MetadataFields); err != nil {
+			return err
+		}
+	}
+
 	return orch.SyncToLibrary(tracks, targetQuery, options, appendOnly)
 }
 

@@ -31,8 +31,9 @@ func HandleError(err error) error {
 
 func getExecContext() provider.ExecutionContext {
 	return provider.ExecutionContext{
-		Apply:   apply,
-		Verbose: verbose,
+		Apply:    apply,
+		Verbose:  verbose,
+		Feedback: &TerminalFeedback{},
 	}
 }
 

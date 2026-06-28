@@ -40,7 +40,8 @@ type mockSystemService struct{}
 func (s *mockSystemService) Capabilities() provider.ProviderCapabilities { return provider.ProviderCapabilities{} }
 func (s *mockSystemService) Containment() provider.ContainmentPolicy { return provider.ContainmentPolicy{} }
 func (s *mockSystemService) MetadataCapabilities() []string { return nil }
-func (s *mockSystemService) SupportedResources() []string { return nil }
+func (s *mockSystemService) TableHeaders() []string         { return []string{"BPM", "Artist", "Title"} }
+func (s *mockSystemService) SupportedResources() []string   { return nil }
 func (s *mockSystemService) Save(_ provider.ExecutionContext, _ string) error { return nil }
 func (s *mockSystemService) Fix(_ provider.ExecutionContext, _, _ string) error { return nil }
 func (s *mockSystemService) Sync(_ provider.ExecutionContext, _ []models.Track, _ string, _ provider.SyncOptions) error { return nil }

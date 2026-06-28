@@ -223,6 +223,10 @@ func (s *rekordboxSystemService) SupportedResources() []string {
 	return []string{"tracks", "playlists", "folders"}
 }
 
+func (s *rekordboxSystemService) TableHeaders() []string {
+	return []string{"BPM", "Key", "Artist", "Title", "Rating"}
+}
+
 func (s *rekordboxSystemService) Save(ctx provider.ExecutionContext, path string) error {
 	if path == "" {
 		path = s.path
@@ -250,9 +254,11 @@ func (s *rekordboxSystemService) Sync(ctx provider.ExecutionContext, tracks []mo
 	}
 
 	err := sync.SyncToLibrary(rbLib, tracks, targetQuery, sync.SyncOptions{
-		ExportDest:   options.ExportDest,
-		ExportFormat: options.ExportFormat,
-		PathMaps:     options.PathMaps,
+		ExportDest:     options.ExportDest,
+		ExportFormat:   options.ExportFormat,
+		PathMaps:       options.PathMaps,
+		MetadataFields: options.MetadataFields,
+		MatchFields:    options.MatchFields,
 	}, ctx.Apply, ctx.Verbose, options.AppendOnly)
 	
 	if err != nil {

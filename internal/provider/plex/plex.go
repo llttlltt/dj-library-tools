@@ -102,6 +102,9 @@ func (s *plexSystemService) Capabilities() provider.ProviderCapabilities { retur
 func (s *plexSystemService) Containment() provider.ContainmentPolicy { return provider.ContainmentPolicy{} }
 func (s *plexSystemService) MetadataCapabilities() []string { return []string{"rating", "plays"} }
 func (s *plexSystemService) SupportedResources() []string { return []string{"tracks", "playlists"} }
+func (s *plexSystemService) TableHeaders() []string {
+	return []string{"BPM", "Key", "Artist", "Title", "Rating"}
+}
 func (s *plexSystemService) Save(ctx provider.ExecutionContext, path string) error { return nil }
 func (s *plexSystemService) Fix(ctx provider.ExecutionContext, resource, query string) error { return provider.ErrReadOnly }
 func (s *plexSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, targetQuery string, opts provider.SyncOptions) error { return provider.ErrReadOnly }
