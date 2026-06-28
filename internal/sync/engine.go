@@ -160,8 +160,8 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, query string, playli
 	for _, track := range tracks {
 		match := o.SyncEngine.Matcher.Match(track)
 		var rbTrack *models.Track
-		if match.RBTrack != nil && match.Confidence >= 0.8 {
-			rbTrack = match.RBTrack
+		if match.TargetTrack != nil && match.Confidence >= 0.8 {
+			rbTrack = match.TargetTrack
 		}
 		jobs <- transcodeJob{track: track, rb: rbTrack}
 	}
@@ -281,7 +281,7 @@ func (e *Engine) MatchTracks(tracks []models.Track, minConfidence float64) []Mat
 	out := make([]MatchResult, 0, len(tracks))
 	for _, t := range tracks {
 		m := e.Matcher.Match(t)
-		if m.RBTrack != nil && m.Confidence >= minConfidence {
+		if m.TargetTrack != nil && m.Confidence >= minConfidence {
 			out = append(out, m)
 		}
 	}
