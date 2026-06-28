@@ -28,7 +28,7 @@ Use --from to specify which playlist to remove tracks from.
 Without --from, the command deletes the resource itself.
 
 Example:
-  djlt rm rb/tracks artist:Four --from "rb/playlists name:Inbox"
+  djlt rm rb/tracks "artist:Four" --from "rb/playlists name:Inbox"
   djlt rm rb/playlists name:Inbox
 
 ## See also
