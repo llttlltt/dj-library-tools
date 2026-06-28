@@ -201,3 +201,8 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, sourceQuery string, 
 
 	return nil
 }
+
+func (o *Orchestrator) WithMatcher(m *Matcher) *Orchestrator {
+	o.Matcher = m
+	return o
+}
