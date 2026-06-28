@@ -4,27 +4,31 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
-	"github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/spf13/cobra"
 )
 
-func newModifyCmd() *cobra.Command {
+func newEditCmd() *cobra.Command {
 	var setFields []string
 	var relocateDir string
 	var matchFields []string
+	var repair bool
 
 	cmd := &cobra.Command{
-		Use:   "modify [selection] [query]",
-		Short: "Bulk update track metadata or relocate missing files",
-		Long: `Modify track metadata or repair broken file paths.
+		Use:   "edit [selection] [query]",
+		Short: "Update metadata, repair paths, or fix library issues",
+		Long: `A unified command for modifying resource state.
 
 Examples:
-  # Set a comment for all tracks in a playlist
-  djlt modify rb/tracks playlists:Inbox --set comment:Great
+  # Set a comment for tracks
+  djlt edit rb/tracks playlists:Inbox --set comment:Great
 
-  # Relocate missing files by searching a directory
-  djlt modify rb/tracks --missing --relocate "/Volumes/Media/Music" --match filename`,
+  # Relocate missing files
+  djlt edit rb/tracks --missing --relocate "/Volumes/Media/Music"
+
+  # Run provider-specific repairs (formerly 'fix')
+  djlt edit rb/tracks --repair`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			queryOverride := ""
@@ -44,10 +48,26 @@ Examples:
 
 			ctx := getExecContext()
 
-			// 1. Handle Relocation
+			// 1. Handle Repairs
+			if repair {
+				if dryRun {
+					fmt.Printf("[Dry Run] Would perform repair on %s/%s\n", sel.Location.Provider, sel.Location.Resource)
+					return nil
+				}
+				if err := wp.Fix(ctx, sel.Location.Resource, sel.Location.Query); err != nil {
+					return err
+				}
+				fmt.Println("Repair completed successfully.")
+				return wp.Save(ctx, "")
+			}
+
+			// 2. Handle Relocation
 			if relocateDir != "" {
-				orch := sync.NewOrchestrator(nil, dryRun, verbose)
-				relocated := orch.Relocate(sel.Tracks, relocateDir, matchFields)
+				// We keep the relocation logic here as it's a cross-provider 'Search & Patch' orchestration
+				// but it calls ModifyTracks on the provider for the actual write.
+				relocated := wp.(interface {
+					Relocate(tracks []models.Track, dir string, match []string) map[string]string
+				}).Relocate(sel.Tracks, relocateDir, matchFields)
 				
 				if len(relocated) == 0 {
 					fmt.Println("No tracks were relocated.")
@@ -59,19 +79,15 @@ Examples:
 					return nil
 				}
 
-				changes := make(map[string]string)
 				for id, newPath := range relocated {
-					changes["location"] = newPath
-					_, err := wp.ModifyTracks(ctx, "id:"+id, changes)
-					if err != nil {
-						fmt.Printf("Warning: failed to update path for track %s: %v\n", id, err)
-					}
+					changes := map[string]string{"location": newPath}
+					wp.ModifyTracks(ctx, "id:"+id, changes)
 				}
 				
 				return wp.Save(ctx, "")
 			}
 
-			// 2. Handle Metadata Updates
+			// 3. Handle Metadata Updates
 			if len(setFields) > 0 {
 				changes := make(map[string]string)
 				for _, f := range setFields {
@@ -103,6 +119,7 @@ Examples:
 	cmd.Flags().StringSliceVar(&setFields, "set", []string{}, "Metadata fields to update (key:value)")
 	cmd.Flags().StringVar(&relocateDir, "relocate", "", "Search this directory to repair missing file paths")
 	cmd.Flags().StringSliceVar(&matchFields, "match", []string{"filename"}, "Criteria to use for relocation matching")
+	cmd.Flags().BoolVar(&repair, "repair", false, "Perform provider-specific health/formatting repairs")
 
 	return cmd
 }

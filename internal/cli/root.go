@@ -60,8 +60,7 @@ func NewRootCmd() *cobra.Command {
 		newDeleteCmd(),
 		newAuthCmd(),
 		newConfigCmd(),
-		newFixCmd(),
-		newModifyCmd(),
+		newEditCmd(),
 	)
 	return root
 }

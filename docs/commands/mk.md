@@ -12,14 +12,17 @@ djlt mk [resource] [name] [flags]
       --from string   Initial items to populate the resource with
   -h, --help          help for mk
       --in string     Parent folder for the new resource
+  -p, --parents       Create parent folders if they don't exist
 ```
 
 ### Inherited Options
 
 ```
       --dry-run          Preview changes without writing
+      --exists           Filter for tracks where the physical file exists
   -f, --file string      Path to the primary library file (Rekordbox XML, M3U, etc.)
       --json             Output results in JSON format
+      --missing          Filter for tracks where the physical file is missing
       --to-file string   Path to the destination library file for sync/move operations
   -v, --verbose          Enable verbose logging
 ```
@@ -29,6 +32,7 @@ You can optionally populate it immediately using items from a source.
 
 Example:
   djlt mk rb/playlists "New Arrivals" --from "rb/tracks added:>2024-01-01"
+  djlt mk rb/playlists "2024/Jan/Inbox" --parents
 
 ## See also
 

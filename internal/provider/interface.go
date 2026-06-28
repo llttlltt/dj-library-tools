@@ -70,9 +70,11 @@ type WritableProvider interface {
 	ReadableProvider
 	AddTracks(ctx ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error)
 	RemoveTracks(ctx ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error)
+	ModifyTracks(ctx ExecutionContext, query string, changes map[string]string) (int, error)
+	MoveTracks(ctx ExecutionContext, source models.ResourceGroup, target models.ResourceGroup, tracks []models.Track) (int, error)
 	CreateGroup(ctx ExecutionContext, parent models.ResourceGroup, name string, groupType models.GroupType, position int) (models.ResourceGroup, error)
 	DeleteGroup(ctx ExecutionContext, node models.ResourceGroup) error
-	RenameGroup(ctx ExecutionContext, node models.ResourceGroup, newName string) error
+	RenameGroup(ctx ExecutionContext, node models.ResourceGroup, newName string, groupType models.GroupType) error
 	MoveGroup(ctx ExecutionContext, node models.ResourceGroup, targetParent models.ResourceGroup) error
 	
 	Sync(ctx ExecutionContext, tracks []models.Track, sourceQuery string, targetQuery string, options SyncOptions) error
@@ -83,7 +85,6 @@ type WritableProvider interface {
 	// Fix performs provider-specific health/formatting repairs (e.g. M3U tag enrichment).
 	Fix(ctx ExecutionContext, resource string, query string) error
 
-	ModifyTracks(ctx ExecutionContext, query string, changes map[string]string) (int, error)
 
 	// Validation methods for pre-flight checks
 	ValidateAddTracks(target models.ResourceGroup) error
