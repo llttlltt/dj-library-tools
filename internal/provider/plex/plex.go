@@ -8,8 +8,22 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/plex"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
+	"github.com/llttlltt/dj-library-tools/internal/provider/factory"
 	"github.com/llttlltt/dj-library-tools/internal/query"
 )
+
+func init() {
+	factory.Register("plex", func(opts factory.ProviderOptions) (provider.Provider, error) {
+		token := ""
+		if opts.Config != nil {
+			token = opts.Config.PlexToken
+		}
+		if token == "" {
+			token = "PLEX_TOKEN" // Default to env check?
+		}
+		return NewPlexProvider(token, opts.Config.PlexHost, opts.Config.PlexPort), nil
+	})
+}
 
 type PlexProvider struct {
 	client *plex.Client
@@ -204,20 +218,37 @@ func (p *PlexProvider) GetPlaylists(ctx provider.ExecutionContext, queryString s
 	return results, nil
 }
 
-func (p *PlexProvider) CreateGroup(_ provider.ExecutionContext, _ models.ResourceGroup, _ string, _ int, _ int) (models.ResourceGroup, error) {
-	return models.ResourceGroup{}, fmt.Errorf("plex does not support group creation via API")
+func (p *PlexProvider) GetResources(ctx provider.ExecutionContext, resource string, query string) ([]models.Resource, error) {
+	var items []models.Resource
+	switch resource {
+	case "tracks":
+		tracks, err := p.GetTracks(ctx, query)
+		if err != nil { return nil, err }
+		for _, t := range tracks { items = append(items, t) }
+	case "playlists":
+		groups, err := p.GetPlaylists(ctx, query)
+		if err != nil { return nil, err }
+		for _, g := range groups { items = append(items, g) }
+	default:
+		return nil, provider.ErrUnsupportedResource
+	}
+	return items, nil
+}
+
+func (p *PlexProvider) CreateGroup(_ provider.ExecutionContext, _ models.ResourceGroup, _ string, _ models.GroupType, _ int) (models.ResourceGroup, error) {
+	return models.ResourceGroup{}, provider.ErrReadOnly
 }
 
 func (p *PlexProvider) DeleteGroup(_ provider.ExecutionContext, _ models.ResourceGroup) error {
-	return fmt.Errorf("plex does not support group deletion via API")
+	return provider.ErrReadOnly
 }
 
-func (p *PlexProvider) RenameGroup(_ provider.ExecutionContext, _ models.ResourceGroup, _ string) error {
-	return fmt.Errorf("plex does not support group renaming via API")
+func (p *PlexProvider) RenameGroup(_ provider.ExecutionContext, _ models.ResourceGroup, _ string, _ models.GroupType) error {
+	return provider.ErrReadOnly
 }
 
 func (p *PlexProvider) MoveGroup(_ provider.ExecutionContext, _ models.ResourceGroup, _ models.ResourceGroup) error {
-	return fmt.Errorf("plex does not support group moving via API")
+	return provider.ErrReadOnly
 }
 
 func (p *PlexProvider) resolveBaseURL(ctx context.Context) (string, error) {
@@ -248,53 +279,36 @@ func (p *PlexProvider) resolveBaseURL(ctx context.Context) (string, error) {
 }
 
 func (p *PlexProvider) Sync(_ provider.ExecutionContext, _ []models.Track, _ string, _ string, _ provider.SyncOptions) error {
-	return fmt.Errorf("sync not supported for plex")
+	return provider.ErrReadOnly
 }
 
 func (p *PlexProvider) ModifyTracks(_ provider.ExecutionContext, _ string, _ map[string]string) (int, error) {
-	return 0, fmt.Errorf("plex provider does not support metadata modification")
+	return 0, provider.ErrReadOnly
 }
 
 func (p *PlexProvider) ValidateAddTracks(_ models.ResourceGroup) error {
-	return fmt.Errorf("plex provider is read-only")
+	return provider.ErrReadOnly
 }
 
 func (p *PlexProvider) ValidateMoveGroup(_ models.ResourceGroup, _ models.ResourceGroup) error {
-	return fmt.Errorf("plex provider is read-only")
+	return provider.ErrReadOnly
 }
 
 func (p *PlexProvider) ValidateCreateGroup(_ models.ResourceGroup, _ models.GroupType) error {
-	return fmt.Errorf("plex provider is read-only")
+	return provider.ErrReadOnly
 }
 
 func (p *PlexProvider) Save(_ provider.ExecutionContext, _ string) error {
 	return nil
 }
 
-func (p *PlexProvider) SortTracks(_ provider.ExecutionContext, tracks []models.Track, field string) {}
-func (p *PlexProvider) SortGroups(_ provider.ExecutionContext, groups []models.ResourceGroup, field string) {}
+func (p *PlexProvider) SortTracks(_ provider.ExecutionContext, _ []models.Track, _ string) {}
+func (p *PlexProvider) SortGroups(_ provider.ExecutionContext, _ []models.ResourceGroup, _ string) {}
 
-func (p *PlexProvider) GetResources(ctx provider.ExecutionContext, resource string, query string) ([]models.Resource, error) {
-	var items []models.Resource
-	switch resource {
-	case "tracks":
-		tracks, err := p.GetTracks(ctx, query)
-		if err != nil { return nil, err }
-		for _, t := range tracks { items = append(items, t) }
-	case "playlists":
-		groups, err := p.GetPlaylists(ctx, query)
-		if err != nil { return nil, err }
-		for _, g := range groups { items = append(items, g) }
-	default:
-		return nil, fmt.Errorf("unknown resource: %s", resource)
-	}
-	return items, nil
+func (p *PlexProvider) IdentifyGroup(_ string, _ models.GroupType) string {
+	return ""
 }
 
 func (p *PlexProvider) SupportedResources() []string {
 	return []string{"tracks", "playlists"}
-}
-
-func (p *PlexProvider) IdentifyGroup(name string, groupType models.GroupType) string {
-	return "" // Not writable yet
 }

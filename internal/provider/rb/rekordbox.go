@@ -7,11 +7,29 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/library"
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
+	"github.com/llttlltt/dj-library-tools/internal/provider/factory"
 	"github.com/llttlltt/dj-library-tools/internal/query"
 	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
 )
+
+func init() {
+	factory.Register("rb", func(opts factory.ProviderOptions) (provider.Provider, error) {
+		if opts.FilePath == "" {
+			return nil, fmt.Errorf("rekordbox XML library required via --file flag")
+		}
+		rbXML, err := rekordbox.ReadRekordboxLibrary(opts.FilePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read rekordbox library: %w", err)
+		}
+		eng := library.NewEngine(NewRekordboxLibrary(rbXML))
+		return NewRekordboxProviderWithXML(eng, rbXML, opts.FilePath), nil
+	})
+	factory.Register("rekordbox", func(opts factory.ProviderOptions) (provider.Provider, error) {
+		return factory.NewProvider("rb", opts)
+	})
+}
 
 type RekordboxProvider struct {
 	Engine *library.Engine
