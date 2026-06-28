@@ -60,7 +60,7 @@ func renderTrackTable(tracks []models.Track) {
 	fmt.Printf("\nMatched %d tracks.\n", len(tracks))
 }
 
-func renderNodeTable(nodes []models.ResourceGroup, label string) {
+func renderGroupTable(nodes []models.ResourceGroup, label string) {
 	t := &Table{
 		Headers: []string{"Items", label},
 	}

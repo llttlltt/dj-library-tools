@@ -112,17 +112,17 @@ func listProviderStats(sel *Selection) error {
 func listProvider(sel *Selection, listSort string) error {
 	if sel.Location.Resource == "playlists" || sel.Location.Resource == "folders" {
 		if jsonOutput {
-			data, _ := json.MarshalIndent(sel.Nodes, "", "  ")
+			data, _ := json.MarshalIndent(sel.Groups, "", "  ")
 			fmt.Println(string(data))
 			return nil
 		}
-		if len(sel.Nodes) == 0 {
+		if len(sel.Groups) == 0 {
 			color.Yellow("No %s matched the query.", sel.Location.Resource)
 			return nil
 		}
 
-		sortGroups(sel, sel.Nodes, listSort)
-		renderNodeTable(sel.Nodes, sel.Location.Resource[:len(sel.Location.Resource)-1])
+		sortGroups(sel, sel.Groups, listSort)
+		renderGroupTable(sel.Groups, sel.Location.Resource[:len(sel.Location.Resource)-1])
 		return nil
 	}
 

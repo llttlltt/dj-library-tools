@@ -18,8 +18,8 @@ var AllowedTrackFields = []string{
 	"remixer", "mix",
 }
 
-// AllowedNodeFields is a list of valid fields for playlist and folder queries.
-var AllowedNodeFields = []string{
+// AllowedGroupFields is a list of valid fields for playlist and folder queries.
+var AllowedGroupFields = []string{
 	"name", "parent", "folder", "items", "type",
 }
 
@@ -284,25 +284,25 @@ func (e *Evaluator) MatchesGroup(node models.ResourceGroup) bool {
 	if e.Query.Root == nil {
 		return true
 	}
-	return e.evalNode(e.Query.Root, node)
+	return e.evalGroup(e.Query.Root, node)
 }
 
-func (e *Evaluator) evalNode(expr Expression, node models.ResourceGroup) bool {
+func (e *Evaluator) evalGroup(expr Expression, node models.ResourceGroup) bool {
 	switch v := expr.(type) {
 	case Comparison:
-		return e.matchNodeComparison(node, v)
+		return e.matchGroupComparison(node, v)
 	case Logical:
 		if v.Op == "AND" {
-			return e.evalNode(v.Left, node) && e.evalNode(v.Right, node)
+			return e.evalGroup(v.Left, node) && e.evalGroup(v.Right, node)
 		}
-		return e.evalNode(v.Left, node) || e.evalNode(v.Right, node)
+		return e.evalGroup(v.Left, node) || e.evalGroup(v.Right, node)
 	case Not:
-		return !e.evalNode(v.Expr, node)
+		return !e.evalGroup(v.Expr, node)
 	}
 	return false
 }
 
-func (e *Evaluator) matchNodeComparison(node models.ResourceGroup, c Comparison) bool {
+func (e *Evaluator) matchGroupComparison(node models.ResourceGroup, c Comparison) bool {
 	val := ""
 	switch strings.ToLower(c.Field) {
 	case "name":

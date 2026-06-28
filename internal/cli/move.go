@@ -70,17 +70,17 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 	}
 
 	org, err := ResolveSelection(moveFrom, "")
-	if err != nil || len(org.Nodes) == 0 {
+	if err != nil || len(org.Groups) == 0 {
 		return fmt.Errorf("could not find origin playlist(s) matching %q", moveFrom)
 	}
 
 	tgt, err := ResolveSelection(moveTo, "")
-	if err != nil || len(tgt.Nodes) == 0 {
+	if err != nil || len(tgt.Groups) == 0 {
 		return fmt.Errorf("could not find target playlist(s) matching %q", moveTo)
 	}
 
 	// Agnostic Pre-flight Validation
-	for _, target := range tgt.Nodes {
+	for _, target := range tgt.Groups {
 		if err := wp.ValidateAddTracks(target); err != nil {
 			return err
 		}
@@ -89,17 +89,17 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 	ctx := getExecContext()
 
 	if dryRun {
-		fmt.Printf("[Dry Run] Would move %d tracks from %d origins to %d targets\n", len(src.Tracks), len(org.Nodes), len(tgt.Nodes))
+		fmt.Printf("[Dry Run] Would move %d tracks from %d origins to %d targets\n", len(src.Tracks), len(org.Groups), len(tgt.Groups))
 		return nil
 	}
 
-	for _, origin := range org.Nodes {
+	for _, origin := range org.Groups {
 		if verbose {
 			fmt.Printf("Removing tracks from origin playlist %q...\n", origin.Name)
 		}
 		wp.RemoveTracks(ctx, origin, src.Tracks)
 	}
-	for _, target := range tgt.Nodes {
+	for _, target := range tgt.Groups {
 		if verbose {
 			fmt.Printf("Adding tracks to target playlist %q...\n", target.Name)
 		}
@@ -110,19 +110,19 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 }
 
 func runMoveGroups(wp provider.WritableProvider, src *Selection, moveTo string) error {
-	if len(src.Nodes) == 0 {
+	if len(src.Groups) == 0 {
 		fmt.Println("No resources found matching query.")
 		return nil
 	}
 
 	tgt, err := ResolveSelection(moveTo, "")
-	if err != nil || len(tgt.Nodes) == 0 {
+	if err != nil || len(tgt.Groups) == 0 {
 		return fmt.Errorf("could not find target folder matching %q", moveTo)
 	}
-	targetParent := tgt.Nodes[0]
+	targetParent := tgt.Groups[0]
 
 	// Agnostic Pre-flight Validation
-	for _, group := range src.Nodes {
+	for _, group := range src.Groups {
 		if err := wp.ValidateMoveGroup(group, targetParent); err != nil {
 			return err
 		}
@@ -131,13 +131,13 @@ func runMoveGroups(wp provider.WritableProvider, src *Selection, moveTo string) 
 	ctx := getExecContext()
 
 	if dryRun {
-		for _, t := range src.Nodes {
+		for _, t := range src.Groups {
 			fmt.Printf("[Dry Run] Would move %s %q to folder %q\n", src.Location.Resource, t.Name, targetParent.Name)
 		}
 		return nil
 	}
 
-	for _, t := range src.Nodes {
+	for _, t := range src.Groups {
 		if verbose {
 			fmt.Printf("Moving %s %q into folder %q...\n", src.Location.Resource, t.Name, targetParent.Name)
 		}
@@ -152,14 +152,14 @@ func runMoveGroups(wp provider.WritableProvider, src *Selection, moveTo string) 
 }
 
 func runRenameGroups(wp provider.WritableProvider, src *Selection, newName string) error {
-	if len(src.Nodes) == 0 {
+	if len(src.Groups) == 0 {
 		return fmt.Errorf("no resources found matching query %q", src.Location.Query)
 	}
-	if len(src.Nodes) > 1 {
-		return fmt.Errorf("rename matched %d resources; refine your query to match exactly one", len(src.Nodes))
+	if len(src.Groups) > 1 {
+		return fmt.Errorf("rename matched %d resources; refine your query to match exactly one", len(src.Groups))
 	}
 
-	target := src.Nodes[0]
+	target := src.Groups[0]
 	ctx := getExecContext()
 
 	if verbose {

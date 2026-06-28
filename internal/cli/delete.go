@@ -81,7 +81,7 @@ func runRemoveMembership(wp provider.WritableProvider, ctx provider.ExecutionCon
 			return err
 		}
 
-		for _, target := range org.Nodes {
+		for _, target := range org.Groups {
 			if dryRun {
 				fmt.Printf("[Dry Run] Would remove %d tracks from playlist %q\n", len(sel.Tracks), target.Name)
 				continue

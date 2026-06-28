@@ -38,15 +38,15 @@ func (r *RekordboxLibrary) GetTracks() []models.Track {
 
 func (r *RekordboxLibrary) GetPlaylists() []models.ResourceGroup {
 	var results []models.ResourceGroup
-	r.collectAllNodes(r.XML.Playlists.Node.Node, "", &results)
+	r.collectAllGroups(r.XML.Playlists.Node.Node, "", &results)
 	return results
 }
 
-func (r *RekordboxLibrary) collectAllNodes(nodes []rekordbox.Node, parent string, out *[]models.ResourceGroup) {
+func (r *RekordboxLibrary) collectAllGroups(nodes []rekordbox.Node, parent string, out *[]models.ResourceGroup) {
 	for _, n := range nodes {
 		*out = append(*out, ToNeutralGroup(n, parent))
 		if len(n.Node) > 0 {
-			r.collectAllNodes(n.Node, n.Name, out)
+			r.collectAllGroups(n.Node, n.Name, out)
 		}
 	}
 }
@@ -123,7 +123,7 @@ func (r *RekordboxLibrary) DeleteGroup(groupID string, groupType models.GroupTyp
 		nodeType = 0
 	}
 
-	_, parentNode, parentSlice, idx := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, groupID, nodeType)
+	_, parentNode, parentSlice, idx := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, groupID, nodeType)
 	if idx == -1 {
 		return fmt.Errorf("group not found")
 	}
@@ -136,7 +136,7 @@ func (r *RekordboxLibrary) DeleteGroup(groupID string, groupType models.GroupTyp
 
 func (r *RekordboxLibrary) LinkTracks(groupID string, trackIDs []string) (int, error) {
 	r.XML.PlaylistsChanged = true
-	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, groupID, 1)
+	node, _, _, _ := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, groupID, 1)
 	if node == nil {
 		return 0, fmt.Errorf("playlist not found")
 	}
@@ -162,7 +162,7 @@ func (r *RekordboxLibrary) LinkTracks(groupID string, trackIDs []string) (int, e
 
 func (r *RekordboxLibrary) UnlinkTracks(groupID string, trackIDs []string) (int, error) {
 	r.XML.PlaylistsChanged = true
-	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, groupID, 1)
+	node, _, _, _ := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, groupID, 1)
 	if node == nil {
 		return 0, fmt.Errorf("playlist not found")
 	}
@@ -186,7 +186,7 @@ func (r *RekordboxLibrary) UnlinkTracks(groupID string, trackIDs []string) (int,
 
 func (r *RekordboxLibrary) UpdateGroup(groupID string, trackIDs []string) error {
 	r.XML.PlaylistsChanged = true
-	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, groupID, 1)
+	node, _, _, _ := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, groupID, 1)
 	if node == nil {
 		return fmt.Errorf("playlist not found")
 	}
@@ -206,7 +206,7 @@ func (r *RekordboxLibrary) RenameGroup(groupID, newName string, groupType models
 	if groupType == models.GroupTypeFolder {
 		nodeType = 0
 	}
-	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, groupID, nodeType)
+	node, _, _, _ := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, groupID, nodeType)
 	if node == nil {
 		return fmt.Errorf("group not found")
 	}
@@ -220,7 +220,7 @@ func (r *RekordboxLibrary) MoveGroup(groupID string, groupType models.GroupType,
 	if groupType == models.GroupTypeFolder {
 		nodeType = 0
 	}
-	node, parentNode, parentSlice, idx := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, groupID, nodeType)
+	node, parentNode, parentSlice, idx := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, groupID, nodeType)
 	if node == nil {
 		return fmt.Errorf("group not found")
 	}
@@ -260,14 +260,14 @@ func (r *RekordboxLibrary) findOrCreateContainer(name string) *rekordbox.Node {
 	return &(*nodes)[len(*nodes)-1]
 }
 
-func (r *RekordboxLibrary) findNodeInTree(nodes *[]rekordbox.Node, parent *rekordbox.Node, name string, nodeType int32) (*rekordbox.Node, *rekordbox.Node, *[]rekordbox.Node, int) {
+func (r *RekordboxLibrary) findGroupInTree(nodes *[]rekordbox.Node, parent *rekordbox.Node, name string, nodeType int32) (*rekordbox.Node, *rekordbox.Node, *[]rekordbox.Node, int) {
 	for i := range *nodes {
 		n := &(*nodes)[i]
 		if n.Name == name && n.Type == nodeType {
 			return n, parent, nodes, i
 		}
 		if len(n.Node) > 0 {
-			if found, foundParent, foundSlice, idx := r.findNodeInTree(&n.Node, n, name, nodeType); found != nil {
+			if found, foundParent, foundSlice, idx := r.findGroupInTree(&n.Node, n, name, nodeType); found != nil {
 				return found, foundParent, foundSlice, idx
 			}
 		}

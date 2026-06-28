@@ -72,7 +72,7 @@ func RunBulkOperation(verb string, targetNames []string, itemIDs []string, actio
 type Selection struct {
 	Items    []models.Resource
 	Tracks   []models.Track
-	Nodes    []models.ResourceGroup
+	Groups    []models.ResourceGroup
 	Location utils.Location
 	Provider provider.Provider
 }
@@ -120,7 +120,7 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 		if t, ok := item.(models.Track); ok {
 			sel.Tracks = append(sel.Tracks, t)
 		} else if g, ok := item.(models.ResourceGroup); ok {
-			sel.Nodes = append(sel.Nodes, g)
+			sel.Groups = append(sel.Groups, g)
 		}
 	}
 
