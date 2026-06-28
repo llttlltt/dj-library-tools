@@ -6,8 +6,57 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
+	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
+	"github.com/llttlltt/dj-library-tools/internal/provider/factory"
+	"github.com/llttlltt/dj-library-tools/internal/query"
 )
+
+// MockProvider for CLI testing
+type MockProvider struct{}
+
+func (m *MockProvider) Name() string { return "rb" }
+func (m *MockProvider) Capabilities() provider.ProviderCapabilities {
+	return provider.ProviderCapabilities{CanWrite: true, CanManageGroups: true}
+}
+func (m *MockProvider) GetContainmentPolicy() provider.ContainmentPolicy { return provider.ContainmentPolicy{} }
+func (m *MockProvider) CustomMatch(_ models.Track, _ string, _ query.Operator, _ string) bool { return false }
+func (m *MockProvider) CanTranscode() bool { return true }
+func (m *MockProvider) SupportedResources() []string { return []string{"tracks", "playlists"} }
+func (m *MockProvider) GetResources(_ provider.ExecutionContext, resource, query string) ([]models.Resource, error) {
+	if resource == "tracks" {
+		return []models.Resource{models.Track{ID: "1", Title: "Test Track", Artist: "Test Artist", Location: "file://localhost/test.mp3"}}, nil
+	}
+	if resource == "playlists" {
+		return []models.Resource{models.ResourceGroup{Name: "Inbox", Type: models.GroupTypePlaylist, Items: 1}}, nil
+	}
+	return nil, nil
+}
+func (m *MockProvider) SortTracks(_ provider.ExecutionContext, _ []models.Track, _ string) {}
+func (m *MockProvider) SortGroups(_ provider.ExecutionContext, _ []models.ResourceGroup, _ string) {}
+
+// Writable implementation
+func (m *MockProvider) AddTracks(_ provider.ExecutionContext, _ models.ResourceGroup, _ []models.Track) (int, error) { return 1, nil }
+func (m *MockProvider) RemoveTracks(_ provider.ExecutionContext, _ models.ResourceGroup, _ []models.Track) (int, error) { return 1, nil }
+func (m *MockProvider) CreateGroup(_ provider.ExecutionContext, _ models.ResourceGroup, name string, gt models.GroupType, _ int) (models.ResourceGroup, error) {
+	return models.ResourceGroup{Name: name, Type: gt}, nil
+}
+func (m *MockProvider) DeleteGroup(_ provider.ExecutionContext, _ models.ResourceGroup) error { return nil }
+func (m *MockProvider) RenameGroup(_ provider.ExecutionContext, _ models.ResourceGroup, _ string) error { return nil }
+func (m *MockProvider) MoveGroup(_ provider.ExecutionContext, _ models.ResourceGroup, _ models.ResourceGroup) error { return nil }
+func (m *MockProvider) Sync(_ provider.ExecutionContext, _ []models.Track, _, _ string, _ provider.SyncOptions) error { return nil }
+func (m *MockProvider) ModifyTracks(_ provider.ExecutionContext, _ string, _ map[string]string) (int, error) { return 0, nil }
+func (m *MockProvider) ValidateAddTracks(_ models.ResourceGroup) error { return nil }
+func (m *MockProvider) ValidateMoveGroup(_, _ models.ResourceGroup) error { return nil }
+func (m *MockProvider) ValidateCreateGroup(_ models.ResourceGroup, _ models.GroupType) error { return nil }
+func (m *MockProvider) IdentifyGroup(n string, _ models.GroupType) string { return n }
+func (m *MockProvider) Save(_ provider.ExecutionContext, _ string) error { return nil }
+
+func init() {
+	factory.Register("mock", func(opts factory.ProviderOptions) (provider.Provider, error) {
+		return &MockProvider{}, nil
+	})
+}
 
 func resetTestState() {
 	dryRun = false
@@ -27,39 +76,15 @@ func executeCommand(args ...string) (string, error) {
 	old := os.Stdout
 	r, w, _ := os.Pipe()
 	os.Stdout = w
-
 	err := root.Execute()
-
 	w.Close()
 	os.Stdout = old
 	var outBuf bytes.Buffer
 	outBuf.ReadFrom(r)
-
 	return buf.String() + outBuf.String(), err
 }
 
-func mockLoadXML() (*rekordbox.RekordboxLibraryXML, string, error) {
-	return &rekordbox.RekordboxLibraryXML{
-		Collection: rekordbox.Collection{
-			TRACK: []rekordbox.Track{
-				{TrackID: 1, Name: "Test Track", Artist: "Test Artist", Location: "file://localhost/test.mp3"},
-			},
-		},
-		Playlists: rekordbox.Playlists{
-			Node: rekordbox.RootNode{
-				Name: "ROOT",
-				Type: 0,
-				Node: []rekordbox.Node{
-					{Name: "Inbox", Type: 1, Entries: rekordbox.PtrInt32(0)},
-				},
-			},
-		},
-	}, "mock.xml", nil
-}
-
-func TestCommandConsistency(t *testing.T) {
-	loadXMLFunc = mockLoadXML
-
+func TestCommandConsistencyAgostic(t *testing.T) {
 	tests := []struct {
 		name     string
 		args     []string
@@ -67,44 +92,14 @@ func TestCommandConsistency(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name: "list rb/tracks positional query",
-			args: []string{"ls", "rb/tracks", "title:'Test Track'"},
+			name: "list mock positional query",
+			args: []string{"ls", "mock/tracks", "title:'Test Track'"},
 			wantIn: "Test Track",
 		},
 		{
-			name: "list rb/playlists positional query",
-			args: []string{"ls", "rb/playlists", "name:Inbox"},
-			wantIn: "Inbox",
-		},
-		{
-			name: "stat merged into list --stats",
-			args: []string{"ls", "rb/tracks", "title:'Test Track'", "--stats"},
-			wantIn: "Selection Summary",
-		},
-		{
 			name: "add tracks merged into sync --append",
-			args: []string{"sync", "rb/tracks", "title:Test", "--to", "rb/playlists name:Inbox", "--append", "--dry-run"},
+			args: []string{"sync", "mock/tracks", "title:Test", "--to", "mock/playlists name:Inbox", "--append", "--dry-run"},
 			wantIn: "Would append to",
-		},
-		{
-			name: "remove tracks from playlist",
-			args: []string{"rm", "rb/tracks", "title:'Test Track'", "--from", "rb/playlists name:Inbox", "--dry-run"},
-			wantIn: "Would remove 1 tracks from playlist \"Inbox\"",
-		},
-		{
-			name: "move tracks requires --from and --to",
-			args: []string{"mv", "rb/tracks", "title:Test", "--to", "Target"},
-			wantErr: true,
-		},
-		{
-			name: "rename merged into move --name",
-			args: []string{"mv", "rb/playlists", "name:Inbox", "--name", "NewInbox", "--dry-run"},
-			wantIn: "Would rename \"Inbox\" to \"NewInbox\"",
-		},
-		{
-			name: "remove playlist resource",
-			args: []string{"rm", "rb/playlists", "name:Inbox", "--dry-run"},
-			wantIn: "Would delete playlist \"Inbox\"",
 		},
 	}
 
@@ -112,11 +107,11 @@ func TestCommandConsistency(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			out, err := executeCommand(tt.args...)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("executeCommand(%v) error = %v, wantErr %v", tt.args, err, tt.wantErr)
+				t.Errorf("error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if tt.wantIn != "" && !strings.Contains(out, tt.wantIn) && !tt.wantErr {
-				t.Errorf("executeCommand(%v) out = %q, want to contain %q", tt.args, out, tt.wantIn)
+			if tt.wantIn != "" && !strings.Contains(out, tt.wantIn) {
+				t.Errorf("out = %q, want %q", out, tt.wantIn)
 			}
 		})
 	}

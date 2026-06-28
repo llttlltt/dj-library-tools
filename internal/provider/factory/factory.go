@@ -6,7 +6,6 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
-	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 )
 
 var (
@@ -19,9 +18,6 @@ type ProviderFactory func(opts ProviderOptions) (provider.Provider, error)
 type ProviderOptions struct {
 	FilePath string
 	Config   *config.AppConfig
-	
-	// MockXML is for internal testing hooks
-	MockXML *rekordbox.RekordboxLibraryXML
 }
 
 // Register makes a provider factory available by the provided name.

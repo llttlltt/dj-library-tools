@@ -103,10 +103,6 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 	}
 
 	if strings.Contains(loc.Provider, "rb") || strings.Contains(loc.Provider, "rekordbox") {
-		if rbXML, xmlPath, err := loadXMLFunc(); err == nil && xmlPath == "mock.xml" {
-			opts.MockXML = rbXML
-			opts.FilePath = xmlPath
-		}
 	}
 
 	prov, err := factory.NewProvider(loc.Provider, opts)
