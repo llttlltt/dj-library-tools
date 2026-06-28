@@ -31,7 +31,7 @@ func HandleError(err error) error {
 
 func getExecContext() provider.ExecutionContext {
 	return provider.ExecutionContext{
-		DryRun:  dryRun,
+		Apply:   apply,
 		Verbose: verbose,
 	}
 }
@@ -40,7 +40,7 @@ func ResolveSelection(locStr string, queryOverride string) (*resolver.Selection,
 	// Standard resolution with global context
 	opts := resolver.ResolveOptions{
 		FilePath: filePath,
-		DryRun:   dryRun,
+		Apply:    apply,
 		Verbose:  verbose,
 	}
 	return resolver.ResolveSelection(locStr, queryOverride, opts)

@@ -161,7 +161,7 @@ func (s *m3uSystemService) Sync(ctx provider.ExecutionContext, tracks []models.T
 		ExportDest:   opts.ExportDest,
 		ExportFormat: opts.ExportFormat,
 		PathMaps:     opts.PathMaps,
-	}, ctx.DryRun, ctx.Verbose, opts.AppendOnly)
+	}, ctx.Apply, ctx.Verbose, opts.AppendOnly)
 	if err != nil { return err }
 	return s.Save(ctx, "")
 }

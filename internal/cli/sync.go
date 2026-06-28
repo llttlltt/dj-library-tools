@@ -53,7 +53,7 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 
 			srcOpts := resolver.ResolveOptions{
 				FilePath: filePath,
-				DryRun:   dryRun,
+				Apply:   apply,
 				Verbose:  verbose,
 			}
 
@@ -65,7 +65,7 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 			for _, targetStr := range syncTo {
 				tgtOpts := resolver.ResolveOptions{
 					FilePath: toFilePath,
-					DryRun:   dryRun,
+					Apply:   apply,
 					Verbose:  verbose,
 				}
 				if tgtOpts.FilePath == "" {
@@ -79,7 +79,7 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 
 				prov := tgt.Provider
 
-				if dryRun {
+				if !apply {
 					action := "sync"
 					if syncAppend {
 						action = "append to"
@@ -106,7 +106,7 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 					targetTracks, err := prov.Tracks().List(getExecContext(), "")
 					if err == nil {
 						matcher := sync.NewMatcher(targetTracks).WithKeys(matchFields)
-						matches := sync.NewOrchestrator(nil, dryRun, verbose).WithMatcher(matcher).Join(src.Tracks, matchFields)
+						matches := sync.NewOrchestrator(nil, apply, verbose).WithMatcher(matcher).Join(src.Tracks, matchFields)
 						
 						if err := prov.Tracks().UpdateBatch(getExecContext(), matches, metadataFields); err != nil {
 							return HandleError(err)

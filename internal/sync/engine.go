@@ -20,13 +20,13 @@ type ProgressListener interface {
 
 type Orchestrator struct {
 	Library    library.WritableLibrary
-	DryRun     bool
+	Apply     bool
 	Verbose    bool
 	Listener   ProgressListener
 	Matcher    *Matcher
 }
 
-func NewOrchestrator(lib library.WritableLibrary, dryRun, verbose bool) *Orchestrator {
+func NewOrchestrator(lib library.WritableLibrary, apply, verbose bool) *Orchestrator {
 	var tracks []models.Track
 	if lib != nil {
 		resources := lib.GetResources("track")
@@ -37,7 +37,7 @@ func NewOrchestrator(lib library.WritableLibrary, dryRun, verbose bool) *Orchest
 	
 	return &Orchestrator{
 		Library:    lib,
-		DryRun:     dryRun,
+		Apply:     apply,
 		Verbose:    verbose,
 		Matcher:    NewMatcher(tracks),
 	}
@@ -55,8 +55,8 @@ type SyncOptions struct {
 }
 
 // SyncToLibrary is a high-level helper that coordinates a full sync from source tracks to a target library.
-func SyncToLibrary(lib library.WritableLibrary, tracks []models.Track, targetQuery string, options SyncOptions, dryRun, verbose bool, appendOnly bool) error {
-	orch := NewOrchestrator(lib, dryRun, verbose)
+func SyncToLibrary(lib library.WritableLibrary, tracks []models.Track, targetQuery string, options SyncOptions, apply, verbose bool, appendOnly bool) error {
+	orch := NewOrchestrator(lib, apply, verbose)
 	return orch.SyncToLibrary(tracks, targetQuery, options, appendOnly)
 }
 
@@ -178,7 +178,7 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opt
 					continue
 				}
 
-				if !o.DryRun {
+				if !o.Apply {
 					if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
 						errors <- fmt.Errorf("mkdir error for %s: %v", track.Title, err)
 						results <- ""
@@ -224,7 +224,7 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opt
 		if o.Verbose { fmt.Printf("  Error: %v\n", err) }
 	}
 
-	if !o.DryRun {
+	if !o.Apply {
 		if appendOnly {
 			o.Library.AddTracks(targetID, trackIDs)
 		} else {

@@ -30,7 +30,7 @@ type ContainmentPolicy struct {
 
 // ExecutionContext holds runtime state for provider operations.
 type ExecutionContext struct {
-	DryRun  bool
+	Apply   bool // If true, changes are persisted. If false, operations should be previewed/simulated.
 	Verbose bool
 }
 

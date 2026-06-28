@@ -57,7 +57,7 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int, pare
 			
 			res, _ := prov.Groups().List(getExecContext(), query)
 			if len(res) == 0 {
-				if dryRun {
+				if !apply {
 					fmt.Printf("[Dry Run] Would create folder %q in %q\n", part, currentParent)
 				} else {
 					_, err := prov.Groups().Create(getExecContext(), models.ResourceGroup{Name: currentParent}, part, models.GroupKindFolder, -1)
@@ -88,7 +88,7 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int, pare
 
 	ctx := getExecContext()
 
-	if dryRun {
+	if !apply {
 		fmt.Printf("[Dry Run] Would create %s %q in folder %q at position %d with %d tracks\n", sel.Location.Resource, name, createIn, createAt, len(tracks))
 		return nil
 	}

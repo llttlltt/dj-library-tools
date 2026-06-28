@@ -32,7 +32,7 @@ func newListCmd() *cobra.Command {
 				FilePath:      filePath,
 				FilterMissing: filterMissing,
 				FilterExists:  filterExists,
-				DryRun:        dryRun,
+				Apply:        apply,
 				Verbose:       verbose,
 			}
 
