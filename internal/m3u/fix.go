@@ -158,21 +158,10 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 		}
 
 		if opts.M3U8 {
-			meta, err := ExtractMetadata(foundPath)
-			if err != nil {
-				if opts.Verbose {
-					fmt.Printf("  ⚠️  Metadata error for %s: %v\n", foundPath, err)
-				}
-				if !opts.DryRun {
-					if _, err := fmt.Fprintln(tmpFile, resolvedPath); err != nil {
-						return nil, err
-					}
-				}
-			} else {
-				if !opts.DryRun {
-					if err := WriteM3U8Entry(tmpFile, meta, resolvedPath, meta.Duration); err != nil {
-						return nil, fmt.Errorf("failed to write M3U8 entry: %w", err)
-					}
+			displayName := filepath.Base(resolvedPath)
+			if !opts.DryRun {
+				if err := WriteM3U8EntryRaw(tmpFile, displayName, resolvedPath, -1); err != nil {
+					return nil, fmt.Errorf("failed to write M3U8 entry: %w", err)
 				}
 			}
 		} else {
