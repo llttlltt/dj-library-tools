@@ -153,3 +153,10 @@ func (e *Engine) applyChanges(track *rekordbox.Track, changes map[string]string)
 		}
 	}
 }
+
+func (e *Engine) PrintStats(res *StatResult) {
+	// This will be moved to cli later, but for now we're just moving it out of query
+	fmt.Printf("\n--- Statistics ---\n")
+	fmt.Printf("Total Tracks: %d\n", res.Count)
+	fmt.Printf("Average BPM:  %.2f\n", res.AvgBPM)
+}
