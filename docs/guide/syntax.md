@@ -39,6 +39,23 @@ The query part supports a powerful set of operators and boolean logic.
 | **NOT** | `!` | `!genre:Pop` |
 | **Group** | `(...)` | `(genre:House \|\| genre:Techno) && rating:>3` |
 
+## Deep Metadata (Path Syntax)
+
+For collections like hotcues and beatgrids, you can traverse properties using a hierarchical path:
+
+`[Collection] . [Index] / [Property] - [Stat]`
+
+- **`hotcues.1/color:red`**: Find tracks where the first hotcue is red.
+- **`beatgrids/bpm-drift:<0.1`**: Find tracks with very consistent "dynamic" grids.
+- **`beatgrids-density:>60`**: Find "busy" grids with many markers.
+- **`hotcues-count:8`**: Find tracks with all 8 hotcues used.
+
+### Supported Collections
+
+- `hotcues`: Properties: `color`, `name`, `position`.
+- `memorycues`: Properties: `color`, `name`, `position`.
+- `beatgrids`: Properties: `bpm`, `position`. Stats: `-drift`, `-density`, `-count`.
+
 ## Advanced Filters
 
 Some providers support advanced filtering patterns (e.g., membership checks or cue properties). See the individual **[Providers](query/providers/index.md)** pages for details on which fields support these.
