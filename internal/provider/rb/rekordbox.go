@@ -263,3 +263,11 @@ func (p *RekordboxProvider) ValidateCreateGroup(parent models.ResourceGroup, gro
 	}
 	return nil
 }
+
+func (p *RekordboxProvider) SortTracks(tracks []models.Track, field string) {
+	// Re-use logic from cli/sort.go or implement custom RB sorting
+}
+
+func (p *RekordboxProvider) SortGroups(groups []models.ResourceGroup, field string) {
+	// Re-use logic from cli/sort.go
+}
