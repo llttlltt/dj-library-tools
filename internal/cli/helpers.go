@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/models"
@@ -102,8 +101,6 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 		Config:   cfg,
 	}
 
-	if strings.Contains(loc.Provider, "rb") || strings.Contains(loc.Provider, "rekordbox") {
-	}
 
 	prov, err := factory.NewProvider(loc.Provider, opts)
 	if err != nil {
