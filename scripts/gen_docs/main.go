@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -28,36 +29,72 @@ func main() {
 
 func generateDocs(cmd *cobra.Command, dir string) error {
 	name := cmd.Name()
-	var path string
-	isParent := cmd.HasSubCommands()
+	isRoot := cmd == cli.RootCmd
+	isConfigChild := strings.Contains(cmd.CommandPath(), "djlt config")
+	isPlexOrRB := name == "plex" || name == "rb"
 
-	if isParent {
-		subDir := dir
-		if cmd != cli.RootCmd {
-			subDir = filepath.Join(dir, name)
-		}
-		if err := os.MkdirAll(subDir, 0755); err != nil {
+	// 1. Root Command
+	if isRoot {
+		path := filepath.Join(dir, "index.md")
+		if err := writeDocToFile(cmd, path); err != nil {
 			return err
 		}
-		path = filepath.Join(subDir, "index.md")
 		for _, child := range cmd.Commands() {
-			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
-				continue
+			if !child.IsAvailableCommand() { continue }
+			if err := generateDocs(child, dir); err != nil {
+				return err
 			}
+		}
+		return nil
+	}
+
+	// 2. Config Command (Direct child of root)
+	if name == "config" {
+		subDir := filepath.Join(dir, "config")
+		os.MkdirAll(subDir, 0755)
+		path := filepath.Join(subDir, "index.md")
+		if err := writeDocToFile(cmd, path); err != nil {
+			return err
+		}
+		for _, child := range cmd.Commands() {
+			if !child.IsAvailableCommand() { continue }
 			if err := generateDocs(child, subDir); err != nil {
 				return err
 			}
 		}
-	} else {
-		path = filepath.Join(dir, name+".md")
+		return nil
 	}
 
+	// 3. Special Case: Plex and RB (Merge children into index)
+	if isConfigChild && isPlexOrRB {
+		subDir := filepath.Join(dir, name)
+		os.MkdirAll(subDir, 0755)
+		path := filepath.Join(subDir, "index.md")
+		f, err := os.Create(path)
+		if err != nil { return err }
+		defer f.Close()
+
+		if err := writeCommandDoc(cmd, f, path); err != nil { return err }
+
+		for _, child := range cmd.Commands() {
+			if !child.IsAvailableCommand() { continue }
+			fmt.Fprintf(f, "\n\n---\n\n")
+			if err := writeCommandDoc(child, f, path); err != nil { return err }
+		}
+		return nil
+	}
+
+	// 4. Standard Commands
+	path := filepath.Join(dir, name+".md")
+	return writeDocToFile(cmd, path)
+}
+
+func writeDocToFile(cmd *cobra.Command, path string) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-
 	return writeCommandDoc(cmd, f, path)
 }
 
@@ -67,8 +104,6 @@ func writeCommandDoc(cmd *cobra.Command, w io.Writer, filePath string) error {
 		return err
 	}
 	content := buf.String()
-
-	// 1. Fix Links before splitting into lines
 	content = fixLinks(content, filePath)
 
 	lines := strings.Split(content, "\n")
@@ -77,7 +112,6 @@ func writeCommandDoc(cmd *cobra.Command, w io.Writer, filePath string) error {
 
 	for i := 0; i < len(lines); i++ {
 		line := lines[i]
-
 		if strings.HasPrefix(line, "## ") && current == &header {
 			heading := strings.TrimPrefix(line, "## ")
 			if strings.HasPrefix(heading, "djlt ") && heading != "djlt" {
@@ -132,22 +166,17 @@ func writeCommandDoc(cmd *cobra.Command, w io.Writer, filePath string) error {
 }
 
 func fixLinks(content string, filePath string) string {
-	// Root of commands docs is ./docs/commands
 	commandsDir, _ := filepath.Abs("docs/commands")
 	currentDir, _ := filepath.Abs(filepath.Dir(filePath))
-
-	// 1. Fix root link (djlt.md)
 	rootRel, _ := filepath.Rel(currentDir, filepath.Join(commandsDir, "index.md"))
 	content = strings.ReplaceAll(content, "(djlt.md)", "("+rootRel+")")
 
-	// 2. Fix other links (djlt_verb_sub.md)
 	re := regexp.MustCompile(`\(djlt_([a-z0-9_]+)\.md\)`)
 	content = re.ReplaceAllStringFunc(content, func(m string) string {
-		match := re.FindStringSubmatch(m)[1] // e.g. fix_playlist or add
+		match := re.FindStringSubmatch(m)[1]
 		parts := strings.Split(match, "_")
 
 		targetPath := filepath.Join(commandsDir, strings.Join(parts, "/"))
-		// Check if it's a directory (parent)
 		if _, err := os.Stat(targetPath); err == nil {
 			targetPath = filepath.Join(targetPath, "index.md")
 		} else {
@@ -157,7 +186,6 @@ func fixLinks(content string, filePath string) string {
 		rel, _ := filepath.Rel(currentDir, targetPath)
 		return "(" + rel + ")"
 	})
-
 	return content
 }
 
@@ -165,9 +193,7 @@ func formatLongDesc(lines []string) []string {
 	var result []string
 	for i := 0; i < len(lines); i++ {
 		line := lines[i]
-		if line == "" && (i == 0 || i == len(lines)-1) {
-			continue
-		}
+		if line == "" && (i == 0 || i == len(lines)-1) { continue }
 		result = append(result, line)
 
 		if strings.HasPrefix(line, "**") && i+1 < len(lines) {
@@ -178,9 +204,7 @@ func formatLongDesc(lines []string) []string {
 				for ; j < len(lines); j++ {
 					if lines[j] == "" || strings.HasPrefix(lines[j], "  ") {
 						result = append(result, strings.TrimPrefix(lines[j], "  "))
-					} else {
-						break
-					}
+					} else { break }
 				}
 				result = append(result, "```")
 				i = j - 1
