@@ -97,13 +97,8 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 
 	cfg, _ := config.LoadAppConfig()
 	
-	path := filePath
-	if loc.Provider == "m3u" || loc.Provider == "m3u8" {
-		path = loc.Resource
-	}
-
 	opts := factory.ProviderOptions{
-		FilePath: path,
+		FilePath: filePath,
 		Config:   cfg,
 	}
 
@@ -122,38 +117,17 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 	sel := &Selection{Location: loc, Provider: prov}
 	ctx := getExecContext()
 	
-	isM3U := loc.Provider == "m3u" || loc.Provider == "m3u8"
-	if isM3U {
-		if strings.HasSuffix(loc.Resource, "/tracks") {
-			loc.Resource = "tracks"
-		} else {
-			loc.Resource = "playlists"
-		}
+	items, err := prov.GetResources(ctx, loc.Resource, loc.Query)
+	if err != nil {
+		return nil, err
 	}
+	sel.Items = items
 
-	if loc.Resource == "tracks" {
-		tracks, err := prov.GetTracks(ctx, loc.Query)
-		if err != nil {
-			return nil, err
-		}
-		sel.Tracks = tracks
-		for _, t := range tracks {
-			sel.Items = append(sel.Items, t)
-		}
-	} else {
-		var groups []models.ResourceGroup
-		var err error
-		if loc.Resource == "folders" {
-			groups, err = prov.GetFolders(ctx, loc.Query)
-		} else {
-			groups, err = prov.GetPlaylists(ctx, loc.Query)
-		}
-		if err != nil {
-			return nil, err
-		}
-		sel.Nodes = groups
-		for _, n := range groups {
-			sel.Items = append(sel.Items, n)
+	for _, item := range items {
+		if t, ok := item.(models.Track); ok {
+			sel.Tracks = append(sel.Tracks, t)
+		} else if g, ok := item.(models.ResourceGroup); ok {
+			sel.Nodes = append(sel.Nodes, g)
 		}
 	}
 
