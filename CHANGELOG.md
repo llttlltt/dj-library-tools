@@ -1,5 +1,40 @@
 # Changelog
 
+## [1.8.0](https://github.com/llttlltt/dj-library-tools/compare/v1.7.2...v1.8.0) (2026-06-28)
+
+
+### Features
+
+* **cli:** add global --missing and --exists flags for physical health filtering ([71d553b](https://github.com/llttlltt/dj-library-tools/commit/71d553b1307962c57cb7538ce007b7c77c685911))
+* **cli:** decouple fix command and implement self-healing M3U provider ([a14f378](https://github.com/llttlltt/dj-library-tools/commit/a14f378584f1c88d73a7f2caa9dbf42848b8756b))
+* **cli:** enhance verbosity and move metadata logic to providers ([3652b02](https://github.com/llttlltt/dj-library-tools/commit/3652b028e70eacb95ce1e6c31c8cf037bb8fc56b))
+* **cli:** finalize 100% architectural agnosticism by removing last provider traces ([9fff55a](https://github.com/llttlltt/dj-library-tools/commit/9fff55a1c249e82d36049a8d83aae9513121086a))
+* **cli:** finalize agnosticism and standardize file flags ([1431476](https://github.com/llttlltt/dj-library-tools/commit/14314764a92770934fc5048ceb5e79a1472c4341))
+* **cli:** implement metadata reconciliation flags and dynamic matching in sync ([a9a53f1](https://github.com/llttlltt/dj-library-tools/commit/a9a53f19e226771916bd7f0ec574909eca358f5b))
+* **cli:** implement modify command with bulk metadata updates and file relocation ([3efe008](https://github.com/llttlltt/dj-library-tools/commit/3efe008f6907a4ff22b94cbfda2f9dd642a74aab))
+* **cli:** implement user-friendly error handling for provider sentinels ([d34600b](https://github.com/llttlltt/dj-library-tools/commit/d34600b083c04e8950f91828be4821fa40eeff7a))
+* **cli:** remove update command from root command and delete orphan file ([c02f26c](https://github.com/llttlltt/dj-library-tools/commit/c02f26c647ad4bee6bfe85fa31e4462df5e6425a))
+* **cli:** replace --xml flag with standardized --file flag ([133314c](https://github.com/llttlltt/dj-library-tools/commit/133314cb415b3e4567aefbcdd3343382281ae9f5))
+* **cli:** use containment policies for agnostic command validation ([684cbfe](https://github.com/llttlltt/dj-library-tools/commit/684cbfe10d163264ed5d3ee1c1bb85d0758fa2b4))
+* **core:** harden provider interfaces and introduce neutral metadata models ([6c5a9b3](https://github.com/llttlltt/dj-library-tools/commit/6c5a9b352500c3065706dfe915a8e58e923b8c15))
+* **provider/rb:** implement full metadata compliance and enhanced verbose reporting ([46ee68a](https://github.com/llttlltt/dj-library-tools/commit/46ee68afcac287b988b048d5aede4cb6ff809576))
+* **provider:** implement 0-255 unified rating scale for plex and rekordbox ([4d50bd3](https://github.com/llttlltt/dj-library-tools/commit/4d50bd3d8581c0231e2000a96b9df02bf6163ed4))
+* **provider:** implement GetResources and unify agnostic selection logic ([4070b86](https://github.com/llttlltt/dj-library-tools/commit/4070b86310680116233758dc867bc6199c0c43b9))
+* **provider:** implement SupportedResources and IdentifyGroup for full agnosticism ([796717e](https://github.com/llttlltt/dj-library-tools/commit/796717eb74f4b9f316dd203b40b1751620808e60))
+* **provider:** move sorting business logic into providers ([9351418](https://github.com/llttlltt/dj-library-tools/commit/9351418b678dcbc860ebd5231717352f45e349ea))
+* **provider:** split Provider interface into Readable, Searchable, and Writable ([24cf966](https://github.com/llttlltt/dj-library-tools/commit/24cf966df0abb074baca0ed7ace4000d50758b1b))
+* **provider:** unify discovery in GetResources and harden writable interface ([9e63e8b](https://github.com/llttlltt/dj-library-tools/commit/9e63e8b61f0b5f673491a104ac3880b781f1cc78))
+* **query:** delegate provider-specific matching to CustomMatcher interface ([98ee29c](https://github.com/llttlltt/dj-library-tools/commit/98ee29cc37d26d0086ccfebd0d411aaf56f2b085))
+* **sync:** implement agnostic Join logic for metadata reconciliation ([e20f609](https://github.com/llttlltt/dj-library-tools/commit/e20f6094947c08287a978e158a7344f8574c9485))
+* **utils:** make location parser purely syntactic and provider-agnostic ([27c7bdc](https://github.com/llttlltt/dj-library-tools/commit/27c7bdcc2372bacccc0c8a54f2ac933cd88f5b61))
+
+
+### Bug Fixes
+
+* **cli:** enforce rekordbox hierarchy constraints for tracks and nodes ([af83429](https://github.com/llttlltt/dj-library-tools/commit/af834299fd6a8d3ed2cba8f62d41d2c3b035700b))
+* **cli:** resolve linting warnings and align CreateGroup signature ([32072fb](https://github.com/llttlltt/dj-library-tools/commit/32072fbeea4f41ceb505d5ef2cfce9a21415f453))
+* **lint:** use tagged switch for kind in engine mock tests ([141be8b](https://github.com/llttlltt/dj-library-tools/commit/141be8b19af7e8ae75df5f2e16bd2a9b281b1e11))
+
 ## [1.7.2](https://github.com/llttlltt/dj-library-tools/compare/v1.7.1...v1.7.2) (2026-06-27)
 
 
