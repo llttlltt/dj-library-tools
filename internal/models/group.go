@@ -1,6 +1,5 @@
 package models
 
-import "strconv"
 
 // ResourceGroup represents a container like a playlist or folder.
 type ResourceGroup struct {
@@ -30,17 +29,8 @@ func (g ResourceGroup) GetKind() string { return g.Kind.String() }
 
 // Value returns a string representation of a group property for querying.
 func (g ResourceGroup) Value(key string) string {
-	switch key {
-	case "id":
-		return g.ID
-	case "name":
-		return g.Name
-	case "parent", "folder":
-		return g.ParentFolder
-	case "items":
-		return strconv.Itoa(g.Items)
-	case "kind":
-		return string(g.Kind)
+	if def, ok := GroupFields[key]; ok {
+		return def.Accessor(g)
 	}
 	return ""
 }

@@ -137,7 +137,7 @@ func (s *m3uSystemService) Containment() provider.ContainmentPolicy { return pro
 func (s *m3uSystemService) MetadataCapabilities() []string { return []string{"display", "location"} }
 func (s *m3uSystemService) SupportedResources() []string { return []string{"tracks", "playlists"} }
 func (s *m3uSystemService) TableHeaders() []string {
-	return []string{"Duration", "Display Name", "Location"}
+	return []string{"duration", "display", "location"}
 }
 
 func (s *m3uSystemService) Save(ctx provider.ExecutionContext, path string) error {

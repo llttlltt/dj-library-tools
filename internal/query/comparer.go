@@ -4,31 +4,21 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-)
 
-// FieldType defines the data type of a field for evaluation purposes.
-type FieldType int
-
-const (
-	TypeString FieldType = iota
-	TypeNumeric
+	"github.com/llttlltt/dj-library-tools/internal/models"
 )
 
 // Schema maps field names to their types for the query engine.
-var Schema = map[string]FieldType{
-	"playlists":  TypeNumeric,
-	"hotcues":    TypeNumeric,
-	"memorycues": TypeNumeric,
-	"beatgrids":  TypeNumeric,
-	"rating":     TypeNumeric,
-	"plays":      TypeNumeric,
-	"year":       TypeNumeric,
-	"bpm":        TypeNumeric,
-	"bitrate":    TypeNumeric,
-	"samplerate": TypeNumeric,
-	"size":       TypeNumeric,
-	"items":      TypeNumeric,
-	"duration":   TypeNumeric,
+// It is derived from the universal models.TrackFields and models.GroupFields.
+func getFieldKind(field string) models.FieldKind {
+	field = strings.ToLower(field)
+	if def, ok := models.TrackFields[field]; ok {
+		return def.Kind
+	}
+	if def, ok := models.GroupFields[field]; ok {
+		return def.Kind
+	}
+	return models.KindString
 }
 
 // Compare executes a comparison between two values based on the operator and field type.
@@ -37,8 +27,7 @@ func Compare(field string, fieldValue, targetValue string, op Operator) bool {
 		return matchRange(fieldValue, targetValue)
 	}
 
-	fieldType := Schema[strings.ToLower(field)]
-	if fieldType == TypeNumeric {
+	if getFieldKind(field) == models.KindNumeric {
 		return matchNumeric(fieldValue, targetValue, op)
 	}
 

@@ -224,7 +224,7 @@ func (s *rekordboxSystemService) SupportedResources() []string {
 }
 
 func (s *rekordboxSystemService) TableHeaders() []string {
-	return []string{"BPM", "Key", "Artist", "Title", "Rating"}
+	return []string{"bpm", "key", "artist", "title", "rating"}
 }
 
 func (s *rekordboxSystemService) Save(ctx provider.ExecutionContext, path string) error {

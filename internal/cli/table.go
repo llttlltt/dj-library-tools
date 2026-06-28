@@ -46,17 +46,16 @@ func (t *Table) Render() {
 	}
 }
 
-func renderTrackTable(prov provider.Provider, tracks []models.Track) {
-	headers := prov.System().TableHeaders()
+func renderTrackTable(prov provider.Provider, tracks []models.Track, columns []string) {
+	if len(columns) == 0 {
+		columns = prov.System().TableHeaders()
+	}
 
-	t := &Table{Headers: headers}
+	t := &Table{Headers: columns}
 	for _, tr := range tracks {
-		row := make([]string, len(headers))
-		for i, h := range headers {
-			row[i] = tr.Value(strings.ToLower(h))
-			// Handle formatted fields
-			if h == "Display Name" { row[i] = tr.Display }
-			if h == "Location" { row[i] = tr.Location }
+		row := make([]string, len(columns))
+		for i, col := range columns {
+			row[i] = tr.Value(strings.ToLower(col))
 		}
 		t.Rows = append(t.Rows, row)
 	}

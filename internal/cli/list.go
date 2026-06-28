@@ -17,6 +17,7 @@ func newListCmd() *cobra.Command {
 	var jsonOutput bool
 	var filterMissing bool
 	var filterExists bool
+	var columns []string
 
 	cmd := &cobra.Command{
 		Use:     "ls [resource] [query]",
@@ -32,7 +33,7 @@ func newListCmd() *cobra.Command {
 				FilePath:      filePath,
 				FilterMissing: filterMissing,
 				FilterExists:  filterExists,
-				Apply:        apply,
+				Apply:         apply,
 				Verbose:       verbose,
 			}
 
@@ -45,7 +46,7 @@ func newListCmd() *cobra.Command {
 				return listProviderStats(sel, jsonOutput)
 			}
 
-			return listProvider(sel, listSort, jsonOutput)
+			return listProvider(sel, listSort, jsonOutput, columns)
 		},
 	}
 	cmd.Flags().StringVar(&listSort, "sort", "", "Sort results by field (e.g. bpm, artist, title)")
@@ -53,6 +54,7 @@ func newListCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output results in JSON format")
 	cmd.Flags().BoolVar(&filterMissing, "missing", false, "Filter for tracks where the physical file is missing")
 	cmd.Flags().BoolVar(&filterExists, "exists", false, "Filter for tracks where the physical file exists")
+	cmd.Flags().StringSliceVar(&columns, "columns", []string{}, "Comma-separated list of columns to display")
 	return cmd
 }
 
@@ -124,7 +126,7 @@ func listProviderStats(sel *resolver.Selection, jsonOutput bool) error {
 	return nil
 }
 
-func listProvider(sel *resolver.Selection, listSort string, jsonOutput bool) error {
+func listProvider(sel *resolver.Selection, listSort string, jsonOutput bool, columns []string) error {
 	if sel.Location.Resource == "playlists" || sel.Location.Resource == "folders" {
 		if jsonOutput {
 			data, _ := json.MarshalIndent(sel.Groups, "", "  ")
@@ -157,7 +159,7 @@ func listProvider(sel *resolver.Selection, listSort string, jsonOutput bool) err
 	if listSort != "" {
 		sel.Provider.Tracks().Sort(getExecContext(), sel.Tracks, listSort)
 	}
-	renderTrackTable(sel.Provider, sel.Tracks)
+	renderTrackTable(sel.Provider, sel.Tracks, columns)
 	return nil
 }
 
