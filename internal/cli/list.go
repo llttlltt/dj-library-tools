@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/llttlltt/dj-library-tools/internal/resolver"
 	"github.com/spf13/cobra"
 )
 
@@ -51,7 +52,7 @@ type StatResult struct {
 	TotalTempo float64
 }
 
-func listProviderStats(sel *Selection) error {
+func listProviderStats(sel *resolver.Selection) error {
 	if sel.Location.Resource != "tracks" {
 		return fmt.Errorf("stats only available for track resources")
 	}
@@ -109,7 +110,7 @@ func listProviderStats(sel *Selection) error {
 	return nil
 }
 
-func listProvider(sel *Selection, listSort string) error {
+func listProvider(sel *resolver.Selection, listSort string) error {
 	if sel.Location.Resource == "playlists" || sel.Location.Resource == "folders" {
 		if jsonOutput {
 			data, _ := json.MarshalIndent(sel.Groups, "", "  ")

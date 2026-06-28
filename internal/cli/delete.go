@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/resolver"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/spf13/cobra"
 )
@@ -47,7 +48,7 @@ Example:
 	return cmd
 }
 
-func runDeleteResources(prov provider.Provider, ctx provider.ExecutionContext, sel *Selection, recursive bool) error {
+func runDeleteResources(prov provider.Provider, ctx provider.ExecutionContext, sel *resolver.Selection, recursive bool) error {
 	if len(sel.Items) == 0 {
 		fmt.Println("No resources matched the query.")
 		return nil
@@ -79,7 +80,7 @@ func runDeleteResources(prov provider.Provider, ctx provider.ExecutionContext, s
 	return sel.Provider.System().Save(ctx, "")
 }
 
-func runRemoveMembership(prov provider.Provider, ctx provider.ExecutionContext, sel *Selection, from []string) error {
+func runRemoveMembership(prov provider.Provider, ctx provider.ExecutionContext, sel *resolver.Selection, from []string) error {
 	if len(sel.Tracks) == 0 {
 		fmt.Println("No tracks matched the query.")
 		return nil
