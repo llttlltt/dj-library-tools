@@ -117,7 +117,7 @@ func (p *M3UProvider) load() error {
 	return scanner.Err()
 }
 
-func (p *M3UProvider) GetTracks(queryString string) ([]models.Track, error) {
+func (p *M3UProvider) GetTracks(ctx provider.ExecutionContext, queryString string) ([]models.Track, error) {
 	q := query.NewParser().Parse(queryString)
 	eval := query.NewEvaluator(q)
 
@@ -130,7 +130,7 @@ func (p *M3UProvider) GetTracks(queryString string) ([]models.Track, error) {
 	return results, nil
 }
 
-func (p *M3UProvider) GetPlaylists(queryString string) ([]models.ResourceGroup, error) {
+func (p *M3UProvider) GetPlaylists(ctx provider.ExecutionContext, queryString string) ([]models.ResourceGroup, error) {
 	// An M3U file is itself a single playlist
 	name := filepath.Base(p.path)
 	n := models.ResourceGroup{
@@ -148,7 +148,7 @@ func (p *M3UProvider) GetPlaylists(queryString string) ([]models.ResourceGroup, 
 	return nil, nil
 }
 
-func (p *M3UProvider) GetFolders(_ string) ([]models.ResourceGroup, error) {
+func (p *M3UProvider) GetFolders(ctx provider.ExecutionContext, _ string) ([]models.ResourceGroup, error) {
 	return nil, nil
 }
 
@@ -156,7 +156,7 @@ func (p *M3UProvider) CanTranscode() bool {
 	return true
 }
 
-func (p *M3UProvider) AddTracks(target models.ResourceGroup, tracks []models.Track) (int, error) {
+func (p *M3UProvider) AddTracks(ctx provider.ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error) {
 	added := 0
 	existing := make(map[string]bool)
 	for _, t := range p.tracks {
@@ -173,7 +173,7 @@ func (p *M3UProvider) AddTracks(target models.ResourceGroup, tracks []models.Tra
 	return added, nil
 }
 
-func (p *M3UProvider) RemoveTracks(target models.ResourceGroup, tracks []models.Track) (int, error) {
+func (p *M3UProvider) RemoveTracks(ctx provider.ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error) {
 	toRemove := make(map[string]bool)
 	for _, t := range tracks {
 		toRemove[t.Location] = true
@@ -192,7 +192,7 @@ func (p *M3UProvider) RemoveTracks(target models.ResourceGroup, tracks []models.
 	return removed, nil
 }
 
-func (p *M3UProvider) CreateGroup(parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
+func (p *M3UProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
 	if nodeType == 0 {
 		return models.ResourceGroup{}, fmt.Errorf("m3u provider does not support folders")
 	}
@@ -201,11 +201,11 @@ func (p *M3UProvider) CreateGroup(parent models.ResourceGroup, name string, node
 	return models.ResourceGroup{Name: name, Type: models.GroupTypePlaylist}, nil
 }
 
-func (p *M3UProvider) DeleteGroup(node models.ResourceGroup) error {
+func (p *M3UProvider) DeleteGroup(ctx provider.ExecutionContext, node models.ResourceGroup) error {
 	return os.Remove(p.path)
 }
 
-func (p *M3UProvider) RenameGroup(node models.ResourceGroup, newName string) error {
+func (p *M3UProvider) RenameGroup(ctx provider.ExecutionContext, node models.ResourceGroup, newName string) error {
 	newPath := filepath.Join(filepath.Dir(p.path), newName)
 	if err := os.Rename(p.path, newPath); err != nil {
 		return err
@@ -214,11 +214,11 @@ func (p *M3UProvider) RenameGroup(node models.ResourceGroup, newName string) err
 	return nil
 }
 
-func (p *M3UProvider) MoveGroup(node models.ResourceGroup, targetParent models.ResourceGroup) error {
+func (p *M3UProvider) MoveGroup(ctx provider.ExecutionContext, node models.ResourceGroup, targetParent models.ResourceGroup) error {
 	return fmt.Errorf("m3u provider does not support move")
 }
 
-func (p *M3UProvider) Save(path string) error {
+func (p *M3UProvider) Save(ctx provider.ExecutionContext, path string) error {
 	// If path is "playlists" or "tracks", it's likely a CLI mask, ignore it
 	if path == "playlists" || path == "tracks" {
 		path = ""
@@ -261,14 +261,14 @@ func (p *M3UProvider) Save(path string) error {
 	return nil
 }
 
-func (p *M3UProvider) Sync(tracks []models.Track, sourceQuery string, targetQuery string, options provider.SyncOptions) error {
+func (p *M3UProvider) Sync(ctx provider.ExecutionContext, tracks []models.Track, sourceQuery string, targetQuery string, options provider.SyncOptions) error {
 	if options.AppendOnly {
-		_, err := p.AddTracks(models.ResourceGroup{}, tracks)
+		_, err := p.AddTracks(ctx, models.ResourceGroup{}, tracks)
 		if err != nil {
 			return err
 		}
 	} else {
 		p.tracks = tracks
 	}
-	return p.Save("")
+	return p.Save(ctx, "")
 }

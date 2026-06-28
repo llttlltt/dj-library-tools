@@ -1,12 +1,12 @@
 package m3u
 
-
 import (
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,7 +24,7 @@ func TestM3UProvider_Load(t *testing.T) {
 	p, err := NewM3UProvider(m3uPath)
 	require.NoError(t, err)
 
-	tracks, err := p.GetTracks("")
+	tracks, err := p.GetTracks(provider.ExecutionContext{}, "")
 	require.NoError(t, err)
 	assert.Len(t, tracks, 2)
 
@@ -49,23 +49,23 @@ func TestM3UProvider_AddRemoveSave(t *testing.T) {
 	newTracks := []models.Track{
 		{Title: "New Track", Artist: "New Artist", Location: "/tmp/new.mp3"},
 	}
-	added, err := p.AddTracks(models.ResourceGroup{}, newTracks)
+	added, err := p.AddTracks(provider.ExecutionContext{}, models.ResourceGroup{}, newTracks)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, added)
 
 	// Save
-	err = p.Save(m3uPath)
+	err = p.Save(provider.ExecutionContext{}, m3uPath)
 	assert.NoError(t, err)
 
 	// Reload and verify
 	p2, err := NewM3UProvider(m3uPath)
 	assert.NoError(t, err)
-	tracks, _ := p2.GetTracks("")
+	tracks, _ := p2.GetTracks(provider.ExecutionContext{}, "")
 	assert.Len(t, tracks, 1)
 	assert.Equal(t, "New Track", tracks[0].Title)
 
 	// Remove
-	removed, err := p2.RemoveTracks(models.ResourceGroup{}, tracks)
+	removed, err := p2.RemoveTracks(provider.ExecutionContext{}, models.ResourceGroup{}, tracks)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, removed)
 	assert.Len(t, p2.tracks, 0)
@@ -79,12 +79,12 @@ func TestM3UProvider_Query(t *testing.T) {
 		},
 	}
 
-	results, err := p.GetTracks("title:Deep")
+	results, err := p.GetTracks(provider.ExecutionContext{}, "title:Deep")
 	assert.NoError(t, err)
 	assert.Len(t, results, 1)
 	assert.Equal(t, "Deep House", results[0].Title)
 
-	results, err = p.GetTracks("artist:Artist")
+	results, err = p.GetTracks(provider.ExecutionContext{}, "artist:Artist")
 	assert.NoError(t, err)
 	assert.Len(t, results, 2)
 }

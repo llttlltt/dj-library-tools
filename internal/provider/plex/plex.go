@@ -60,9 +60,9 @@ func (p *PlexProvider) CanTranscode() bool {
 	return true
 }
 
-func (p *PlexProvider) getRawTracksInternal(queryString string) ([]plex.Track, error) {
-	ctx := context.Background()
-	baseURL, err := p.resolveBaseURL(ctx)
+func (p *PlexProvider) getRawTracksInternal(ctx provider.ExecutionContext, queryString string) ([]plex.Track, error) {
+	goCtx := context.Background()
+	baseURL, err := p.resolveBaseURL(goCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (p *PlexProvider) getRawTracksInternal(queryString string) ([]plex.Track, e
 		walkResolve(q.Root)
 
 		if len(playlistIDs) == 0 && playlistName != "" {
-			plexPlaylists, err := p.client.GetPlaylists(ctx, baseURL)
+			plexPlaylists, err := p.client.GetPlaylists(goCtx, baseURL)
 			if err != nil {
 				return nil, err
 			}
@@ -127,7 +127,7 @@ func (p *PlexProvider) getRawTracksInternal(queryString string) ([]plex.Track, e
 		seen := make(map[string]bool)
 		for _, id := range playlistIDs {
 			path := "/playlists/" + id + "/items"
-			pt, err := p.client.GetPlaylistTracks(ctx, baseURL, path)
+			pt, err := p.client.GetPlaylistTracks(goCtx, baseURL, path)
 			if err != nil {
 				continue
 			}
@@ -139,7 +139,7 @@ func (p *PlexProvider) getRawTracksInternal(queryString string) ([]plex.Track, e
 			}
 		}
 	} else {
-		plexTracks, err = p.client.GetAllTracks(ctx, baseURL)
+		plexTracks, err = p.client.GetAllTracks(goCtx, baseURL)
 	}
 
 	if err != nil {
@@ -156,8 +156,8 @@ func (p *PlexProvider) getRawTracksInternal(queryString string) ([]plex.Track, e
 	return tracks, nil
 }
 
-func (p *PlexProvider) GetTracks(queryString string) ([]models.Track, error) {
-	raw, err := p.getRawTracksInternal(queryString)
+func (p *PlexProvider) GetTracks(ctx provider.ExecutionContext, queryString string) ([]models.Track, error) {
+	raw, err := p.getRawTracksInternal(ctx, queryString)
 	if err != nil {
 		return nil, err
 	}
@@ -169,13 +169,13 @@ func (p *PlexProvider) GetTracks(queryString string) ([]models.Track, error) {
 	return tracks, nil
 }
 
-func (p *PlexProvider) GetFolders(_ string) ([]models.ResourceGroup, error) {
+func (p *PlexProvider) GetFolders(ctx provider.ExecutionContext, _ string) ([]models.ResourceGroup, error) {
 	return nil, nil // Plex has no folder concept
 }
 
-func (p *PlexProvider) GetPlaylists(queryString string) ([]models.ResourceGroup, error) {
-	ctx := context.Background()
-	baseURL, err := p.resolveBaseURL(ctx)
+func (p *PlexProvider) GetPlaylists(ctx provider.ExecutionContext, queryString string) ([]models.ResourceGroup, error) {
+	goCtx := context.Background()
+	baseURL, err := p.resolveBaseURL(goCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func (p *PlexProvider) GetPlaylists(queryString string) ([]models.ResourceGroup,
 		return nil, err
 	}
 
-	plexPlaylists, err := p.client.GetPlaylists(ctx, baseURL)
+	plexPlaylists, err := p.client.GetPlaylists(goCtx, baseURL)
 	if err != nil {
 		return nil, err
 	}
@@ -203,19 +203,19 @@ func (p *PlexProvider) GetPlaylists(queryString string) ([]models.ResourceGroup,
 	return results, nil
 }
 
-func (p *PlexProvider) CreateGroup(parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
+func (p *PlexProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
 	return models.ResourceGroup{}, fmt.Errorf("plex does not support node creation via API")
 }
 
-func (p *PlexProvider) DeleteGroup(node models.ResourceGroup) error {
+func (p *PlexProvider) DeleteGroup(ctx provider.ExecutionContext, node models.ResourceGroup) error {
 	return fmt.Errorf("plex does not support node deletion via API")
 }
 
-func (p *PlexProvider) RenameGroup(node models.ResourceGroup, newName string) error {
+func (p *PlexProvider) RenameGroup(ctx provider.ExecutionContext, node models.ResourceGroup, newName string) error {
 	return fmt.Errorf("plex does not support node renaming via API")
 }
 
-func (p *PlexProvider) MoveGroup(node models.ResourceGroup, targetParent models.ResourceGroup) error {
+func (p *PlexProvider) MoveGroup(ctx provider.ExecutionContext, node models.ResourceGroup, targetParent models.ResourceGroup) error {
 	return fmt.Errorf("plex does not support node moving via API")
 }
 
@@ -246,6 +246,6 @@ func (p *PlexProvider) resolveBaseURL(ctx context.Context) (string, error) {
 	return "", fmt.Errorf("could not find an active Plex server")
 }
 
-func (p *PlexProvider) Sync(tracks []models.Track, sourceQuery string, targetQuery string, options provider.SyncOptions) error {
+func (p *PlexProvider) Sync(ctx provider.ExecutionContext, tracks []models.Track, sourceQuery string, targetQuery string, options provider.SyncOptions) error {
 	return fmt.Errorf("sync not supported for plex")
 }

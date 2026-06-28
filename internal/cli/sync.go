@@ -67,7 +67,7 @@ match the source. By default, it removes tracks from the target that no longer m
 					continue
 				}
 
-				err = wp.Sync(src.Tracks, src.Location.Query, tgt.Location.Query, provider.SyncOptions{
+				err = wp.Sync(getExecContext(), src.Tracks, src.Location.Query, tgt.Location.Query, provider.SyncOptions{
 					ExportDest:   exportDest,
 					ExportFormat: exportFormat,
 					AppendOnly:   syncAppend,

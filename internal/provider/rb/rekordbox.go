@@ -41,15 +41,15 @@ func (p *RekordboxProvider) Name() string {
 	return "rb"
 }
 
-func (p *RekordboxProvider) GetTracks(query string) ([]models.Track, error) {
+func (p *RekordboxProvider) GetTracks(ctx provider.ExecutionContext, query string) ([]models.Track, error) {
 	return p.Engine.Ls(query, p)
 }
 
-func (p *RekordboxProvider) GetPlaylists(query string) ([]models.ResourceGroup, error) {
+func (p *RekordboxProvider) GetPlaylists(ctx provider.ExecutionContext, query string) ([]models.ResourceGroup, error) {
 	return p.Engine.LsPlaylists(query)
 }
 
-func (p *RekordboxProvider) GetFolders(query string) ([]models.ResourceGroup, error) {
+func (p *RekordboxProvider) GetFolders(ctx provider.ExecutionContext, query string) ([]models.ResourceGroup, error) {
 	return p.Engine.LsFolders(query)
 }
 
@@ -57,7 +57,7 @@ func (p *RekordboxProvider) CanTranscode() bool {
 	return true
 }
 
-func (p *RekordboxProvider) AddTracks(target models.ResourceGroup, tracks []models.Track) (int, error) {
+func (p *RekordboxProvider) AddTracks(ctx provider.ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error) {
 	var ids []string
 	for _, t := range tracks {
 		ids = append(ids, t.ID)
@@ -66,7 +66,7 @@ func (p *RekordboxProvider) AddTracks(target models.ResourceGroup, tracks []mode
 	return added, nil
 }
 
-func (p *RekordboxProvider) RemoveTracks(target models.ResourceGroup, tracks []models.Track) (int, error) {
+func (p *RekordboxProvider) RemoveTracks(ctx provider.ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error) {
 	var ids []string
 	for _, t := range tracks {
 		ids = append(ids, t.ID)
@@ -75,7 +75,7 @@ func (p *RekordboxProvider) RemoveTracks(target models.ResourceGroup, tracks []m
 	return removed, nil
 }
 
-func (p *RekordboxProvider) CreateGroup(parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
+func (p *RekordboxProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
 	if nodeType == 0 {
 		p.Engine.Library.(library.WritableLibrary).CreateFolder(parent.Name, name, -1)
 	} else {
@@ -84,22 +84,22 @@ func (p *RekordboxProvider) CreateGroup(parent models.ResourceGroup, name string
 	return models.ResourceGroup{Name: name, Type: models.GroupType(nodeType)}, nil
 }
 
-func (p *RekordboxProvider) DeleteGroup(node models.ResourceGroup) error {
+func (p *RekordboxProvider) DeleteGroup(ctx provider.ExecutionContext, node models.ResourceGroup) error {
 	p.Engine.Library.(library.WritableLibrary).RemoveGroup(node.Name, int32(node.Type))
 	return nil
 }
 
-func (p *RekordboxProvider) RenameGroup(node models.ResourceGroup, newName string) error {
+func (p *RekordboxProvider) RenameGroup(ctx provider.ExecutionContext, node models.ResourceGroup, newName string) error {
 	p.Engine.Library.(library.WritableLibrary).RenameGroup(node.Name, newName, int32(node.Type))
 	return nil
 }
 
-func (p *RekordboxProvider) MoveGroup(node models.ResourceGroup, targetParent models.ResourceGroup) error {
+func (p *RekordboxProvider) MoveGroup(ctx provider.ExecutionContext, node models.ResourceGroup, targetParent models.ResourceGroup) error {
 	p.Engine.Library.(library.WritableLibrary).MoveGroup(node.Name, int32(node.Type), targetParent.Name)
 	return nil
 }
 
-func (p *RekordboxProvider) Save(path string) error {
+func (p *RekordboxProvider) Save(ctx provider.ExecutionContext, path string) error {
 	if path == "" {
 		path = p.path
 	}
@@ -192,7 +192,7 @@ func (p *RekordboxProvider) GetTrackColorName(hex string) string {
 	return hex
 }
 
-func (p *RekordboxProvider) Sync(tracks []models.Track, sourceQuery string, targetQuery string, options provider.SyncOptions) error {
+func (p *RekordboxProvider) Sync(ctx provider.ExecutionContext, tracks []models.Track, sourceQuery string, targetQuery string, options provider.SyncOptions) error {
 	var rbLib *RekordboxLibrary
 	if p.rbXML != nil {
 		rbLib = NewRekordboxLibrary(p.rbXML)

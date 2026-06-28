@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
@@ -10,11 +9,11 @@ import (
 )
 
 func newDeleteCmd() *cobra.Command {
-	var removeOrigins []string
+	var deleteFrom []string
 
 	cmd := &cobra.Command{
-		Use:     "rm [resource] [query]",
-		Short:   "Remove a resource or membership from the library",
+		Use:   "rm [resource] [query]",
+		Short: "Permanently delete resources or remove membership",
 		Long: `Permanently delete resources or remove track membership from playlists.
 
 Use --from to specify which playlist to remove tracks from.
@@ -25,92 +24,72 @@ Example:
   djlt rm rb/playlists name:Inbox`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			queryOverride := ""
-			if len(args) > 1 {
-				queryOverride = strings.Join(args[1:], " ")
-			}
-			sel, err := ResolveSelection(args[0], queryOverride)
+			sel, err := ResolveSelection(args[0], "")
 			if err != nil {
 				return err
 			}
 
 			wp, ok := sel.Provider.(provider.WritableProvider)
 			if !ok {
-				return fmt.Errorf("provider %q does not support removal", sel.Location.Provider)
+				return fmt.Errorf("provider %q does not support deleting resources", sel.Location.Provider)
 			}
 
-			// Membership removal case
-			if cmd.Flags().Changed("from") {
-				if sel.Location.Resource != "tracks" && sel.Location.Provider != "m3u" && sel.Location.Provider != "m3u8" {
-					return fmt.Errorf("can only remove tracks from playlists")
-				}
-				return runRemoveMembership(wp, sel, removeOrigins)
+			ctx := getExecContext()
+
+			if len(deleteFrom) == 0 {
+				return runDeleteResources(wp, ctx, sel)
 			}
 
-			// Resource deletion case
-			if sel.Location.Resource == "tracks" {
-				return fmt.Errorf("deleting tracks from collection is not yet supported; use --from to unlink from playlists")
-			}
-
-			if len(sel.Nodes) == 0 {
-				fmt.Println("No resources found matching query.")
-				return nil
-			}
-
-			if dryRun {
-				kind := strings.TrimSuffix(sel.Location.Resource, "s")
-				for _, t := range sel.Nodes {
-					fmt.Printf("[Dry Run] Would delete %s %q\n", kind, t.Name)
-				}
-				return nil
-			}
-
-			for _, t := range sel.Nodes {
-				if verbose {
-					fmt.Printf("Deleting %s %q...\n", sel.Location.Resource, t.Name)
-				}
-				if err := wp.DeleteGroup(t); err != nil {
-					fmt.Printf("Warning: failed to delete %q: %v\n", t.Name, err)
-					continue
-				}
-				fmt.Printf("Deleted %s %q\n", sel.Location.Resource, t.Name)
-			}
-
-			return wp.Save("")
+			return runRemoveMembership(wp, ctx, sel, deleteFrom)
 		},
 	}
-	cmd.Flags().StringSliceVar(&removeOrigins, "from", []string{}, "Origin resource(s) to remove from (repeatable)")
+	cmd.Flags().StringSliceVar(&deleteFrom, "from", []string{}, "Origin resource(s) to remove from")
 	return cmd
 }
 
-func runRemoveMembership(wp provider.WritableProvider, src *Selection, removeOrigins []string) error {
-	var targetNodes []models.ResourceGroup
-
-	for _, originStr := range removeOrigins {
-		org, err := ResolveSelection(originStr, "")
-		if err != nil {
-			return err
-		}
-		if org.Location.Resource != "playlists" {
-			return fmt.Errorf("can only remove from playlists, got %q", org.Location.Resource)
-		}
-		targetNodes = append(targetNodes, org.Nodes...)
-	}
-
-	if dryRun {
-		for _, n := range targetNodes {
-			fmt.Printf("[Dry Run] Would remove %d tracks from playlist %q\n", len(src.Tracks), n.Name)
-		}
+func runDeleteResources(wp provider.WritableProvider, ctx provider.ExecutionContext, sel *Selection) error {
+	if len(sel.Items) == 0 {
+		fmt.Println("No resources matched the query.")
 		return nil
 	}
 
-	for _, n := range targetNodes {
-		removed, err := wp.RemoveTracks(n, src.Tracks)
+	for _, item := range sel.Items {
+		if node, ok := item.(models.ResourceGroup); ok {
+			if dryRun {
+				fmt.Printf("[Dry Run] Would delete %s %q\n", node.GetKind(), node.Name)
+				continue
+			}
+			if err := wp.DeleteGroup(ctx, node); err != nil {
+				return err
+			}
+			fmt.Printf("Deleted %s %q\n", node.GetKind(), node.Name)
+		}
+	}
+
+	return wp.Save(ctx, "")
+}
+
+func runRemoveMembership(wp provider.WritableProvider, ctx provider.ExecutionContext, sel *Selection, from []string) error {
+	if len(sel.Tracks) == 0 {
+		fmt.Println("No tracks matched the query.")
+		return nil
+	}
+
+	for _, fromStr := range from {
+		org, err := ResolveSelection(fromStr, "")
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Removed %d tracks from %q\n", removed, n.Name)
+
+		for _, target := range org.Nodes {
+			if dryRun {
+				fmt.Printf("[Dry Run] Would remove %d tracks from playlist %q\n", len(sel.Tracks), target.Name)
+				continue
+			}
+			removed, _ := wp.RemoveTracks(ctx, target, sel.Tracks)
+			fmt.Printf("Removed %d tracks from %q\n", removed, target.Name)
+		}
 	}
 
-	return wp.Save("")
+	return wp.Save(ctx, "")
 }

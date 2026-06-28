@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<DJ_PLAYLISTS Version=""><PRODUCT Name="" Version="" Company=""/><COLLECTION Entries="0"><TRACK TrackID="1" Name="Test Track" Artist="Test Artist" Composer="" Album=""
+       Grouping="" Genre="" Kind="" Size="0" TotalTime="0" DiscNumber="0"
+       TrackNumber="0" Year="0" AverageBpm="" DateAdded="" BitRate="0"
+       SampleRate="0" Comments="" PlayCount="0" Rating="0"
+       Location="file://localhost/test.mp3" Remixer="" Tonality="" Label=""
+       Mix=""/></COLLECTION><PLAYLISTS><NODE Type="0" Name="ROOT" Count="0"><NODE Name="Inbox" Type="1" Entries="0"/></NODE></PLAYLISTS></DJ_PLAYLISTS>
