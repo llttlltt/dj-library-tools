@@ -14,19 +14,30 @@ const (
 	TypeNumeric
 )
 
+// Schema maps field names to their types for the query engine.
+var Schema = map[string]FieldType{
+	"playlists":  TypeNumeric,
+	"hotcues":    TypeNumeric,
+	"memorycues": TypeNumeric,
+	"beatgrids":  TypeNumeric,
+	"rating":     TypeNumeric,
+	"plays":      TypeNumeric,
+	"year":       TypeNumeric,
+	"bpm":        TypeNumeric,
+	"bitrate":    TypeNumeric,
+	"samplerate": TypeNumeric,
+	"size":       TypeNumeric,
+	"items":      TypeNumeric,
+	"duration":   TypeNumeric,
+}
+
 // Compare executes a comparison between two values based on the operator and field type.
 func Compare(field string, fieldValue, targetValue string, op Operator) bool {
 	if op == OpRange {
 		return matchRange(fieldValue, targetValue)
 	}
 
-	// Lookup field type from generated schemas
-	fieldType := TrackSchema[strings.ToLower(field)]
-	if fieldType == TypeString {
-		// Fallback to group schema
-		fieldType = GroupSchema[strings.ToLower(field)]
-	}
-
+	fieldType := Schema[strings.ToLower(field)]
 	if fieldType == TypeNumeric {
 		return matchNumeric(fieldValue, targetValue, op)
 	}
@@ -68,9 +79,7 @@ func matchString(fieldValue, targetValue string, op Operator) bool {
 }
 
 func parseToFloat(s string) float64 {
-	// Simple float parsing helper
 	var f float64
-	// Remove commas or other non-numeric chars if needed in future
 	fmt.Sscanf(s, "%f", &f)
 	return f
 }

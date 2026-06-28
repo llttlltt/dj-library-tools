@@ -6,11 +6,20 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/models"
 )
 
-// Global Schemas generated via reflection
-var (
-	TrackSchema, AllowedTrackFields = ReflectSchema(models.Track{})
-	GroupSchema, AllowedGroupFields = ReflectSchema(models.ResourceGroup{})
-)
+// Allowed Fields generated from the accessor maps
+var AllowedTrackFields []string
+var AllowedGroupFields []string
+
+func init() {
+	for k := range TrackAccessors {
+		AllowedTrackFields = append(AllowedTrackFields, k)
+	}
+	AllowedTrackFields = append(AllowedTrackFields, "playlists")
+
+	for k := range GroupAccessors {
+		AllowedGroupFields = append(AllowedGroupFields, k)
+	}
+}
 
 type CustomMatcher interface {
 	CustomMatch(track models.Track, field string, op Operator, value string) bool
@@ -77,7 +86,7 @@ func (e *Evaluator) matchComparison(track models.Track, playlists []string, c Co
 	field := strings.ToLower(c.Field)
 	targetValue := ResolveValue(c.Field, c.Value)
 
-	// Custom delegation (e.g. Cues by color)
+	// Custom implementation-specific delegation
 	if e.Matcher != nil && isCalculatedField(field) && !isNumericIntent(c) {
 		return e.Matcher.CustomMatch(track, c.Field, c.Operator, c.Value)
 	}
@@ -87,14 +96,18 @@ func (e *Evaluator) matchComparison(track models.Track, playlists []string, c Co
 		return Compare(field, strings.Join(playlists, ","), targetValue, c.Operator)
 	}
 
-	fieldValue := GetFieldValue(track, field)
-	return Compare(field, fieldValue, targetValue, c.Operator)
+	accessor, ok := TrackAccessors[field]
+	if !ok { return false }
+
+	return Compare(field, accessor(track), targetValue, c.Operator)
 }
 
 func (e *Evaluator) matchGroupComparison(group models.ResourceGroup, c Comparison) bool {
 	field := strings.ToLower(c.Field)
-	fieldValue := GetFieldValue(group, field)
-	return Compare(field, fieldValue, c.Value, c.Operator)
+	accessor, ok := GroupAccessors[field]
+	if !ok { return false }
+
+	return Compare(field, accessor(group), c.Value, c.Operator)
 }
 
 // Helpers
