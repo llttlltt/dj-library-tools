@@ -7,6 +7,8 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
+	"github.com/llttlltt/dj-library-tools/internal/provider/factory"
+	"github.com/llttlltt/dj-library-tools/internal/provider/m3u"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"
@@ -91,7 +93,7 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 	cfg, _ := config.LoadAppConfig()
 	rbXML, primaryPath, _ := loadXMLFunc()
 
-	prov, err := provider.NewProvider(loc.Provider, rbXML, primaryPath, cfg)
+	prov, err := factory.NewProvider(loc.Provider, rbXML, primaryPath, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +110,7 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 			loc.Resource = "playlists"
 		}
 
-		m3uProv, err := provider.NewM3UProvider(m3uPath)
+		m3uProv, err := m3u.NewM3UProvider(m3uPath)
 		if err != nil {
 			return nil, err
 		}

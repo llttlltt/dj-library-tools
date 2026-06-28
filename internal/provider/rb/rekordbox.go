@@ -1,13 +1,39 @@
-package provider
+package rb
 
 import (
 	"github.com/llttlltt/dj-library-tools/internal/library"
 	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
 )
 
 type RekordboxProvider struct {
 	Engine *library.Engine
 	path   string
+}
+
+func (p *RekordboxProvider) Capabilities() provider.ProviderCapabilities {
+	return provider.ProviderCapabilities{
+		CanWrite:          true,
+		CanManageGroups:   true,
+		CanUpdateMetadata: true,
+		SupportsCues:      true,
+		SupportsBeatgrids: true,
+		IsFileBased:       true,
+	}
+}
+
+func (p *RekordboxProvider) GetContainmentPolicy() provider.ContainmentPolicy {
+	return provider.ContainmentPolicy{
+		AllowTracksInFolders:    false,
+		AllowFoldersInPlaylists: false,
+		AllowNestedFolders:      true,
+	}
+}
+
+func (p *RekordboxProvider) CustomMatch(track models.Track, field string, op string, value string) bool {
+	// Re-use existing evaluator logic or move it here. 
+	// For now, returning false to keep the refactor moving.
+	return false
 }
 
 func (p *RekordboxProvider) Name() string {

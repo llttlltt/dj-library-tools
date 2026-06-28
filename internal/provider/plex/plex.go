@@ -1,4 +1,4 @@
-package provider
+package plex
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/plex"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/query"
 )
 
@@ -22,6 +23,29 @@ func NewPlexProvider(token string, host string, port int) *PlexProvider {
 		host:   host,
 		port:   port,
 	}
+}
+
+func (p *PlexProvider) Capabilities() provider.ProviderCapabilities {
+	return provider.ProviderCapabilities{
+		CanWrite:          false,
+		CanManageGroups:   false,
+		CanUpdateMetadata: false,
+		SupportsCues:      false,
+		SupportsBeatgrids: false,
+		IsFileBased:       false,
+	}
+}
+
+func (p *PlexProvider) GetContainmentPolicy() provider.ContainmentPolicy {
+	return provider.ContainmentPolicy{
+		AllowTracksInFolders:    false,
+		AllowFoldersInPlaylists: false,
+		AllowNestedFolders:      false,
+	}
+}
+
+func (p *PlexProvider) CustomMatch(track models.Track, field string, op string, value string) bool {
+	return false
 }
 
 func (p *PlexProvider) Name() string {
