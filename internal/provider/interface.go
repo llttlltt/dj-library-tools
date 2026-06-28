@@ -28,29 +28,36 @@ type ExecutionContext struct {
 	Verbose bool
 }
 
-// Provider defines the interface for a music library provider.
-type Provider interface {
+// BaseProvider defines methods common to all providers.
+type BaseProvider interface {
 	Name() string
-	GetTracks(ctx ExecutionContext, query string) ([]models.Track, error)
-	GetPlaylists(ctx ExecutionContext, query string) ([]models.ResourceGroup, error)
-	GetFolders(ctx ExecutionContext, query string) ([]models.ResourceGroup, error)
-
-	// Capabilities returns the feature set of this provider.
 	Capabilities() ProviderCapabilities
-
-	// GetContainmentPolicy returns the structural rules for this provider.
 	GetContainmentPolicy() ContainmentPolicy
-
-	// CustomMatch allows the provider to handle complex query fields.
 	CustomMatch(track models.Track, field string, op query.Operator, value string) bool
-
-	// CanTranscode reports whether this provider can supply raw audio for transcoding.
 	CanTranscode() bool
 }
 
-// WritableProvider extends Provider with modification capabilities.
+// ReadableProvider extends BaseProvider with read operations.
+type ReadableProvider interface {
+	BaseProvider
+	GetTracks(ctx ExecutionContext, query string) ([]models.Track, error)
+	GetPlaylists(ctx ExecutionContext, query string) ([]models.ResourceGroup, error)
+	GetFolders(ctx ExecutionContext, query string) ([]models.ResourceGroup, error)
+	
+	// Sort operations
+	SortTracks(tracks []models.Track, field string)
+	SortGroups(groups []models.ResourceGroup, field string)
+}
+
+// SearchableProvider is an optional interface for providers with server-side search.
+type SearchableProvider interface {
+	ReadableProvider
+	Search(ctx ExecutionContext, query string) ([]models.Resource, error)
+}
+
+// WritableProvider extends ReadableProvider with modification capabilities.
 type WritableProvider interface {
-	Provider
+	ReadableProvider
 	AddTracks(ctx ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error)
 	RemoveTracks(ctx ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error)
 	CreateGroup(ctx ExecutionContext, parent models.ResourceGroup, name string, nodeType int, position int) (models.ResourceGroup, error)
@@ -58,10 +65,7 @@ type WritableProvider interface {
 	RenameGroup(ctx ExecutionContext, node models.ResourceGroup, newName string) error
 	MoveGroup(ctx ExecutionContext, node models.ResourceGroup, targetParent models.ResourceGroup) error
 	
-	// Sync tracks to a specific target within this provider.
 	Sync(ctx ExecutionContext, tracks []models.Track, sourceQuery string, targetQuery string, options SyncOptions) error
-
-	// ModifyTracks applies metadata changes to tracks matching the query.
 	ModifyTracks(ctx ExecutionContext, query string, changes map[string]string) (int, error)
 
 	// Validation methods for pre-flight checks
@@ -69,9 +73,11 @@ type WritableProvider interface {
 	ValidateMoveGroup(src models.ResourceGroup, target models.ResourceGroup) error
 	ValidateCreateGroup(parent models.ResourceGroup, groupType models.GroupType) error
 
-	// Save persists any in-memory mutations to the given path.
 	Save(ctx ExecutionContext, path string) error
 }
+
+// Provider is an alias for ReadableProvider as the standard return type.
+type Provider = ReadableProvider
 
 type SyncOptions struct {
 	ExportDest   string

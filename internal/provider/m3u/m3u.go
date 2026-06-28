@@ -291,3 +291,6 @@ func (p *M3UProvider) ValidateCreateGroup(parent models.ResourceGroup, groupType
 	}
 	return nil
 }
+
+func (p *M3UProvider) SortTracks(tracks []models.Track, field string) {}
+func (p *M3UProvider) SortGroups(groups []models.ResourceGroup, field string) {}
