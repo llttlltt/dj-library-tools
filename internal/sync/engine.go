@@ -106,7 +106,7 @@ func (o *Orchestrator) Relocate(tracks []models.Track, searchDir string, matchFi
 	return relocated
 }
 
-func (o *Orchestrator) SyncToLibrary(tracks []models.Track, playlistName string, opts SyncOptions, appendOnly bool) error {
+func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opts SyncOptions, appendOnly bool) error {
 	var transcoder *media.Transcoder
 	if opts.ExportDest != "" {
 		cfgMedia := media.DefaultConfig()
@@ -226,12 +226,12 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, playlistName string,
 
 	if !o.DryRun {
 		if appendOnly {
-			o.Library.AddTracks(playlistName, trackIDs)
+			o.Library.AddTracks(targetID, trackIDs)
 		} else {
-			err := o.Library.UpdateGroup(playlistName, trackIDs)
+			err := o.Library.UpdateGroup(targetID, trackIDs)
 			if err != nil {
-				o.Library.CreateGroup("", playlistName, models.GroupTypePlaylist, -1)
-				o.Library.UpdateGroup(playlistName, trackIDs)
+				o.Library.CreateGroup("", targetID, models.GroupTypePlaylist, -1)
+				o.Library.UpdateGroup(targetID, trackIDs)
 			}
 		}
 	}

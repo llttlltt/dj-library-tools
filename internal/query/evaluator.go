@@ -98,16 +98,18 @@ func (e *Evaluator) matchComparison(track models.Track, playlists []string, c Co
 		return e.matchPlaylistStrings(playlists, c)
 	}
 
-	// Delegated custom fields
+	// Delegated custom matching (Implementation Authority)
 	if e.Matcher != nil {
 		switch field {
 		case "hotcues", "memorycues", "beatgrids":
-			if !c.Quoted {
-				if _, err := strconv.Atoi(targetValue); err == nil || c.Operator == OpRange || c.Operator == OpGt || c.Operator == OpLt {
-					return e.matchNumericCount(track, playlists, c)
+			// If it looks like a numeric operation, use the track's count property.
+			// Otherwise, let the provider handle custom logic (e.g., color-based cue matching).
+			isNumericSearch := !c.Quoted && (c.Operator == OpRange || c.Operator == OpGt || c.Operator == OpLt)
+			if !isNumericSearch {
+				if _, err := strconv.Atoi(targetValue); err != nil {
+					return e.Matcher.CustomMatch(track, c.Field, c.Operator, c.Value)
 				}
 			}
-			return e.Matcher.CustomMatch(track, c.Field, c.Operator, c.Value)
 		}
 	}
 
