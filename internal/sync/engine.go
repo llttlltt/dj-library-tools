@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/library"
 	"github.com/llttlltt/dj-library-tools/internal/media"
@@ -27,9 +28,11 @@ type Orchestrator struct {
 
 func NewOrchestrator(lib library.WritableLibrary, dryRun, verbose bool) *Orchestrator {
 	var tracks []models.Track
-	resources := lib.GetResources("track")
-	for _, r := range resources {
-		tracks = append(tracks, r.(models.Track))
+	if lib != nil {
+		resources := lib.GetResources("track")
+		for _, r := range resources {
+			tracks = append(tracks, r.(models.Track))
+		}
 	}
 	
 	return &Orchestrator{
@@ -38,6 +41,11 @@ func NewOrchestrator(lib library.WritableLibrary, dryRun, verbose bool) *Orchest
 		Verbose:    verbose,
 		Matcher:    NewMatcher(tracks),
 	}
+}
+
+func (o *Orchestrator) WithMatcher(m *Matcher) *Orchestrator {
+	o.Matcher = m
+	return o
 }
 
 type SyncOptions struct {
@@ -50,8 +58,6 @@ type SyncOptions struct {
 func (o *Orchestrator) Join(sourceTracks []models.Track, matchFields []string) []models.MetadataMatch {
 	var matches []models.MetadataMatch
 	
-	// Create a new matcher specifically for these fields if needed, 
-	// for now we use the default (Artist/Title).
 	for _, st := range sourceTracks {
 		match := o.Matcher.Match(st)
 		if match.TargetTrack != nil && match.Confidence >= 0.8 {
@@ -63,6 +69,35 @@ func (o *Orchestrator) Join(sourceTracks []models.Track, matchFields []string) [
 	}
 	
 	return matches
+}
+
+// Relocate searches for physical files for the given tracks in the searchDir.
+func (o *Orchestrator) Relocate(tracks []models.Track, searchDir string, matchFields []string) map[string]string {
+	relocated := make(map[string]string)
+	
+	fileMap := make(map[string][]string)
+	filepath.Walk(searchDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() { return nil }
+		name := strings.ToLower(info.Name())
+		fileMap[name] = append(fileMap[name], path)
+		return nil
+	})
+
+	for _, t := range tracks {
+		filename := strings.ToLower(filepath.Base(t.Location))
+		candidates, ok := fileMap[filename]
+		if !ok { continue }
+
+		for _, candidate := range candidates {
+			relocated[t.ID] = candidate
+			if o.Verbose {
+				fmt.Printf("Relocated %s -> %s\n", t.Title, candidate)
+			}
+			break
+		}
+	}
+
+	return relocated
 }
 
 func (o *Orchestrator) SyncToLibrary(tracks []models.Track, sourceQuery string, playlistName string, opts SyncOptions, appendOnly bool) error {
@@ -196,13 +231,9 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, sourceQuery string, 
 	}
 
 	if o.Listener != nil {
-		o.Listener.OnComplete()
+		l := o.Listener
+		l.OnComplete()
 	}
 
 	return nil
-}
-
-func (o *Orchestrator) WithMatcher(m *Matcher) *Orchestrator {
-	o.Matcher = m
-	return o
 }
