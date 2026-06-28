@@ -8,6 +8,22 @@ import (
 	"strings"
 )
 
+// FormatPath takes a file path and returns it with the specified new extension.
+func FormatPath(path string, newExtension string) string {
+	if newExtension == "" {
+		return path
+	}
+
+	// Ensure extension has a dot prefix
+	if !strings.HasPrefix(newExtension, ".") {
+		newExtension = "." + newExtension
+	}
+
+	// Remove existing extension and append the new one
+	base := strings.TrimSuffix(path, filepath.Ext(path))
+	return base + newExtension
+}
+
 // FixOptions holds the configuration for the playlist fix operation.
 type FixOptions struct {
 	Exts           []string
