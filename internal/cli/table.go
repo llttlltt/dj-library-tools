@@ -34,7 +34,8 @@ func (t *Table) Render() {
 
 	headerFmt := color.New(color.FgCyan, color.Bold, color.Underline).SprintFunc()
 	for i, h := range t.Headers {
-		fmt.Printf("%-*s ", colWidths[i], headerFmt(h))
+		padding := colWidths[i] - len(h)
+		fmt.Printf("%s%s ", headerFmt(h), strings.Repeat(" ", padding))
 	}
 	fmt.Println()
 
