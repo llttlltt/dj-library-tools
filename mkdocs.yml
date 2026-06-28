@@ -70,7 +70,6 @@ nav:
         - mv: commands/mv.md
         - rm: commands/rm.md
         - sync: commands/sync.md
-        - update: commands/update.md
         - auth: commands/auth.md
         - config: commands/config.md
         - fix:
