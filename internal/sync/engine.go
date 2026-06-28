@@ -54,6 +54,12 @@ type SyncOptions struct {
 	PathMaps     map[string]string
 }
 
+// SyncToLibrary is a high-level helper that coordinates a full sync from source tracks to a target library.
+func SyncToLibrary(lib library.WritableLibrary, tracks []models.Track, sourceQuery string, targetQuery string, options SyncOptions, dryRun, verbose bool, appendOnly bool) error {
+	orch := NewOrchestrator(lib, dryRun, verbose)
+	return orch.SyncToLibrary(tracks, sourceQuery, targetQuery, options, appendOnly)
+}
+
 // Join matches source tracks against the target library using the specified keys.
 func (o *Orchestrator) Join(sourceTracks []models.Track, matchFields []string) []models.MetadataMatch {
 	var matches []models.MetadataMatch

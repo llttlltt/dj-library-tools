@@ -9,6 +9,7 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/provider/factory"
+	"github.com/llttlltt/dj-library-tools/internal/sync"
 )
 
 func init() {
@@ -156,7 +157,12 @@ func (s *m3uSystemService) Save(ctx provider.ExecutionContext, path string) erro
 func (s *m3uSystemService) Fix(ctx provider.ExecutionContext, resource string, query string) error { return s.Save(ctx, "") }
 
 func (s *m3uSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, srcQ, tgtQ string, opts provider.SyncOptions) error {
-	if opts.AppendOnly { s.Tracks().Groups().Add(ctx, tracks, models.ResourceGroup{}) } else { s.tracks = tracks }
+	err := sync.SyncToLibrary(m3u.NewLibrary(s.tracks), tracks, srcQ, tgtQ, sync.SyncOptions{
+		ExportDest:   opts.ExportDest,
+		ExportFormat: opts.ExportFormat,
+		PathMaps:     opts.PathMaps,
+	}, ctx.DryRun, ctx.Verbose, opts.AppendOnly)
+	if err != nil { return err }
 	return s.Save(ctx, "")
 }
 
