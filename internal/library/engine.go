@@ -42,7 +42,7 @@ func (e *Engine) Ls(queryString string, matcher query.CustomMatcher) ([]models.T
 func (e *Engine) LsGroups(queryString string) ([]models.ResourceGroup, error) {
 	parser := query.NewParser()
 	q := parser.Parse(queryString)
-	if err := q.ValidateWithFields(query.AllowedNodeFields); err != nil {
+	if err := q.ValidateWithFields(query.AllowedGroupFields); err != nil {
 		return nil, err
 	}
 	eval := query.NewEvaluator(q)

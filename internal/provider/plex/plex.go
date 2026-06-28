@@ -196,7 +196,7 @@ func (p *PlexProvider) GetPlaylists(ctx provider.ExecutionContext, queryString s
 	}
 
 	q := query.NewParser().Parse(queryString)
-	if err := q.ValidateWithFields(query.AllowedNodeFields); err != nil {
+	if err := q.ValidateWithFields(query.AllowedGroupFields); err != nil {
 		return nil, err
 	}
 
@@ -209,7 +209,7 @@ func (p *PlexProvider) GetPlaylists(ctx provider.ExecutionContext, queryString s
 	eval := query.NewEvaluator(q)
 
 	for _, pl := range plexPlaylists {
-		n := pl.ToNeutralNode()
+		n := pl.ToNeutralGroup()
 		if eval.MatchesGroup(n) {
 			results = append(results, n)
 		}
