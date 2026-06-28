@@ -14,7 +14,7 @@ djlt ls [resource] [query] [flags]
   -h, --help              help for ls
       --json              Output results in JSON format
       --missing           Filter for tracks where the physical file is missing
-      --sort string       Sort results by field (e.g. bpm, artist, title)
+      --sort string       Sort results by any available field (e.g. artist, title, bpm, etc.)
       --stats             Show summary statistics for the selection
 ```
 
