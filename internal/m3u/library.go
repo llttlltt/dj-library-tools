@@ -26,8 +26,8 @@ func (l *Library) GetResources(kind string) []models.Resource {
 	return results
 }
 
-func (l *Library) GetMembershipMap() map[string][]string {
-	return make(map[string][]string)
+func (l *Library) GetMembershipMap() map[string][]models.PlaylistMembership {
+	return make(map[string][]models.PlaylistMembership)
 }
 
 func (l *Library) CreateGroup(parentID, name string, groupType models.GroupKind, position int) (models.ResourceGroup, error) {

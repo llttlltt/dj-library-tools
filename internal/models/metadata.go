@@ -48,7 +48,6 @@ var TrackFields = map[string]FieldDefinition[Track]{
 	"remixer":    {Kind: KindString, RequiredCap: CapMetadata, Accessor: func(t Track) string { return t.Remixer }},
 	"mix":        {Kind: KindString, RequiredCap: CapMetadata, Accessor: func(t Track) string { return t.Mix }},
 	"duration":   {Kind: KindNumeric, RequiredCap: CapNone, Accessor: func(t Track) string { return strconv.Itoa(t.Duration) }},
-	"playlists":  {Kind: KindNumeric, RequiredCap: CapNone, Accessor: func(t Track) string { return "0" }},
 }
 
 // CollectionFields defines the properties available within specific track collections.
@@ -67,6 +66,10 @@ var CollectionFields = map[string]map[string]FieldKind{
 		"bpm":      KindNumeric,
 		"position": KindNumeric,
 	},
+	"playlists": {
+		"name":   KindString,
+		"folder": KindString,
+	},
 }
 
 // CollectionCapabilities maps collections to the required capability to use them.
@@ -74,6 +77,7 @@ var CollectionCapabilities = map[string]Capability{
 	"hotcues":    CapCues,
 	"memorycues": CapCues,
 	"beatgrids":  CapBeatgrids,
+	"playlists":  CapNone,
 }
 
 // GroupFields is the single source of truth for queryable group metadata.

@@ -8,8 +8,8 @@ import (
 type ReadableLibrary interface {
 	// GetResources returns all resources of a specific kind (track, group).
 	GetResources(kind string) []models.Resource
-	// GetMembershipMap returns a mapping of track IDs to the names of groups they belong to.
-	GetMembershipMap() map[string][]string
+	// GetMembershipMap returns a mapping of track IDs to the playlists they belong to.
+	GetMembershipMap() map[string][]models.PlaylistMembership
 }
 
 // WritableLibrary extends ReadableLibrary with operations to modify the library.

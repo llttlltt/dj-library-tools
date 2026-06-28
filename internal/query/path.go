@@ -68,6 +68,10 @@ func ResolvePath(track models.Track, path string) (string, bool) {
 		for _, tm := range track.TempoMarkers {
 			values = append(values, resolveMarkerProperty(tm, property))
 		}
+	case "playlists":
+		for _, pm := range track.Playlists {
+			values = append(values, resolvePlaylistProperty(pm, property))
+		}
 	default:
 		return "", false
 	}
@@ -122,5 +126,16 @@ func resolveMarkerProperty(tm models.TempoMarker, prop string) string {
 		return fmt.Sprintf("%.4f", tm.Position)
 	default:
 		return fmt.Sprintf("%.4f", tm.BPM)
+	}
+}
+
+func resolvePlaylistProperty(pm models.PlaylistMembership, prop string) string {
+	switch strings.ToLower(prop) {
+	case "name":
+		return pm.Name
+	case "folder":
+		return pm.Folder
+	default:
+		return pm.Name
 	}
 }

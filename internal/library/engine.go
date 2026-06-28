@@ -31,7 +31,15 @@ func (e *Engine) Ls(queryString string, matcher query.CustomMatcher) ([]models.T
 	resources := e.Library.GetResources("track")
 	for _, res := range resources {
 		track := res.(models.Track)
-		if eval.MatchesWithPlaylists(track, membership[track.ID]) {
+		track.Playlists = membership[track.ID]
+		
+		// For backward compatibility and convenience, we extract playlist names to a slice
+		var playlistNames []string
+		for _, p := range track.Playlists {
+			playlistNames = append(playlistNames, p.Name)
+		}
+		
+		if eval.MatchesWithPlaylists(track, playlistNames) {
 			matched = append(matched, track)
 		}
 	}
