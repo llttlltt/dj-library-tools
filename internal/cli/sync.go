@@ -6,7 +6,6 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/resolver"
-	"github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/spf13/cobra"
 )
 
@@ -79,27 +78,16 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 
 				prov := tgt.Provider
 
-				// 1. Membership Sync
+				// Perform Membership and Metadata Sync
 				err = prov.System().Sync(getExecContext(), src.Tracks, tgt.Location.Query, provider.SyncOptions{
-					ExportDest:   exportDest,
-					ExportFormat: exportFormat,
-					AppendOnly:   syncAppend,
+					ExportDest:     exportDest,
+					ExportFormat:   exportFormat,
+					AppendOnly:     syncAppend,
+					MetadataFields: metadataFields,
+					MatchFields:    matchFields,
 				})
 				if err != nil {
 					return HandleError(err)
-				}
-
-				// 2. Metadata Sync (if requested)
-				if len(metadataFields) > 0 {
-					targetTracks, err := prov.Tracks().List(getExecContext(), "")
-					if err == nil {
-						matcher := sync.NewMatcher(targetTracks).WithKeys(matchFields)
-						matches := sync.NewOrchestrator(nil, apply, verbose).WithMatcher(matcher).Join(src.Tracks, matchFields)
-						
-						if err := prov.Tracks().UpdateBatch(getExecContext(), matches, metadataFields); err != nil {
-							return HandleError(err)
-						}
-					}
 				}
 			}
 			return nil

@@ -28,10 +28,17 @@ type ContainmentPolicy struct {
 	AllowNestedFolders      bool
 }
 
-// ExecutionContext holds runtime state for provider operations.
+// ExecutionContext holds runtime state and feedback channels for provider operations.
 type ExecutionContext struct {
-	Apply   bool // If true, changes are persisted. If false, operations should be previewed/simulated.
-	Verbose bool
+	Apply    bool
+	Verbose  bool
+	Feedback Feedback
+}
+
+// Feedback defines an interface for providing user feedback during operations.
+type Feedback interface {
+	OnPreview(message string)
+	OnSuccess(message string)
 }
 
 // Provider is the entry point for all provider-specific operations.
@@ -99,6 +106,7 @@ type SystemService interface {
 	Containment() ContainmentPolicy
 	MetadataCapabilities() []string
 	SupportedResources() []string
+	TableHeaders() []string
 
 	// Save writes changes to persistent storage.
 	Save(ctx ExecutionContext, path string) error
@@ -114,10 +122,12 @@ type SystemService interface {
 }
 
 type SyncOptions struct {
-	ExportDest   string
-	ExportFormat string
-	PathMaps     map[string]string
-	AppendOnly   bool
+	ExportDest     string
+	ExportFormat   string
+	PathMaps       map[string]string
+	AppendOnly     bool
+	MetadataFields []string // If set, sync these metadata fields
+	MatchFields    []string // Keys to use for matching tracks (e.g. artist, title, filename)
 }
 
 func ToTrackSlice(res []models.Resource) []models.Track {

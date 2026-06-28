@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/llttlltt/dj-library-tools/internal/djerr"
 	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/fatih/color"
 )
 
 // GatedProvider wraps a provider and enforces capabilities and safety at the interface level.
@@ -47,7 +46,7 @@ func (s *gatedTrackService) Update(ctx ExecutionContext, query string, changes m
 		return 0, djerr.ErrReadOnly
 	}
 	if !ctx.Apply {
-		fmt.Printf("[%s] Would update tracks matching %q with %v\n", color.YellowString("Preview"), query, changes)
+		ctx.Feedback.OnPreview(fmt.Sprintf("update tracks matching %q with %v", query, changes))
 		return 0, nil
 	}
 	return s.base.Update(ctx, query, changes)
@@ -58,7 +57,7 @@ func (s *gatedTrackService) UpdateBatch(ctx ExecutionContext, matches []models.M
 		return djerr.ErrReadOnly
 	}
 	if !ctx.Apply {
-		fmt.Printf("[%s] Would sync metadata fields %v for %d matched tracks\n", color.YellowString("Preview"), fields, len(matches))
+		ctx.Feedback.OnPreview(fmt.Sprintf("sync metadata fields %v for %d matched tracks", fields, len(matches)))
 		return nil
 	}
 	return s.base.UpdateBatch(ctx, matches, fields)
@@ -69,7 +68,7 @@ func (s *gatedTrackService) Delete(ctx ExecutionContext, query string) (int, err
 		return 0, djerr.ErrReadOnly
 	}
 	if !ctx.Apply {
-		fmt.Printf("[%s] Would delete tracks matching %q\n", color.RedString("Preview"), query)
+		ctx.Feedback.OnPreview(fmt.Sprintf("delete tracks matching %q", query))
 		return 0, nil
 	}
 	return s.base.Delete(ctx, query)
@@ -93,7 +92,7 @@ func (s *gatedTrackGroupService) Add(ctx ExecutionContext, tracks []models.Track
 		return 0, djerr.ErrReadOnly
 	}
 	if !ctx.Apply {
-		fmt.Printf("[%s] Would add %d tracks to %q\n", color.GreenString("Preview"), len(tracks), target.Name)
+		ctx.Feedback.OnPreview(fmt.Sprintf("add %d tracks to %q", len(tracks), target.Name))
 		return len(tracks), nil
 	}
 	return s.base.Add(ctx, tracks, target)
@@ -104,7 +103,7 @@ func (s *gatedTrackGroupService) Remove(ctx ExecutionContext, tracks []models.Tr
 		return 0, djerr.ErrReadOnly
 	}
 	if !ctx.Apply {
-		fmt.Printf("[%s] Would remove %d tracks from %q\n", color.RedString("Preview"), len(tracks), group.Name)
+		ctx.Feedback.OnPreview(fmt.Sprintf("remove %d tracks from %q", len(tracks), group.Name))
 		return len(tracks), nil
 	}
 	return s.base.Remove(ctx, tracks, group)
@@ -115,7 +114,7 @@ func (s *gatedTrackGroupService) Move(ctx ExecutionContext, tracks []models.Trac
 		return 0, djerr.ErrReadOnly
 	}
 	if !ctx.Apply {
-		fmt.Printf("[%s] Would move %d tracks from %q to %q\n", color.YellowString("Preview"), len(tracks), from.Name, to.Name)
+		ctx.Feedback.OnPreview(fmt.Sprintf("move %d tracks from %q to %q", len(tracks), from.Name, to.Name))
 		return len(tracks), nil
 	}
 	return s.base.Move(ctx, tracks, from, to)
@@ -136,7 +135,7 @@ func (s *gatedGroupService) Create(ctx ExecutionContext, parent models.ResourceG
 		return models.ResourceGroup{}, djerr.ErrUnsupportedResource
 	}
 	if !ctx.Apply {
-		fmt.Printf("[%s] Would create %s %q in folder %q\n", color.GreenString("Preview"), gt, name, parent.Name)
+		ctx.Feedback.OnPreview(fmt.Sprintf("create %s %q in folder %q", gt, name, parent.Name))
 		return models.ResourceGroup{Name: name, Kind: gt}, nil
 	}
 	return s.base.Create(ctx, parent, name, gt, pos)
@@ -148,10 +147,10 @@ func (s *gatedGroupService) Update(ctx ExecutionContext, group models.ResourceGr
 	}
 	if !ctx.Apply {
 		if newName != "" {
-			fmt.Printf("[%s] Would rename %s %q to %q\n", color.YellowString("Preview"), group.GetKind(), group.Name, newName)
+			ctx.Feedback.OnPreview(fmt.Sprintf("rename %s %q to %q", group.GetKind(), group.Name, newName))
 		}
 		if newParent != nil {
-			fmt.Printf("[%s] Would move %s %q into folder %q\n", color.YellowString("Preview"), group.GetKind(), group.Name, newParent.Name)
+			ctx.Feedback.OnPreview(fmt.Sprintf("move %s %q into folder %q", group.GetKind(), group.Name, newParent.Name))
 		}
 		return nil
 	}
@@ -163,7 +162,7 @@ func (s *gatedGroupService) Delete(ctx ExecutionContext, group models.ResourceGr
 		return djerr.ErrReadOnly
 	}
 	if !ctx.Apply {
-		fmt.Printf("[%s] Would delete %s %q\n", color.RedString("Preview"), group.GetKind(), group.Name)
+		ctx.Feedback.OnPreview(fmt.Sprintf("delete %s %q", group.GetKind(), group.Name))
 		return nil
 	}
 	return s.base.Delete(ctx, group)

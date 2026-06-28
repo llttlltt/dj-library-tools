@@ -136,6 +136,9 @@ func (s *m3uSystemService) Capabilities() provider.ProviderCapabilities {
 func (s *m3uSystemService) Containment() provider.ContainmentPolicy { return provider.ContainmentPolicy{} }
 func (s *m3uSystemService) MetadataCapabilities() []string { return []string{"display", "location"} }
 func (s *m3uSystemService) SupportedResources() []string { return []string{"tracks", "playlists"} }
+func (s *m3uSystemService) TableHeaders() []string {
+	return []string{"Duration", "Display Name", "Location"}
+}
 
 func (s *m3uSystemService) Save(ctx provider.ExecutionContext, path string) error {
 	if path == "" { path = s.path }
@@ -162,9 +165,11 @@ func (s *m3uSystemService) Fix(ctx provider.ExecutionContext, resource string, q
 
 func (s *m3uSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, targetQuery string, opts provider.SyncOptions) error {
 	return sync.SyncToLibrary(m3u.NewLibrary(s.tracks), tracks, targetQuery, sync.SyncOptions{
-		ExportDest:   opts.ExportDest,
-		ExportFormat: opts.ExportFormat,
-		PathMaps:     opts.PathMaps,
+		ExportDest:     opts.ExportDest,
+		ExportFormat:   opts.ExportFormat,
+		PathMaps:       opts.PathMaps,
+		MetadataFields: opts.MetadataFields,
+		MatchFields:    opts.MatchFields,
 	}, ctx.Apply, ctx.Verbose, opts.AppendOnly)
 }
 

@@ -157,7 +157,7 @@ func listProvider(sel *resolver.Selection, listSort string, jsonOutput bool) err
 	if listSort != "" {
 		sel.Provider.Tracks().Sort(getExecContext(), sel.Tracks, listSort)
 	}
-	renderTrackTable(sel.Location.Provider, sel.Tracks)
+	renderTrackTable(sel.Provider, sel.Tracks)
 	return nil
 }
 

@@ -2,9 +2,11 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
 )
 
 type Table struct {
@@ -44,30 +46,17 @@ func (t *Table) Render() {
 	}
 }
 
-func renderTrackTable(providerName string, tracks []models.Track) {
-	// Standard headers for all providers
-	headers := []string{"BPM", "Key", "Artist", "Title", "Rating"}
-	if providerName == "m3u" || providerName == "m3u8" {
-		headers = []string{"Duration", "Display Name", "Location"}
-	}
+func renderTrackTable(prov provider.Provider, tracks []models.Track) {
+	headers := prov.System().TableHeaders()
 
 	t := &Table{Headers: headers}
 	for _, tr := range tracks {
-		var row []string
-		if providerName == "m3u" || providerName == "m3u8" {
-			row = []string{
-				fmt.Sprintf("%d", tr.Duration),
-				tr.Display,
-				tr.Location,
-			}
-		} else {
-			row = []string{
-				fmt.Sprintf("%.2f", tr.BPM),
-				tr.Key,
-				tr.Artist,
-				tr.Title,
-				fmt.Sprintf("%d", tr.Rating),
-			}
+		row := make([]string, len(headers))
+		for i, h := range headers {
+			row[i] = tr.Value(strings.ToLower(h))
+			// Handle formatted fields
+			if h == "Display Name" { row[i] = tr.Display }
+			if h == "Location" { row[i] = tr.Location }
 		}
 		t.Rows = append(t.Rows, row)
 	}
