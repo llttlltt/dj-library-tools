@@ -8,7 +8,6 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/provider/factory"
-	"github.com/llttlltt/dj-library-tools/internal/provider/m3u"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"
@@ -44,7 +43,6 @@ func RunBulkOperation(verb string, targetNames []string, itemIDs []string, actio
 			fmt.Printf("%s %d items in %q...\n", stringsTitle(verb), len(itemIDs), name)
 		}
 
-		// We process in chunks to show progress
 		chunkSize := 10
 		if len(itemIDs) < chunkSize {
 			chunkSize = len(itemIDs)
@@ -74,8 +72,8 @@ func RunBulkOperation(verb string, targetNames []string, itemIDs []string, actio
 // Selection represents a resolved set of resources from a provider.
 type Selection struct {
 	Items    []models.Resource
-	Tracks   []models.Track // Convenience helpers
-	Nodes    []models.ResourceGroup  // Convenience helpers
+	Tracks   []models.Track
+	Nodes    []models.ResourceGroup
 	Location utils.Location
 	Provider provider.Provider
 }
@@ -91,68 +89,64 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 	}
 
 	cfg, _ := config.LoadAppConfig()
-	rbXML, primaryPath, _ := loadXMLFunc()
+	
+	// Default to primary file path unless sync targets or specific overrides exist
+	path := filePath
+	if loc.Provider == "m3u" || loc.Provider == "m3u8" {
+		path = loc.Resource
+	}
 
-	prov, err := factory.NewProvider(loc.Provider, rbXML, primaryPath, cfg)
+	opts := factory.ProviderOptions{
+		FilePath: path,
+		Config:   cfg,
+	}
+
+	// Test hook: if loadXMLFunc is overridden (in tests), grab the mock XML
+	if strings.Contains(loc.Provider, "rb") || strings.Contains(loc.Provider, "rekordbox") {
+		if rbXML, xmlPath, err := loadXMLFunc(); err == nil && xmlPath == "mock.xml" {
+			opts.MockXML = rbXML
+			opts.FilePath = xmlPath
+		}
+	}
+
+	prov, err := factory.NewProvider(loc.Provider, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	// For M3U, the "Resource" part of the location is actually the file path.
-	m3uPath := loc.Resource
+	sel := &Selection{Location: loc, Provider: prov}
+	
 	isM3U := loc.Provider == "m3u" || loc.Provider == "m3u8"
 	if isM3U {
-		// If the resource was something like "test.m3u8/tracks", we should strip /tracks
-		if strings.HasSuffix(m3uPath, "/tracks") {
-			m3uPath = strings.TrimSuffix(m3uPath, "/tracks")
+		if strings.HasSuffix(loc.Resource, "/tracks") {
 			loc.Resource = "tracks"
 		} else {
 			loc.Resource = "playlists"
 		}
-
-		m3uProv, err := m3u.NewM3UProvider(m3uPath)
-		if err != nil {
-			return nil, err
-		}
-		prov = m3uProv
 	}
 
-	sel := &Selection{Location: loc, Provider: prov}
-	if isM3U {
-		if loc.Resource == "playlists" {
-			nodes, _ := prov.GetPlaylists("")
-			sel.Nodes = nodes
-			for _, n := range nodes {
-				sel.Items = append(sel.Items, n)
-			}
-		}
-	}
-
-	if loc.Resource == "tracks" || isM3U {
+	if loc.Resource == "tracks" {
 		tracks, err := prov.GetTracks(loc.Query)
 		if err != nil {
 			return nil, err
 		}
 		sel.Tracks = tracks
-		// Only add to sel.Items if we haven't already added nodes
-		if len(sel.Items) == 0 {
-			for _, t := range tracks {
-				sel.Items = append(sel.Items, t)
-			}
+		for _, t := range tracks {
+			sel.Items = append(sel.Items, t)
 		}
 	} else {
-		var nodes []models.ResourceGroup
+		var groups []models.ResourceGroup
 		var err error
 		if loc.Resource == "folders" {
-			nodes, err = prov.GetFolders(loc.Query)
+			groups, err = prov.GetFolders(loc.Query)
 		} else {
-			nodes, err = prov.GetPlaylists(loc.Query)
+			groups, err = prov.GetPlaylists(loc.Query)
 		}
 		if err != nil {
 			return nil, err
 		}
-		sel.Nodes = nodes
-		for _, n := range nodes {
+		sel.Nodes = groups
+		for _, n := range groups {
 			sel.Items = append(sel.Items, n)
 		}
 	}
@@ -160,7 +154,6 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 	return sel, nil
 }
 
-// stringsTitle is a simple helper since strings.Title is deprecated.
 func stringsTitle(s string) string {
 	if s == "" {
 		return ""
