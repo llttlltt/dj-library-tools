@@ -57,15 +57,13 @@ nav:
       - M3U: guide/query/providers/m3u/index.md
     - Workflows:
       - index: guide/workflows/index.md
-      - Automating Playlists: guide/workflows/automating-playlists.md
+      - Creating and Updating Playlists: guide/workflows/creating-and-updating-playlists.md
       - Cleaning Up: guide/workflows/cleaning-up.md
       - Library Repair: guide/workflows/library-repair.md
       - Metadata Hardening: guide/workflows/metadata-hardening.md
       - Metadata Reconciliation: guide/workflows/metadata-reconciliation.md
       - Organizing by Complexity: guide/workflows/organizing-by-complexity.md
       - Organizing Resources: guide/workflows/organizing-resources.md
-      - Performance Prep: guide/workflows/performance-prep.md
-      - Syncing to Mobile: guide/workflows/syncing-to-mobile.md
     - Commands:
       - index: guide/commands/index.md
       - Reference:
