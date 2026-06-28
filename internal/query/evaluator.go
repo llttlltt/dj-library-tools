@@ -214,11 +214,19 @@ func (e *Evaluator) getFieldValue(track models.Track, playlists []string, field 
 	case "samplerate":
 		return strconv.Itoa(track.SampleRate)
 	case "hotcues":
-		return strconv.Itoa(track.HotCues)
+		count := 0
+		for _, cp := range track.CuePoints {
+			if cp.Num != -1 { count++ }
+		}
+		return strconv.Itoa(count)
 	case "memorycues":
-		return strconv.Itoa(track.MemoryCues)
+		count := 0
+		for _, cp := range track.CuePoints {
+			if cp.Num == -1 { count++ }
+		}
+		return strconv.Itoa(count)
 	case "beatgrids":
-		return strconv.Itoa(track.BeatgridCount)
+		return strconv.Itoa(len(track.TempoMarkers))
 	case "remixer":
 		return track.Remixer
 	case "mix":
