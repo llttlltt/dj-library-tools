@@ -84,6 +84,14 @@ func (e *Evaluator) matchComparison(track models.Track, playlists []string, c Co
 	field := strings.ToLower(c.Field)
 	targetValue := ResolveValue(c.Field, c.Value)
 
+	// Path-based resolution
+	if isPath(c.Field) {
+		val, ok := ResolvePath(track, c.Field)
+		if ok {
+			return Compare(c.Field, val, targetValue, c.Operator)
+		}
+	}
+
 	// Custom implementation-specific delegation
 	if e.Matcher != nil && isCalculatedField(field) && !isNumericIntent(c) {
 		return e.Matcher.CustomMatch(track, c.Field, c.Operator, c.Value)
@@ -106,6 +114,10 @@ func (e *Evaluator) matchGroupComparison(group models.ResourceGroup, c Compariso
 
 func isCalculatedField(field string) bool {
 	return field == "hotcues" || field == "memorycues" || field == "beatgrids"
+}
+
+func isPath(field string) bool {
+	return strings.ContainsAny(field, "./-")
 }
 
 func isNumericIntent(c Comparison) bool {
