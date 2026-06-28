@@ -1,6 +1,6 @@
 # Metadata Hardening
 
-A "hardened" library is one where every track is fully analyzed, cue-pointed, and correctly tagged. This workflow helps you identify gaps in your metadata and fix them in bulk.
+A "hardened" library is one where every track is fully analyzed, cue-pointed, and correctly tagged. This workflow helps you identify gaps in your metadata and reconcile them in bulk.
 
 ### 1. Identify Missing Beatgrids
 Analyze which tracks are missing beatgrid information (Tempo markers). These are tracks you haven't "locked in" for syncing yet.
@@ -19,15 +19,15 @@ Use color coding to flag tracks that need specific types of work. For example, u
 djlt ls rb/tracks "color:red && hotcues:>3"
 ```
 
-### 3. Verify Comments
-Many DJs use the `comment` field for energy levels or custom tags. Find tracks that are missing these vital clues.
+### 3. Reconcile from External Sources
+If you have metadata (like ratings or grids) in a different library, use the `sync` command to reconcile it without moving files.
 
 ```bash
-# Find tracks with no comments
-djlt ls rb/tracks "comment:none"
+# Sync ratings from Plex into your Rekordbox collection
+djlt sync plex/tracks --to rb/tracks --metadata rating
 ```
 
-### 4. Bulk Fixing
+### 4. Bulk Processing
 If you find a group of tracks that are missing a specific tag, you can move them into a temporary "To Tag" playlist to process them in Rekordbox.
 
 ```bash
@@ -38,8 +38,7 @@ djlt mv rb/tracks "comment:none" --from "rb/playlists name:Inbox" --to "rb/playl
 ---
 
 ## The analyze-tag loop
-The most effective way to harden your library is the query-fix loop:
+The most effective way to harden your library is the query-reconcile loop:
 1. Run `ls` with a specific metadata gap (e.g. `hotcues:0`).
-2. Move those tracks to a specific playlist using `mv`.
-3. Open Rekordbox, process the tracks in that playlist.
-4. Repeat until the query returns zero results.
+2. Fix the metadata in your provider or reconcile from a backup using `sync --metadata`.
+3. Repeat until the query returns zero results.
