@@ -1,6 +1,6 @@
 # rm
 
-Remove a resource or membership from the library
+Permanently delete resources or remove membership
 
 ```
 djlt rm [resource] [query] [flags]
@@ -8,7 +8,7 @@ djlt rm [resource] [query] [flags]
 ### Options
 
 ```
-      --from strings   Origin resource(s) to remove from (repeatable)
+      --from strings   Origin resource(s) to remove from
   -h, --help           help for rm
 ```
 

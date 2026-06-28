@@ -13,7 +13,7 @@ djlt update [resource] [query] --from [source-file] [flags]
   -h, --help            help for update
       --merge           Merge metadata instead of overwriting
   -o, --output string   Output path for the updated Rekordbox XML
-  -t, --to string       Destination Rekordbox XML to update (defaults to primary library)
+  -t, --to string       Destination library file to update (defaults to primary library)
 ```
 
 ### Inherited Options
