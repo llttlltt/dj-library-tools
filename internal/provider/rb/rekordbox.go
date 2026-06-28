@@ -83,10 +83,7 @@ func (s *rekordboxTrackService) UpdateBatch(ctx provider.ExecutionContext, match
 		fmt.Printf("\nSuccessfully updated %d tracks.\n", count)
 	}
 
-	if !ctx.Apply {
-		return rekordbox.WriteRekordboxLibrary(s.path, rbXML)
-	}
-	return nil
+	return rekordbox.WriteRekordboxLibrary(s.path, rbXML)
 }
 
 func (s *rekordboxTrackService) Delete(ctx provider.ExecutionContext, query string) (int, error) {
@@ -136,19 +133,15 @@ func (s *rekordboxTrackService) Move(ctx provider.ExecutionContext, tracks []mod
 		fmt.Printf("Moving %d tracks from %q to %q\n", len(tracks), from.Name, to.Name)
 	}
 
-	if !ctx.Apply {
-		added, err := s.engine.Library.(library.WritableLibrary).AddTracks(to.ID, ids)
-		if err != nil {
-			return 0, err
-		}
-		removed, err := s.engine.Library.(library.WritableLibrary).RemoveTracks(from.ID, ids)
-		if err != nil {
-			return added, err
-		}
-		return removed, nil 
+	added, err := s.engine.Library.(library.WritableLibrary).AddTracks(to.ID, ids)
+	if err != nil {
+		return 0, err
 	}
-
-	return len(tracks), nil
+	removed, err := s.engine.Library.(library.WritableLibrary).RemoveTracks(from.ID, ids)
+	if err != nil {
+		return added, err
+	}
+	return removed, nil 
 }
 
 func (s *rekordboxTrackService) Sort(ctx provider.ExecutionContext, tracks []models.Track, field string) {
@@ -163,14 +156,14 @@ func (s *rekordboxGroupService) List(ctx provider.ExecutionContext, query string
 	return s.engine.LsGroups(query)
 }
 
-func (s *rekordboxGroupService) Create(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, groupType models.GroupKind, position int) (models.ResourceGroup, error) {
+func (s *rekordboxGroupService) Create(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, groupKind models.GroupKind, position int) (models.ResourceGroup, error) {
 	if parent.Name != "" && parent.Kind == models.GroupKindPlaylist {
 		return models.ResourceGroup{}, fmt.Errorf("cannot create group inside playlist %q (containers must live in folders)", parent.Name)
 	}
 	if ctx.Verbose {
-		fmt.Printf("Creating %s %q in %q\n", groupType, name, parent.Name)
+		fmt.Printf("Creating %s %q in %q\n", groupKind, name, parent.Name)
 	}
-	return s.engine.Library.(library.WritableLibrary).CreateGroup(parent.ID, name, groupType, position)
+	return s.engine.Library.(library.WritableLibrary).CreateGroup(parent.ID, name, groupKind, position)
 }
 
 func (s *rekordboxGroupService) Update(ctx provider.ExecutionContext, group models.ResourceGroup, newName string, newParent *models.ResourceGroup) error {
@@ -266,10 +259,7 @@ func (s *rekordboxSystemService) Sync(ctx provider.ExecutionContext, tracks []mo
 		return err
 	}
 
-	if s.rbXML == nil && !ctx.Apply {
-		return rbLib.Save(s.path)
-	}
-	return nil
+	return rbLib.Save(s.path)
 }
 
 func (s *rekordboxSystemService) Identify(name string, groupType models.GroupKind) string {
