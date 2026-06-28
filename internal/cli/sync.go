@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
-	"github.com/llttlltt/dj-library-tools/internal/library"
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
+	"github.com/llttlltt/dj-library-tools/internal/provider/rb"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/spf13/cobra"
@@ -89,7 +89,7 @@ func syncToRekordbox(src, tgt *Selection, exportDest, exportFormat string, appen
 		return err
 	}
 
-	orch := sync.NewOrchestrator(nil, library.NewRekordboxLibrary(rbXML), dryRun, verbose)
+	orch := sync.NewOrchestrator(nil, rb.NewRekordboxLibrary(rbXML), dryRun, verbose)
 
 	tracks, err := src.Provider.GetTracks(src.Location.Query)
 	if err != nil {
@@ -106,7 +106,7 @@ func syncToRekordbox(src, tgt *Selection, exportDest, exportFormat string, appen
 	}
 
 	if !dryRun {
-		return library.NewRekordboxLibrary(rbXML).Save(path)
+		return rb.NewRekordboxLibrary(rbXML).Save(path)
 	}
 	return nil
 }

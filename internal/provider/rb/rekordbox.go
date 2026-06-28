@@ -40,7 +40,7 @@ func (p *RekordboxProvider) Name() string {
 }
 
 func (p *RekordboxProvider) GetTracks(query string) ([]models.Track, error) {
-	return p.Engine.Ls(query)
+	return p.Engine.Ls(query, p)
 }
 
 func (p *RekordboxProvider) GetPlaylists(query string) ([]models.ResourceGroup, error) {
@@ -108,9 +108,9 @@ func NewRekordboxProvider(eng *library.Engine, path string) *RekordboxProvider {
 	return &RekordboxProvider{Engine: eng, path: path}
 }
 
-func (p *RekordboxProvider) CustomMatch(track models.Track, field string, op string, value string) bool {
+func (p *RekordboxProvider) CustomMatch(track models.Track, field string, op query.Operator, value string) bool {
 	target := strings.ToLower(value)
-	operator := query.Operator(op)
+	operator := op
 
 	if rt, ok := track.Raw.(rekordbox.Track); ok {
 		if field == "hotcues" {

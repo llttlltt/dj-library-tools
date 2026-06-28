@@ -2,6 +2,7 @@ package provider
 
 import (
 	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/query"
 )
 
 // ProviderCapabilities defines what a provider is able to do.
@@ -35,7 +36,7 @@ type Provider interface {
 	GetContainmentPolicy() ContainmentPolicy
 
 	// CustomMatch allows the provider to handle complex query fields.
-	CustomMatch(track models.Track, field string, op string, value string) bool
+	CustomMatch(track models.Track, field string, op query.Operator, value string) bool
 
 	// CanTranscode reports whether this provider can supply raw audio for transcoding.
 	CanTranscode() bool
