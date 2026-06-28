@@ -69,23 +69,16 @@ nav:
       - index: guide/commands/index.md
       - Reference:
         - index: commands/index.md
-        - ls: commands/djlt_ls.md
-        - sync: commands/djlt_sync.md
-        - edit: commands/djlt_edit.md
-        - mk: commands/djlt_mk.md
-        - mv: commands/djlt_mv.md
-        - rm: commands/djlt_rm.md
+        - ls: commands/ls.md
+        - sync: commands/sync.md
+        - edit: commands/edit.md
+        - mk: commands/mk.md
+        - mv: commands/mv.md
+        - rm: commands/rm.md
         - config:
-          - index: commands/djlt_config.md
-          - list: commands/djlt_config_list.md
-          - plex:
-            - index: commands/djlt_config_plex.md
-            - auth: commands/djlt_config_plex_auth.md
-            - host: commands/djlt_config_plex_host.md
-            - port: commands/djlt_config_plex_port.md
-            - map: commands/djlt_config_plex_map.md
-          - rb:
-            - index: commands/djlt_config_rb.md
-            - file: commands/djlt_config_rb_file.md
+          - index: commands/config/index.md
+          - list: commands/config/list.md
+          - plex: commands/config/plex/index.md
+          - rb: commands/config/rb/index.md
   - Development:
     - Architecture: development/architecture.md
