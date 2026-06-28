@@ -23,7 +23,7 @@ func newConfigCmd() *cobra.Command {
 - **plex.port**: Plex server port (default: 32400).
 - **plex.token**: Plex authentication token (usually set via 'djlt auth --plex').
 - **plex.map**: Remote-to-local path map entry. Used to bridge Plex remote paths to your local mount points.
-- **rekordbox.xml-path**: Absolute path to your Rekordbox XML export file.
+- **rekordbox.file-path**: Absolute path to your Rekordbox XML export file.
 
 ## Examples
 
@@ -31,7 +31,7 @@ func newConfigCmd() *cobra.Command {
   djlt config --list
 
 **Configure Rekordbox library**
-  djlt config rekordbox.xml-path ~/Documents/rekordbox.xml
+  djlt config rekordbox.file-path ~/Documents/rekordbox.xml
 
 **Set up Plex connection**
   djlt config plex.host 192.168.1.50
@@ -96,9 +96,9 @@ func runConfigSet(cfg *config.AppConfig, key, value string) error {
 		}
 		cfg.PathMaps[parts[0]] = parts[1]
 		fmt.Printf("plex.map %s -> %s\n", parts[0], parts[1])
-	case "rekordbox.xml-path":
+	case "rekordbox.file-path":
 		cfg.RekordboxXMLPath = value
-		fmt.Printf("rekordbox.xml-path = %s\n", value)
+		fmt.Printf("rekordbox.file-path = %s\n", value)
 	default:
 		return fmt.Errorf("unknown config key %q; run 'djlt config --help' for valid keys", key)
 	}
@@ -117,7 +117,7 @@ func runConfigGet(cfg *config.AppConfig, key string) error {
 		for remote, local := range cfg.PathMaps {
 			fmt.Printf("%s:%s\n", remote, local)
 		}
-	case "rekordbox.xml-path":
+	case "rekordbox.file-path":
 		fmt.Println(cfg.RekordboxXMLPath)
 	default:
 		return fmt.Errorf("unknown config key %q; run 'djlt config --help' for valid keys", key)
@@ -149,9 +149,9 @@ func runConfigUnset(cfg *config.AppConfig, key string, rest []string) error {
 		}
 		delete(cfg.PathMaps, remote)
 		fmt.Printf("removed plex.map %s\n", remote)
-	case "rekordbox.xml-path":
+	case "rekordbox.file-path":
 		cfg.RekordboxXMLPath = ""
-		fmt.Println("unset rekordbox.xml-path")
+		fmt.Println("unset rekordbox.file-path")
 	default:
 		return fmt.Errorf("unknown config key %q; run 'djlt config --help' for valid keys", key)
 	}
@@ -162,7 +162,7 @@ func printConfig(cfg *config.AppConfig) {
 	fmt.Printf("plex.host = %s\n", cfg.PlexHost)
 	fmt.Printf("plex.port = %d\n", cfg.PlexPort)
 	fmt.Printf("plex.token = %s\n", maskToken(cfg.PlexToken))
-	fmt.Printf("rekordbox.xml-path = %s\n", cfg.RekordboxXMLPath)
+	fmt.Printf("rekordbox.file-path = %s\n", cfg.RekordboxXMLPath)
 	for remote, local := range cfg.PathMaps {
 		fmt.Printf("plex.map = %s:%s\n", remote, local)
 	}

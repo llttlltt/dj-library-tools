@@ -16,7 +16,7 @@ func resetTestState() {
 	dryRun = false
 	verbose = false
 	jsonOutput = false
-	xmlPath = ""
+	filePath = ""
 }
 
 func executeCommand(args ...string) (string, error) {

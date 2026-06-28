@@ -10,14 +10,14 @@ import (
 )
 
 // NewProvider returns a Provider instance for the given name.
-func NewProvider(name string, rbXML *rekordbox.RekordboxLibraryXML, xmlPath string, cfg *config.AppConfig) (Provider, error) {
+func NewProvider(name string, rbXML *rekordbox.RekordboxLibraryXML, filePath string, cfg *config.AppConfig) (Provider, error) {
 	switch name {
 	case "rb", "rekordbox":
 		if rbXML == nil {
 			return nil, fmt.Errorf("rekordbox XML library required")
 		}
 		eng := library.NewEngine(library.NewRekordboxLibrary(rbXML))
-		return NewRekordboxProvider(eng, xmlPath), nil
+		return NewRekordboxProvider(eng, filePath), nil
 	case "plex":
 		token := os.Getenv("PLEX_TOKEN")
 		if token == "" {

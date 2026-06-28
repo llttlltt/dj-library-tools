@@ -89,26 +89,26 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 	}
 
 	cfg, _ := config.LoadAppConfig()
-	var rbXML, xmlPath, _ = loadXMLFunc()
+	rbXML, primaryPath, _ := loadXMLFunc()
 
-	prov, err := provider.NewProvider(loc.Provider, rbXML, xmlPath, cfg)
+	prov, err := provider.NewProvider(loc.Provider, rbXML, primaryPath, cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	// For M3U, the "Resource" part of the location is actually the file path.
-	filePath := loc.Resource
+	m3uPath := loc.Resource
 	isM3U := loc.Provider == "m3u" || loc.Provider == "m3u8"
 	if isM3U {
 		// If the resource was something like "test.m3u8/tracks", we should strip /tracks
-		if strings.HasSuffix(filePath, "/tracks") {
-			filePath = strings.TrimSuffix(filePath, "/tracks")
+		if strings.HasSuffix(m3uPath, "/tracks") {
+			m3uPath = strings.TrimSuffix(m3uPath, "/tracks")
 			loc.Resource = "tracks"
 		} else {
 			loc.Resource = "playlists"
 		}
 
-		m3uProv, err := provider.NewM3UProvider(filePath)
+		m3uProv, err := provider.NewM3UProvider(m3uPath)
 		if err != nil {
 			return nil, err
 		}
