@@ -24,3 +24,7 @@ func makeMockLibrary() *MockLibrary {
 		},
 	}
 }
+
+func (m *MockLibrary) GetMembershipMap() map[string][]string {
+	return nil
+}

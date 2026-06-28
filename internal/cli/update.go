@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/llttlltt/dj-library-tools/internal/library"
+	"github.com/llttlltt/dj-library-tools/internal/provider/rb"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 	"github.com/spf13/cobra"
@@ -60,7 +60,7 @@ Example:
 				return nil
 			}
 
-			destLibWrapper := library.NewRekordboxLibrary(mergedLibrary)
+			destLibWrapper := rb.NewRekordboxLibrary(mergedLibrary)
 			if err := destLibWrapper.Save(outputPath); err != nil {
 				return fmt.Errorf("error writing merged library to %q: %w", outputPath, err)
 			}
@@ -69,7 +69,7 @@ Example:
 		},
 	}
 	cmd.Flags().StringVarP(&updateFrom, "from", "F", "", "Source library file to read metadata from")
-	cmd.Flags().StringVarP(&updateTo, "to", "t", "", "Destination Rekordbox XML to update (defaults to primary library)")
+	cmd.Flags().StringVarP(&updateTo, "to", "t", "", "Destination library file to update (defaults to primary library)")
 	cmd.Flags().StringVarP(&updateOutput, "output", "o", "", "Output path for the updated Rekordbox XML")
 	cmd.Flags().BoolVar(&updateMerge, "merge", false, "Merge metadata instead of overwriting")
 	cmd.Flags().BoolVar(&updateForce, "force", false, "Overwrite output file if it already exists")

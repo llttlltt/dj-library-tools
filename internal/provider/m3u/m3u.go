@@ -49,7 +49,7 @@ func (p *M3UProvider) GetContainmentPolicy() provider.ContainmentPolicy {
 	}
 }
 
-func (p *M3UProvider) CustomMatch(track models.Track, field string, op string, value string) bool {
+func (p *M3UProvider) CustomMatch(track models.Track, field string, op query.Operator, value string) bool {
 	return false
 }
 

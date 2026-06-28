@@ -44,7 +44,7 @@ func (p *PlexProvider) GetContainmentPolicy() provider.ContainmentPolicy {
 	}
 }
 
-func (p *PlexProvider) CustomMatch(track models.Track, field string, op string, value string) bool {
+func (p *PlexProvider) CustomMatch(track models.Track, field string, op query.Operator, value string) bool {
 	return false
 }
 

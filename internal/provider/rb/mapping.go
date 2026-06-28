@@ -1,12 +1,13 @@
-package rekordbox
+package rb
 
 import (
 	"strconv"
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 )
 
-func (t Track) ToNeutral() models.Track {
+func ToNeutralTrack(t rekordbox.Track) models.Track {
 	mt := models.Track{
 		ID:           strconv.Itoa(t.TrackID),
 		Title:        t.Name,
@@ -49,12 +50,12 @@ func (t Track) ToNeutral() models.Track {
 	return mt
 }
 
-func (n Node) ToNeutral(parentFolder string) models.ResourceGroup {
+func ToNeutralGroup(n rekordbox.Node, parentFolder string) models.ResourceGroup {
 	// Folders (Type=0) store their child-node count in Count;
 	// playlists (Type=1) store their track count in Entries.
-	items := DerefInt32(n.Entries)
+	items := rekordbox.DerefInt32(n.Entries)
 	if n.Type == 0 {
-		items = DerefInt32(n.Count)
+		items = rekordbox.DerefInt32(n.Count)
 	}
 	return models.ResourceGroup{
 		Name:         n.Name,

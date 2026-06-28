@@ -20,7 +20,7 @@ func NewProvider(name string, rbXML *rekordbox.RekordboxLibraryXML, filePath str
 		if rbXML == nil {
 			return nil, fmt.Errorf("rekordbox XML library required")
 		}
-		eng := library.NewEngine(library.NewRekordboxLibrary(rbXML))
+		eng := library.NewEngine(rb.NewRekordboxLibrary(rbXML))
 		return rb.NewRekordboxProvider(eng, filePath), nil
 	case "plex":
 		token := os.Getenv("PLEX_TOKEN")
