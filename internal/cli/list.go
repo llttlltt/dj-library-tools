@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/query"
 	"github.com/llttlltt/dj-library-tools/internal/resolver"
 	"github.com/spf13/cobra"
 )
@@ -49,7 +51,7 @@ func newListCmd() *cobra.Command {
 			return listProvider(sel, listSort, jsonOutput, columns)
 		},
 	}
-	cmd.Flags().StringVar(&listSort, "sort", "", "Sort results by field (e.g. bpm, artist, title)")
+	cmd.Flags().StringVar(&listSort, "sort", "", "Sort results by any available field (e.g. artist, title, bpm, etc.)")
 	cmd.Flags().BoolVar(&listStats, "stats", false, "Show summary statistics for the selection")
 	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output results in JSON format")
 	cmd.Flags().BoolVar(&filterMissing, "missing", false, "Filter for tracks where the physical file is missing")
@@ -128,35 +130,27 @@ func listProviderStats(sel *resolver.Selection, jsonOutput bool) error {
 
 func listProvider(sel *resolver.Selection, listSort string, jsonOutput bool, columns []string) error {
 	if sel.Location.Resource == "playlists" || sel.Location.Resource == "folders" {
-		if jsonOutput {
-			data, _ := json.MarshalIndent(sel.Groups, "", "  ")
-			fmt.Println(string(data))
-			return nil
-		}
-		if len(sel.Groups) == 0 {
-			color.Yellow("No %s matched the query.", sel.Location.Resource)
-			return nil
-		}
-
+		// Group Logic...
 		if listSort != "" {
+			if _, ok := models.GroupFields[listSort]; !ok {
+				return fmt.Errorf("invalid sort field %q; valid fields are: %v", listSort, strings.Join(query.AllowedGroupFields, ", "))
+			}
 			sel.Provider.Groups().Sort(getExecContext(), sel.Groups, listSort)
 		}
 		renderGroupTable(sel.Groups, sel.Location.Resource[:len(sel.Location.Resource)-1])
 		return nil
 	}
 
-	if jsonOutput {
-		data, _ := json.MarshalIndent(sel.Tracks, "", "  ")
-		fmt.Println(string(data))
-		return nil
-	}
-
+	// Track Logic...
 	if len(sel.Tracks) == 0 {
 		color.Yellow("No tracks matched the query.")
 		return nil
 	}
 
 	if listSort != "" {
+		if _, ok := models.TrackFields[listSort]; !ok {
+			return fmt.Errorf("invalid sort field %q; valid fields are: %v", listSort, strings.Join(query.AllowedTrackFields, ", "))
+		}
 		sel.Provider.Tracks().Sort(getExecContext(), sel.Tracks, listSort)
 	}
 	renderTrackTable(sel.Provider, sel.Tracks, columns)
