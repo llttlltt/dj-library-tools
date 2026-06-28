@@ -5,7 +5,7 @@ DJ Library Tools CLI
 ### Options
 
 ```
-      --dry-run          Preview changes without writing
+      --apply          Actually apply changes to the library (destructive)
       --exists           Filter for tracks where the physical file exists
   -f, --file string      Path to the primary library file (Rekordbox XML, M3U, etc.)
   -h, --help             help for djlt

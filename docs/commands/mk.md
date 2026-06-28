@@ -18,7 +18,7 @@ djlt mk [resource] [name] [flags]
 ### Inherited Options
 
 ```
-      --dry-run          Preview changes without writing
+      --apply          Actually apply changes to the library (destructive)
       --exists           Filter for tracks where the physical file exists
   -f, --file string      Path to the primary library file (Rekordbox XML, M3U, etc.)
       --json             Output results in JSON format

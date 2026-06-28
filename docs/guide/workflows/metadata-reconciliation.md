@@ -8,17 +8,19 @@ Determine which library has the "Golden" metadata. For example, you might have f
 ### 2. Match and Preview
 Use the `sync` command with the `--metadata` flag. By default, `djlt` matches tracks by **Artist** and **Title**.
 
+Commands run in **Preview mode** by default, showing you which tracks will be updated.
+
 ```bash
 # Preview syncing beatgrids from a backup XML to your primary library
-djlt sync "rb/tracks" --file backup.xml --to "rb/tracks" --metadata beatgrids --dry-run
+djlt sync "rb/tracks" --file backup.xml --to "rb/tracks" --metadata beatgrids
 ```
 
-### 3. Change Match Criteria
-If your filenames are identical but your tags are slightly different, you can match by **Filename** instead.
+### 3. Commit Changes
+Once you have verified the matches in the preview, add the **`--apply`** flag to update your library:
 
 ```bash
 # Sync ratings from Plex to Rekordbox, matching by filename
-djlt sync "plex/tracks" --to "rb/tracks" --metadata rating --match filename
+djlt sync "plex/tracks" --to "rb/tracks" --metadata rating --match filename --apply
 ```
 
 ### 4. Selective Reconciliation
