@@ -79,6 +79,13 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 		return fmt.Errorf("could not find target playlist(s) matching %q", moveTo)
 	}
 
+	// Validation: Tracks can only be moved to Playlists, not Folders
+	for _, node := range tgt.Nodes {
+		if node.Type == 0 {
+			return fmt.Errorf("invalid move: cannot move tracks to folder %q (tracks must live in playlists)", node.Name)
+		}
+	}
+
 	if dryRun {
 		fmt.Printf("[Dry Run] Would move %d tracks from %d origins to %d targets\n", len(src.Tracks), len(org.Nodes), len(tgt.Nodes))
 		return nil
@@ -115,11 +122,19 @@ func runMoveNodes(wp provider.WritableProvider, src *Selection, moveTo string) e
 	if dryRun {
 		for _, t := range src.Nodes {
 			fmt.Printf("[Dry Run] Would move %s %q to folder %q\n", src.Location.Resource, t.Name, targetParent.Name)
+			// Validation: Folders/Playlists can only be moved to Folders, not Playlists
+			if targetParent.Type == 1 {
+				return fmt.Errorf("invalid move: cannot move %s to playlist %q (containers must live in folders)", src.Location.Resource, targetParent.Name)
+			}
 		}
 		return nil
 	}
 
 	for _, t := range src.Nodes {
+		// Validation: Folders/Playlists can only be moved to Folders, not Playlists
+		if targetParent.Type == 1 {
+			return fmt.Errorf("invalid move: cannot move %s to playlist %q (containers must live in folders)", src.Location.Resource, targetParent.Name)
+		}
 		if verbose {
 			fmt.Printf("Moving %s %q into folder %q...\n", src.Location.Resource, t.Name, targetParent.Name)
 		}

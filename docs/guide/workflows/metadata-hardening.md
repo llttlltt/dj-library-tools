@@ -28,11 +28,11 @@ djlt ls rb/tracks "comment:none"
 ```
 
 ### 4. Bulk Fixing
-If you find a group of tracks that are missing a specific tag, you can move them into a temporary "To Tag" folder to process them in Rekordbox.
+If you find a group of tracks that are missing a specific tag, you can move them into a temporary "To Tag" playlist to process them in Rekordbox.
 
 ```bash
-# Move all un-tagged tracks into a processing folder
-djlt mv rb/tracks "comment:none" --from "rb/playlists name:Inbox" --to "rb/folders name:'To Tag'"
+# Move all un-tagged tracks into a processing playlist
+djlt mv rb/tracks "comment:none" --from "rb/playlists name:Inbox" --to "rb/playlists name:'To Tag'"
 ```
 
 ---
@@ -40,6 +40,6 @@ djlt mv rb/tracks "comment:none" --from "rb/playlists name:Inbox" --to "rb/folde
 ## The analyze-tag loop
 The most effective way to harden your library is the query-fix loop:
 1. Run `ls` with a specific metadata gap (e.g. `hotcues:0`).
-2. Move those tracks to a specific folder using `mv`.
-3. Open Rekordbox, process the tracks in that folder.
+2. Move those tracks to a specific playlist using `mv`.
+3. Open Rekordbox, process the tracks in that playlist.
 4. Repeat until the query returns zero results.
