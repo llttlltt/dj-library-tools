@@ -37,15 +37,12 @@ func loadXML() (*rekordbox.RekordboxLibraryXML, string, error) {
 	return rbXML, path, nil
 }
 
-// NewRootCmd builds and returns a fully wired root command. Each call
-// produces an independent command tree — verb-specific flag vars live in
-// closures so there is no shared mutable state between instances. Tests
-// call NewRootCmd() directly to get isolation without a reset helper.
+// NewRootCmd builds and returns a fully wired root command.
 func NewRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "djlt",
 		Short: "DJ Library Tools CLI",
-		Long:  `A comprehensive CLI tool for managing DJ libraries and Rekordbox XMLs.`,
+		Long:  `A comprehensive CLI tool for managing DJ libraries across multiple providers.`,
 	}
 	root.PersistentFlags().StringVarP(&filePath, "file", "f", "", "Path to the primary library file (Rekordbox XML, M3U, etc.)")
 	root.PersistentFlags().StringVar(&toFilePath, "to-file", "", "Path to the destination library file for sync/move operations")
@@ -62,7 +59,6 @@ func NewRootCmd() *cobra.Command {
 		newAuthCmd(),
 		newConfigCmd(),
 		newFixCmd(),
-		newUpdateCmd(),
 	)
 	return root
 }

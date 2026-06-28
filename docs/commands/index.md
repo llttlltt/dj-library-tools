@@ -13,7 +13,7 @@ DJ Library Tools CLI
   -v, --verbose          Enable verbose logging
 ```
 
-A comprehensive CLI tool for managing DJ libraries and Rekordbox XMLs.
+A comprehensive CLI tool for managing DJ libraries across multiple providers.
 ## See also
 
 * [djlt auth](auth.md)	 - Authenticate with third-party providers
@@ -24,4 +24,3 @@ A comprehensive CLI tool for managing DJ libraries and Rekordbox XMLs.
 * [djlt mv](mv.md)	 - Move items between locations
 * [djlt rm](rm.md)	 - Permanently delete resources or remove membership
 * [djlt sync](sync.md)	 - Keep a playlist or metadata in sync with a track query
-* [djlt update](update.md)	 - Reconcile metadata between two libraries
