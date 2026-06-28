@@ -46,6 +46,25 @@ type SyncOptions struct {
 	PathMaps     map[string]string
 }
 
+// Join matches source tracks against the target library using the specified keys.
+func (o *Orchestrator) Join(sourceTracks []models.Track, matchFields []string) []models.MetadataMatch {
+	var matches []models.MetadataMatch
+	
+	// Create a new matcher specifically for these fields if needed, 
+	// for now we use the default (Artist/Title).
+	for _, st := range sourceTracks {
+		match := o.Matcher.Match(st)
+		if match.TargetTrack != nil && match.Confidence >= 0.8 {
+			matches = append(matches, models.MetadataMatch{
+				Source: st,
+				Target: *match.TargetTrack,
+			})
+		}
+	}
+	
+	return matches
+}
+
 func (o *Orchestrator) SyncToLibrary(tracks []models.Track, sourceQuery string, playlistName string, opts SyncOptions, appendOnly bool) error {
 	var transcoder *media.Transcoder
 	if opts.ExportDest != "" {
@@ -153,9 +172,6 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, sourceQuery string, 
 	}
 	close(jobs)
 	
-	// Wait logic needs to be careful in goroutines. Simplistic for now.
-	// In a real app we'd use WaitGroups but keeping close to original logic.
-	
 	var trackIDs []string
 	for i := 0; i < len(tracks); i++ {
 		if res := <-results; res != "" {
@@ -171,11 +187,8 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, sourceQuery string, 
 		if appendOnly {
 			o.Library.LinkTracks(playlistName, trackIDs)
 		} else {
-			// Upsert logic
 			err := o.Library.UpdateGroup(playlistName, trackIDs)
 			if err != nil {
-				// Default to root if folder not specified, or use source folder?
-				// Keeping it simple: attempt to create at root if update fails.
 				o.Library.CreateGroup("", playlistName, models.GroupTypePlaylist, -1)
 				o.Library.UpdateGroup(playlistName, trackIDs)
 			}
