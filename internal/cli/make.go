@@ -34,7 +34,7 @@ Example:
 func runCreateCmd(args []string, createIn, createFrom string, createAt int) error {
 	sel, err := ResolveSelection(args[0], "")
 	if err != nil {
-		return err
+		return HandleError(err)
 	}
 	name := args[1]
 
@@ -47,7 +47,7 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int) erro
 	if createFrom != "" {
 		src, err := ResolveSelection(createFrom, "")
 		if err != nil {
-			return err
+			return HandleError(err)
 		}
 		tracks = src.Tracks
 	}
@@ -59,11 +59,11 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int) erro
 
 	// Agnostic Pre-flight Validation
 	if err := wp.ValidateCreateGroup(models.ResourceGroup{Name: createIn}, groupType); err != nil {
-		return err
+		return HandleError(err)
 	}
 	if len(tracks) > 0 {
 		if err := wp.ValidateAddTracks(models.ResourceGroup{Name: name, Type: groupType}); err != nil {
-			return err
+			return HandleError(err)
 		}
 	}
 
@@ -76,7 +76,7 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int) erro
 
 	newNode, err := wp.CreateGroup(ctx, models.ResourceGroup{Name: createIn}, name, groupType, createAt)
 	if err != nil {
-		return err
+		return HandleError(err)
 	}
 
 	if len(tracks) > 0 {

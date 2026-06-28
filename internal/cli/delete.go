@@ -26,7 +26,7 @@ Example:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			sel, err := ResolveSelection(args[0], "")
 			if err != nil {
-				return err
+				return HandleError(err)
 			}
 
 			wp, ok := sel.Provider.(provider.WritableProvider)
@@ -60,7 +60,7 @@ func runDeleteResources(wp provider.WritableProvider, ctx provider.ExecutionCont
 				continue
 			}
 			if err := wp.DeleteGroup(ctx, node); err != nil {
-				return err
+				return HandleError(err)
 			}
 			fmt.Printf("Deleted %s %q\n", node.GetKind(), node.Name)
 		}
@@ -78,7 +78,7 @@ func runRemoveMembership(wp provider.WritableProvider, ctx provider.ExecutionCon
 	for _, fromStr := range from {
 		org, err := ResolveSelection(fromStr, "")
 		if err != nil {
-			return err
+			return HandleError(err)
 		}
 
 		for _, target := range org.Groups {

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
@@ -11,6 +12,25 @@ import (
 	"github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"
 )
+
+// HandleError provides user-friendly messages for sentinel provider errors.
+func HandleError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	if errors.Is(err, provider.ErrReadOnly) {
+		return fmt.Errorf("operation failed: this provider is read-only")
+	}
+	if errors.Is(err, provider.ErrUnsupportedResource) {
+		return fmt.Errorf("operation failed: this resource type is not supported by the provider")
+	}
+	if errors.Is(err, provider.ErrInvalidParent) {
+		return fmt.Errorf("operation failed: cannot create the resource in that location (structural constraint)")
+	}
+
+	return HandleError(err)
+}
 
 // BulkAction is a function that performs an action on a target and returns the number of items affected.
 type BulkAction func(targetName string, items []string) (bool, int)
@@ -72,7 +92,7 @@ func RunBulkOperation(verb string, targetNames []string, itemIDs []string, actio
 type Selection struct {
 	Items    []models.Resource
 	Tracks   []models.Track
-	Groups    []models.ResourceGroup
+	Groups   []models.ResourceGroup
 	Location utils.Location
 	Provider provider.Provider
 }
@@ -100,7 +120,6 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 		FilePath: filePath,
 		Config:   cfg,
 	}
-
 
 	prov, err := factory.NewProvider(loc.Provider, opts)
 	if err != nil {
