@@ -16,9 +16,9 @@ type ReadableLibrary interface {
 type WritableLibrary interface {
 	ReadableLibrary
 	// CreateGroup creates a new group (Playlist or Folder) under the specified parent.
-	CreateGroup(parentID, name string, groupType models.GroupType, position int) (models.ResourceGroup, error)
+	CreateGroup(parentID, name string, groupType models.GroupKind, position int) (models.ResourceGroup, error)
 	// DeleteGroup removes a group from the library.
-	DeleteGroup(groupID string, groupType models.GroupType) error
+	DeleteGroup(groupID string, groupType models.GroupKind) error
 	// AddTracks adds track memberships to a group.
 	AddTracks(groupID string, trackIDs []string) (int, error)
 	// RemoveTracks removes track memberships from a group.
@@ -26,9 +26,9 @@ type WritableLibrary interface {
 	// UpdateGroup replaces all track memberships in a group.
 	UpdateGroup(groupID string, trackIDs []string) error
 	// RenameGroup renames a group.
-	RenameGroup(groupID, newName string, groupType models.GroupType) error
+	RenameGroup(groupID, newName string, groupType models.GroupKind) error
 	// MoveGroup detaches a group and re-attaches it under a new parent.
-	MoveGroup(groupID string, groupType models.GroupType, targetParentID string) error
+	MoveGroup(groupID string, groupType models.GroupKind, targetParentID string) error
 	// Save writes changes back to persistent storage.
 	Save(path string) error
 }

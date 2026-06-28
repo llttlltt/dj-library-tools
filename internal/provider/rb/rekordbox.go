@@ -98,7 +98,7 @@ func (s *rekordboxTrackService) Groups() provider.TrackGroupService {
 }
 
 func (s *rekordboxTrackService) Add(ctx provider.ExecutionContext, tracks []models.Track, target models.ResourceGroup) (int, error) {
-	if target.Type == models.GroupTypeFolder {
+	if target.Kind == models.GroupKindFolder {
 		return 0, fmt.Errorf("cannot add tracks to folder %q (rekordbox tracks must live in playlists)", target.Name)
 	}
 	var ids []string
@@ -123,7 +123,7 @@ func (s *rekordboxTrackService) Remove(ctx provider.ExecutionContext, tracks []m
 }
 
 func (s *rekordboxTrackService) Move(ctx provider.ExecutionContext, tracks []models.Track, from models.ResourceGroup, to models.ResourceGroup) (int, error) {
-	if to.Type == models.GroupTypeFolder {
+	if to.Kind == models.GroupKindFolder {
 		return 0, fmt.Errorf("cannot move tracks into folder %q (rekordbox tracks must live in playlists)", to.Name)
 	}
 	
@@ -163,8 +163,8 @@ func (s *rekordboxGroupService) List(ctx provider.ExecutionContext, query string
 	return s.engine.LsGroups(query)
 }
 
-func (s *rekordboxGroupService) Create(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, groupType models.GroupType, position int) (models.ResourceGroup, error) {
-	if parent.Name != "" && parent.Type == models.GroupTypePlaylist {
+func (s *rekordboxGroupService) Create(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, groupType models.GroupKind, position int) (models.ResourceGroup, error) {
+	if parent.Name != "" && parent.Kind == models.GroupKindPlaylist {
 		return models.ResourceGroup{}, fmt.Errorf("cannot create group inside playlist %q (containers must live in folders)", parent.Name)
 	}
 	if ctx.Verbose {
@@ -175,15 +175,15 @@ func (s *rekordboxGroupService) Create(ctx provider.ExecutionContext, parent mod
 
 func (s *rekordboxGroupService) Update(ctx provider.ExecutionContext, group models.ResourceGroup, newName string, newParent *models.ResourceGroup) error {
 	if newName != "" {
-		if err := s.engine.Library.(library.WritableLibrary).RenameGroup(group.ID, newName, group.Type); err != nil {
+		if err := s.engine.Library.(library.WritableLibrary).RenameGroup(group.ID, newName, group.Kind); err != nil {
 			return err
 		}
 	}
 	if newParent != nil {
-		if newParent.Type == models.GroupTypePlaylist {
+		if newParent.Kind == models.GroupKindPlaylist {
 			return fmt.Errorf("cannot move group into playlist %q (containers must live in folders)", newParent.Name)
 		}
-		return s.engine.Library.(library.WritableLibrary).MoveGroup(group.ID, group.Type, newParent.ID)
+		return s.engine.Library.(library.WritableLibrary).MoveGroup(group.ID, group.Kind, newParent.ID)
 	}
 	return nil
 }
@@ -192,7 +192,7 @@ func (s *rekordboxGroupService) Delete(ctx provider.ExecutionContext, group mode
 	if ctx.Verbose {
 		fmt.Printf("Deleting %s %q\n", group.GetKind(), group.Name)
 	}
-	return s.engine.Library.(library.WritableLibrary).DeleteGroup(group.ID, group.Type)
+	return s.engine.Library.(library.WritableLibrary).DeleteGroup(group.ID, group.Kind)
 }
 
 func (s *rekordboxGroupService) Sort(ctx provider.ExecutionContext, groups []models.ResourceGroup, field string) {
@@ -272,7 +272,7 @@ func (s *rekordboxSystemService) Sync(ctx provider.ExecutionContext, tracks []mo
 	return nil
 }
 
-func (s *rekordboxSystemService) Identify(name string, groupType models.GroupType) string {
+func (s *rekordboxSystemService) Identify(name string, groupType models.GroupKind) string {
 	return rekordbox.Identify(name, groupType)
 }
 

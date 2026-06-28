@@ -108,9 +108,9 @@ func (s *m3uGroupService) List(ctx provider.ExecutionContext, query string) ([]m
 	return eng.LsGroups(query)
 }
 
-func (s *m3uGroupService) Create(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, gt models.GroupType, pos int) (models.ResourceGroup, error) {
-	if gt == models.GroupTypeFolder { return models.ResourceGroup{}, fmt.Errorf("m3u does not support folders") }
-	return models.ResourceGroup{Name: name, Type: models.GroupTypePlaylist}, nil
+func (s *m3uGroupService) Create(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, gt models.GroupKind, pos int) (models.ResourceGroup, error) {
+	if gt == models.GroupKindFolder { return models.ResourceGroup{}, fmt.Errorf("m3u does not support folders") }
+	return models.ResourceGroup{Name: name, Kind: models.GroupKindPlaylist}, nil
 }
 
 func (s *m3uGroupService) Update(ctx provider.ExecutionContext, group models.ResourceGroup, newName string, newParent *models.ResourceGroup) error {
@@ -166,4 +166,4 @@ func (s *m3uSystemService) Sync(ctx provider.ExecutionContext, tracks []models.T
 	return s.Save(ctx, "")
 }
 
-func (s *m3uSystemService) Identify(name string, gt models.GroupType) string { return s.path }
+func (s *m3uSystemService) Identify(name string, gt models.GroupKind) string { return s.path }

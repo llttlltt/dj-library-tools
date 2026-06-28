@@ -30,11 +30,11 @@ func (l *Library) GetMembershipMap() map[string][]string {
 	return make(map[string][]string)
 }
 
-func (l *Library) CreateGroup(parentID, name string, groupType models.GroupType, position int) (models.ResourceGroup, error) {
+func (l *Library) CreateGroup(parentID, name string, groupType models.GroupKind, position int) (models.ResourceGroup, error) {
 	return models.ResourceGroup{}, nil
 }
 
-func (l *Library) DeleteGroup(groupID string, groupType models.GroupType) error {
+func (l *Library) DeleteGroup(groupID string, groupType models.GroupKind) error {
 	return nil
 }
 
@@ -52,11 +52,11 @@ func (l *Library) UpdateGroup(groupID string, trackIDs []string) error {
 	return nil
 }
 
-func (l *Library) RenameGroup(groupID, newName string, groupType models.GroupType) error {
+func (l *Library) RenameGroup(groupID, newName string, groupType models.GroupKind) error {
 	return nil
 }
 
-func (l *Library) MoveGroup(groupID string, groupType models.GroupType, targetParentID string) error {
+func (l *Library) MoveGroup(groupID string, groupType models.GroupKind, targetParentID string) error {
 	return nil
 }
 

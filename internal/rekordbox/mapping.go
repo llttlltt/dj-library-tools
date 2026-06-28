@@ -77,6 +77,11 @@ func ToNeutralGroup(n Node, parentFolder string) models.ResourceGroup {
 		id = parentFolder + "/" + n.Name
 	}
 
+	groupKind := models.GroupKindPlaylist
+	if n.Type == 0 {
+		groupKind = models.GroupKindFolder
+	}
+
 	// Folders (Type=0) store their child-node count in Count;
 	// playlists (Type=1) store their track count in Entries.
 	items := DerefInt32(n.Entries)
@@ -88,7 +93,7 @@ func ToNeutralGroup(n Node, parentFolder string) models.ResourceGroup {
 		Name:                n.Name,
 		Items:               int(items),
 		ParentFolder:        parentFolder,
-		Type:                models.GroupType(n.Type),
+		Kind:                groupKind,
 		ImplementationState: n,
 	}
 }

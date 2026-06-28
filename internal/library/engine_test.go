@@ -44,7 +44,7 @@ func TestEngine_Ls(t *testing.T) {
 func TestEngine_LsGroups(t *testing.T) {
 	mock := &MockLibrary{
 		Playlists: []models.ResourceGroup{
-			{Name: "House", Type: models.GroupTypePlaylist},
+			{Name: "House", Kind: models.GroupKindPlaylist},
 		},
 	}
 	eng := NewEngine(mock)

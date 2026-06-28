@@ -27,7 +27,7 @@ func ToNeutralGroup(p Playlist) models.ResourceGroup {
 		ID:    p.RatingKey,
 		Name:  p.Title,
 		Items: p.LeafCount,
-		Type:  models.GroupTypePlaylist,
+		Kind:  models.GroupKindPlaylist,
 		ImplementationState: p,
 	}
 }
