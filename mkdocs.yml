@@ -1,5 +1,5 @@
 site_name: DJ Library Tools
-site_description: DJ library management and Rekordbox XML manipulation.
+site_description: DJ library management across multiple providers.
 repo_url: https://github.com/llttlltt/dj-library-tools
 edit_uri: edit/main/docs/
 
@@ -54,26 +54,30 @@ nav:
       - Overview: guide/query/providers/index.md
       - Rekordbox: guide/query/providers/rekordbox/index.md
       - Plex: guide/query/providers/plex/index.md
+      - M3U: guide/query/providers/m3u/index.md
     - Workflows:
-      - guide/workflows/index.md
+      - index: guide/workflows/index.md
       - Automating Playlists: guide/workflows/automating-playlists.md
       - Cleaning Up: guide/workflows/cleaning-up.md
-      - Performance Prep: guide/workflows/performance-prep.md
+      - Library Repair: guide/workflows/library-repair.md
       - Metadata Hardening: guide/workflows/metadata-hardening.md
+      - Metadata Reconciliation: guide/workflows/metadata-reconciliation.md
+      - Organizing by Complexity: guide/workflows/organizing-by-complexity.md
+      - Organizing Resources: guide/workflows/organizing-resources.md
+      - Performance Prep: guide/workflows/performance-prep.md
       - Syncing to Mobile: guide/workflows/syncing-to-mobile.md
     - Commands:
-      - guide/commands/index.md
+      - index: guide/commands/index.md
       - Reference:
-        - commands/index.md
+        - index: commands/index.md
+        - auth: commands/auth.md
+        - config: commands/config.md
+        - fix: commands/fix.md
         - ls: commands/ls.md
         - mk: commands/mk.md
+        - modify: commands/modify.md
         - mv: commands/mv.md
         - rm: commands/rm.md
         - sync: commands/sync.md
-        - auth: commands/auth.md
-        - config: commands/config.md
-        - fix:
-          - commands/fix/index.md
-          - playlist: commands/fix/playlist.md
   - Development:
     - Architecture: development/architecture.md
