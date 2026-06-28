@@ -8,7 +8,7 @@ import (
 
 func TestQuery(t *testing.T) {
 	rt := rekordbox.Track{Name: "Test"}
-	tr := ToNeutralTrack(rt)
+	tr := rekordbox.ToNeutralTrack(rt)
 	parser := query.NewParser()
 	q := parser.Parse("title:Test")
 	eval := query.NewEvaluator(q)

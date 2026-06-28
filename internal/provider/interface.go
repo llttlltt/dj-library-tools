@@ -70,7 +70,7 @@ type WritableProvider interface {
 	ReadableProvider
 	AddTracks(ctx ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error)
 	RemoveTracks(ctx ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error)
-	ModifyTracks(ctx ExecutionContext, query string, changes map[string]string) (int, error)
+	UpdateTracks(ctx ExecutionContext, query string, changes map[string]string) (int, error)
 	MoveTracks(ctx ExecutionContext, source models.ResourceGroup, target models.ResourceGroup, tracks []models.Track) (int, error)
 	CreateGroup(ctx ExecutionContext, parent models.ResourceGroup, name string, groupType models.GroupType, position int) (models.ResourceGroup, error)
 	DeleteGroup(ctx ExecutionContext, node models.ResourceGroup) error

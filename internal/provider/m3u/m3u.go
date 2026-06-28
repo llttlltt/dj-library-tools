@@ -301,7 +301,7 @@ func (p *M3UProvider) Sync(ctx provider.ExecutionContext, tracks []models.Track,
 	return p.Save(ctx, "")
 }
 
-func (p *M3UProvider) ModifyTracks(_ provider.ExecutionContext, _ string, _ map[string]string) (int, error) {
+func (p *M3UProvider) UpdateTracks(_ provider.ExecutionContext, _ string, _ map[string]string) (int, error) {
 	return 0, fmt.Errorf("m3u provider does not support metadata modification")
 }
 

@@ -1,17 +1,16 @@
-package rb
+package rekordbox
 
 import (
 	"fmt"
 	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 )
 
-// RekordboxLibrary is an adapter that makes RekordboxLibraryXML satisfy the Library interface.
-type RekordboxLibrary struct {
-	XML *rekordbox.RekordboxLibraryXML
+// Library is an adapter that makes RekordboxLibraryXML satisfy the Library interface.
+type Library struct {
+	XML *RekordboxLibraryXML
 }
 
-func (r *RekordboxLibrary) GetResources(kind string) []models.Resource {
+func (r *Library) GetResources(kind string) []models.Resource {
 	var results []models.Resource
 	switch kind {
 	case "track":
@@ -27,7 +26,7 @@ func (r *RekordboxLibrary) GetResources(kind string) []models.Resource {
 	return results
 }
 
-func (r *RekordboxLibrary) GetTracks() []models.Track {
+func (r *Library) GetTracks() []models.Track {
 	rbTracks := r.XML.Collection.TRACK
 	tracks := make([]models.Track, len(rbTracks))
 	for i, rt := range rbTracks {
@@ -36,13 +35,13 @@ func (r *RekordboxLibrary) GetTracks() []models.Track {
 	return tracks
 }
 
-func (r *RekordboxLibrary) GetPlaylists() []models.ResourceGroup {
+func (r *Library) GetPlaylists() []models.ResourceGroup {
 	var results []models.ResourceGroup
 	r.collectAllGroups(r.XML.Playlists.Node.Node, "", &results)
 	return results
 }
 
-func (r *RekordboxLibrary) collectAllGroups(nodes []rekordbox.Node, parent string, out *[]models.ResourceGroup) {
+func (r *Library) collectAllGroups(nodes []Node, parent string, out *[]models.ResourceGroup) {
 	for _, n := range nodes {
 		*out = append(*out, ToNeutralGroup(n, parent))
 		if len(n.Node) > 0 {
@@ -51,13 +50,13 @@ func (r *RekordboxLibrary) collectAllGroups(nodes []rekordbox.Node, parent strin
 	}
 }
 
-func (r *RekordboxLibrary) GetMembershipMap() map[string][]string {
+func (r *Library) GetMembershipMap() map[string][]string {
 	m := make(map[string][]string)
 	r.walkRekordboxPlaylists(r.XML.Playlists.Node.Node, m)
 	return m
 }
 
-func (r *RekordboxLibrary) walkRekordboxPlaylists(nodes []rekordbox.Node, m map[string][]string) {
+func (r *Library) walkRekordboxPlaylists(nodes []Node, m map[string][]string) {
 	for _, node := range nodes {
 		if node.Type == 1 {
 			for _, t := range node.TRACK {
@@ -70,10 +69,10 @@ func (r *RekordboxLibrary) walkRekordboxPlaylists(nodes []rekordbox.Node, m map[
 	}
 }
 
-func (r *RekordboxLibrary) CreateGroup(parentID, name string, groupType models.GroupType, position int) (models.ResourceGroup, error) {
+func (r *Library) CreateGroup(parentID, name string, groupType models.GroupType, position int) (models.ResourceGroup, error) {
 	r.XML.PlaylistsChanged = true
-	var container *[]rekordbox.Node
-	var folderNode *rekordbox.Node
+	var container *[]Node
+	var folderNode *Node
 	
 	if parentID == "" {
 		container = &r.XML.Playlists.Node.Node
@@ -87,16 +86,16 @@ func (r *RekordboxLibrary) CreateGroup(parentID, name string, groupType models.G
 		nodeType = 0
 	}
 
-	node := rekordbox.Node{
+	node := Node{
 		Name:    name,
 		Type:    int32(nodeType),
-		KeyType: rekordbox.PtrInt32(0),
+		KeyType: PtrInt32(0),
 	}
 
 	if nodeType == 1 {
-		node.Entries = rekordbox.PtrInt32(0)
+		node.Entries = PtrInt32(0)
 	} else {
-		node.Count = rekordbox.PtrInt32(0)
+		node.Count = PtrInt32(0)
 	}
 
 	if position < 0 || position >= len(*container) {
@@ -108,7 +107,7 @@ func (r *RekordboxLibrary) CreateGroup(parentID, name string, groupType models.G
 
 	if folderNode != nil {
 		if folderNode.Count == nil {
-			folderNode.Count = rekordbox.PtrInt32(1)
+			folderNode.Count = PtrInt32(1)
 		} else {
 			*folderNode.Count++
 		}
@@ -116,7 +115,7 @@ func (r *RekordboxLibrary) CreateGroup(parentID, name string, groupType models.G
 	return ToNeutralGroup(node, parentID), nil
 }
 
-func (r *RekordboxLibrary) DeleteGroup(groupID string, groupType models.GroupType) error {
+func (r *Library) DeleteGroup(groupID string, groupType models.GroupType) error {
 	r.XML.PlaylistsChanged = true
 	nodeType := int32(1)
 	if groupType == models.GroupTypeFolder {
@@ -134,7 +133,7 @@ func (r *RekordboxLibrary) DeleteGroup(groupID string, groupType models.GroupTyp
 	return nil
 }
 
-func (r *RekordboxLibrary) LinkTracks(groupID string, trackIDs []string) (int, error) {
+func (r *Library) AddTracks(groupID string, trackIDs []string) (int, error) {
 	r.XML.PlaylistsChanged = true
 	node, _, _, _ := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, groupID, 1)
 	if node == nil {
@@ -156,11 +155,11 @@ func (r *RekordboxLibrary) LinkTracks(groupID string, trackIDs []string) (int, e
 			added++
 		}
 	}
-	node.Entries = rekordbox.PtrInt32(int32(len(node.TRACK)))
+	node.Entries = PtrInt32(int32(len(node.TRACK)))
 	return added, nil
 }
 
-func (r *RekordboxLibrary) UnlinkTracks(groupID string, trackIDs []string) (int, error) {
+func (r *Library) RemoveTracks(groupID string, trackIDs []string) (int, error) {
 	r.XML.PlaylistsChanged = true
 	node, _, _, _ := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, groupID, 1)
 	if node == nil {
@@ -180,11 +179,11 @@ func (r *RekordboxLibrary) UnlinkTracks(groupID string, trackIDs []string) (int,
 		}
 	}
 	node.TRACK = kept
-	node.Entries = rekordbox.PtrInt32(int32(len(node.TRACK)))
+	node.Entries = PtrInt32(int32(len(node.TRACK)))
 	return before - len(node.TRACK), nil
 }
 
-func (r *RekordboxLibrary) UpdateGroup(groupID string, trackIDs []string) error {
+func (r *Library) UpdateGroup(groupID string, trackIDs []string) error {
 	r.XML.PlaylistsChanged = true
 	node, _, _, _ := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, groupID, 1)
 	if node == nil {
@@ -196,11 +195,11 @@ func (r *RekordboxLibrary) UpdateGroup(groupID string, trackIDs []string) error 
 			Key string `xml:"Key,attr"`
 		}{Key: id})
 	}
-	node.Entries = rekordbox.PtrInt32(int32(len(trackIDs)))
+	node.Entries = PtrInt32(int32(len(trackIDs)))
 	return nil
 }
 
-func (r *RekordboxLibrary) RenameGroup(groupID, newName string, groupType models.GroupType) error {
+func (r *Library) RenameGroup(groupID, newName string, groupType models.GroupType) error {
 	r.XML.PlaylistsChanged = true
 	nodeType := int32(1)
 	if groupType == models.GroupTypeFolder {
@@ -214,7 +213,7 @@ func (r *RekordboxLibrary) RenameGroup(groupID, newName string, groupType models
 	return nil
 }
 
-func (r *RekordboxLibrary) MoveGroup(groupID string, groupType models.GroupType, targetParentID string) error {
+func (r *Library) MoveGroup(groupID string, groupType models.GroupType, targetParentID string) error {
 	r.XML.PlaylistsChanged = true
 	nodeType := int32(1)
 	if groupType == models.GroupTypeFolder {
@@ -234,33 +233,33 @@ func (r *RekordboxLibrary) MoveGroup(groupID string, groupType models.GroupType,
 	target := r.findOrCreateContainer(targetParentID)
 	target.Node = append(target.Node, moved)
 	if target.Count == nil {
-		target.Count = rekordbox.PtrInt32(1)
+		target.Count = PtrInt32(1)
 	} else {
 		*target.Count++
 	}
 	return nil
 }
 
-func (r *RekordboxLibrary) Save(path string) error {
-	return rekordbox.WriteRekordboxLibrary(path, r.XML)
+func (r *Library) Save(path string) error {
+	return WriteRekordboxLibrary(path, r.XML)
 }
 
-func (r *RekordboxLibrary) findOrCreateContainer(name string) *rekordbox.Node {
+func (r *Library) findOrCreateContainer(name string) *Node {
 	nodes := &r.XML.Playlists.Node.Node
 	for i := range *nodes {
 		if (*nodes)[i].Name == name && (*nodes)[i].Type == 0 {
 			return &(*nodes)[i]
 		}
 	}
-	*nodes = append(*nodes, rekordbox.Node{
+	*nodes = append(*nodes, Node{
 		Name:  name,
 		Type:  0,
-		Count: rekordbox.PtrInt32(0),
+		Count: PtrInt32(0),
 	})
 	return &(*nodes)[len(*nodes)-1]
 }
 
-func (r *RekordboxLibrary) findGroupInTree(nodes *[]rekordbox.Node, parent *rekordbox.Node, name string, nodeType int32) (*rekordbox.Node, *rekordbox.Node, *[]rekordbox.Node, int) {
+func (r *Library) findGroupInTree(nodes *[]Node, parent *Node, name string, nodeType int32) (*Node, *Node, *[]Node, int) {
 	for i := range *nodes {
 		n := &(*nodes)[i]
 		if n.Name == name && n.Type == nodeType {
@@ -275,7 +274,7 @@ func (r *RekordboxLibrary) findGroupInTree(nodes *[]rekordbox.Node, parent *reko
 	return nil, nil, nil, -1
 }
 
-// NewRekordboxLibrary creates a new Library wrapper for a Rekordbox XML.
-func NewRekordboxLibrary(xml *rekordbox.RekordboxLibraryXML) *RekordboxLibrary {
-	return &RekordboxLibrary{XML: xml}
+// NewLibrary creates a new Library wrapper for a Rekordbox XML.
+func NewLibrary(xml *RekordboxLibraryXML) *Library {
+	return &Library{XML: xml}
 }
