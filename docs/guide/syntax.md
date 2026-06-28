@@ -39,22 +39,31 @@ The query part supports a powerful set of operators and boolean logic.
 | **NOT** | `!` | `!genre:Pop` |
 | **Group** | `(...)` | `(genre:House \|\| genre:Techno) && rating:>3` |
 
-## Deep Metadata (Path Syntax)
+### Collection Stats
 
-For collections like hotcues and beatgrids, you can traverse properties using a hierarchical path:
+Stats allow you to perform calculations on a collection.
 
-`[Collection] . [Index] / [Property] - [Stat]`
+| Stat | Description | Example |
+| :--- | :--- | :--- |
+| `-count` | Total items in the collection. | `hotcues-count:8` |
+| `-density` | Items per minute of duration. | `beatgrids-density:>60` |
+| `-drift` | Max value minus Min value. | `beatgrids/bpm-drift:<0.1` |
 
-- **`hotcues.1/color:red`**: Find tracks where the first hotcue is red.
-- **`beatgrids/bpm-drift:<0.1`**: Find tracks with very consistent "dynamic" grids.
-- **`beatgrids-density:>60`**: Find "busy" grids with many markers.
-- **`hotcues-count:8`**: Find tracks with all 8 hotcues used.
+### Path Query Examples
+
+| Query | Description |
+| :--- | :--- |
+| `hotcues.1/color:red` | Match if the first hotcue is red. |
+| `beatgrids/bpm-drift:<0.1` | Match if the BPM varies by less than 0.1. |
+| `memorycues/name:Drop` | Match if any memory cue is named "Drop". |
 
 ### Supported Collections
 
-- `hotcues`: Properties: `color`, `name`, `position`.
-- `memorycues`: Properties: `color`, `name`, `position`.
-- `beatgrids`: Properties: `bpm`, `position`. Stats: `-drift`, `-density`, `-count`.
+| Collection | Properties | Stats |
+| :--- | :--- | :--- |
+| `hotcues` | `color`, `name`, `position` | `-count` |
+| `memorycues` | `color`, `name`, `position` | `-count` |
+| `beatgrids` | `bpm`, `position` | `-count`, `-drift`, `-density` |
 
 ## Advanced Filters
 

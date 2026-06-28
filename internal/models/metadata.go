@@ -48,9 +48,9 @@ var TrackFields = map[string]FieldDefinition[Track]{
 	"remixer":    {Kind: KindString, RequiredCap: CapMetadata, Accessor: func(t Track) string { return t.Remixer }},
 	"mix":        {Kind: KindString, RequiredCap: CapMetadata, Accessor: func(t Track) string { return t.Mix }},
 	"duration":   {Kind: KindNumeric, RequiredCap: CapNone, Accessor: func(t Track) string { return strconv.Itoa(t.Duration) }},
-	"hotcues":    {Kind: KindNumeric, RequiredCap: CapCues, Accessor: func(t Track) string { return strconv.Itoa(t.Hotcues()) }},
-	"memorycues": {Kind: KindNumeric, RequiredCap: CapCues, Accessor: func(t Track) string { return strconv.Itoa(t.Memorycues()) }},
-	"beatgrids":  {Kind: KindNumeric, RequiredCap: CapBeatgrids, Accessor: func(t Track) string { return strconv.Itoa(t.Beatgrids()) }},
+	"hotcues-count":    {Kind: KindNumeric, RequiredCap: CapCues, Accessor: func(t Track) string { return strconv.Itoa(t.Hotcues()) }},
+	"memorycues-count": {Kind: KindNumeric, RequiredCap: CapCues, Accessor: func(t Track) string { return strconv.Itoa(t.Memorycues()) }},
+	"beatgrids-count":  {Kind: KindNumeric, RequiredCap: CapBeatgrids, Accessor: func(t Track) string { return strconv.Itoa(t.Beatgrids()) }},
 	"playlists":  {Kind: KindNumeric, RequiredCap: CapNone, Accessor: func(t Track) string { return "0" }},
 }
 

@@ -7,7 +7,7 @@ Analyze which tracks are missing beatgrid information (Tempo markers). These are
 
 ```bash
 # Find tracks with zero beatgrids
-djlt ls rb/tracks "beatgrids:0"
+djlt ls rb/tracks "beatgrids-count:0"
 ```
 
 ### 2. Standardize Color Coding
@@ -15,10 +15,10 @@ Use color coding to flag tracks that need specific types of work. You can query 
 
 ```bash
 # Find all "Red" tracks that you've since analyzed (have hotcues)
-djlt ls rb/tracks "color:red && hotcues:>3"
+djlt ls rb/tracks "color:red && hotcues-count:>3"
 
-# Advanced: Find tracks where the first Hot Cue (A) is specifically Red
-djlt ls rb/tracks "hotcues:a:red"
+# Advanced: Find tracks where the first Hot Cue is specifically Red
+djlt ls rb/tracks "hotcues.1/color:red"
 ```
 
 ### 3. Reconcile from External Sources
@@ -41,6 +41,6 @@ djlt mv rb/tracks "comment:none" --from "rb/playlists name:Inbox" --to "rb/playl
 
 ## The analyze-tag loop
 The most effective way to harden your library is the query-reconcile loop:
-1. Run `ls` with a specific metadata gap (e.g. `hotcues:0`).
+1. Run `ls` with a specific metadata gap (e.g. `hotcues-count:0`).
 2. Fix the metadata in your provider or reconcile from a backup using `sync --metadata`.
 3. Repeat until the query returns zero results.
