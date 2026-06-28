@@ -2,7 +2,6 @@ package query
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -87,43 +86,19 @@ func (e *Evaluator) matchComparison(track models.Track, playlists []string, c Co
 	field := strings.ToLower(c.Field)
 	targetValue := ResolveValue(c.Field, c.Value)
 
-	// Implementation-specific special fields (e.g. Cues by color)
-	if e.Matcher != nil && isCalculatedField(field) {
-		if !isNumericIntent(c) {
-			return e.Matcher.CustomMatch(track, c.Field, c.Operator, c.Value)
-		}
+	// Implementation-specific delegation (e.g. Cues by color)
+	if e.Matcher != nil && isCalculatedField(field) && !isNumericIntent(c) {
+		return e.Matcher.CustomMatch(track, c.Field, c.Operator, c.Value)
 	}
 
 	fieldValue := e.getTrackFieldValue(track, playlists, field)
-	return e.compare(field, fieldValue, targetValue, c)
+	return Compare(field, fieldValue, targetValue, c.Operator)
 }
 
 func (e *Evaluator) matchGroupComparison(group models.ResourceGroup, c Comparison) bool {
 	field := strings.ToLower(c.Field)
 	fieldValue := e.getGroupFieldValue(group, field)
-	return e.compare(field, fieldValue, c.Value, c)
-}
-
-func (e *Evaluator) compare(field, fieldValue, targetValue string, c Comparison) bool {
-	if c.Operator == OpRange {
-		return e.matchRange(fieldValue, targetValue)
-	}
-
-	if isNumericField(field) {
-		return e.matchNumericComparison(fieldValue, targetValue, c.Operator)
-	}
-
-	switch c.Operator {
-	case OpExact:
-		return strings.EqualFold(fieldValue, targetValue)
-	case OpSubstring:
-		return strings.Contains(strings.ToLower(fieldValue), strings.ToLower(targetValue))
-	case OpRegex:
-		re, err := regexp.Compile(targetValue)
-		if err != nil { return false }
-		return re.MatchString(fieldValue)
-	}
-	return false
+	return Compare(field, fieldValue, c.Value, c.Operator)
 }
 
 func (e *Evaluator) getTrackFieldValue(track models.Track, playlists []string, field string) string {
@@ -168,38 +143,7 @@ func (e *Evaluator) getGroupFieldValue(group models.ResourceGroup, field string)
 	return ""
 }
 
-func (e *Evaluator) matchRange(fieldValue string, rangeValue string) bool {
-	parts := strings.Split(rangeValue, "..")
-	if len(parts) != 2 { return false }
-	val, _ := strconv.ParseFloat(fieldValue, 64)
-	min, _ := strconv.ParseFloat(parts[0], 64)
-	max, _ := strconv.ParseFloat(parts[1], 64)
-	return val >= min && val <= max
-}
-
-func (e *Evaluator) matchNumericComparison(fieldValue string, targetValue string, op Operator) bool {
-	f, _ := strconv.ParseFloat(fieldValue, 64)
-	t, _ := strconv.ParseFloat(targetValue, 64)
-	switch op {
-	case OpGt:  return f > t
-	case OpGte: return f >= t
-	case OpLt:  return f < t
-	case OpLte: return f <= t
-	case OpExact, OpSubstring: return f == t
-	}
-	return false
-}
-
 // Helpers
-
-func isNumericField(field string) bool {
-	switch field {
-	case "playlists", "hotcues", "memorycues", "beatgrids", "rating", "plays", "year",
-		"bpm", "bitrate", "samplerate", "size", "items":
-		return true
-	}
-	return false
-}
 
 func isCalculatedField(field string) bool {
 	return field == "hotcues" || field == "memorycues" || field == "beatgrids"
