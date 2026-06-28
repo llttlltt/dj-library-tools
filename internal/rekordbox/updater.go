@@ -6,7 +6,7 @@ import (
 )
 
 // UpdateBatch applies specific field updates to the provided XML library.
-func UpdateBatch(rbXML *RekordboxLibraryXML, matches []models.MetadataMatch, fields []string, verbose bool) int {
+func UpdateBatch(rbXML *RekordboxLibraryXML, matches []models.MetadataMatch, fields []string) int {
 	fieldMap := make(map[string]bool)
 	for _, f := range fields {
 		fieldMap[f] = true

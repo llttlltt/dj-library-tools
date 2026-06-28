@@ -77,7 +77,7 @@ func (s *rekordboxTrackService) UpdateBatch(ctx provider.ExecutionContext, match
 		return err
 	}
 
-	count := rekordbox.UpdateBatch(rbXML, matches, fields, ctx.Verbose)
+	count := rekordbox.UpdateBatch(rbXML, matches, fields)
 
 	if ctx.Verbose {
 		fmt.Printf("\nSuccessfully updated %d tracks.\n", count)
