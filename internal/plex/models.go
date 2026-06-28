@@ -1,9 +1,5 @@
 package plex
 
-import (
-	"github.com/llttlltt/dj-library-tools/internal/models"
-)
-
 type Resource struct {
 	Name                   string       `json:"name"`
 	ClientIdentifier       string       `json:"clientIdentifier"`
@@ -82,30 +78,4 @@ type MediaContainer struct {
 
 type TrackContainer struct {
 	Metadata []Track `json:"Metadata"`
-}
-
-func (t Track) ToNeutral() models.Track {
-	mt := models.Track{
-		ID:     t.RatingKey,
-		Title:  t.Title,
-		Artist: t.Artist,
-		Album:  t.Album,
-		BPM:    t.BPM,
-		Key:    t.KeyTag,
-		Rating: models.NormalizeRating(t.UserRating, 10.0), // Plex uses a 10-point internal scale
-		Raw:    t,
-	}
-	if len(t.Media) > 0 && len(t.Media[0].Part) > 0 {
-		mt.Location = t.Media[0].Part[0].File
-	}
-	return mt
-}
-
-func (p Playlist) ToNeutralGroup() models.ResourceGroup {
-	return models.ResourceGroup{
-		Name:    p.Title,
-		Items:   p.LeafCount,
-		Type:    1,
-		Raw:     p,
-	}
 }

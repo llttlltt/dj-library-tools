@@ -2,7 +2,6 @@ package rb
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/library"
 	"github.com/llttlltt/dj-library-tools/internal/models"
@@ -78,77 +77,10 @@ func (s *rekordboxTrackService) UpdateBatch(ctx provider.ExecutionContext, match
 		return err
 	}
 
-	fieldMap := make(map[string]bool)
-	for _, f := range fields {
-		fieldMap[f] = true
-	}
-
-	blue := color.New(color.FgCyan).SprintFunc()
-	yellow := color.New(color.FgYellow).SprintFunc()
-
-	updateCount := 0
-	for _, match := range matches {
-		for i := range rbXML.Collection.TRACK {
-			target := &rbXML.Collection.TRACK[i]
-			if fmt.Sprintf("%d", target.TrackID) == match.Target.ID {
-				if ctx.Verbose {
-					fmt.Printf("[%s]\n", blue(match.Target.Artist+" - "+match.Target.Title))
-				}
-
-				if fieldMap["beatgrids"] {
-					if rt, ok := match.Source.Raw.(rekordbox.Track); ok {
-						if ctx.Verbose {
-							fmt.Printf("  %s Beatgrids: %d -> %d\n", yellow("~"), len(target.Tempo), len(rt.Tempo))
-						}
-						target.Tempo = rt.Tempo
-					}
-				}
-				if fieldMap["rating"] {
-					if ctx.Verbose {
-						fmt.Printf("  %s Rating: %d -> %d\n", yellow("~"), target.Rating, match.Source.Rating)
-					}
-					target.Rating = int32(match.Source.Rating)
-				}
-				if fieldMap["comment"] {
-					if ctx.Verbose {
-						fmt.Printf("  %s Comment: %q -> %q\n", yellow("~"), target.Comments, match.Source.Comment)
-					}
-					target.Comments = match.Source.Comment
-				}
-				if fieldMap["genre"] {
-					if ctx.Verbose {
-						fmt.Printf("  %s Genre: %q -> %q\n", yellow("~"), target.Genre, match.Source.Genre)
-					}
-					target.Genre = match.Source.Genre
-				}
-				if fieldMap["label"] {
-					if ctx.Verbose {
-						fmt.Printf("  %s Label: %q -> %q\n", yellow("~"), target.Label, match.Source.Label)
-					}
-					target.Label = match.Source.Label
-				}
-				if fieldMap["key"] {
-					if ctx.Verbose {
-						fmt.Printf("  %s Key: %q -> %q\n", yellow("~"), target.Tonality, match.Source.Key)
-					}
-					target.Tonality = match.Source.Key
-				}
-				if fieldMap["bpm"] {
-					newBpm := fmt.Sprintf("%.2f", match.Source.BPM)
-					if ctx.Verbose {
-						fmt.Printf("  %s BPM: %q -> %q\n", yellow("~"), target.AverageBpm, newBpm)
-					}
-					target.AverageBpm = newBpm
-				}
-				
-				updateCount++
-				break
-			}
-		}
-	}
+	count := rekordbox.UpdateBatch(rbXML, matches, fields, ctx.Verbose)
 
 	if ctx.Verbose {
-		fmt.Printf("\nSuccessfully updated %d tracks.\n", updateCount)
+		fmt.Printf("\nSuccessfully updated %d tracks.\n", count)
 	}
 
 	if !ctx.DryRun {
@@ -349,52 +281,9 @@ func (s *rekordboxSystemService) Identify(name string, groupType models.GroupTyp
 // --- Custom Matching (Internal for Engine) ---
 
 func (p *RekordboxProvider) CustomMatch(track models.Track, field string, op query.Operator, value string) bool {
-	target := strings.ToLower(value)
-
-	if rt, ok := track.Raw.(rekordbox.Track); ok {
-		if field == "hotcues" {
-			for _, pm := range rt.PositionMark {
-				if pm.Num == -1 { continue }
-				if p.matchCueMetadata(pm, target, op) { return true }
-			}
-		} else if field == "memorycues" {
-			for _, pm := range rt.PositionMark {
-				if pm.Num != -1 { continue }
-				if p.matchCueMetadata(pm, target, op) { return true }
-			}
-		}
-	}
-	return false
+	return rekordbox.CustomMatch(track, field, op, value)
 }
 
-func (p *RekordboxProvider) matchCueMetadata(pm rekordbox.PositionMark, target string, op query.Operator) bool {
-	if op == query.OpExact {
-		if strings.EqualFold(pm.Name, target) { return true }
-	} else if strings.Contains(strings.ToLower(pm.Name), target) {
-		return true
-	}
-
-	colorName := strings.ToLower(p.getHotCueColorName(pm))
-	if op == query.OpExact {
-		if colorName == target { return true }
-	} else if strings.Contains(colorName, target) {
-		return true
-	}
-
-	return false
-}
-
-func (p *RekordboxProvider) getHotCueColorName(pm rekordbox.PositionMark) string {
-	rgb := fmt.Sprintf("%02X%02X%02X", pm.Red, pm.Green, pm.Blue)
-	switch rgb {
-	case "E62828": return "red"
-	case "DE44CF": return "hotpink"
-	case "FFFF00", "B4BE04", "C3AF04": return "yellow"
-	case "28E214", "10B176": return "green"
-	case "00E0FF", "50B4FF": return "aqua"
-	case "305AFF", "6473FF": return "blue"
-	case "B432FF", "AA72FF": return "purple"
-	case "E0641B", "FFA500": return "orange"
-	}
-	return ""
+func (p *RekordboxProvider) GetTrackColorName(hex string) string {
+	return rekordbox.GetTrackColorName(hex)
 }
