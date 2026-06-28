@@ -122,7 +122,9 @@ func listProvider(sel *resolver.Selection, listSort string) error {
 			return nil
 		}
 
-		sortGroups(sel, sel.Groups, listSort)
+		if listSort != "" {
+			sel.Provider.Groups().Sort(getExecContext(), sel.Groups, listSort)
+		}
 		renderGroupTable(sel.Groups, sel.Location.Resource[:len(sel.Location.Resource)-1])
 		return nil
 	}
@@ -138,7 +140,9 @@ func listProvider(sel *resolver.Selection, listSort string) error {
 		return nil
 	}
 
-	sortTracks(sel, sel.Tracks, listSort) //nolint:staticcheck
+	if listSort != "" {
+		sel.Provider.Tracks().Sort(getExecContext(), sel.Tracks, listSort)
+	}
 	renderTrackTable(sel.Location.Provider, sel.Tracks)
 	return nil
 }
@@ -174,5 +178,3 @@ func printTop(m map[string]int, title string, limit int) {
 		fmt.Printf("%-20s %s\n", labelFmt(kv.Key), valFmt(fmt.Sprintf("%d", kv.Value)))
 	}
 }
-
-

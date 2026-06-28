@@ -45,11 +45,10 @@ func (t *Table) Render() {
 }
 
 func renderTrackTable(providerName string, tracks []models.Track) {
-	var headers []string
+	// Standard headers for all providers
+	headers := []string{"BPM", "Key", "Artist", "Title", "Rating"}
 	if providerName == "m3u" || providerName == "m3u8" {
 		headers = []string{"Duration", "Display Name", "Location"}
-	} else {
-		headers = []string{"BPM", "Key", "Artist", "Title"}
 	}
 
 	t := &Table{Headers: headers}
@@ -67,6 +66,7 @@ func renderTrackTable(providerName string, tracks []models.Track) {
 				tr.Key,
 				tr.Artist,
 				tr.Title,
+				fmt.Sprintf("%d", tr.Rating),
 			}
 		}
 		t.Rows = append(t.Rows, row)

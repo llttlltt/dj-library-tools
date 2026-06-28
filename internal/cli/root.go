@@ -1,12 +1,6 @@
 package cli
 
 import (
-	"fmt"
-	"os"
-
-	"github.com/llttlltt/dj-library-tools/internal/config"
-	"github.com/llttlltt/dj-library-tools/internal/utils"
-	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 	"github.com/spf13/cobra"
 )
 
@@ -19,23 +13,6 @@ var (
 	filterMissing bool
 	filterExists  bool
 )
-
-// loadXML resolves and loads the Rekordbox XML library, preferring --file flag over config.
-func loadXML() (*rekordbox.RekordboxLibraryXML, string, error) {
-	cfg, _ := config.LoadAppConfig()
-	path := utils.ExpandPath(filePath)
-	if path == "" {
-		path = utils.ExpandPath(cfg.Rekordbox.PrimaryFilePath)
-	}
-	if path == "" {
-		return nil, "", fmt.Errorf("library path required; use --file or run 'djlt config rekordbox --file PATH'")
-	}
-	rbXML, err := rekordbox.ReadRekordboxLibrary(path)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to read rekordbox library: %w", err)
-	}
-	return rbXML, path, nil
-}
 
 // NewRootCmd builds and returns a fully wired root command.
 func NewRootCmd() *cobra.Command {
@@ -70,11 +47,4 @@ var RootCmd = NewRootCmd()
 
 func Execute() error {
 	return RootCmd.Execute()
-}
-
-func main() {
-	if err := Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
 }
