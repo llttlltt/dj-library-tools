@@ -18,8 +18,6 @@ var (
 	jsonOutput    bool
 	filterMissing bool
 	filterExists  bool
-	// loadXMLFunc allows overriding the XML loading logic for testing.
-	loadXMLFunc = loadXML
 )
 
 // loadXML resolves and loads the Rekordbox XML library, preferring --file flag over config.
@@ -27,7 +25,7 @@ func loadXML() (*rekordbox.RekordboxLibraryXML, string, error) {
 	cfg, _ := config.LoadAppConfig()
 	path := utils.ExpandPath(filePath)
 	if path == "" {
-		path = utils.ExpandPath(cfg.RekordboxXMLPath)
+		path = utils.ExpandPath(cfg.PrimaryFilePath)
 	}
 	if path == "" {
 		return nil, "", fmt.Errorf("library path required; use --file or run 'djlt config rekordbox --file PATH'")
