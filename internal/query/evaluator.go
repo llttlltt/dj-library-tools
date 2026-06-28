@@ -6,19 +6,37 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/models"
 )
 
-// Allowed Fields generated from the accessor maps
-var AllowedTrackFields []string
-var AllowedGroupFields []string
+// TrackSchema defines which track fields are numeric.
+var TrackSchema = map[string]FieldType{
+	"playlists":  TypeNumeric,
+	"hotcues":    TypeNumeric,
+	"memorycues": TypeNumeric,
+	"beatgrids":  TypeNumeric,
+	"rating":     TypeNumeric,
+	"plays":      TypeNumeric,
+	"year":       TypeNumeric,
+	"bpm":        TypeNumeric,
+	"bitrate":    TypeNumeric,
+	"samplerate": TypeNumeric,
+	"size":       TypeNumeric,
+	"duration":   TypeNumeric,
+}
 
-func init() {
-	for k := range TrackAccessors {
-		AllowedTrackFields = append(AllowedTrackFields, k)
-	}
-	AllowedTrackFields = append(AllowedTrackFields, "playlists")
+// GroupSchema defines which group fields are numeric.
+var GroupSchema = map[string]FieldType{
+	"items": TypeNumeric,
+}
 
-	for k := range GroupAccessors {
-		AllowedGroupFields = append(AllowedGroupFields, k)
-	}
+// Allowed Fields (hardcoded for now to avoid circular dependency or reflection)
+var AllowedTrackFields = []string{
+	"playlists", "title", "artist", "album", "bpm", "key", "genre", "comment",
+	"year", "label", "rating", "plays", "added", "modified", "color", "bitrate",
+	"samplerate", "size", "beatgrids", "hotcues", "memorycues", "id", "location",
+	"remixer", "mix", "display", "duration",
+}
+
+var AllowedGroupFields = []string{
+	"name", "parent", "folder", "items", "kind",
 }
 
 type CustomMatcher interface {
@@ -96,18 +114,12 @@ func (e *Evaluator) matchComparison(track models.Track, playlists []string, c Co
 		return Compare(field, strings.Join(playlists, ","), targetValue, c.Operator)
 	}
 
-	accessor, ok := TrackAccessors[field]
-	if !ok { return false }
-
-	return Compare(field, accessor(track), targetValue, c.Operator)
+	return Compare(field, track.Value(field), targetValue, c.Operator)
 }
 
 func (e *Evaluator) matchGroupComparison(group models.ResourceGroup, c Comparison) bool {
 	field := strings.ToLower(c.Field)
-	accessor, ok := GroupAccessors[field]
-	if !ok { return false }
-
-	return Compare(field, accessor(group), c.Value, c.Operator)
+	return Compare(field, group.Value(field), c.Value, c.Operator)
 }
 
 // Helpers
