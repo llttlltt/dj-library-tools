@@ -11,11 +11,13 @@ import (
 )
 
 var (
-	filePath   string
-	toFilePath string
-	dryRun     bool
-	verbose    bool
-	jsonOutput bool
+	filePath      string
+	toFilePath    string
+	dryRun        bool
+	verbose       bool
+	jsonOutput    bool
+	filterMissing bool
+	filterExists  bool
 	// loadXMLFunc allows overriding the XML loading logic for testing.
 	loadXMLFunc = loadXML
 )
@@ -49,6 +51,8 @@ func NewRootCmd() *cobra.Command {
 	root.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Preview changes without writing")
 	root.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 	root.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Output results in JSON format")
+	root.PersistentFlags().BoolVar(&filterMissing, "missing", false, "Filter for tracks where the physical file is missing")
+	root.PersistentFlags().BoolVar(&filterExists, "exists", false, "Filter for tracks where the physical file exists")
 
 	root.AddCommand(
 		newListCmd(),

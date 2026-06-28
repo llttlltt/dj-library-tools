@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/models"
@@ -29,7 +30,7 @@ func HandleError(err error) error {
 		return fmt.Errorf("operation failed: cannot create the resource in that location (structural constraint)")
 	}
 
-	return HandleError(err)
+	return err
 }
 
 // BulkAction is a function that performs an action on a target and returns the number of items affected.
@@ -133,8 +134,23 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 	if err != nil {
 		return nil, err
 	}
-	sel.Items = items
 
+	// Apply physical health filtering if flags are set
+	if filterMissing || filterExists {
+		var filtered []models.Resource
+		for _, item := range items {
+			if t, ok := item.(models.Track); ok {
+				_, statErr := os.Stat(t.Location)
+				missing := os.IsNotExist(statErr)
+				if filterMissing && !missing { continue }
+				if filterExists && missing { continue }
+			}
+			filtered = append(filtered, item)
+		}
+		items = filtered
+	}
+
+	sel.Items = items
 	for _, item := range items {
 		if t, ok := item.(models.Track); ok {
 			sel.Tracks = append(sel.Tracks, t)
