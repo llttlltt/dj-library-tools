@@ -78,14 +78,7 @@ nav:
         - config:
           - index: commands/config/index.md
           - list: commands/config/list.md
-          - plex:
-            - index: commands/config/plex/index.md
-            - auth: commands/config/plex/auth.md
-            - host: commands/config/plex/host.md
-            - port: commands/config/plex/port.md
-            - map: commands/config/plex/map.md
-          - rb:
-            - index: commands/config/rb/index.md
-            - file: commands/config/rb/file.md
+          - plex: commands/config/plex/index.md
+          - rb: commands/config/rb/index.md
   - Development:
     - Architecture: development/architecture.md
