@@ -293,8 +293,6 @@ func (p *Parser) parsePrimary() Expression {
 			quoted = tok.Quoted
 		}
 
-		isCueField := strings.HasPrefix(strings.ToLower(token.Value), "hotcue") || strings.HasPrefix(strings.ToLower(token.Value), "memorycue")
-
 		for {
 			peek := p.peek()
 			if peek.Kind != TokenValue {
@@ -303,11 +301,6 @@ func (p *Parser) parsePrimary() Expression {
 			if val == "" || val == `""` {
 				val = peek.Value
 				quoted = peek.Quoted
-			} else if isCueField {
-				val += ":" + peek.Value
-				if peek.Quoted {
-					quoted = true
-				}
 			} else {
 				val += " " + peek.Value
 				if peek.Quoted {

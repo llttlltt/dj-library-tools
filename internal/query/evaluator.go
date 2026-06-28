@@ -92,11 +92,6 @@ func (e *Evaluator) matchComparison(track models.Track, playlists []string, c Co
 		}
 	}
 
-	// Custom implementation-specific delegation
-	if e.Matcher != nil && isCalculatedField(field) && !isNumericIntent(c) {
-		return e.Matcher.CustomMatch(track, c.Field, c.Operator, c.Value)
-	}
-
 	// Membership domain
 	if field == "playlists" {
 		return Compare(field, strings.Join(playlists, ","), targetValue, c.Operator)

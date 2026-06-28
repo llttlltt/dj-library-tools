@@ -7,7 +7,6 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/provider/factory"
-	"github.com/llttlltt/dj-library-tools/internal/query"
 	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
@@ -58,12 +57,14 @@ func (p *RekordboxProvider) System() provider.SystemService {
 	return &rekordboxSystemService{p}
 }
 
+type rekordboxSystemService struct{ *RekordboxProvider }
+
 // --- Track Service ---
 
 type rekordboxTrackService struct{ *RekordboxProvider }
 
 func (s *rekordboxTrackService) List(ctx provider.ExecutionContext, query string) ([]models.Track, error) {
-	return s.engine.Ls(query, s)
+	return s.engine.Ls(query, nil)
 }
 
 func (s *rekordboxTrackService) Update(ctx provider.ExecutionContext, query string, changes map[string]string) (int, error) {
@@ -187,8 +188,6 @@ func (s *rekordboxGroupService) Sort(ctx provider.ExecutionContext, groups []mod
 
 // --- System Service ---
 
-type rekordboxSystemService struct{ *RekordboxProvider }
-
 func (s *rekordboxSystemService) Capabilities() provider.ProviderCapabilities {
 	return provider.ProviderCapabilities{
 		CanWrite:          true,
@@ -263,14 +262,4 @@ func (s *rekordboxSystemService) Sync(ctx provider.ExecutionContext, tracks []mo
 
 func (s *rekordboxSystemService) Identify(name string, groupType models.GroupKind) string {
 	return rekordbox.Identify(name, groupType)
-}
-
-// --- Custom Matching (Internal for Engine) ---
-
-func (p *RekordboxProvider) CustomMatch(track models.Track, field string, op query.Operator, value string) bool {
-	return rekordbox.CustomMatch(track, field, op, value)
-}
-
-func (p *RekordboxProvider) GetTrackColorName(hex string) string {
-	return rekordbox.GetTrackColorName(hex)
 }
