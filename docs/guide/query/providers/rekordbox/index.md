@@ -70,8 +70,24 @@ You can search for Hot Cues by color name using the `hotcues` field.
 
 | Example | Description |
 | :--- | :--- |
-| `hotcues:red` | Find tracks with at least one Red hot cue. |
-| `hotcues:hotpink` | Find tracks with at least one Hot Pink hot cue. |
+### Specific Cue Properties
+
+You can target a specific cue by its ID or Index and check its properties.
+
+**Syntax**: `field:[ID|Index]:[Property:]Value`
+
+| Resource | IDs | Example | Description |
+| :--- | :--- | :--- | :--- |
+| `hotcues` | `a-h` or `0-7` | `hotcues:a:red` | Match Hot Cue A if it is Red. |
+| `hotcues` | — | `hotcues:red` | Match if ANY hot cue is Red. |
+| `memorycues` | `0, 1, ...` | `memorycues:0:Drop` | Match the first memory cue if it contains "Drop". |
+
+### Available Properties
+
+| Property | Value | Description |
+| :--- | :--- | :--- |
+| `color` | `Color Name` | Match by cue color (Hot Cues only). |
+| `name` | `Text` | Substring match on the cue name/comment. |
 
 ### Color Palettes
 
