@@ -14,7 +14,7 @@ The M3U provider allows you to read from and write to standard music playlist fi
 | Resource | Description | Example |
 | :--- | :--- | :--- |
 | `tracks` | The tracks contained within the file. | `m3u8:/path/to/list.m3u8/tracks` |
-| `playlists` | The M3U file itself as a node (Default). | `m3u8:/path/to/list.m3u8` |
+| `playlists` | The M3U file itself as a ResourceGroup (Default). | `m3u8:/path/to/list.m3u8` |
 
 !!! tip "Path Syntax"
     Unlike other providers, the "Resource" part for M3U is the **file path**. 

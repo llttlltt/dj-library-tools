@@ -16,10 +16,11 @@ djlt config [key] [value] [flags]
 ### Inherited Options
 
 ```
-      --dry-run      Preview changes without writing
-      --json         Output results in JSON format
-  -v, --verbose      Enable verbose logging
-  -x, --xml string   Path to the Rekordbox XML library
+      --dry-run          Preview changes without writing
+  -f, --file string      Path to the primary library file (Rekordbox XML, M3U, etc.)
+      --json             Output results in JSON format
+      --to-file string   Path to the destination library file for sync/move operations
+  -v, --verbose          Enable verbose logging
 ```
 
 Manage djlt configuration using dot-namespaced keys. Settings are stored in ~/.config/djlt/config.json.
@@ -30,7 +31,7 @@ Manage djlt configuration using dot-namespaced keys. Settings are stored in ~/.c
 - **plex.port**: Plex server port (default: 32400).
 - **plex.token**: Plex authentication token (usually set via 'djlt auth --plex').
 - **plex.map**: Remote-to-local path map entry. Used to bridge Plex remote paths to your local mount points.
-- **rekordbox.xml-path**: Absolute path to your Rekordbox XML export file.
+- **rekordbox.file-path**: Absolute path to your Rekordbox XML export file.
 
 ## Examples
 
@@ -41,7 +42,7 @@ djlt config --list
 ```
 **Configure Rekordbox library**
 ```bash
-djlt config rekordbox.xml-path ~/Documents/rekordbox.xml
+djlt config rekordbox.file-path ~/Documents/rekordbox.xml
 
 ```
 **Set up Plex connection**

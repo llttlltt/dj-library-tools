@@ -18,10 +18,11 @@ djlt sync [source-resource] [source-query] --to [target-resource] [target-query]
 ### Inherited Options
 
 ```
-      --dry-run      Preview changes without writing
-      --json         Output results in JSON format
-  -v, --verbose      Enable verbose logging
-  -x, --xml string   Path to the Rekordbox XML library
+      --dry-run          Preview changes without writing
+  -f, --file string      Path to the primary library file (Rekordbox XML, M3U, etc.)
+      --json             Output results in JSON format
+      --to-file string   Path to the destination library file for sync/move operations
+  -v, --verbose          Enable verbose logging
 ```
 
 Synchronizes a target (like a Rekordbox playlist or M3U file) with a source query.

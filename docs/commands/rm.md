@@ -15,10 +15,11 @@ djlt rm [resource] [query] [flags]
 ### Inherited Options
 
 ```
-      --dry-run      Preview changes without writing
-      --json         Output results in JSON format
-  -v, --verbose      Enable verbose logging
-  -x, --xml string   Path to the Rekordbox XML library
+      --dry-run          Preview changes without writing
+  -f, --file string      Path to the primary library file (Rekordbox XML, M3U, etc.)
+      --json             Output results in JSON format
+      --to-file string   Path to the destination library file for sync/move operations
+  -v, --verbose          Enable verbose logging
 ```
 
 Permanently delete resources or remove track membership from playlists.

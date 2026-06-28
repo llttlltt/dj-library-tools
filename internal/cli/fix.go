@@ -83,7 +83,7 @@ func newFixCmd() *cobra.Command {
 	fixPlaylist.Flags().StringSliceVarP(&extsFlag, "ext", "e", []string{}, "Priority list of file extensions (comma-separated)")
 	fixPlaylist.Flags().BoolVar(&m3u8Flag, "m3u8", false, "Enrich playlist with M3U8 #EXTINF tags")
 	fixPlaylist.Flags().BoolVarP(&removeOriginal, "remove-original", "r", false, "Remove the original playlist file after processing")
-	fixPlaylist.Flags().BoolVarP(&forceOverwrite, "force", "f", false, "Force overwrite if output file exists")
+	fixPlaylist.Flags().BoolVar(&forceOverwrite, "force", false, "Force overwrite if output file exists")
 	fixPlaylist.Flags().StringVarP(&outputFileFlag, "output", "o", "", "Specific output path (optional)")
 	fix.AddCommand(fixPlaylist)
 	return fix

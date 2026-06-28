@@ -68,7 +68,7 @@ Example:
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&updateFrom, "from", "f", "", "Source Rekordbox XML to read metadata from")
+	cmd.Flags().StringVarP(&updateFrom, "from", "F", "", "Source library file to read metadata from")
 	cmd.Flags().StringVarP(&updateTo, "to", "t", "", "Destination Rekordbox XML to update (defaults to primary library)")
 	cmd.Flags().StringVarP(&updateOutput, "output", "o", "", "Output path for the updated Rekordbox XML")
 	cmd.Flags().BoolVar(&updateMerge, "merge", false, "Merge metadata instead of overwriting")
