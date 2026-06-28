@@ -44,7 +44,12 @@ func ToNeutralTrack(t Track) models.Track {
 		}
 	}
 	mt.BeatgridCount = len(t.Tempo)
-	mt.Color = t.Colour
+	
+	if t.Colour != "" {
+		mt.Color = GetTrackColorName(t.Colour)
+	} else {
+		mt.Color = t.Colour
+	}
 
 	return mt
 }
