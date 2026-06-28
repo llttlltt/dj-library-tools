@@ -287,39 +287,39 @@ func (e *Evaluator) matchNumericComparison(fieldValue string, targetValue string
 	return false
 }
 
-func (e *Evaluator) MatchesGroup(node models.ResourceGroup) bool {
+func (e *Evaluator) MatchesGroup(group models.ResourceGroup) bool {
 	if e.Query.Root == nil {
 		return true
 	}
-	return e.evalGroup(e.Query.Root, node)
+	return e.evalGroup(e.Query.Root, group)
 }
 
-func (e *Evaluator) evalGroup(expr Expression, node models.ResourceGroup) bool {
+func (e *Evaluator) evalGroup(expr Expression, group models.ResourceGroup) bool {
 	switch v := expr.(type) {
 	case Comparison:
-		return e.matchGroupComparison(node, v)
+		return e.matchGroupComparison(group, v)
 	case Logical:
 		if v.Op == "AND" {
-			return e.evalGroup(v.Left, node) && e.evalGroup(v.Right, node)
+			return e.evalGroup(v.Left, group) && e.evalGroup(v.Right, group)
 		}
-		return e.evalGroup(v.Left, node) || e.evalGroup(v.Right, node)
+		return e.evalGroup(v.Left, group) || e.evalGroup(v.Right, group)
 	case Not:
-		return !e.evalGroup(v.Expr, node)
+		return !e.evalGroup(v.Expr, group)
 	}
 	return false
 }
 
-func (e *Evaluator) matchGroupComparison(node models.ResourceGroup, c Comparison) bool {
+func (e *Evaluator) matchGroupComparison(group models.ResourceGroup, c Comparison) bool {
 	val := ""
 	switch strings.ToLower(c.Field) {
 	case "name":
-		val = node.Name
+		val = group.Name
 	case "parent", "folder":
-		val = node.ParentFolder
+		val = group.ParentFolder
 	case "items":
-		val = strconv.Itoa(node.Items)
+		val = strconv.Itoa(group.Items)
 	case "kind":
-		val = string(node.Kind)
+		val = string(group.Kind)
 	}
 	if c.Operator == OpRange {
 		return e.matchRange(val, c.Value)

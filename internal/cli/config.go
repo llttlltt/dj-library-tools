@@ -74,17 +74,17 @@ func newConfigCmd() *cobra.Command {
 func runConfigSet(cfg *config.AppConfig, key, value string) error {
 	switch key {
 	case "plex.host":
-		cfg.PlexHost = value
+		cfg.Plex.Host = value
 		fmt.Printf("plex.host = %s\n", value)
 	case "plex.port":
 		port, err := strconv.Atoi(value)
 		if err != nil {
 			return fmt.Errorf("plex.port must be an integer, got %q", value)
 		}
-		cfg.PlexPort = port
+		cfg.Plex.Port = port
 		fmt.Printf("plex.port = %d\n", port)
 	case "plex.token":
-		cfg.PlexToken = value
+		cfg.Plex.Token = value
 		fmt.Println("plex.token updated")
 	case "plex.map":
 		parts := strings.SplitN(value, ":", 2)
@@ -97,7 +97,7 @@ func runConfigSet(cfg *config.AppConfig, key, value string) error {
 		cfg.PathMaps[parts[0]] = parts[1]
 		fmt.Printf("plex.map %s -> %s\n", parts[0], parts[1])
 	case "rekordbox.file-path":
-		cfg.PrimaryFilePath = value
+		cfg.Rekordbox.PrimaryFilePath = value
 		fmt.Printf("rekordbox.file-path = %s\n", value)
 	default:
 		return fmt.Errorf("unknown config key %q; run 'djlt config --help' for valid keys", key)
@@ -108,17 +108,17 @@ func runConfigSet(cfg *config.AppConfig, key, value string) error {
 func runConfigGet(cfg *config.AppConfig, key string) error {
 	switch key {
 	case "plex.host":
-		fmt.Println(cfg.PlexHost)
+		fmt.Println(cfg.Plex.Host)
 	case "plex.port":
-		fmt.Println(cfg.PlexPort)
+		fmt.Println(cfg.Plex.Port)
 	case "plex.token":
-		fmt.Println(maskToken(cfg.PlexToken))
+		fmt.Println(maskToken(cfg.Plex.Token))
 	case "plex.map":
 		for remote, local := range cfg.PathMaps {
 			fmt.Printf("%s:%s\n", remote, local)
 		}
 	case "rekordbox.file-path":
-		fmt.Println(cfg.PrimaryFilePath)
+		fmt.Println(cfg.Rekordbox.PrimaryFilePath)
 	default:
 		return fmt.Errorf("unknown config key %q; run 'djlt config --help' for valid keys", key)
 	}
@@ -128,13 +128,13 @@ func runConfigGet(cfg *config.AppConfig, key string) error {
 func runConfigUnset(cfg *config.AppConfig, key string, rest []string) error {
 	switch key {
 	case "plex.host":
-		cfg.PlexHost = ""
+		cfg.Plex.Host = ""
 		fmt.Println("unset plex.host")
 	case "plex.port":
-		cfg.PlexPort = 0
+		cfg.Plex.Port = 0
 		fmt.Println("unset plex.port")
 	case "plex.token":
-		cfg.PlexToken = ""
+		cfg.Plex.Token = ""
 		fmt.Println("unset plex.token")
 	case "plex.map":
 		if len(rest) == 0 {
@@ -150,7 +150,7 @@ func runConfigUnset(cfg *config.AppConfig, key string, rest []string) error {
 		delete(cfg.PathMaps, remote)
 		fmt.Printf("removed plex.map %s\n", remote)
 	case "rekordbox.file-path":
-		cfg.PrimaryFilePath = ""
+		cfg.Rekordbox.PrimaryFilePath = ""
 		fmt.Println("unset rekordbox.file-path")
 	default:
 		return fmt.Errorf("unknown config key %q; run 'djlt config --help' for valid keys", key)
@@ -159,10 +159,10 @@ func runConfigUnset(cfg *config.AppConfig, key string, rest []string) error {
 }
 
 func printConfig(cfg *config.AppConfig) {
-	fmt.Printf("plex.host = %s\n", cfg.PlexHost)
-	fmt.Printf("plex.port = %d\n", cfg.PlexPort)
-	fmt.Printf("plex.token = %s\n", maskToken(cfg.PlexToken))
-	fmt.Printf("rekordbox.file-path = %s\n", cfg.PrimaryFilePath)
+	fmt.Printf("plex.host = %s\n", cfg.Plex.Host)
+	fmt.Printf("plex.port = %d\n", cfg.Plex.Port)
+	fmt.Printf("plex.token = %s\n", maskToken(cfg.Plex.Token))
+	fmt.Printf("rekordbox.file-path = %s\n", cfg.Rekordbox.PrimaryFilePath)
 	for remote, local := range cfg.PathMaps {
 		fmt.Printf("plex.map = %s:%s\n", remote, local)
 	}
