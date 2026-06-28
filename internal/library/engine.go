@@ -20,6 +20,9 @@ func NewEngine(lib ReadableLibrary) *Engine {
 func (e *Engine) Ls(queryString string, matcher query.CustomMatcher) ([]models.Track, error) {
 	parser := query.NewParser()
 	q := parser.Parse(queryString)
+	if err := q.ValidateWithFields(query.AllowedTrackFields); err != nil {
+		return nil, err
+	}
 	eval := query.NewEvaluatorWithMatcher(q, matcher)
 
 	membership := e.Library.GetMembershipMap()

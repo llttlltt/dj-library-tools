@@ -3,6 +3,8 @@ package query
 import (
 	"fmt"
 	"strings"
+
+	"github.com/llttlltt/dj-library-tools/internal/models"
 )
 
 // Operator defines the type of match to perform
@@ -88,6 +90,19 @@ func (q Query) validateExpr(expr Expression, allowedFields []string) error {
 					break
 				}
 			}
+			// Also allow path-based fields if the base collection is recognized
+			if !found && strings.ContainsAny(f, "./-") {
+				collection := strings.Split(f, ".")[0]
+				collection = strings.Split(collection, "/")[0]
+				collection = strings.Split(collection, "-")[0]
+				for allowedCol := range models.CollectionFields {
+					if collection == allowedCol {
+						found = true
+						break
+					}
+				}
+			}
+
 			if !found {
 				return fmt.Errorf("unrecognized field %q. Allowed fields are: %s", v.Field, strings.Join(allowedFields, ", "))
 			}
