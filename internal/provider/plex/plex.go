@@ -3,13 +3,12 @@ package plex
 import (
 	"context"
 	"fmt"
-	"strings"
 
+	"github.com/llttlltt/dj-library-tools/internal/library"
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/plex"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/provider/factory"
-	"github.com/llttlltt/dj-library-tools/internal/query"
 )
 
 func init() {
@@ -41,18 +40,18 @@ func NewPlexProvider(token string, host string, port int) *PlexProvider {
 
 func (p *PlexProvider) Name() string { return "plex" }
 
-func (p *PlexProvider) Tracks() provider.TrackService { return &plexTrackService{p} }
-func (p *PlexProvider) Groups() provider.GroupService { return &plexGroupService{p} }
+func (p *PlexProvider) Tracks() provider.TrackService   { return &plexTrackService{p} }
+func (p *PlexProvider) Groups() provider.GroupService   { return &plexGroupService{p} }
 func (p *PlexProvider) System() provider.SystemService { return &plexSystemService{p} }
 
 type plexTrackService struct{ *PlexProvider }
 
 func (s *plexTrackService) List(ctx provider.ExecutionContext, queryString string) ([]models.Track, error) {
-	raw, err := s.getRawTracksInternal(ctx, queryString)
+	baseURL, err := s.resolveBaseURL(context.Background())
 	if err != nil { return nil, err }
-	var tracks []models.Track
-	for _, pt := range raw { tracks = append(tracks, pt.ToNeutral()) }
-	return tracks, nil
+
+	eng := library.NewEngine(plex.NewLibrary(s.client, baseURL))
+	return eng.Ls(queryString, nil)
 }
 
 func (s *plexTrackService) Update(ctx provider.ExecutionContext, query string, changes map[string]string) (int, error) {
@@ -68,37 +67,19 @@ func (s *plexTrackService) Delete(ctx provider.ExecutionContext, query string) (
 }
 
 func (s *plexTrackService) Groups() provider.TrackGroupService { return s }
-
-func (s *plexTrackService) Add(ctx provider.ExecutionContext, tracks []models.Track, target models.ResourceGroup) (int, error) {
-	return 0, provider.ErrReadOnly
-}
-
-func (s *plexTrackService) Remove(ctx provider.ExecutionContext, tracks []models.Track, group models.ResourceGroup) (int, error) {
-	return 0, provider.ErrReadOnly
-}
-
-func (s *plexTrackService) Move(ctx provider.ExecutionContext, tracks []models.Track, from models.ResourceGroup, to models.ResourceGroup) (int, error) {
-	return 0, provider.ErrReadOnly
-}
-
+func (s *plexTrackService) Add(ctx provider.ExecutionContext, tracks []models.Track, target models.ResourceGroup) (int, error) { return 0, provider.ErrReadOnly }
+func (s *plexTrackService) Remove(ctx provider.ExecutionContext, tracks []models.Track, group models.ResourceGroup) (int, error) { return 0, provider.ErrReadOnly }
+func (s *plexTrackService) Move(ctx provider.ExecutionContext, tracks []models.Track, from models.ResourceGroup, to models.ResourceGroup) (int, error) { return 0, provider.ErrReadOnly }
 func (s *plexTrackService) Sort(ctx provider.ExecutionContext, tracks []models.Track, field string) {}
 
 type plexGroupService struct{ *PlexProvider }
 
 func (s *plexGroupService) List(ctx provider.ExecutionContext, queryString string) ([]models.ResourceGroup, error) {
-	goCtx := context.Background()
-	baseURL, err := s.resolveBaseURL(goCtx)
+	baseURL, err := s.resolveBaseURL(context.Background())
 	if err != nil { return nil, err }
-	q := query.NewParser().Parse(queryString)
-	plexPlaylists, err := s.client.GetPlaylists(goCtx, baseURL)
-	if err != nil { return nil, err }
-	var results []models.ResourceGroup
-	eval := query.NewEvaluator(q)
-	for _, pl := range plexPlaylists {
-		n := pl.ToNeutralGroup()
-		if eval.MatchesGroup(n) { results = append(results, n) }
-	}
-	return results, nil
+
+	eng := library.NewEngine(plex.NewLibrary(s.client, baseURL))
+	return eng.LsGroups(queryString)
 }
 
 func (s *plexGroupService) Create(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, gt models.GroupType, pos int) (models.ResourceGroup, error) {
@@ -135,58 +116,10 @@ func (p *PlexProvider) resolveBaseURL(ctx context.Context) (string, error) {
 	resources, err := p.client.GetResources(ctx)
 	if err != nil { return "", err }
 	for _, res := range resources {
-		if res.Provides != "server" { continue }
-		probe, err := p.client.ProbeBestConnection(res)
-		if err == nil { return probe.BaseURL, nil }
-	}
-	return "", fmt.Errorf("could not find an active Plex server")
-}
-
-func (p *PlexProvider) getRawTracksInternal(_ provider.ExecutionContext, queryString string) ([]plex.Track, error) {
-	goCtx := context.Background()
-	baseURL, err := p.resolveBaseURL(goCtx)
-	if err != nil { return nil, err }
-	q := query.NewParser().Parse(queryString)
-	playlistIDs := []string{}
-	if queryString != "" {
-		var playlistName string
-		var playlistOp query.Operator
-		var walkResolve func(expr query.Expression)
-		walkResolve = func(expr query.Expression) {
-			switch v := expr.(type) {
-			case query.Comparison:
-				f := strings.ToLower(v.Field)
-				if f == "id" || f == "ratingkey" { playlistIDs = append(playlistIDs, v.Value)
-				} else if f == "playlist" { playlistName = v.Value; playlistOp = v.Operator }
-			case query.Logical: walkResolve(v.Left); walkResolve(v.Right)
-			}
-		}
-		walkResolve(q.Root)
-		if len(playlistIDs) == 0 && playlistName != "" {
-			plexPlaylists, err := p.client.GetPlaylists(goCtx, baseURL)
-			if err != nil { return nil, err }
-			for _, pl := range plexPlaylists {
-				match := false
-				if playlistOp == query.OpExact { match = pl.Title == playlistName
-				} else { match = strings.Contains(strings.ToLower(pl.Title), strings.ToLower(playlistName)) }
-				if match { playlistIDs = append(playlistIDs, pl.RatingKey) }
-			}
+		if res.Provides == "server" {
+			probe, err := p.client.ProbeBestConnection(res)
+			if err == nil { return probe.BaseURL, nil }
 		}
 	}
-	var plexTracks []plex.Track
-	if len(playlistIDs) > 0 {
-		seen := make(map[string]bool)
-		for _, id := range playlistIDs {
-			pt, err := p.client.GetPlaylistTracks(goCtx, baseURL, "/playlists/"+id+"/items")
-			if err != nil { continue }
-			for _, t := range pt { if !seen[t.RatingKey] { plexTracks = append(plexTracks, t); seen[t.RatingKey] = true } }
-		}
-	} else {
-		plexTracks, err = p.client.GetAllTracks(goCtx, baseURL)
-	}
-	if err != nil { return nil, err }
-	var tracks []plex.Track
-	eval := query.NewEvaluator(q)
-	for _, pt := range plexTracks { if eval.Matches(pt.ToNeutral()) { tracks = append(tracks, pt) } }
-	return tracks, nil
+	return "", fmt.Errorf("could find no active Plex server")
 }
