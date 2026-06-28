@@ -24,7 +24,7 @@ The query part supports a powerful set of operators and boolean logic.
 | :--- | :--- | :--- | :--- |
 | `:` | String | `artist:Daft` | Case-insensitive substring match. |
 | `:` | Numeric | `bpm:124` | **Exact** numeric equality. |
-| `=` | Exact | `title='Music'` | Case-sensitive exact match. |
+| `:=` | Exact | `title:='Music'` | Case-sensitive exact match. |
 | `::` | Regex | `name::'^Ye'` | Regular expression match. |
 | `..` | Range | `bpm:120..130` | Inclusive range match. |
 | `>`, `<` | Comparison | `rating:>3` | Greater than / Less than. |
