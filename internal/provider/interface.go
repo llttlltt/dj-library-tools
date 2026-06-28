@@ -43,7 +43,10 @@ type ReadableProvider interface {
 	GetTracks(ctx ExecutionContext, query string) ([]models.Track, error)
 	GetPlaylists(ctx ExecutionContext, query string) ([]models.ResourceGroup, error)
 	GetFolders(ctx ExecutionContext, query string) ([]models.ResourceGroup, error)
-	
+
+	// GetResources is the unified entry point for all resource types.
+	GetResources(ctx ExecutionContext, resource string, query string) ([]models.Resource, error)
+
 	// Sort operations
 	SortTracks(ctx ExecutionContext, tracks []models.Track, field string)
 	SortGroups(ctx ExecutionContext, groups []models.ResourceGroup, field string)

@@ -272,3 +272,24 @@ func (p *RekordboxProvider) ValidateCreateGroup(parent models.ResourceGroup, gro
 	}
 	return nil
 }
+
+func (p *RekordboxProvider) GetResources(ctx provider.ExecutionContext, resource string, query string) ([]models.Resource, error) {
+	var items []models.Resource
+	switch resource {
+	case "tracks":
+		tracks, err := p.GetTracks(ctx, query)
+		if err != nil { return nil, err }
+		for _, t := range tracks { items = append(items, t) }
+	case "playlists":
+		groups, err := p.GetPlaylists(ctx, query)
+		if err != nil { return nil, err }
+		for _, g := range groups { items = append(items, g) }
+	case "folders":
+		groups, err := p.GetFolders(ctx, query)
+		if err != nil { return nil, err }
+		for _, g := range groups { items = append(items, g) }
+	default:
+		return nil, fmt.Errorf("unknown resource: %s", resource)
+	}
+	return items, nil
+}
