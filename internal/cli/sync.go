@@ -53,7 +53,7 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 
 			srcOpts := resolver.ResolveOptions{
 				FilePath: filePath,
-				Apply:   apply,
+				Apply:    apply,
 				Verbose:  verbose,
 			}
 
@@ -65,7 +65,7 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 			for _, targetStr := range syncTo {
 				tgtOpts := resolver.ResolveOptions{
 					FilePath: toFilePath,
-					Apply:   apply,
+					Apply:    apply,
 					Verbose:  verbose,
 				}
 				if tgtOpts.FilePath == "" {
@@ -78,18 +78,6 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 				}
 
 				prov := tgt.Provider
-
-				if !apply {
-					action := "sync"
-					if syncAppend {
-						action = "append to"
-					}
-					fmt.Printf("[Dry Run] Would %s playlist %q with %d tracks\n", action, tgt.Location.Query, len(src.Tracks))
-					if len(metadataFields) > 0 {
-						fmt.Printf("[Dry Run] Would sync metadata fields %v for matched tracks\n", metadataFields)
-					}
-					continue
-				}
 
 				// 1. Membership Sync
 				err = prov.System().Sync(getExecContext(), src.Tracks, tgt.Location.Query, provider.SyncOptions{

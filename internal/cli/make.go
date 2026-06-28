@@ -40,8 +40,8 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int, pare
 		return HandleError(err)
 	}
 	name := args[1]
-
 	prov := sel.Provider
+	ctx := getExecContext()
 
 	// Handle --parents by ensuring the folder path exists
 	if parents && createIn != "" {
@@ -49,20 +49,15 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int, pare
 		currentParent := ""
 		for _, part := range parts {
 			if part == "" { continue }
-			// Check if part exists as folder
 			query := fmt.Sprintf("name:%q", part)
 			if currentParent != "" {
 				query += fmt.Sprintf(" && parent:%q", currentParent)
 			}
 			
-			res, _ := prov.Groups().List(getExecContext(), query)
+			res, _ := prov.Groups().List(ctx, query)
 			if len(res) == 0 {
-				if !apply {
-					fmt.Printf("[Dry Run] Would create folder %q in %q\n", part, currentParent)
-				} else {
-					_, err := prov.Groups().Create(getExecContext(), models.ResourceGroup{Name: currentParent}, part, models.GroupKindFolder, -1)
-					if err != nil { return HandleError(err) }
-				}
+				_, err := prov.Groups().Create(ctx, models.ResourceGroup{Name: currentParent}, part, models.GroupKindFolder, -1)
+				if err != nil { return HandleError(err) }
 			}
 			currentParent = part
 		}
@@ -77,32 +72,25 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int, pare
 		tracks = src.Tracks
 	}
 
-	groupType := models.GroupKindPlaylist
+	groupKind := models.GroupKindPlaylist
 	if sel.Location.Resource == "folders" {
-		groupType = models.GroupKindFolder
+		groupKind = models.GroupKindFolder
 	}
 
-	// Handle structural validation by checking provider capabilities or specific constraints
-	// (Note: In the new architecture, validation logic can be embedded in the Create call 
-	// or specific policy checks on System().Containment())
-
-	ctx := getExecContext()
-
-	if !apply {
-		fmt.Printf("[Dry Run] Would create %s %q in folder %q at position %d with %d tracks\n", sel.Location.Resource, name, createIn, createAt, len(tracks))
-		return nil
-	}
-
-	newNode, err := prov.Groups().Create(ctx, models.ResourceGroup{Name: createIn}, name, groupType, createAt)
+	newNode, err := prov.Groups().Create(ctx, models.ResourceGroup{Name: createIn}, name, groupKind, createAt)
 	if err != nil {
 		return HandleError(err)
 	}
 
 	if len(tracks) > 0 {
 		added, _ := prov.Tracks().Groups().Add(ctx, tracks, newNode)
-		fmt.Printf("Created %s %q with %d tracks\n", sel.Location.Resource, name, added)
+		if ctx.Apply {
+			fmt.Printf("Created %s %q with %d tracks\n", sel.Location.Resource, name, added)
+		}
 	} else {
-		fmt.Printf("Created %s %q\n", sel.Location.Resource, name)
+		if ctx.Apply {
+			fmt.Printf("Created %s %q\n", sel.Location.Resource, name)
+		}
 	}
 
 	return prov.System().Save(ctx, "")
