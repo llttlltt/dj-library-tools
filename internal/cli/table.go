@@ -44,27 +44,42 @@ func (t *Table) Render() {
 	}
 }
 
-func renderTrackTable(tracks []models.Track) {
-	t := &Table{
-		Headers: []string{"BPM", "Key", "Artist", "Title"},
+func renderTrackTable(providerName string, tracks []models.Track) {
+	var headers []string
+	if providerName == "m3u" || providerName == "m3u8" {
+		headers = []string{"Duration", "Display Name", "Location"}
+	} else {
+		headers = []string{"BPM", "Key", "Artist", "Title"}
 	}
+
+	t := &Table{Headers: headers}
 	for _, tr := range tracks {
-		t.Rows = append(t.Rows, []string{
-			fmt.Sprintf("%.2f", tr.BPM),
-			tr.Key,
-			tr.Artist,
-			tr.Title,
-		})
+		var row []string
+		if providerName == "m3u" || providerName == "m3u8" {
+			row = []string{
+				fmt.Sprintf("%d", tr.Duration),
+				tr.Display,
+				tr.Location,
+			}
+		} else {
+			row = []string{
+				fmt.Sprintf("%.2f", tr.BPM),
+				tr.Key,
+				tr.Artist,
+				tr.Title,
+			}
+		}
+		t.Rows = append(t.Rows, row)
 	}
 	t.Render()
 	fmt.Printf("\nMatched %d tracks.\n", len(tracks))
 }
 
-func renderGroupTable(nodes []models.ResourceGroup, label string) {
+func renderGroupTable(groups []models.ResourceGroup, label string) {
 	t := &Table{
 		Headers: []string{"Items", label},
 	}
-	for _, n := range nodes {
+	for _, n := range groups {
 		path := n.Name
 		if n.ParentFolder != "" {
 			path = n.ParentFolder + "/" + n.Name
@@ -75,5 +90,5 @@ func renderGroupTable(nodes []models.ResourceGroup, label string) {
 		})
 	}
 	t.Render()
-	fmt.Printf("\nMatched %d %s.\n", len(nodes), label)
+	fmt.Printf("\nMatched %d %s.\n", len(groups), label)
 }

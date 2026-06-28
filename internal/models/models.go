@@ -14,6 +14,7 @@ type Track struct {
 	Title         string
 	Artist        string
 	Album         string
+	Display       string // Provider-specific display name (e.g. M3U display string)
 	BPM           float64
 	Key           string
 	Genre         string

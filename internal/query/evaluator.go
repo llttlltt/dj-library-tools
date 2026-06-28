@@ -15,7 +15,7 @@ var AllowedTrackFields = []string{
 	"playlists", "title", "artist", "album", "bpm", "key", "genre", "comment",
 	"year", "label", "rating", "plays", "added", "modified", "color", "bitrate",
 	"samplerate", "size", "beatgrids", "hotcues", "memorycues", "id", "location",
-	"remixer", "mix",
+	"remixer", "mix", "display",
 }
 
 // AllowedGroupFields is a list of valid fields for playlist and folder queries.
@@ -175,6 +175,8 @@ func (e *Evaluator) getFieldValue(track models.Track, playlists []string, field 
 		return track.ID
 	case "location":
 		return track.Location
+	case "display":
+		return track.Display
 	case "playlists":
 		return strconv.Itoa(len(playlists))
 	case "title":
