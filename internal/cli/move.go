@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/provider"
+	"github.com/llttlltt/dj-library-tools/internal/resolver"
 	"github.com/spf13/cobra"
 )
 
@@ -60,7 +61,7 @@ Example:
 	return cmd
 }
 
-func runMoveTracks(prov provider.Provider, src *Selection, moveFrom, moveTo string) error {
+func runMoveTracks(prov provider.Provider, src *resolver.Selection, moveFrom, moveTo string) error {
 	if len(src.Tracks) == 0 {
 		fmt.Println("No tracks matched the source query.")
 		return nil
@@ -98,7 +99,7 @@ func runMoveTracks(prov provider.Provider, src *Selection, moveFrom, moveTo stri
 	return prov.System().Save(ctx, "")
 }
 
-func runMoveGroups(prov provider.Provider, src *Selection, moveTo string) error {
+func runMoveGroups(prov provider.Provider, src *resolver.Selection, moveTo string) error {
 	if len(src.Groups) == 0 {
 		fmt.Println("No resources found matching query.")
 		return nil
@@ -133,7 +134,7 @@ func runMoveGroups(prov provider.Provider, src *Selection, moveTo string) error 
 	return prov.System().Save(ctx, "")
 }
 
-func runRenameGroups(prov provider.Provider, src *Selection, newName string) error {
+func runRenameGroups(prov provider.Provider, src *resolver.Selection, newName string) error {
 	if len(src.Groups) == 0 {
 		return fmt.Errorf("no resources found matching query %q", src.Location.Query)
 	}

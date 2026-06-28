@@ -3,13 +3,11 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"os"
+	"strings"
 
-	"github.com/llttlltt/dj-library-tools/internal/config"
-	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/djerr"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
-	"github.com/llttlltt/dj-library-tools/internal/provider/factory"
-	"github.com/llttlltt/dj-library-tools/internal/utils"
+	"github.com/llttlltt/dj-library-tools/internal/resolver"
 	"github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"
 )
@@ -20,13 +18,13 @@ func HandleError(err error) error {
 		return nil
 	}
 
-	if errors.Is(err, provider.ErrReadOnly) {
+	if errors.Is(err, djerr.ErrReadOnly) {
 		return fmt.Errorf("operation failed: this provider is read-only")
 	}
-	if errors.Is(err, provider.ErrUnsupportedResource) {
+	if errors.Is(err, djerr.ErrUnsupportedResource) {
 		return fmt.Errorf("operation failed: this resource type is not supported by the provider")
 	}
-	if errors.Is(err, provider.ErrInvalidParent) {
+	if errors.Is(err, djerr.ErrInvalidParent) {
 		return fmt.Errorf("operation failed: cannot create the resource in that location (structural constraint)")
 	}
 
@@ -89,15 +87,6 @@ func RunBulkOperation(verb string, targetNames []string, itemIDs []string, actio
 	}
 }
 
-// Selection represents a resolved set of resources from a provider.
-type Selection struct {
-	Items    []models.Resource
-	Tracks   []models.Track
-	Groups   []models.ResourceGroup
-	Location utils.Location
-	Provider provider.Provider
-}
-
 func getExecContext() provider.ExecutionContext {
 	return provider.ExecutionContext{
 		DryRun:  dryRun,
@@ -105,74 +94,23 @@ func getExecContext() provider.ExecutionContext {
 	}
 }
 
-// ResolveSelection resolves a location string into a Selection.
-func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
-	if locStr == "" {
-		return &Selection{}, nil
+func getResolveOptions() resolver.ResolveOptions {
+	return resolver.ResolveOptions{
+		FilePath:      filePath,
+		FilterMissing: filterMissing,
+		FilterExists:  filterExists,
+		DryRun:        dryRun,
+		Verbose:       verbose,
 	}
-	loc := utils.ParseLocation(locStr, queryOverride)
-	if loc.Resource == "" {
-		return nil, fmt.Errorf("resource must be specified in location %q (e.g. %s/tracks)", locStr, loc.Provider)
-	}
+}
 
-	cfg, _ := config.LoadAppConfig()
-	
-	opts := factory.ProviderOptions{
-		FilePath: filePath,
-		Config:   cfg,
-	}
-
-	prov, err := factory.NewProvider(loc.Provider, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	sel := &Selection{Location: loc, Provider: prov}
-	ctx := getExecContext()
-	
-	var items []models.Resource
-	if loc.Resource == "tracks" {
-		tracks, err := prov.Tracks().List(ctx, loc.Query)
-		if err != nil { return nil, err }
-		for _, t := range tracks { items = append(items, t) }
-	} else if loc.Resource == "playlists" || loc.Resource == "folders" {
-		groups, err := prov.Groups().List(ctx, loc.Query)
-		if err != nil { return nil, err }
-		for _, g := range groups { items = append(items, g) }
-	} else {
-		return nil, fmt.Errorf("unsupported resource type: %s", loc.Resource)
-	}
-
-	// Apply physical health filtering if flags are set
-	if filterMissing || filterExists {
-		var filtered []models.Resource
-		for _, item := range items {
-			if t, ok := item.(models.Track); ok {
-				_, statErr := os.Stat(t.Location)
-				missing := os.IsNotExist(statErr)
-				if filterMissing && !missing { continue }
-				if filterExists && missing { continue }
-			}
-			filtered = append(filtered, item)
-		}
-		items = filtered
-	}
-
-	sel.Items = items
-	for _, item := range items {
-		if t, ok := item.(models.Track); ok {
-			sel.Tracks = append(sel.Tracks, t)
-		} else if g, ok := item.(models.ResourceGroup); ok {
-			sel.Groups = append(sel.Groups, g)
-		}
-	}
-
-	return sel, nil
+func ResolveSelection(locStr string, queryOverride string) (*resolver.Selection, error) {
+	return resolver.ResolveSelection(locStr, queryOverride, getResolveOptions())
 }
 
 func stringsTitle(s string) string {
 	if s == "" {
 		return ""
 	}
-	return fmt.Sprintf("%c%s", s[0]-32, s[1:])
+	return strings.ToUpper(s[:1]) + s[1:]
 }
