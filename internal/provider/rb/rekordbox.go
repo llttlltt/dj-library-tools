@@ -216,7 +216,7 @@ func (s *rekordboxSystemService) Containment() provider.ContainmentPolicy {
 }
 
 func (s *rekordboxSystemService) MetadataCapabilities() []string {
-	return []string{"bpm", "key", "rating", "comment", "genre", "label", "color", "beatgrids"}
+	return provider.ResolveAvailableFields(s.Capabilities())
 }
 
 func (s *rekordboxSystemService) SupportedResources() []string {

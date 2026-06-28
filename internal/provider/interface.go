@@ -21,6 +21,24 @@ type ProviderCapabilities struct {
 	IsFileBased       bool // Requires --file flag
 }
 
+// ResolveAvailableFields returns a list of queryable fields based on provider capabilities.
+func ResolveAvailableFields(caps ProviderCapabilities) []string {
+	var fields []string
+	// Map flags to model capability set
+	enabled := make(map[models.Capability]bool)
+	enabled[models.CapNone] = true
+	if caps.CanUpdateMetadata { enabled[models.CapMetadata] = true }
+	if caps.SupportsCues { enabled[models.CapCues] = true }
+	if caps.SupportsBeatgrids { enabled[models.CapBeatgrids] = true }
+
+	for name, def := range models.TrackFields {
+		if enabled[def.RequiredCap] {
+			fields = append(fields, name)
+		}
+	}
+	return fields
+}
+
 // ContainmentPolicy defines the structural rules of the library.
 type ContainmentPolicy struct {
 	AllowTracksInFolders   bool

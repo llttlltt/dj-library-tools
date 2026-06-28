@@ -100,7 +100,10 @@ type plexSystemService struct{ *PlexProvider }
 
 func (s *plexSystemService) Capabilities() provider.ProviderCapabilities { return provider.ProviderCapabilities{} }
 func (s *plexSystemService) Containment() provider.ContainmentPolicy { return provider.ContainmentPolicy{} }
-func (s *plexSystemService) MetadataCapabilities() []string { return []string{"rating", "plays"} }
+func (s *plexSystemService) MetadataCapabilities() []string {
+	return provider.ResolveAvailableFields(s.Capabilities())
+}
+
 func (s *plexSystemService) SupportedResources() []string { return []string{"tracks", "playlists"} }
 func (s *plexSystemService) TableHeaders() []string {
 	return []string{"bpm", "key", "artist", "title", "rating"}
