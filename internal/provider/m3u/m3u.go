@@ -306,3 +306,11 @@ func (p *M3UProvider) ValidateCreateGroup(parent models.ResourceGroup, groupType
 	}
 	return nil
 }
+
+func (p *M3UProvider) SupportedResources() []string {
+	return []string{"tracks", "playlists"}
+}
+
+func (p *M3UProvider) IdentifyGroup(name string, groupType models.GroupType) string {
+	return p.path
+}

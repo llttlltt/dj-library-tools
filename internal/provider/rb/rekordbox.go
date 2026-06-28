@@ -277,3 +277,12 @@ func (p *RekordboxProvider) ValidateCreateGroup(parent models.ResourceGroup, gro
 	}
 	return nil
 }
+
+func (p *RekordboxProvider) SupportedResources() []string {
+	return []string{"tracks", "playlists", "folders"}
+}
+
+func (p *RekordboxProvider) IdentifyGroup(name string, groupType models.GroupType) string {
+	// Rekordbox uses names as unique IDs within a parent context for XML interaction
+	return name
+}

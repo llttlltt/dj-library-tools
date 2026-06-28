@@ -290,3 +290,11 @@ func (p *PlexProvider) GetResources(ctx provider.ExecutionContext, resource stri
 	}
 	return items, nil
 }
+
+func (p *PlexProvider) SupportedResources() []string {
+	return []string{"tracks", "playlists"}
+}
+
+func (p *PlexProvider) IdentifyGroup(name string, groupType models.GroupType) string {
+	return "" // Not writable yet
+}
