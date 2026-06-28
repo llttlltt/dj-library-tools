@@ -3,11 +3,13 @@ package resolver
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/provider/factory"
+	"github.com/llttlltt/dj-library-tools/internal/query"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
 )
 
@@ -99,5 +101,49 @@ func ResolveSelection(locStr string, queryOverride string, opts ResolveOptions) 
 		}
 	}
 
+	// Validate path-based query capabilities
+	if loc.Query != "" {
+		validatePathCapabilities(sel)
+	}
+
 	return sel, nil
+}
+
+func validatePathCapabilities(sel *Selection) {
+	q := query.NewParser().Parse(sel.Location.Query)
+	caps := sel.Provider.System().Capabilities()
+
+	var check func(expr query.Expression)
+	check = func(expr query.Expression) {
+		switch v := expr.(type) {
+		case query.Comparison:
+			if strings.ContainsAny(v.Field, "./-") {
+				collection := strings.Split(v.Field, ".")[0]
+				collection = strings.Split(collection, "/")[0]
+				collection = strings.Split(collection, "-")[0]
+
+				if reqCap, ok := models.CollectionCapabilities[collection]; ok {
+					hasCap := false
+					switch reqCap {
+					case models.CapCues:
+						hasCap = caps.SupportsCues
+					case models.CapBeatgrids:
+						hasCap = caps.SupportsBeatgrids
+					}
+					if !hasCap {
+						fmt.Fprintf(os.Stderr, "⚠️  Warning: The current provider (%s) does not support %q. Results for %q may be incomplete or empty.\n", 
+							sel.Provider.Name(), collection, v.Field)
+					}
+				}
+			}
+		case query.Logical:
+			check(v.Left)
+			check(v.Right)
+		case query.Not:
+			check(v.Expr)
+		}
+	}
+	if q.Root != nil {
+		check(q.Root)
+	}
 }

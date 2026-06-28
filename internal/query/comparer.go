@@ -12,6 +12,19 @@ import (
 // It is derived from the universal models.TrackFields and models.GroupFields.
 func getFieldKind(field string) models.FieldKind {
 	field = strings.ToLower(field)
+
+	// Handle path-based fields
+	if strings.ContainsAny(field, "./-") {
+		// Stats and certain properties are numeric
+		if strings.Contains(field, "-drift") || 
+		   strings.Contains(field, "-density") || 
+		   strings.Contains(field, "-count") ||
+		   strings.Contains(field, "/bpm") ||
+		   strings.Contains(field, "/position") {
+			return models.KindNumeric
+		}
+	}
+
 	if def, ok := models.TrackFields[field]; ok {
 		return def.Kind
 	}
