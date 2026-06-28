@@ -271,5 +271,5 @@ func (p *PlexProvider) Save(_ provider.ExecutionContext, _ string) error {
 	return nil
 }
 
-func (p *PlexProvider) SortTracks(tracks []models.Track, field string) {}
-func (p *PlexProvider) SortGroups(groups []models.ResourceGroup, field string) {}
+func (p *PlexProvider) SortTracks(_ provider.ExecutionContext, tracks []models.Track, field string) {}
+func (p *PlexProvider) SortGroups(_ provider.ExecutionContext, groups []models.ResourceGroup, field string) {}
