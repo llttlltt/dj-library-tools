@@ -60,7 +60,7 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int, pare
 				if dryRun {
 					fmt.Printf("[Dry Run] Would create folder %q in %q\n", part, currentParent)
 				} else {
-					_, err := prov.Groups().Create(getExecContext(), models.ResourceGroup{Name: currentParent}, part, models.GroupTypeFolder, -1)
+					_, err := prov.Groups().Create(getExecContext(), models.ResourceGroup{Name: currentParent}, part, models.GroupKindFolder, -1)
 					if err != nil { return HandleError(err) }
 				}
 			}
@@ -77,9 +77,9 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int, pare
 		tracks = src.Tracks
 	}
 
-	groupType := models.GroupTypePlaylist
+	groupType := models.GroupKindPlaylist
 	if sel.Location.Resource == "folders" {
-		groupType = models.GroupTypeFolder
+		groupType = models.GroupKindFolder
 	}
 
 	// Handle structural validation by checking provider capabilities or specific constraints

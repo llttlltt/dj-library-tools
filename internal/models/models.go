@@ -7,18 +7,15 @@ type Resource interface {
 	GetKind() string
 }
 
-type GroupType int
+type GroupKind string
 
 const (
-	GroupTypeFolder   GroupType = 0
-	GroupTypePlaylist GroupType = 1
+	GroupKindFolder   GroupKind = "folder"
+	GroupKindPlaylist GroupKind = "playlist"
 )
 
-func (g GroupType) String() string {
-	if g == GroupTypeFolder {
-		return "folder"
-	}
-	return "playlist"
+func (g GroupKind) String() string {
+	return string(g)
 }
 
 // Track is the provider-neutral representation of a music track.
@@ -89,13 +86,13 @@ type ResourceGroup struct {
 	Name                string
 	Items               int
 	ParentFolder        string
-	Type                GroupType
+	Kind                GroupKind
 	ImplementationState interface{}
 }
 
 func (n ResourceGroup) GetID() string   { return n.ID }
 func (n ResourceGroup) GetName() string { return n.Name }
-func (n ResourceGroup) GetKind() string { return n.Type.String() }
+func (n ResourceGroup) GetKind() string { return n.Kind.String() }
 
 // MetadataMatch pairs a source track with a target track for reconciliation.
 type MetadataMatch struct {

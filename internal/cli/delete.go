@@ -56,7 +56,7 @@ func runDeleteResources(prov provider.Provider, ctx provider.ExecutionContext, s
 
 	for _, item := range sel.Items {
 		if node, ok := item.(models.ResourceGroup); ok {
-			if recursive && node.Type == models.GroupTypeFolder {
+			if recursive && node.Kind == models.GroupKindFolder {
 				// Recursive delete: find children and delete them first
 				// This is a simple CLI-side orchestration
 				children, _ := prov.Groups().List(ctx, fmt.Sprintf("parent:%q", node.Name))

@@ -20,7 +20,7 @@ var AllowedTrackFields = []string{
 
 // AllowedGroupFields is a list of valid fields for playlist and folder queries.
 var AllowedGroupFields = []string{
-	"name", "parent", "folder", "items", "type",
+	"name", "parent", "folder", "items", "kind",
 }
 
 type CustomMatcher interface {
@@ -69,7 +69,7 @@ func (e *Evaluator) eval(expr Expression, track models.Track, playlists []string
 func isNumericField(field string) bool {
 	switch strings.ToLower(field) {
 	case "playlists", "hotcues", "memorycues", "beatgrids", "rating", "plays", "year",
-		"bpm", "bitrate", "samplerate", "size", "items", "type":
+		"bpm", "bitrate", "samplerate", "size", "items":
 		return true
 	}
 	return false
@@ -318,8 +318,8 @@ func (e *Evaluator) matchGroupComparison(node models.ResourceGroup, c Comparison
 		val = node.ParentFolder
 	case "items":
 		val = strconv.Itoa(node.Items)
-	case "type":
-		val = strconv.Itoa(int(node.Type))
+	case "kind":
+		val = string(node.Kind)
 	}
 	if c.Operator == OpRange {
 		return e.matchRange(val, c.Value)

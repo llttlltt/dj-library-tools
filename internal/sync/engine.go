@@ -230,7 +230,7 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opt
 		} else {
 			err := o.Library.UpdateGroup(targetID, trackIDs)
 			if err != nil {
-				o.Library.CreateGroup("", targetID, models.GroupTypePlaylist, -1)
+				o.Library.CreateGroup("", targetID, models.GroupKindPlaylist, -1)
 				o.Library.UpdateGroup(targetID, trackIDs)
 			}
 		}

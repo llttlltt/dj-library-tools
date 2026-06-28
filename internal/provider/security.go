@@ -106,7 +106,7 @@ func (s *gatedGroupService) List(ctx ExecutionContext, query string) ([]models.R
 	return s.base.List(ctx, query)
 }
 
-func (s *gatedGroupService) Create(ctx ExecutionContext, parent models.ResourceGroup, name string, gt models.GroupType, pos int) (models.ResourceGroup, error) {
+func (s *gatedGroupService) Create(ctx ExecutionContext, parent models.ResourceGroup, name string, gt models.GroupKind, pos int) (models.ResourceGroup, error) {
 	if !s.caps.CanManageGroups {
 		return models.ResourceGroup{}, fmt.Errorf("group management is not supported by this provider")
 	}

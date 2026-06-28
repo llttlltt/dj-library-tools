@@ -81,7 +81,7 @@ type GroupService interface {
 	List(ctx ExecutionContext, query string) ([]models.ResourceGroup, error)
 
 	// Create creates a new group container.
-	Create(ctx ExecutionContext, parent models.ResourceGroup, name string, groupType models.GroupType, position int) (models.ResourceGroup, error)
+	Create(ctx ExecutionContext, parent models.ResourceGroup, name string, groupType models.GroupKind, position int) (models.ResourceGroup, error)
 
 	// Update modifies group properties (rename, move group in tree).
 	Update(ctx ExecutionContext, group models.ResourceGroup, newName string, newParent *models.ResourceGroup) error
@@ -110,7 +110,7 @@ type SystemService interface {
 	Sync(ctx ExecutionContext, tracks []models.Track, targetQuery string, options SyncOptions) error
 
 	// Identify returns a provider-specific ID for a name.
-	Identify(name string, groupType models.GroupType) string
+	Identify(name string, groupType models.GroupKind) string
 }
 
 type SyncOptions struct {

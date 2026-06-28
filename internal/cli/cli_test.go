@@ -29,7 +29,7 @@ func (s *mockTrackService) Sort(_ provider.ExecutionContext, _ []models.Track, _
 
 type mockGroupService struct{}
 func (s *mockGroupService) List(_ provider.ExecutionContext, _ string) ([]models.ResourceGroup, error) { return nil, nil }
-func (s *mockGroupService) Create(_ provider.ExecutionContext, _ models.ResourceGroup, name string, _ models.GroupType, _ int) (models.ResourceGroup, error) {
+func (s *mockGroupService) Create(_ provider.ExecutionContext, _ models.ResourceGroup, name string, _ models.GroupKind, _ int) (models.ResourceGroup, error) {
 	return models.ResourceGroup{Name: name}, nil
 }
 func (s *mockGroupService) Update(_ provider.ExecutionContext, _ models.ResourceGroup, _ string, _ *models.ResourceGroup) error { return nil }
@@ -44,7 +44,7 @@ func (s *mockSystemService) SupportedResources() []string { return nil }
 func (s *mockSystemService) Save(_ provider.ExecutionContext, _ string) error { return nil }
 func (s *mockSystemService) Fix(_ provider.ExecutionContext, _, _ string) error { return nil }
 func (s *mockSystemService) Sync(_ provider.ExecutionContext, _ []models.Track, _ string, _ provider.SyncOptions) error { return nil }
-func (s *mockSystemService) Identify(_ string, _ models.GroupType) string { return "" }
+func (s *mockSystemService) Identify(_ string, _ models.GroupKind) string { return "" }
 
 func TestResolveSelection(t *testing.T) {
 	// The current ResolveSelection uses factory.NewProvider, which we can't easily mock

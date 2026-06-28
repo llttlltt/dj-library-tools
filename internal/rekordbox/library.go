@@ -69,7 +69,7 @@ func (r *Library) walkRekordboxPlaylists(nodes []Node, m map[string][]string) {
 	}
 }
 
-func (r *Library) CreateGroup(parentID, name string, groupType models.GroupType, position int) (models.ResourceGroup, error) {
+func (r *Library) CreateGroup(parentID, name string, groupKind models.GroupKind, position int) (models.ResourceGroup, error) {
 	r.XML.PlaylistsChanged = true
 	var container *[]Node
 	var folderNode *Node
@@ -82,7 +82,7 @@ func (r *Library) CreateGroup(parentID, name string, groupType models.GroupType,
 	}
 
 	nodeType := 1 // Playlist
-	if groupType == models.GroupTypeFolder {
+	if groupKind == models.GroupKindFolder {
 		nodeType = 0
 	}
 
@@ -115,10 +115,10 @@ func (r *Library) CreateGroup(parentID, name string, groupType models.GroupType,
 	return ToNeutralGroup(node, parentID), nil
 }
 
-func (r *Library) DeleteGroup(groupID string, groupType models.GroupType) error {
+func (r *Library) DeleteGroup(groupID string, groupKind models.GroupKind) error {
 	r.XML.PlaylistsChanged = true
 	nodeType := int32(1)
-	if groupType == models.GroupTypeFolder {
+	if groupKind == models.GroupKindFolder {
 		nodeType = 0
 	}
 
@@ -199,10 +199,10 @@ func (r *Library) UpdateGroup(groupID string, trackIDs []string) error {
 	return nil
 }
 
-func (r *Library) RenameGroup(groupID, newName string, groupType models.GroupType) error {
+func (r *Library) RenameGroup(groupID, newName string, groupKind models.GroupKind) error {
 	r.XML.PlaylistsChanged = true
 	nodeType := int32(1)
-	if groupType == models.GroupTypeFolder {
+	if groupKind == models.GroupKindFolder {
 		nodeType = 0
 	}
 	node, _, _, _ := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, groupID, nodeType)
@@ -213,10 +213,10 @@ func (r *Library) RenameGroup(groupID, newName string, groupType models.GroupTyp
 	return nil
 }
 
-func (r *Library) MoveGroup(groupID string, groupType models.GroupType, targetParentID string) error {
+func (r *Library) MoveGroup(groupID string, groupKind models.GroupKind, targetParentID string) error {
 	r.XML.PlaylistsChanged = true
 	nodeType := int32(1)
-	if groupType == models.GroupTypeFolder {
+	if groupKind == models.GroupKindFolder {
 		nodeType = 0
 	}
 	node, parentNode, parentSlice, idx := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, groupID, nodeType)
