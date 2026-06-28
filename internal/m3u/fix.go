@@ -1,4 +1,4 @@
-package playlist
+package m3u
 
 import (
 	"bufio"
