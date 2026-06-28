@@ -57,7 +57,7 @@ func (e *Engine) lsNodes(queryString string, nodeType models.GroupType) ([]model
 	var matched []models.ResourceGroup
 	for _, node := range e.Library.GetPlaylists() {
 		if node.Type == nodeType {
-			if eval.MatchesNode(node) {
+			if eval.MatchesGroup(node) {
 				matched = append(matched, node)
 			}
 		}

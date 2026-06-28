@@ -69,7 +69,7 @@ Example:
 				if verbose {
 					fmt.Printf("Deleting %s %q...\n", sel.Location.Resource, t.Name)
 				}
-				if err := wp.DeleteNode(t); err != nil {
+				if err := wp.DeleteGroup(t); err != nil {
 					fmt.Printf("Warning: failed to delete %q: %v\n", t.Name, err)
 					continue
 				}

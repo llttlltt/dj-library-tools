@@ -27,12 +27,12 @@ type WritableLibrary interface {
 	RemoveTracksFromPlaylist(name string, trackIDs []string) (bool, int)
 	// CreateFolder creates a new folder.
 	CreateFolder(folder, name string, position int) bool
-	// RenameNode renames a folder or playlist.
-	RenameNode(name, newName string, nodeType int32) bool
-	// MoveNode moves a folder or playlist.
-	MoveNode(name string, nodeType int32, targetFolder string) bool
-	// RemoveNode removes a folder or playlist.
-	RemoveNode(name string, nodeType int32) bool
+	// RenameGroup renames a folder or playlist.
+	RenameGroup(name, newName string, nodeType int32) bool
+	// MoveGroup moves a folder or playlist.
+	MoveGroup(name string, nodeType int32, targetFolder string) bool
+	// RemoveGroup removes a folder or playlist.
+	RemoveGroup(name string, nodeType int32) bool
 	// Save writes changes back to persistent storage.
 	Save(path string) error
 }

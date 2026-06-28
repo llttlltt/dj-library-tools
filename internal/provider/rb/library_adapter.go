@@ -192,7 +192,7 @@ func (r *RekordboxLibrary) CreateFolder(folder, name string, position int) bool 
 	return true
 }
 
-func (r *RekordboxLibrary) RenameNode(name, newName string, nodeType int32) bool {
+func (r *RekordboxLibrary) RenameGroup(name, newName string, nodeType int32) bool {
 	r.XML.PlaylistsChanged = true
 	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, name, nodeType)
 	if node == nil {
@@ -202,7 +202,7 @@ func (r *RekordboxLibrary) RenameNode(name, newName string, nodeType int32) bool
 	return true
 }
 
-func (r *RekordboxLibrary) MoveNode(name string, nodeType int32, targetFolder string) bool {
+func (r *RekordboxLibrary) MoveGroup(name string, nodeType int32, targetFolder string) bool {
 	r.XML.PlaylistsChanged = true
 	node, parentNode, parentSlice, idx := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, name, nodeType)
 	if node == nil {
@@ -225,7 +225,7 @@ func (r *RekordboxLibrary) MoveNode(name string, nodeType int32, targetFolder st
 	return true
 }
 
-func (r *RekordboxLibrary) RemoveNode(name string, nodeType int32) bool {
+func (r *RekordboxLibrary) RemoveGroup(name string, nodeType int32) bool {
 	r.XML.PlaylistsChanged = true
 	_, parentNode, parentSlice, idx := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, name, nodeType)
 	if idx == -1 {
