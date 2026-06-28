@@ -62,11 +62,11 @@ func runDeleteResources(prov provider.Provider, ctx provider.ExecutionContext, s
 				children, _ := prov.Groups().List(ctx, fmt.Sprintf("parent:%q", node.Name))
 				
 				for _, c := range children {
-					if !dryRun { prov.Groups().Delete(ctx, c) }
+					if apply { prov.Groups().Delete(ctx, c) }
 				}
 			}
 
-			if dryRun {
+			if !apply {
 				fmt.Printf("[Dry Run] Would delete %s %q\n", node.GetKind(), node.Name)
 				continue
 			}
@@ -93,7 +93,7 @@ func runRemoveMembership(prov provider.Provider, ctx provider.ExecutionContext, 
 		}
 
 		for _, target := range org.Groups {
-			if dryRun {
+			if !apply {
 				fmt.Printf("[Dry Run] Would remove %d tracks from playlist %q\n", len(sel.Tracks), target.Name)
 				continue
 			}

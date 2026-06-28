@@ -79,7 +79,7 @@ func runMoveTracks(prov provider.Provider, src *resolver.Selection, moveFrom, mo
 
 	ctx := getExecContext()
 
-	if dryRun {
+	if !apply {
 		fmt.Printf("[Dry Run] Would move %d tracks from %d origins to %d targets\n", len(src.Tracks), len(org.Groups), len(tgt.Groups))
 		return nil
 	}
@@ -113,7 +113,7 @@ func runMoveGroups(prov provider.Provider, src *resolver.Selection, moveTo strin
 
 	ctx := getExecContext()
 
-	if dryRun {
+	if !apply {
 		for _, t := range src.Groups {
 			fmt.Printf("[Dry Run] Would move %s %q to folder %q\n", src.Location.Resource, t.Name, targetParent.Name)
 		}
@@ -149,7 +149,7 @@ func runRenameGroups(prov provider.Provider, src *resolver.Selection, newName st
 		fmt.Printf("Renaming %s %q -> %q...\n", src.Location.Resource, target.Name, newName)
 	}
 
-	if dryRun {
+	if !apply {
 		fmt.Printf("[Dry Run] Would rename %q to %q\n", target.Name, newName)
 		return nil
 	}

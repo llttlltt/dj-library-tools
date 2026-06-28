@@ -6,7 +6,7 @@ import (
 
 var (
 	filePath   string
-	dryRun     bool
+	apply      bool
 	verbose    bool
 )
 
@@ -18,7 +18,7 @@ func NewRootCmd() *cobra.Command {
 		Long:  `A comprehensive CLI tool for managing DJ libraries across multiple providers.`,
 	}
 	root.PersistentFlags().StringVarP(&filePath, "file", "f", "", "Path to the primary library file (Rekordbox XML, M3U, etc.)")
-	root.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Preview changes without writing")
+	root.PersistentFlags().BoolVar(&apply, "apply", false, "Actually apply changes to the library (destructive)")
 	root.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 
 	root.AddCommand(

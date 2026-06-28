@@ -25,7 +25,7 @@ type ResolveOptions struct {
 	FilePath      string
 	FilterMissing bool
 	FilterExists  bool
-	DryRun        bool
+	Apply         bool
 	Verbose       bool
 }
 
@@ -53,7 +53,7 @@ func ResolveSelection(locStr string, queryOverride string, opts ResolveOptions) 
 
 	sel := &Selection{Location: loc, Provider: prov}
 	ctx := provider.ExecutionContext{
-		DryRun:  opts.DryRun,
+		Apply:   opts.Apply,
 		Verbose: opts.Verbose,
 	}
 	

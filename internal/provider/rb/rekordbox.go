@@ -83,7 +83,7 @@ func (s *rekordboxTrackService) UpdateBatch(ctx provider.ExecutionContext, match
 		fmt.Printf("\nSuccessfully updated %d tracks.\n", count)
 	}
 
-	if !ctx.DryRun {
+	if !ctx.Apply {
 		return rekordbox.WriteRekordboxLibrary(s.path, rbXML)
 	}
 	return nil
@@ -136,7 +136,7 @@ func (s *rekordboxTrackService) Move(ctx provider.ExecutionContext, tracks []mod
 		fmt.Printf("Moving %d tracks from %q to %q\n", len(tracks), from.Name, to.Name)
 	}
 
-	if !ctx.DryRun {
+	if !ctx.Apply {
 		added, err := s.engine.Library.(library.WritableLibrary).AddTracks(to.ID, ids)
 		if err != nil {
 			return 0, err
@@ -260,13 +260,13 @@ func (s *rekordboxSystemService) Sync(ctx provider.ExecutionContext, tracks []mo
 		ExportDest:   options.ExportDest,
 		ExportFormat: options.ExportFormat,
 		PathMaps:     options.PathMaps,
-	}, ctx.DryRun, ctx.Verbose, options.AppendOnly)
+	}, ctx.Apply, ctx.Verbose, options.AppendOnly)
 	
 	if err != nil {
 		return err
 	}
 
-	if s.rbXML == nil && !ctx.DryRun {
+	if s.rbXML == nil && !ctx.Apply {
 		return rbLib.Save(s.path)
 	}
 	return nil

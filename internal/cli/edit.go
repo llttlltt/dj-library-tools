@@ -42,7 +42,7 @@ Examples:
 				FilePath:      filePath,
 				FilterMissing: filterMissing,
 				FilterExists:  filterExists,
-				DryRun:        dryRun,
+				Apply:        apply,
 				Verbose:       verbose,
 			}
 
@@ -57,7 +57,7 @@ Examples:
 
 			// 1. Handle Repairs
 			if repair {
-				if dryRun {
+				if !apply {
 					fmt.Printf("[Dry Run] Would perform repair on %s/%s\n", sel.Location.Provider, sel.Location.Resource)
 					return nil
 				}
@@ -81,7 +81,7 @@ Examples:
 					return nil
 				}
 
-				if dryRun {
+				if !apply {
 					fmt.Printf("[Dry Run] Would update paths for %d tracks\n", len(relocated))
 					return nil
 				}
@@ -105,7 +105,7 @@ Examples:
 					changes[parts[0]] = parts[1]
 				}
 
-				if dryRun {
+				if !apply {
 					fmt.Printf("[Dry Run] Would apply changes %v to %d tracks\n", changes, len(sel.Tracks))
 					return nil
 				}
