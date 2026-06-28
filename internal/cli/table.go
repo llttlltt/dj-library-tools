@@ -2,8 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/fatih/color"
 	"github.com/llttlltt/dj-library-tools/internal/models"
@@ -19,94 +17,63 @@ func (t *Table) Render() {
 		return
 	}
 
-	headerFmt := color.New(color.FgCyan, color.Bold, color.Underline).SprintfFunc()
-
-	// Calculate column widths
-	widths := make([]int, len(t.Headers))
+	colWidths := make([]int, len(t.Headers))
 	for i, h := range t.Headers {
-		widths[i] = len(h)
+		colWidths[i] = len(h)
 	}
+
 	for _, row := range t.Rows {
 		for i, val := range row {
-			if len(val) > widths[i] {
-				widths[i] = len(val)
+			if len(val) > colWidths[i] {
+				colWidths[i] = len(val)
 			}
 		}
 	}
 
-	// Print Headers
+	headerFmt := color.New(color.FgCyan, color.Bold, color.Underline).SprintFunc()
 	for i, h := range t.Headers {
-		fmt.Print(headerFmt("%-*s", widths[i], h))
-		if i < len(t.Headers)-1 {
-			fmt.Print(" ")
-		}
+		fmt.Printf("%-*s ", colWidths[i], headerFmt(h))
 	}
 	fmt.Println()
 
-	// Print Rows
 	for _, row := range t.Rows {
 		for i, val := range row {
-			// Apply specific colors based on header name
-			rendered := val
-			header := strings.ToLower(t.Headers[i])
-			switch {
-			case header == "bpm":
-				rendered = color.HiGreenString("%*s", widths[i], val)
-			case header == "key":
-				rendered = color.HiYellowString("%*s", widths[i], val)
-			case header == "artist":
-				rendered = color.HiMagentaString("%-*s", widths[i], val)
-			case header == "title" || header == "name":
-				rendered = color.HiWhiteString("%-*s", widths[i], val)
-			case header == "items":
-				rendered = color.CyanString("%*s", widths[i], val)
-			default:
-				rendered = fmt.Sprintf("%-*s", widths[i], val)
-			}
-
-			fmt.Print(rendered)
-			if i < len(row)-1 {
-				fmt.Print(" ")
-			}
+			fmt.Printf("%-*s ", colWidths[i], val)
 		}
 		fmt.Println()
 	}
 }
 
 func renderTrackTable(tracks []models.Track) {
-	table := Table{
+	t := &Table{
 		Headers: []string{"BPM", "Key", "Artist", "Title"},
 	}
-
-	for _, t := range tracks {
-		table.Rows = append(table.Rows, []string{
-			fmt.Sprintf("%6.2f", t.BPM),
-			fmt.Sprintf("%4s", t.Key),
-			t.Artist,
-			t.Title,
+	for _, tr := range tracks {
+		t.Rows = append(t.Rows, []string{
+			fmt.Sprintf("%.2f", tr.BPM),
+			tr.Key,
+			tr.Artist,
+			tr.Title,
 		})
 	}
-
-	table.Render()
-	fmt.Printf("\n%s\n", color.HiGreenString("Matched %d tracks.", len(tracks)))
+	t.Render()
+	fmt.Printf("\nMatched %d tracks.\n", len(tracks))
 }
 
-func renderNodeTable(results []models.ResourceGroup, resourceType string) {
-	table := Table{
-		Headers: []string{"Items", stringsTitle(resourceType)},
+func renderNodeTable(nodes []models.ResourceGroup, label string) {
+	t := &Table{
+		Headers: []string{"Items", label},
 	}
-
-	for _, res := range results {
-		name := res.Name
-		if res.ParentFolder != "" {
-			name = res.ParentFolder + "/" + name
+	for _, n := range nodes {
+		path := n.Name
+		if n.ParentFolder != "" {
+			path = n.ParentFolder + "/" + n.Name
 		}
-		table.Rows = append(table.Rows, []string{
-			strconv.Itoa(res.Items),
-			name,
+		t.Rows = append(t.Rows, []string{
+			fmt.Sprintf("%d", n.Items),
+			path,
 		})
 	}
-
-	table.Render()
-	fmt.Printf("\n%s\n", color.HiGreenString("Matched %d %s.", len(results), resourceType))
+	t.Render()
+	fmt.Printf("\nMatched %d %s.\n", len(nodes), label)
 }
