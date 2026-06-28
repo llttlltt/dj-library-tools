@@ -4,35 +4,31 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/models"
 )
 
-// Library defines the interface for a music library source.
-type Library interface {
-	// GetTracks returns all tracks in the library in a neutral format.
-	GetTracks() []models.Track
-	// GetPlaylists returns the nodes of the playlist tree in a neutral format.
-	GetPlaylists() []models.ResourceGroup
-	// GetMembershipMap returns a mapping of track IDs to the names of playlists they belong to.
+// ReadableLibrary defines the read-only interface for a music library source.
+type ReadableLibrary interface {
+	// GetResources returns all resources of a specific kind (track, group).
+	GetResources(kind string) []models.Resource
+	// GetMembershipMap returns a mapping of track IDs to the names of groups they belong to.
 	GetMembershipMap() map[string][]string
 }
 
-// WritableLibrary extends Library with operations to modify the playlist tree.
+// WritableLibrary extends ReadableLibrary with operations to modify the library.
 type WritableLibrary interface {
-	Library
-	// AddGroup creates a new playlist at the given position in a folder.
-	AddGroup(folder, name string, trackIDs []string, position int)
-	// UpdateGroup replaces an existing playlist's tracks.
-	UpdateGroup(name string, trackIDs []string) bool
-	// AddTracksToGroup appends tracks to an existing playlist.
-	AddTracksToGroup(name string, trackIDs []string) (bool, int)
-	// RemoveTracksFromGroup removes tracks from an existing playlist.
-	RemoveTracksFromGroup(name string, trackIDs []string) (bool, int)
-	// CreateContainer creates a new folder.
-	CreateContainer(folder, name string, position int) bool
-	// RenameGroup renames a folder or playlist.
-	RenameGroup(name, newName string, nodeType int32) bool
-	// MoveGroup moves a folder or playlist.
-	MoveGroup(name string, nodeType int32, targetFolder string) bool
-	// RemoveGroup removes a folder or playlist.
-	RemoveGroup(name string, nodeType int32) bool
+	ReadableLibrary
+	// CreateGroup creates a new group (Playlist or Folder) under the specified parent.
+	CreateGroup(parentID, name string, groupType models.GroupType, position int) (models.ResourceGroup, error)
+	// DeleteGroup removes a group from the library.
+	DeleteGroup(groupID string, groupType models.GroupType) error
+	// LinkTracks adds track memberships to a group.
+	LinkTracks(groupID string, trackIDs []string) (int, error)
+	// UnlinkTracks removes track memberships from a group.
+	UnlinkTracks(groupID string, trackIDs []string) (int, error)
+	// UpdateGroup replaces all track memberships in a group.
+	UpdateGroup(groupID string, trackIDs []string) error
+	// RenameGroup renames a group.
+	RenameGroup(groupID, newName string, groupType models.GroupType) error
+	// MoveGroup detaches a group and re-attaches it under a new parent.
+	MoveGroup(groupID string, groupType models.GroupType, targetParentID string) error
 	// Save writes changes back to persistent storage.
 	Save(path string) error
 }

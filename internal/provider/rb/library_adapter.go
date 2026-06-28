@@ -1,6 +1,7 @@
 package rb
 
 import (
+	"fmt"
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 )
@@ -8,6 +9,22 @@ import (
 // RekordboxLibrary is an adapter that makes RekordboxLibraryXML satisfy the Library interface.
 type RekordboxLibrary struct {
 	XML *rekordbox.RekordboxLibraryXML
+}
+
+func (r *RekordboxLibrary) GetResources(kind string) []models.Resource {
+	var results []models.Resource
+	switch kind {
+	case "track":
+		for _, rt := range r.XML.Collection.TRACK {
+			results = append(results, ToNeutralTrack(rt))
+		}
+	case "group":
+		groups := r.GetPlaylists()
+		for _, g := range groups {
+			results = append(results, g)
+		}
+	}
+	return results
 }
 
 func (r *RekordboxLibrary) GetTracks() []models.Track {
@@ -53,27 +70,33 @@ func (r *RekordboxLibrary) walkRekordboxPlaylists(nodes []rekordbox.Node, m map[
 	}
 }
 
-func (r *RekordboxLibrary) AddGroup(folder, name string, trackIDs []string, position int) {
+func (r *RekordboxLibrary) CreateGroup(parentID, name string, groupType models.GroupType, position int) (models.ResourceGroup, error) {
 	r.XML.PlaylistsChanged = true
 	var container *[]rekordbox.Node
 	var folderNode *rekordbox.Node
-	if folder == "" {
+	
+	if parentID == "" {
 		container = &r.XML.Playlists.Node.Node
 	} else {
-		folderNode = r.findOrCreateContainer(folder)
+		folderNode = r.findOrCreateContainer(parentID)
 		container = &folderNode.Node
+	}
+
+	nodeType := 1 // Playlist
+	if groupType == models.GroupTypeFolder {
+		nodeType = 0
 	}
 
 	node := rekordbox.Node{
 		Name:    name,
-		Type:    1,
+		Type:    int32(nodeType),
 		KeyType: rekordbox.PtrInt32(0),
-		Entries: rekordbox.PtrInt32(int32(len(trackIDs))),
 	}
-	for _, id := range trackIDs {
-		node.TRACK = append(node.TRACK, struct {
-			Key string `xml:"Key,attr"`
-		}{Key: id})
+
+	if nodeType == 1 {
+		node.Entries = rekordbox.PtrInt32(0)
+	} else {
+		node.Count = rekordbox.PtrInt32(0)
 	}
 
 	if position < 0 || position >= len(*container) {
@@ -90,29 +113,32 @@ func (r *RekordboxLibrary) AddGroup(folder, name string, trackIDs []string, posi
 			*folderNode.Count++
 		}
 	}
+	return ToNeutralGroup(node, parentID), nil
 }
 
-func (r *RekordboxLibrary) UpdateGroup(name string, trackIDs []string) bool {
+func (r *RekordboxLibrary) DeleteGroup(groupID string, groupType models.GroupType) error {
 	r.XML.PlaylistsChanged = true
-	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, name, 1)
-	if node == nil {
-		return false
+	nodeType := int32(1)
+	if groupType == models.GroupTypeFolder {
+		nodeType = 0
 	}
-	node.TRACK = nil
-	for _, id := range trackIDs {
-		node.TRACK = append(node.TRACK, struct {
-			Key string `xml:"Key,attr"`
-		}{Key: id})
+
+	_, parentNode, parentSlice, idx := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, groupID, nodeType)
+	if idx == -1 {
+		return fmt.Errorf("group not found")
 	}
-	node.Entries = rekordbox.PtrInt32(int32(len(trackIDs)))
-	return true
+	*parentSlice = append((*parentSlice)[:idx], (*parentSlice)[idx+1:]...)
+	if parentNode != nil && parentNode.Count != nil && *parentNode.Count > 0 {
+		*parentNode.Count--
+	}
+	return nil
 }
 
-func (r *RekordboxLibrary) AddTracksToGroup(name string, trackIDs []string) (bool, int) {
+func (r *RekordboxLibrary) LinkTracks(groupID string, trackIDs []string) (int, error) {
 	r.XML.PlaylistsChanged = true
-	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, name, 1)
+	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, groupID, 1)
 	if node == nil {
-		return false, 0
+		return 0, fmt.Errorf("playlist not found")
 	}
 
 	existing := make(map[string]struct{}, len(node.TRACK))
@@ -131,14 +157,14 @@ func (r *RekordboxLibrary) AddTracksToGroup(name string, trackIDs []string) (boo
 		}
 	}
 	node.Entries = rekordbox.PtrInt32(int32(len(node.TRACK)))
-	return true, added
+	return added, nil
 }
 
-func (r *RekordboxLibrary) RemoveTracksFromGroup(name string, trackIDs []string) (bool, int) {
+func (r *RekordboxLibrary) UnlinkTracks(groupID string, trackIDs []string) (int, error) {
 	r.XML.PlaylistsChanged = true
-	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, name, 1)
+	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, groupID, 1)
 	if node == nil {
-		return false, 0
+		return 0, fmt.Errorf("playlist not found")
 	}
 
 	toRemove := make(map[string]struct{}, len(trackIDs))
@@ -155,58 +181,48 @@ func (r *RekordboxLibrary) RemoveTracksFromGroup(name string, trackIDs []string)
 	}
 	node.TRACK = kept
 	node.Entries = rekordbox.PtrInt32(int32(len(node.TRACK)))
-	return true, before - len(node.TRACK)
+	return before - len(node.TRACK), nil
 }
 
-func (r *RekordboxLibrary) CreateContainer(folder, name string, position int) bool {
+func (r *RekordboxLibrary) UpdateGroup(groupID string, trackIDs []string) error {
 	r.XML.PlaylistsChanged = true
-	var container *[]rekordbox.Node
-	var folderNode *rekordbox.Node
-	if folder == "" {
-		container = &r.XML.Playlists.Node.Node
-	} else {
-		folderNode = r.findOrCreateContainer(folder)
-		container = &folderNode.Node
-	}
-
-	node := rekordbox.Node{
-		Name:  name,
-		Type:  0,
-		Count: rekordbox.PtrInt32(0),
-	}
-
-	if position < 0 || position >= len(*container) {
-		*container = append(*container, node)
-	} else {
-		*container = append((*container)[:position+1], (*container)[position:]...)
-		(*container)[position] = node
-	}
-
-	if folderNode != nil {
-		if folderNode.Count == nil {
-			folderNode.Count = rekordbox.PtrInt32(1)
-		} else {
-			*folderNode.Count++
-		}
-	}
-	return true
-}
-
-func (r *RekordboxLibrary) RenameGroup(name, newName string, nodeType int32) bool {
-	r.XML.PlaylistsChanged = true
-	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, name, nodeType)
+	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, groupID, 1)
 	if node == nil {
-		return false
+		return fmt.Errorf("playlist not found")
+	}
+	node.TRACK = nil
+	for _, id := range trackIDs {
+		node.TRACK = append(node.TRACK, struct {
+			Key string `xml:"Key,attr"`
+		}{Key: id})
+	}
+	node.Entries = rekordbox.PtrInt32(int32(len(trackIDs)))
+	return nil
+}
+
+func (r *RekordboxLibrary) RenameGroup(groupID, newName string, groupType models.GroupType) error {
+	r.XML.PlaylistsChanged = true
+	nodeType := int32(1)
+	if groupType == models.GroupTypeFolder {
+		nodeType = 0
+	}
+	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, groupID, nodeType)
+	if node == nil {
+		return fmt.Errorf("group not found")
 	}
 	node.Name = newName
-	return true
+	return nil
 }
 
-func (r *RekordboxLibrary) MoveGroup(name string, nodeType int32, targetFolder string) bool {
+func (r *RekordboxLibrary) MoveGroup(groupID string, groupType models.GroupType, targetParentID string) error {
 	r.XML.PlaylistsChanged = true
-	node, parentNode, parentSlice, idx := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, name, nodeType)
+	nodeType := int32(1)
+	if groupType == models.GroupTypeFolder {
+		nodeType = 0
+	}
+	node, parentNode, parentSlice, idx := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, groupID, nodeType)
 	if node == nil {
-		return false
+		return fmt.Errorf("group not found")
 	}
 
 	moved := *node
@@ -215,27 +231,14 @@ func (r *RekordboxLibrary) MoveGroup(name string, nodeType int32, targetFolder s
 		*parentNode.Count--
 	}
 
-	target := r.findOrCreateContainer(targetFolder)
+	target := r.findOrCreateContainer(targetParentID)
 	target.Node = append(target.Node, moved)
 	if target.Count == nil {
 		target.Count = rekordbox.PtrInt32(1)
 	} else {
 		*target.Count++
 	}
-	return true
-}
-
-func (r *RekordboxLibrary) RemoveGroup(name string, nodeType int32) bool {
-	r.XML.PlaylistsChanged = true
-	_, parentNode, parentSlice, idx := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, name, nodeType)
-	if idx == -1 {
-		return false
-	}
-	*parentSlice = append((*parentSlice)[:idx], (*parentSlice)[idx+1:]...)
-	if parentNode != nil && parentNode.Count != nil && *parentNode.Count > 0 {
-		*parentNode.Count--
-	}
-	return true
+	return nil
 }
 
 func (r *RekordboxLibrary) Save(path string) error {
