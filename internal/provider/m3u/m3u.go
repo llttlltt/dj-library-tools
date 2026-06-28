@@ -30,6 +30,66 @@ func NewM3UProvider(path string) (*M3UProvider, error) {
 	return p, nil
 }
 
+func (p *M3UProvider) Name() string {
+	return "m3u"
+}
+
+func (p *M3UProvider) load() error {
+	f, err := os.Open(p.path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	var currentMeta playlist.AudioMetadata
+	var tracks []models.Track
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#EXTM3U") {
+			continue
+		}
+
+		if strings.HasPrefix(line, "#EXTINF:") {
+			info := strings.TrimPrefix(line, "#EXTINF:")
+			commaIdx := strings.Index(info, ",")
+			if commaIdx != -1 {
+				metaStr := info[commaIdx+1:]
+				if strings.Contains(metaStr, " - ") {
+					parts := strings.SplitN(metaStr, " - ", 2)
+					currentMeta.Artist = strings.TrimSpace(parts[0])
+					currentMeta.Title = strings.TrimSpace(parts[1])
+				} else {
+					currentMeta.Title = strings.TrimSpace(metaStr)
+				}
+			}
+			continue
+		}
+
+		trackPath := line
+		if !filepath.IsAbs(trackPath) {
+			trackPath = filepath.Join(filepath.Dir(p.path), trackPath)
+		}
+
+		title := currentMeta.Title
+		if title == "" {
+			title = filepath.Base(trackPath)
+		}
+
+		tracks = append(tracks, models.Track{
+			ID:       trackPath,
+			Title:    title,
+			Artist:   currentMeta.Artist,
+			Location: trackPath,
+		})
+		currentMeta = playlist.AudioMetadata{}
+	}
+
+	p.tracks = tracks
+	return scanner.Err()
+}
+
 func (p *M3UProvider) Capabilities() provider.ProviderCapabilities {
 	return provider.ProviderCapabilities{
 		CanWrite:          true,
@@ -53,72 +113,9 @@ func (p *M3UProvider) CustomMatch(track models.Track, field string, op query.Ope
 	return false
 }
 
-func (p *M3UProvider) Name() string {
-	return "m3u"
-}
-
-func (p *M3UProvider) load() error {
-	f, err := os.Open(p.path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	var currentMeta playlist.AudioMetadata
-	var tracks []models.Track
-
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#EXTM3U") {
-			continue
-		}
-
-		if strings.HasPrefix(line, "#EXTINF:") {
-			// Try to parse metadata if available
-			// #EXTINF:duration,Artist - Title
-			info := strings.TrimPrefix(line, "#EXTINF:")
-			commaIdx := strings.Index(info, ",")
-			if commaIdx != -1 {
-				// We don't strictly need duration yet, but could parse it
-				metaStr := info[commaIdx+1:]
-				if strings.Contains(metaStr, " - ") {
-					parts := strings.SplitN(metaStr, " - ", 2)
-					currentMeta.Artist = strings.TrimSpace(parts[0])
-					currentMeta.Title = strings.TrimSpace(parts[1])
-				} else {
-					currentMeta.Title = strings.TrimSpace(metaStr)
-				}
-			}
-			continue
-		}
-
-		// It's a path
-		trackPath := line
-		if !filepath.IsAbs(trackPath) {
-			trackPath = filepath.Join(filepath.Dir(p.path), trackPath)
-		}
-
-		title := currentMeta.Title
-		if title == "" {
-			title = filepath.Base(trackPath)
-		}
-
-		tracks = append(tracks, models.Track{
-			ID:       trackPath, // Use path as ID for M3U
-			Title:    title,
-			Artist:   currentMeta.Artist,
-			Location: trackPath,
-		})
-		currentMeta = playlist.AudioMetadata{}
-	}
-
-	p.tracks = tracks
-	return scanner.Err()
-}
-
 func (p *M3UProvider) GetTracks(ctx provider.ExecutionContext, queryString string) ([]models.Track, error) {
-	q := query.NewParser().Parse(queryString)
+	parser := query.NewParser()
+	q := parser.Parse(queryString)
 	eval := query.NewEvaluator(q)
 
 	var results []models.Track
@@ -131,16 +128,16 @@ func (p *M3UProvider) GetTracks(ctx provider.ExecutionContext, queryString strin
 }
 
 func (p *M3UProvider) GetPlaylists(ctx provider.ExecutionContext, queryString string) ([]models.ResourceGroup, error) {
-	// An M3U file is itself a single playlist
 	name := filepath.Base(p.path)
 	n := models.ResourceGroup{
 		ID:    p.path,
 		Name:  name,
-		Type:  1,
+		Type:  models.GroupTypePlaylist,
 		Items: len(p.tracks),
 	}
 
-	q := query.NewParser().Parse(queryString)
+	parser := query.NewParser()
+	q := parser.Parse(queryString)
 	eval := query.NewEvaluator(q)
 	if eval.MatchesGroup(n) {
 		return []models.ResourceGroup{n}, nil
@@ -148,8 +145,32 @@ func (p *M3UProvider) GetPlaylists(ctx provider.ExecutionContext, queryString st
 	return nil, nil
 }
 
-func (p *M3UProvider) GetFolders(ctx provider.ExecutionContext, _ string) ([]models.ResourceGroup, error) {
+func (p *M3UProvider) GetFolders(_ provider.ExecutionContext, _ string) ([]models.ResourceGroup, error) {
 	return nil, nil
+}
+
+func (p *M3UProvider) GetResources(ctx provider.ExecutionContext, resource string, query string) ([]models.Resource, error) {
+	var items []models.Resource
+	switch resource {
+	case "tracks":
+		tracks, err := p.GetTracks(ctx, query)
+		if err != nil { return nil, err }
+		for _, t := range tracks { items = append(items, t) }
+	case "playlists":
+		groups, err := p.GetPlaylists(ctx, query)
+		if err != nil { return nil, err }
+		for _, g := range groups { items = append(items, g) }
+	default:
+		return nil, provider.ErrUnsupportedResource
+	}
+	return items, nil
+}
+
+func (p *M3UProvider) SortTracks(_ provider.ExecutionContext, tracks []models.Track, field string) {
+	// Simple M3U sorting
+}
+
+func (p *M3UProvider) SortGroups(_ provider.ExecutionContext, groups []models.ResourceGroup, field string) {
 }
 
 func (p *M3UProvider) CanTranscode() bool {
@@ -192,12 +213,10 @@ func (p *M3UProvider) RemoveTracks(ctx provider.ExecutionContext, target models.
 	return removed, nil
 }
 
-func (p *M3UProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, nodeType int, position int) (models.ResourceGroup, error) {
-	if nodeType == 0 {
-		return models.ResourceGroup{}, fmt.Errorf("m3u provider does not support folders")
+func (p *M3UProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, groupType models.GroupType, position int) (models.ResourceGroup, error) {
+	if groupType == models.GroupTypeFolder {
+		return models.ResourceGroup{}, provider.ErrUnsupportedResource
 	}
-	// For M3U, "creating a node" just means setting the path if it wasn't already.
-	// But usually the path is provided in the location.
 	return models.ResourceGroup{Name: name, Type: models.GroupTypePlaylist}, nil
 }
 
@@ -219,7 +238,6 @@ func (p *M3UProvider) MoveGroup(ctx provider.ExecutionContext, node models.Resou
 }
 
 func (p *M3UProvider) Save(ctx provider.ExecutionContext, path string) error {
-	// If path is "playlists" or "tracks", it's likely a CLI mask, ignore it
 	if path == "playlists" || path == "tracks" {
 		path = ""
 	}
@@ -230,7 +248,6 @@ func (p *M3UProvider) Save(ctx provider.ExecutionContext, path string) error {
 		return fmt.Errorf("no path specified for M3U save")
 	}
 
-	// Ensure the directory exists
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
 	}
@@ -251,8 +268,6 @@ func (p *M3UProvider) Save(ctx provider.ExecutionContext, path string) error {
 			Title:  t.Title,
 			Album:  t.Album,
 		}
-		// Try to preserve relative paths if they were loaded that way?
-		// For now, let's use absolute or whatever is in .Location
 		if err := playlist.WriteM3U8Entry(f, meta, t.Location, float64(t.Duration)); err != nil {
 			return err
 		}
@@ -290,24 +305,4 @@ func (p *M3UProvider) ValidateCreateGroup(parent models.ResourceGroup, groupType
 		return fmt.Errorf("m3u provider does not support folders")
 	}
 	return nil
-}
-
-func (p *M3UProvider) SortTracks(_ provider.ExecutionContext, tracks []models.Track, field string) {}
-func (p *M3UProvider) SortGroups(_ provider.ExecutionContext, groups []models.ResourceGroup, field string) {}
-
-func (p *M3UProvider) GetResources(ctx provider.ExecutionContext, resource string, query string) ([]models.Resource, error) {
-	var items []models.Resource
-	switch resource {
-	case "tracks":
-		tracks, err := p.GetTracks(ctx, query)
-		if err != nil { return nil, err }
-		for _, t := range tracks { items = append(items, t) }
-	case "playlists":
-		groups, err := p.GetPlaylists(ctx, query)
-		if err != nil { return nil, err }
-		for _, g := range groups { items = append(items, g) }
-	default:
-		return nil, fmt.Errorf("unknown resource: %s", resource)
-	}
-	return items, nil
 }
