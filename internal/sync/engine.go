@@ -187,7 +187,7 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, query string, playli
 		fmt.Printf("[Dry Run] Would %s playlist %q with %d tracks into XML\n", action, playlistName, len(trackIDs))
 	} else {
 		if appendOnly {
-			o.SyncEngine.AddTracksToPlaylist(playlistName, trackIDs)
+			o.SyncEngine.AddTracksToGroup(playlistName, trackIDs)
 			fmt.Printf("Appended %d tracks to %q\n", len(trackIDs), playlistName)
 		} else {
 			result := o.SyncEngine.InjectPlaylist(playlistName, trackIDs)
@@ -227,9 +227,9 @@ type SyncResult struct {
 // When folder is empty the playlist is placed at the root level.
 // position is the 0-indexed position in the folder. -1 appends to the end.
 func (e *Engine) UpsertPlaylist(folder, name string, trackIDs []string, position int) *SyncResult {
-	updated := e.Library.UpdatePlaylist(name, trackIDs)
+	updated := e.Library.UpdateGroup(name, trackIDs)
 	if !updated {
-		e.Library.AddPlaylist(folder, name, trackIDs, position)
+		e.Library.AddGroup(folder, name, trackIDs, position)
 	}
 
 	return &SyncResult{
@@ -244,21 +244,21 @@ func (e *Engine) InjectPlaylist(name string, trackIDs []string) *SyncResult {
 	return e.UpsertPlaylist(DefaultSyncFolder, name, trackIDs, -1)
 }
 
-// AddTracksToPlaylist appends trackIDs to a named playlist anywhere in the tree.
+// AddTracksToGroup appends trackIDs to a named playlist anywhere in the tree.
 // Returns (true, addedCount) if the playlist was found, (false, 0) otherwise.
-func (e *Engine) AddTracksToPlaylist(name string, trackIDs []string) (bool, int) {
-	return e.Library.AddTracksToPlaylist(name, trackIDs)
+func (e *Engine) AddTracksToGroup(name string, trackIDs []string) (bool, int) {
+	return e.Library.AddTracksToGroup(name, trackIDs)
 }
 
-// RemoveTracksFromPlaylist removes all trackIDs present in the given slice from a named playlist.
+// RemoveTracksFromGroup removes all trackIDs present in the given slice from a named playlist.
 // Returns (true, removedCount) if the playlist was found, (false, 0) otherwise.
-func (e *Engine) RemoveTracksFromPlaylist(name string, trackIDs []string) (bool, int) {
-	return e.Library.RemoveTracksFromPlaylist(name, trackIDs)
+func (e *Engine) RemoveTracksFromGroup(name string, trackIDs []string) (bool, int) {
+	return e.Library.RemoveTracksFromGroup(name, trackIDs)
 }
 
-// CreateFolder creates a new folder node at the specified position.
-func (e *Engine) CreateFolder(folder, name string, position int) bool {
-	return e.Library.CreateFolder(folder, name, position)
+// CreateContainer creates a new folder node at the specified position.
+func (e *Engine) CreateContainer(folder, name string, position int) bool {
+	return e.Library.CreateContainer(folder, name, position)
 }
 
 // RenameGroup renames the first node matching name and nodeType anywhere in the tree.

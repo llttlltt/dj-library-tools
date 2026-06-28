@@ -17,16 +17,16 @@ type Library interface {
 // WritableLibrary extends Library with operations to modify the playlist tree.
 type WritableLibrary interface {
 	Library
-	// AddPlaylist adds a new playlist at the given position in a folder.
-	AddPlaylist(folder, name string, trackIDs []string, position int)
-	// UpdatePlaylist replaces an existing playlist's tracks.
-	UpdatePlaylist(name string, trackIDs []string) bool
-	// AddTracksToPlaylist appends tracks to an existing playlist.
-	AddTracksToPlaylist(name string, trackIDs []string) (bool, int)
-	// RemoveTracksFromPlaylist removes tracks from an existing playlist.
-	RemoveTracksFromPlaylist(name string, trackIDs []string) (bool, int)
-	// CreateFolder creates a new folder.
-	CreateFolder(folder, name string, position int) bool
+	// AddGroup creates a new playlist at the given position in a folder.
+	AddGroup(folder, name string, trackIDs []string, position int)
+	// UpdateGroup replaces an existing playlist's tracks.
+	UpdateGroup(name string, trackIDs []string) bool
+	// AddTracksToGroup appends tracks to an existing playlist.
+	AddTracksToGroup(name string, trackIDs []string) (bool, int)
+	// RemoveTracksFromGroup removes tracks from an existing playlist.
+	RemoveTracksFromGroup(name string, trackIDs []string) (bool, int)
+	// CreateContainer creates a new folder.
+	CreateContainer(folder, name string, position int) bool
 	// RenameGroup renames a folder or playlist.
 	RenameGroup(name, newName string, nodeType int32) bool
 	// MoveGroup moves a folder or playlist.
