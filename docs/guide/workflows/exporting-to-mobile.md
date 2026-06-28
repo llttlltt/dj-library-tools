@@ -22,8 +22,8 @@ djlt sync "rb/tracks genre:Techno" --to "m3u8/tracks" --to-file "techno.m3u8"
 If you want to remove specific tracks from your phone's playlist file:
 
 ```bash
-# Remove 1-star tracks from your mobile playlist file
-djlt rm m3u8/tracks --file mobile.m3u8 "rating:1"
+# Remove tracks by matching part of the display name
+djlt rm m3u8/tracks --file mobile.m3u8 "display:Unknown"
 ```
 
 ---
