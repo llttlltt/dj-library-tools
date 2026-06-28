@@ -1,15 +1,14 @@
 package provider
 
 import (
-	"errors"
-
+	"github.com/llttlltt/dj-library-tools/internal/djerr"
 	"github.com/llttlltt/dj-library-tools/internal/models"
 )
 
 var (
-	ErrReadOnly            = errors.New("provider is read-only")
-	ErrInvalidParent       = errors.New("invalid parent for this group type")
-	ErrUnsupportedResource = errors.New("resource type not supported by this provider")
+	ErrReadOnly            = djerr.ErrReadOnly
+	ErrInvalidParent       = djerr.ErrInvalidParent
+	ErrUnsupportedResource = djerr.ErrUnsupportedResource
 )
 
 // ProviderCapabilities defines what a provider is able to do.
