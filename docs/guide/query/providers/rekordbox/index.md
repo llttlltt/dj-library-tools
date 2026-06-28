@@ -63,6 +63,7 @@ Rekordbox supports advanced path-based queries for deep analysis of cues and bea
 | `beatgrids` | Beatgrid markers and tempo information. | `bpm`, `position` | `-count`, `-drift`, `-density` |
 | `hotcues` | Performance pads (A-H). | `color`, `name`, `position` | `-count` |
 | `memorycues` | Standard markers. | `color`, `name`, `position` | `-count` |
+| `playlists` | Membership in playlists. | `name`, `folder` | `-count` |
 
 ### Property Reference
 
@@ -72,6 +73,16 @@ Rekordbox supports advanced path-based queries for deep analysis of cues and bea
 | `position` | Numeric | Time in seconds from the start of the track. |
 | `color` | String | Color name (e.g., `red`, `skyblue`). |
 | `name` | String | User-assigned label or comment. |
+| `folder` | String | Name of the folder containing the playlist (Playlists only). |
+
+### Indexing
+
+Collections support **1-based indexing** to target a specific item. 
+
+- `hotcues.1/color`: The color of the first hotcue.
+- `playlists.2/name`: The name of the second playlist the track belongs to.
+
+If no index is provided (e.g., `playlists/name:House`), the query returns true if **any** item in the collection matches.
 
 ### Stat Reference
 

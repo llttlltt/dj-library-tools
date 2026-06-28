@@ -22,7 +22,7 @@ func (m *MockLibrary) GetResources(kind string) []models.Resource {
 	return items
 }
 
-func (m *MockLibrary) GetMembershipMap() map[string][]string { return nil }
+func (m *MockLibrary) GetMembershipMap() map[string][]models.PlaylistMembership { return nil }
 
 func TestEngine_Ls(t *testing.T) {
 	mock := &MockLibrary{

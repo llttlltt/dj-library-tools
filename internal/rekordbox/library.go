@@ -50,21 +50,24 @@ func (r *Library) collectAllGroups(nodes []Node, parent string, out *[]models.Re
 	}
 }
 
-func (r *Library) GetMembershipMap() map[string][]string {
-	m := make(map[string][]string)
-	r.walkRekordboxPlaylists(r.XML.Playlists.Node.Node, m)
+func (r *Library) GetMembershipMap() map[string][]models.PlaylistMembership {
+	m := make(map[string][]models.PlaylistMembership)
+	r.walkRekordboxPlaylists(r.XML.Playlists.Node.Node, "", m)
 	return m
 }
 
-func (r *Library) walkRekordboxPlaylists(nodes []Node, m map[string][]string) {
+func (r *Library) walkRekordboxPlaylists(nodes []Node, parentFolder string, m map[string][]models.PlaylistMembership) {
 	for _, node := range nodes {
 		if node.Type == 1 {
 			for _, t := range node.TRACK {
-				m[t.Key] = append(m[t.Key], node.Name)
+				m[t.Key] = append(m[t.Key], models.PlaylistMembership{
+					Name:   node.Name,
+					Folder: parentFolder,
+				})
 			}
 		}
 		if len(node.Node) > 0 {
-			r.walkRekordboxPlaylists(node.Node, m)
+			r.walkRekordboxPlaylists(node.Node, node.Name, m)
 		}
 	}
 }

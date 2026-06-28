@@ -39,9 +39,9 @@ func (l *Library) GetResources(kind string) []models.Resource {
 	return results
 }
 
-func (l *Library) GetMembershipMap() map[string][]string {
+func (l *Library) GetMembershipMap() map[string][]models.PlaylistMembership {
 	// Note: For now, fetching memberships in Plex is expensive (N API calls)
 	// We'll return an empty map and eventually optimize this if Plex becomes 
 	// a primary source provider.
-	return make(map[string][]string)
+	return make(map[string][]models.PlaylistMembership)
 }

@@ -41,9 +41,16 @@ type Track struct {
 	Mix          string
 	CuePoints    []CuePoint
 	TempoMarkers []TempoMarker
+	Playlists    []PlaylistMembership
 
 	// ImplementationState is an opaque bucket for provider-specific state.
 	ImplementationState interface{}
+}
+
+// PlaylistMembership represents a track's presence in a specific playlist.
+type PlaylistMembership struct {
+	Name   string
+	Folder string
 }
 
 func (t Track) GetID() string   { return t.ID }
