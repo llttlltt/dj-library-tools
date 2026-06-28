@@ -106,7 +106,7 @@ func (s *plexSystemService) MetadataCapabilities() []string {
 
 func (s *plexSystemService) SupportedResources() []string { return []string{"tracks", "playlists"} }
 func (s *plexSystemService) TableHeaders() []string {
-	return []string{"bpm", "key", "artist", "title", "rating"}
+	return []string{"bpm", "key", "artist", "title"}
 }
 func (s *plexSystemService) Save(ctx provider.ExecutionContext, path string) error { return nil }
 func (s *plexSystemService) Fix(ctx provider.ExecutionContext, resource, query string) error { return provider.ErrReadOnly }
