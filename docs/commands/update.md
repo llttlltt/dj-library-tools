@@ -1,19 +1,16 @@
 # update
 
-Update track metadata or merge markers between libraries
+Reconcile metadata between two libraries
 
 ```
-djlt update [resource] [query] --from [source-file] [flags]
+djlt update [target-selection] --from [source-selection] [flags]
 ```
 ### Options
 
 ```
-      --force           Overwrite output file if it already exists
-  -F, --from string     Source library file to read metadata from
+  -F, --from string     Source selection to read metadata from
   -h, --help            help for update
-      --merge           Merge metadata instead of overwriting
-  -o, --output string   Output path for the updated Rekordbox XML
-  -t, --to string       Destination library file to update (defaults to primary library)
+      --match strings   Fields to use for matching tracks (default [artist,title])
 ```
 
 ### Inherited Options
@@ -26,11 +23,10 @@ djlt update [resource] [query] --from [source-file] [flags]
   -v, --verbose          Enable verbose logging
 ```
 
-Update metadata for tracks in the library using another Rekordbox XML as a source.
-Currently supports updating/merging Tempo markers (Beatgrids).
+Matches tracks between a source and target selection and synchronizes metadata.
 
 Example:
-  djlt update rb/tracks --from other_library.xml
+  djlt update rb/tracks --from plex/tracks --metadata beatgrids
 
 ## See also
 

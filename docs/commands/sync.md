@@ -1,6 +1,6 @@
 # sync
 
-Keep a playlist in sync with a track query
+Keep a playlist or metadata in sync with a track query
 
 ```
 djlt sync [source-resource] [source-query] --to [target-resource] [target-query] [flags]
@@ -8,11 +8,13 @@ djlt sync [source-resource] [source-query] --to [target-resource] [target-query]
 ### Options
 
 ```
-      --append          Append new tracks without removing existing ones
-      --dest string     Destination directory for exported files
-      --format string   Target format for exported files (default "mp3")
-  -h, --help            help for sync
-      --to strings      Target resource(s) to sync to (repeatable)
+      --append             Append new tracks without removing existing ones
+      --dest string        Destination directory for exported files
+      --format string      Target format for exported files (default "mp3")
+  -h, --help               help for sync
+      --match strings      Fields to use for matching tracks (default [artist,title])
+      --metadata strings   Metadata fields to synchronize (e.g. beatgrids, rating)
+      --to strings         Target resource(s) to sync to (repeatable)
 ```
 
 ### Inherited Options
@@ -30,6 +32,10 @@ Synchronizes a target (like a Rekordbox playlist or M3U file) with a source quer
 The sync command is "surgical"—it only adds or removes tracks necessary to make the target
 match the source. By default, it removes tracks from the target that no longer match the query.
 
+### Metadata Reconciliation
+If --metadata is specified, djlt will match tracks between the source and target using the --match keys
+and synchronize specific metadata fields (e.g. beatgrids, rating).
+
 ### Examples
 
 **Keep an "Inbox" playlist matched to specific criteria:**
@@ -37,14 +43,14 @@ match the source. By default, it removes tracks from the target that no longer m
 djlt sync "rb/tracks added:>today" --to "rb/playlists name:Inbox"
 
 ```
-**Add new tracks to a playlist without removing existing ones:**
+**Sync beatgrids from a backup Rekordbox XML to your primary library:**
 ```bash
-djlt sync "rb/tracks rating:5" --to "rb/playlists name:Favorites" --append
+djlt sync "rb/tracks" --file backup.xml --to "rb/tracks" --metadata beatgrids
 
 ```
-**Sync a query to an external M3U playlist file:**
+**Sync ratings from Plex to Rekordbox matching by filename:**
 ```bash
-djlt sync "rb/tracks genre:House" --to "m3u/path/to/playlist.m3u"
+djlt sync "plex/tracks" --to "rb/tracks" --metadata rating --match filename
 
 
 
