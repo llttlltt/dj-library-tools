@@ -29,7 +29,6 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 | `bpm` | Numeric | Beats per minute. |
 | `rating` | Numeric | Star rating (Standardized 0-255). |
 | `plays` | Numeric | Number of times played. |
-| `playlists` | Mixed | Match by playlist name (String) or number of memberships (Numeric). |
 | `year` | Numeric | Release year. |
 | `key` | String | Musical key (Tonality). |
 | `comment` | String | Track comments. |
@@ -171,7 +170,7 @@ djlt ls rb/tracks "genre:House && bpm:124..128 && rating:>=4"
 
 **Tracks not in any playlist**
 ```bash
-djlt ls rb/tracks "playlists:0"
+djlt ls rb/tracks "playlists-count:0"
 ```
 
 **Find a specific track by ID**
