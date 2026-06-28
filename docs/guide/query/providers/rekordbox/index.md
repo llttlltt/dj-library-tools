@@ -88,7 +88,13 @@ If no index is provided (e.g., `playlists/name:House`), the query returns true i
 | Stat | Type | Description |
 | :--- | :--- | :--- |
 | `-count` | Numeric | Total number of items in the collection. |
-| `-drift` | Numeric | Difference between the Maximum and Minimum property values. |
+| `-min` | Numeric | Minimum value found in the collection. |
+| `-max` | Numeric | Maximum value found in the collection. |
+| `-avg` | Numeric | Mathematical average of values. |
+| `-drift` | Numeric | Difference between the Maximum and Minimum values. |
+| `-jitter` | Numeric | Average change between consecutive items. |
+| `-redundancy` | Numeric | Percentage (0-1) of items identical to the previous one. |
+| `-stability` | Numeric | Composite score (0-100) where 100 is perfectly steady. |
 | `-density` | Numeric | Items per minute (based on track duration). |
 
 ## Color Palettes
