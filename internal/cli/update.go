@@ -76,6 +76,8 @@ Example:
 	return cmd
 }
 
+// ... rest of file (merging helpers) ...
+
 // ── matching & merging helpers ─────────────────────────────────────────────
 
 type TrackMatch struct {

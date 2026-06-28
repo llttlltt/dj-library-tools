@@ -78,6 +78,13 @@ type Selection struct {
 	Provider provider.Provider
 }
 
+func getExecContext() provider.ExecutionContext {
+	return provider.ExecutionContext{
+		DryRun:  dryRun,
+		Verbose: verbose,
+	}
+}
+
 // ResolveSelection resolves a location string into a Selection.
 func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 	if locStr == "" {
@@ -90,7 +97,6 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 
 	cfg, _ := config.LoadAppConfig()
 	
-	// Default to primary file path unless sync targets or specific overrides exist
 	path := filePath
 	if loc.Provider == "m3u" || loc.Provider == "m3u8" {
 		path = loc.Resource
@@ -101,7 +107,6 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 		Config:   cfg,
 	}
 
-	// Test hook: if loadXMLFunc is overridden (in tests), grab the mock XML
 	if strings.Contains(loc.Provider, "rb") || strings.Contains(loc.Provider, "rekordbox") {
 		if rbXML, xmlPath, err := loadXMLFunc(); err == nil && xmlPath == "mock.xml" {
 			opts.MockXML = rbXML
@@ -115,6 +120,7 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 	}
 
 	sel := &Selection{Location: loc, Provider: prov}
+	ctx := getExecContext()
 	
 	isM3U := loc.Provider == "m3u" || loc.Provider == "m3u8"
 	if isM3U {
@@ -126,7 +132,7 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 	}
 
 	if loc.Resource == "tracks" {
-		tracks, err := prov.GetTracks(loc.Query)
+		tracks, err := prov.GetTracks(ctx, loc.Query)
 		if err != nil {
 			return nil, err
 		}
@@ -138,9 +144,9 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 		var groups []models.ResourceGroup
 		var err error
 		if loc.Resource == "folders" {
-			groups, err = prov.GetFolders(loc.Query)
+			groups, err = prov.GetFolders(ctx, loc.Query)
 		} else {
-			groups, err = prov.GetPlaylists(loc.Query)
+			groups, err = prov.GetPlaylists(ctx, loc.Query)
 		}
 		if err != nil {
 			return nil, err

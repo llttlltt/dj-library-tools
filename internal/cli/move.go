@@ -102,16 +102,16 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 		if verbose {
 			fmt.Printf("Removing tracks from origin playlist %q...\n", origin.Name)
 		}
-		wp.RemoveTracks(origin, src.Tracks)
+		wp.RemoveTracks(getExecContext(), origin, src.Tracks)
 	}
 	for _, target := range tgt.Nodes {
 		if verbose {
 			fmt.Printf("Adding tracks to target playlist %q...\n", target.Name)
 		}
-		wp.AddTracks(target, src.Tracks)
+		wp.AddTracks(getExecContext(), target, src.Tracks)
 	}
 
-	return wp.Save("")
+	return wp.Save(getExecContext(), "")
 }
 
 func runMoveGroups(wp provider.WritableProvider, src *Selection, moveTo string) error {
@@ -153,14 +153,14 @@ func runMoveGroups(wp provider.WritableProvider, src *Selection, moveTo string) 
 		if verbose {
 			fmt.Printf("Moving %s %q into folder %q...\n", src.Location.Resource, t.Name, targetParent.Name)
 		}
-		if err := wp.MoveGroup(t, targetParent); err != nil {
+		if err := wp.MoveGroup(getExecContext(), t, targetParent); err != nil {
 			fmt.Printf("Warning: failed to move %q: %v\n", t.Name, err)
 			continue
 		}
 		fmt.Printf("Moved %s %q -> %q\n", src.Location.Resource, t.Name, targetParent.Name)
 	}
 
-	return wp.Save("")
+	return wp.Save(getExecContext(), "")
 }
 
 func runRenameGroups(wp provider.WritableProvider, src *Selection, newName string) error {
@@ -181,11 +181,11 @@ func runRenameGroups(wp provider.WritableProvider, src *Selection, newName strin
 		return nil
 	}
 
-	if err := wp.RenameGroup(target, newName); err != nil {
+	if err := wp.RenameGroup(getExecContext(), target, newName); err != nil {
 		return fmt.Errorf("failed to rename %q: %v", target.Name, err)
 	}
 
 	fmt.Printf("Renamed %q -> %q\n", target.Name, newName)
 
-	return wp.Save("")
+	return wp.Save(getExecContext(), "")
 }

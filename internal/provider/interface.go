@@ -22,12 +22,18 @@ type ContainmentPolicy struct {
 	AllowNestedFolders      bool
 }
 
+// ExecutionContext holds runtime state for provider operations.
+type ExecutionContext struct {
+	DryRun  bool
+	Verbose bool
+}
+
 // Provider defines the interface for a music library provider.
 type Provider interface {
 	Name() string
-	GetTracks(query string) ([]models.Track, error)
-	GetPlaylists(query string) ([]models.ResourceGroup, error)
-	GetFolders(query string) ([]models.ResourceGroup, error)
+	GetTracks(ctx ExecutionContext, query string) ([]models.Track, error)
+	GetPlaylists(ctx ExecutionContext, query string) ([]models.ResourceGroup, error)
+	GetFolders(ctx ExecutionContext, query string) ([]models.ResourceGroup, error)
 
 	// Capabilities returns the feature set of this provider.
 	Capabilities() ProviderCapabilities
@@ -45,17 +51,18 @@ type Provider interface {
 // WritableProvider extends Provider with modification capabilities.
 type WritableProvider interface {
 	Provider
-	AddTracks(target models.ResourceGroup, tracks []models.Track) (int, error)
-	RemoveTracks(target models.ResourceGroup, tracks []models.Track) (int, error)
-	CreateGroup(parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error)
-	DeleteGroup(node models.ResourceGroup) error
-	RenameGroup(node models.ResourceGroup, newName string) error
-	MoveGroup(node models.ResourceGroup, targetParent models.ResourceGroup) error
+	AddTracks(ctx ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error)
+	RemoveTracks(ctx ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error)
+	CreateGroup(ctx ExecutionContext, parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error)
+	DeleteGroup(ctx ExecutionContext, node models.ResourceGroup) error
+	RenameGroup(ctx ExecutionContext, node models.ResourceGroup, newName string) error
+	MoveGroup(ctx ExecutionContext, node models.ResourceGroup, targetParent models.ResourceGroup) error
+	
 	// Sync tracks to a specific target within this provider.
-	Sync(tracks []models.Track, sourceQuery string, targetQuery string, options SyncOptions) error
+	Sync(ctx ExecutionContext, tracks []models.Track, sourceQuery string, targetQuery string, options SyncOptions) error
 
 	// Save persists any in-memory mutations to the given path.
-	Save(path string) error
+	Save(ctx ExecutionContext, path string) error
 }
 
 type SyncOptions struct {
