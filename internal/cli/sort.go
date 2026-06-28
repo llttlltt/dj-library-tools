@@ -8,12 +8,12 @@ func sortTracks(src *Selection, tracks []models.Track, field string) {
 	if field == "" {
 		return
 	}
-	src.Provider.SortTracks(getExecContext(), tracks, field)
+	src.Provider.Tracks().Sort(getExecContext(), tracks, field)
 }
 
 func sortGroups(src *Selection, groups []models.ResourceGroup, field string) {
 	if field == "" {
 		return
 	}
-	src.Provider.SortGroups(getExecContext(), groups, field)
+	src.Provider.Groups().Sort(getExecContext(), groups, field)
 }

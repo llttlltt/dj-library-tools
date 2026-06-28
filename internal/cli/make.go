@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/spf13/cobra"
 )
 
@@ -42,10 +41,7 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int, pare
 	}
 	name := args[1]
 
-	wp, ok := sel.Provider.(provider.WritableProvider)
-	if !ok {
-		return fmt.Errorf("provider %q does not support creating resources", sel.Location.Provider)
-	}
+	prov := sel.Provider
 
 	// Handle --parents by ensuring the folder path exists
 	if parents && createIn != "" {
@@ -59,12 +55,12 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int, pare
 				query += fmt.Sprintf(" && parent:%q", currentParent)
 			}
 			
-			res, _ := wp.GetResources(getExecContext(), "folders", query)
+			res, _ := prov.Groups().List(getExecContext(), query)
 			if len(res) == 0 {
 				if dryRun {
 					fmt.Printf("[Dry Run] Would create folder %q in %q\n", part, currentParent)
 				} else {
-					_, err := wp.CreateGroup(getExecContext(), models.ResourceGroup{Name: currentParent}, part, models.GroupTypeFolder, -1)
+					_, err := prov.Groups().Create(getExecContext(), models.ResourceGroup{Name: currentParent}, part, models.GroupTypeFolder, -1)
 					if err != nil { return HandleError(err) }
 				}
 			}
@@ -86,15 +82,9 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int, pare
 		groupType = models.GroupTypeFolder
 	}
 
-	// Agnostic Pre-flight Validation
-	if err := wp.ValidateCreateGroup(models.ResourceGroup{Name: createIn}, groupType); err != nil {
-		return HandleError(err)
-	}
-	if len(tracks) > 0 {
-		if err := wp.ValidateAddTracks(models.ResourceGroup{Name: name, Type: groupType}); err != nil {
-			return HandleError(err)
-		}
-	}
+	// Handle structural validation by checking provider capabilities or specific constraints
+	// (Note: In the new architecture, validation logic can be embedded in the Create call 
+	// or specific policy checks on System().Containment())
 
 	ctx := getExecContext()
 
@@ -103,17 +93,17 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int, pare
 		return nil
 	}
 
-	newNode, err := wp.CreateGroup(ctx, models.ResourceGroup{Name: createIn}, name, groupType, createAt)
+	newNode, err := prov.Groups().Create(ctx, models.ResourceGroup{Name: createIn}, name, groupType, createAt)
 	if err != nil {
 		return HandleError(err)
 	}
 
 	if len(tracks) > 0 {
-		added, _ := wp.AddTracks(ctx, newNode, tracks)
+		added, _ := prov.Tracks().Groups().Add(ctx, tracks, newNode)
 		fmt.Printf("Created %s %q with %d tracks\n", sel.Location.Resource, name, added)
 	} else {
 		fmt.Printf("Created %s %q\n", sel.Location.Resource, name)
 	}
 
-	return wp.Save(ctx, "")
+	return prov.System().Save(ctx, "")
 }

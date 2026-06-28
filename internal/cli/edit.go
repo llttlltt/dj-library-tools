@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/spf13/cobra"
 )
 
@@ -41,10 +40,7 @@ Examples:
 				return err
 			}
 
-			wp, ok := sel.Provider.(provider.WritableProvider)
-			if !ok {
-				return fmt.Errorf("provider %q is read-only", sel.Location.Provider)
-			}
+			prov := sel.Provider
 
 			ctx := getExecContext()
 
@@ -54,18 +50,18 @@ Examples:
 					fmt.Printf("[Dry Run] Would perform repair on %s/%s\n", sel.Location.Provider, sel.Location.Resource)
 					return nil
 				}
-				if err := wp.Fix(ctx, sel.Location.Resource, sel.Location.Query); err != nil {
+				if err := prov.System().Fix(ctx, sel.Location.Resource, sel.Location.Query); err != nil {
 					return err
 				}
 				fmt.Println("Repair completed successfully.")
-				return wp.Save(ctx, "")
+				return prov.System().Save(ctx, "")
 			}
 
 			// 2. Handle Relocation
 			if relocateDir != "" {
 				// We keep the relocation logic here as it's a cross-provider 'Search & Patch' orchestration
 				// but it calls ModifyTracks on the provider for the actual write.
-				relocated := wp.(interface {
+				relocated := prov.(interface {
 					Relocate(tracks []models.Track, dir string, match []string) map[string]string
 				}).Relocate(sel.Tracks, relocateDir, matchFields)
 				
@@ -81,10 +77,10 @@ Examples:
 
 				for id, newPath := range relocated {
 					changes := map[string]string{"location": newPath}
-					wp.UpdateTracks(ctx, "id:"+id, changes)
+					prov.Tracks().Update(ctx, "id:"+id, changes)
 				}
 				
-				return wp.Save(ctx, "")
+				return prov.System().Save(ctx, "")
 			}
 
 			// 3. Handle Metadata Updates
@@ -103,13 +99,13 @@ Examples:
 					return nil
 				}
 
-				count, err := wp.UpdateTracks(ctx, sel.Location.Query, changes)
+				count, err := prov.Tracks().Update(ctx, sel.Location.Query, changes)
 				if err != nil {
 					return err
 				}
 
 				fmt.Printf("Successfully modified %d tracks.\n", count)
-				return wp.Save(ctx, "")
+				return prov.System().Save(ctx, "")
 			}
 
 			return cmd.Help()

@@ -38,23 +38,20 @@ Example:
 				return HandleError(err)
 			}
 
-			wp, ok := src.Provider.(provider.WritableProvider)
-			if !ok {
-				return fmt.Errorf("provider %q does not support moving resources", src.Location.Provider)
-			}
+			prov := src.Provider
 
 			if moveName != "" {
-				return runRenameGroups(wp, src, moveName)
+				return runRenameGroups(prov, src, moveName)
 			}
 
 			if src.Location.Resource == "tracks" {
 				if moveFrom == "" {
 					return fmt.Errorf("--from origin is required when moving tracks")
 				}
-				return runMoveTracks(wp, src, moveFrom, moveTo)
+				return runMoveTracks(prov, src, moveFrom, moveTo)
 			}
 
-			return runMoveGroups(wp, src, moveTo)
+			return runMoveGroups(prov, src, moveTo)
 		},
 	}
 	cmd.Flags().StringVar(&moveTo, "to", "", "Destination playlist or folder")
@@ -63,7 +60,7 @@ Example:
 	return cmd
 }
 
-func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveTo string) error {
+func runMoveTracks(prov provider.Provider, src *Selection, moveFrom, moveTo string) error {
 	if len(src.Tracks) == 0 {
 		fmt.Println("No tracks matched the source query.")
 		return nil
@@ -89,7 +86,7 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 	totalMoved := 0
 	for _, origin := range org.Groups {
 		for _, target := range tgt.Groups {
-			moved, err := wp.MoveTracks(ctx, origin, target, src.Tracks)
+			moved, err := prov.Tracks().Groups().Move(ctx, src.Tracks, origin, target)
 			if err != nil {
 				return HandleError(err)
 			}
@@ -98,10 +95,10 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 	}
 
 	fmt.Printf("Successfully moved %d tracks.\n", totalMoved)
-	return wp.Save(ctx, "")
+	return prov.System().Save(ctx, "")
 }
 
-func runMoveGroups(wp provider.WritableProvider, src *Selection, moveTo string) error {
+func runMoveGroups(prov provider.Provider, src *Selection, moveTo string) error {
 	if len(src.Groups) == 0 {
 		fmt.Println("No resources found matching query.")
 		return nil
@@ -112,13 +109,6 @@ func runMoveGroups(wp provider.WritableProvider, src *Selection, moveTo string) 
 		return fmt.Errorf("could not find target folder matching %q", moveTo)
 	}
 	targetParent := tgt.Groups[0]
-
-	// Agnostic Pre-flight Validation
-	for _, group := range src.Groups {
-		if err := wp.ValidateMoveGroup(group, targetParent); err != nil {
-			return HandleError(err)
-		}
-	}
 
 	ctx := getExecContext()
 
@@ -133,17 +123,17 @@ func runMoveGroups(wp provider.WritableProvider, src *Selection, moveTo string) 
 		if verbose {
 			fmt.Printf("Moving %s %q into folder %q...\n", src.Location.Resource, t.Name, targetParent.Name)
 		}
-		if err := wp.MoveGroup(ctx, t, targetParent); err != nil {
+		if err := prov.Groups().Update(ctx, t, "", &targetParent); err != nil {
 			fmt.Printf("Warning: failed to move %q: %v\n", t.Name, err)
 			continue
 		}
 		fmt.Printf("Moved %s %q -> %q\n", src.Location.Resource, t.Name, targetParent.Name)
 	}
 
-	return wp.Save(ctx, "")
+	return prov.System().Save(ctx, "")
 }
 
-func runRenameGroups(wp provider.WritableProvider, src *Selection, newName string) error {
+func runRenameGroups(prov provider.Provider, src *Selection, newName string) error {
 	if len(src.Groups) == 0 {
 		return fmt.Errorf("no resources found matching query %q", src.Location.Query)
 	}
@@ -163,11 +153,11 @@ func runRenameGroups(wp provider.WritableProvider, src *Selection, newName strin
 		return nil
 	}
 
-	if err := wp.RenameGroup(ctx, target, newName, target.Type); err != nil {
+	if err := prov.Groups().Update(ctx, target, newName, nil); err != nil {
 		return fmt.Errorf("failed to rename %q: %v", target.Name, err)
 	}
 
 	fmt.Printf("Renamed %q -> %q\n", target.Name, newName)
 
-	return wp.Save(ctx, "")
+	return prov.System().Save(ctx, "")
 }

@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/llttlltt/dj-library-tools/internal/query"
 )
 
 var (
@@ -36,69 +35,84 @@ type ExecutionContext struct {
 	Verbose bool
 }
 
-// BaseProvider defines methods common to all providers.
-type BaseProvider interface {
+// Provider is the entry point for all provider-specific operations.
+type Provider interface {
 	Name() string
+	Tracks() TrackService
+	Groups() GroupService
+	System() SystemService
+}
+
+// TrackService handles operations on individual music files and their metadata.
+type TrackService interface {
+	// List returns tracks matching a query.
+	List(ctx ExecutionContext, query string) ([]models.Track, error)
+
+	// Update modifies metadata for tracks matching a query.
+	Update(ctx ExecutionContext, query string, changes map[string]string) (int, error)
+
+	// UpdateBatch applies specific field updates to matched tracks (used for syncing).
+	UpdateBatch(ctx ExecutionContext, matches []models.MetadataMatch, fields []string) error
+
+	// Delete removes tracks from the provider's collection.
+	Delete(ctx ExecutionContext, query string) (int, error)
+
+	// Groups returns a service for managing track-to-group relationships.
+	Groups() TrackGroupService
+
+	// Sort orders a slice of tracks in-place.
+	Sort(ctx ExecutionContext, tracks []models.Track, field string)
+}
+
+// TrackGroupService handles track memberships within groups (playlists).
+type TrackGroupService interface {
+	// Add adds tracks to a specific group.
+	Add(ctx ExecutionContext, tracks []models.Track, target models.ResourceGroup) (int, error)
+
+	// Remove removes tracks from a specific group.
+	Remove(ctx ExecutionContext, tracks []models.Track, group models.ResourceGroup) (int, error)
+
+	// Move transfers tracks from one group to another.
+	Move(ctx ExecutionContext, tracks []models.Track, from models.ResourceGroup, to models.ResourceGroup) (int, error)
+}
+
+// GroupService handles structural items (Playlists, Folders) themselves.
+type GroupService interface {
+	// List returns groups matching a query.
+	List(ctx ExecutionContext, query string) ([]models.ResourceGroup, error)
+
+	// Create creates a new group container.
+	Create(ctx ExecutionContext, parent models.ResourceGroup, name string, groupType models.GroupType, position int) (models.ResourceGroup, error)
+
+	// Update modifies group properties (rename, move group in tree).
+	Update(ctx ExecutionContext, group models.ResourceGroup, newName string, newParent *models.ResourceGroup) error
+
+	// Delete removes a group container.
+	Delete(ctx ExecutionContext, group models.ResourceGroup) error
+
+	// Sort orders a slice of groups in-place.
+	Sort(ctx ExecutionContext, groups []models.ResourceGroup, field string)
+}
+
+// SystemService handles provider-wide configuration, maintenance, and orchestration.
+type SystemService interface {
 	Capabilities() ProviderCapabilities
-	GetContainmentPolicy() ContainmentPolicy
-	CustomMatch(track models.Track, field string, op query.Operator, value string) bool
-	CanTranscode() bool
-	SupportedResources() []string
-	// MetadataCapabilities returns a list of fields this provider can serve/update.
+	Containment() ContainmentPolicy
 	MetadataCapabilities() []string
-}
+	SupportedResources() []string
 
-// ReadableProvider extends BaseProvider with read operations.
-type ReadableProvider interface {
-	BaseProvider
-	// GetResources is the primary discovery method for all resource types (tracks, playlists, folders).
-	GetResources(ctx ExecutionContext, resource string, query string) ([]models.Resource, error)
-	
-	// Sort operations
-	SortTracks(ctx ExecutionContext, tracks []models.Track, field string)
-	SortGroups(ctx ExecutionContext, groups []models.ResourceGroup, field string)
-}
+	// Save writes changes to persistent storage.
+	Save(ctx ExecutionContext, path string) error
 
-// SearchableProvider is an optional interface for providers with server-side search.
-type SearchableProvider interface {
-	ReadableProvider
-	Search(ctx ExecutionContext, query string) ([]models.Resource, error)
-}
-
-// WritableProvider extends ReadableProvider with modification capabilities.
-type WritableProvider interface {
-	ReadableProvider
-	AddTracks(ctx ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error)
-	RemoveTracks(ctx ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error)
-	UpdateTracks(ctx ExecutionContext, query string, changes map[string]string) (int, error)
-	MoveTracks(ctx ExecutionContext, source models.ResourceGroup, target models.ResourceGroup, tracks []models.Track) (int, error)
-	CreateGroup(ctx ExecutionContext, parent models.ResourceGroup, name string, groupType models.GroupType, position int) (models.ResourceGroup, error)
-	DeleteGroup(ctx ExecutionContext, node models.ResourceGroup) error
-	RenameGroup(ctx ExecutionContext, node models.ResourceGroup, newName string, groupType models.GroupType) error
-	MoveGroup(ctx ExecutionContext, node models.ResourceGroup, targetParent models.ResourceGroup) error
-	
-	Sync(ctx ExecutionContext, tracks []models.Track, sourceQuery string, targetQuery string, options SyncOptions) error
-	
-	// UpdateMetadata applies specific field updates to matched tracks.
-	UpdateMetadata(ctx ExecutionContext, matches []models.MetadataMatch, fields []string) error
-
-	// Fix performs provider-specific health/formatting repairs (e.g. M3U tag enrichment).
+	// Fix performs health/formatting repairs.
 	Fix(ctx ExecutionContext, resource string, query string) error
 
+	// Sync orchestrates a full library sync.
+	Sync(ctx ExecutionContext, tracks []models.Track, sourceQuery string, targetQuery string, options SyncOptions) error
 
-	// Validation methods for pre-flight checks
-	ValidateAddTracks(target models.ResourceGroup) error
-	ValidateMoveGroup(src models.ResourceGroup, target models.ResourceGroup) error
-	ValidateCreateGroup(parent models.ResourceGroup, groupType models.GroupType) error
-
-	// IdentifyGroup returns the provider-specific ID for a group name and type.
-	IdentifyGroup(name string, groupType models.GroupType) string
-
-	Save(ctx ExecutionContext, path string) error
+	// Identify returns a provider-specific ID for a name.
+	Identify(name string, groupType models.GroupType) string
 }
-
-// Provider is an alias for ReadableProvider as the standard return type.
-type Provider = ReadableProvider
 
 type SyncOptions struct {
 	ExportDest   string

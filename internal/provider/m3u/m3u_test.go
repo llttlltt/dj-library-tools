@@ -24,7 +24,7 @@ func TestM3UProvider_Load(t *testing.T) {
 	p, err := NewM3UProvider(m3uPath)
 	require.NoError(t, err)
 
-	tracks, err := p.GetTracks(provider.ExecutionContext{}, "")
+	tracks, err := p.Tracks().List(provider.ExecutionContext{}, "")
 	require.NoError(t, err)
 	assert.Len(t, tracks, 2)
 
@@ -48,23 +48,23 @@ func TestM3UProvider_AddRemoveSave(t *testing.T) {
 	newTracks := []models.Track{
 		{Display: "New Track Display", Location: "/tmp/new.mp3"},
 	}
-	added, err := p.AddTracks(provider.ExecutionContext{}, models.ResourceGroup{}, newTracks)
+	added, err := p.Tracks().Groups().Add(provider.ExecutionContext{}, newTracks, models.ResourceGroup{})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, added)
 
 	// Save
-	err = p.Save(provider.ExecutionContext{}, m3uPath)
+	err = p.System().Save(provider.ExecutionContext{}, m3uPath)
 	assert.NoError(t, err)
 
 	// Reload and verify
 	p2, err := NewM3UProvider(m3uPath)
 	assert.NoError(t, err)
-	tracks, _ := p2.GetTracks(provider.ExecutionContext{}, "")
+	tracks, _ := p2.Tracks().List(provider.ExecutionContext{}, "")
 	assert.Len(t, tracks, 1)
 	assert.Equal(t, "New Track Display", tracks[0].Display)
 
 	// Remove
-	removed, err := p2.RemoveTracks(provider.ExecutionContext{}, models.ResourceGroup{}, tracks)
+	removed, err := p2.Tracks().Groups().Remove(provider.ExecutionContext{}, tracks, models.ResourceGroup{})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, removed)
 	assert.Len(t, p2.tracks, 0)

@@ -31,18 +31,15 @@ Example:
 				return HandleError(err)
 			}
 
-			wp, ok := sel.Provider.(provider.WritableProvider)
-			if !ok {
-				return fmt.Errorf("provider %q does not support deleting resources", sel.Location.Provider)
-			}
+			prov := sel.Provider
 
 			ctx := getExecContext()
 
 			if len(deleteFrom) == 0 {
-				return runDeleteResources(wp, ctx, sel, recursive)
+				return runDeleteResources(prov, ctx, sel, recursive)
 			}
 
-			return runRemoveMembership(wp, ctx, sel, deleteFrom)
+			return runRemoveMembership(prov, ctx, sel, deleteFrom)
 		},
 	}
 	cmd.Flags().StringSliceVar(&deleteFrom, "from", []string{}, "Origin resource(s) to remove from")
@@ -50,7 +47,7 @@ Example:
 	return cmd
 }
 
-func runDeleteResources(wp provider.WritableProvider, ctx provider.ExecutionContext, sel *Selection, recursive bool) error {
+func runDeleteResources(prov provider.Provider, ctx provider.ExecutionContext, sel *Selection, recursive bool) error {
 	if len(sel.Items) == 0 {
 		fmt.Println("No resources matched the query.")
 		return nil
@@ -61,15 +58,10 @@ func runDeleteResources(wp provider.WritableProvider, ctx provider.ExecutionCont
 			if recursive && node.Type == models.GroupTypeFolder {
 				// Recursive delete: find children and delete them first
 				// This is a simple CLI-side orchestration
-				children, _ := wp.GetResources(ctx, "playlists", fmt.Sprintf("parent:%q", node.Name))
-				childFolders, _ := wp.GetResources(ctx, "folders", fmt.Sprintf("parent:%q", node.Name))
+				children, _ := prov.Groups().List(ctx, fmt.Sprintf("parent:%q", node.Name))
 				
 				for _, c := range children {
-					if !dryRun { wp.DeleteGroup(ctx, c.(models.ResourceGroup)) }
-				}
-				for _, c := range childFolders {
-					// We could recurse deeper here if needed, but for now 1-level deep
-					if !dryRun { wp.DeleteGroup(ctx, c.(models.ResourceGroup)) }
+					if !dryRun { prov.Groups().Delete(ctx, c) }
 				}
 			}
 
@@ -77,17 +69,17 @@ func runDeleteResources(wp provider.WritableProvider, ctx provider.ExecutionCont
 				fmt.Printf("[Dry Run] Would delete %s %q\n", node.GetKind(), node.Name)
 				continue
 			}
-			if err := wp.DeleteGroup(ctx, node); err != nil {
+			if err := sel.Provider.Groups().Delete(ctx, node); err != nil {
 				return HandleError(err)
 			}
 			fmt.Printf("Deleted %s %q\n", node.GetKind(), node.Name)
 		}
 	}
 
-	return wp.Save(ctx, "")
+	return sel.Provider.System().Save(ctx, "")
 }
 
-func runRemoveMembership(wp provider.WritableProvider, ctx provider.ExecutionContext, sel *Selection, from []string) error {
+func runRemoveMembership(prov provider.Provider, ctx provider.ExecutionContext, sel *Selection, from []string) error {
 	if len(sel.Tracks) == 0 {
 		fmt.Println("No tracks matched the query.")
 		return nil
@@ -104,10 +96,10 @@ func runRemoveMembership(wp provider.WritableProvider, ctx provider.ExecutionCon
 				fmt.Printf("[Dry Run] Would remove %d tracks from playlist %q\n", len(sel.Tracks), target.Name)
 				continue
 			}
-			removed, _ := wp.RemoveTracks(ctx, target, sel.Tracks)
+			removed, _ := prov.Tracks().Groups().Remove(ctx, sel.Tracks, target)
 			fmt.Printf("Removed %d tracks from %q\n", removed, target.Name)
 		}
 	}
 
-	return wp.Save(ctx, "")
+	return sel.Provider.System().Save(ctx, "")
 }
