@@ -82,6 +82,7 @@ The selection engine uses a recursive descent parser and a generic evaluator. It
 ### Test Boundaries and Interfaces
 `djlt` uses explicit interfaces to decouple core logic from external dependencies:
 - **`Library`**: Decouples implementation-specific storage from the query `Engine`, allowing for agnostic search across different data formats.
+- **`Feedback`**: An interface in the execution context that allows implementation packages to provide user feedback (e.g. preview messages) without depending on terminal libraries or Stdout.
 - **`Provider`**: Service-registry interface that exposes the hierarchical `Tracks()`, `Groups()`, and `System()` domains.
 - **`Resource`**: A universal interface for any item in a library (Track, ResourceGroup), allowing for generic movement and listing logic.
 - **`sys.FileSystem` & `sys.Runner`**: Abstract the OS environment (Filesystem, FFmpeg), enabling side-effect-free testing of media and sync operations.
