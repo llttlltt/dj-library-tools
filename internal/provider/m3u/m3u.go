@@ -192,7 +192,7 @@ func (p *M3UProvider) RemoveTracks(ctx provider.ExecutionContext, target models.
 	return removed, nil
 }
 
-func (p *M3UProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
+func (p *M3UProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, nodeType int, position int) (models.ResourceGroup, error) {
 	if nodeType == 0 {
 		return models.ResourceGroup{}, fmt.Errorf("m3u provider does not support folders")
 	}
@@ -271,4 +271,23 @@ func (p *M3UProvider) Sync(ctx provider.ExecutionContext, tracks []models.Track,
 		p.tracks = tracks
 	}
 	return p.Save(ctx, "")
+}
+
+func (p *M3UProvider) ModifyTracks(ctx provider.ExecutionContext, query string, changes map[string]string) (int, error) {
+	return 0, fmt.Errorf("m3u provider does not support metadata modification")
+}
+
+func (p *M3UProvider) ValidateAddTracks(target models.ResourceGroup) error {
+	return nil
+}
+
+func (p *M3UProvider) ValidateMoveGroup(src models.ResourceGroup, target models.ResourceGroup) error {
+	return fmt.Errorf("m3u provider does not support move")
+}
+
+func (p *M3UProvider) ValidateCreateGroup(parent models.ResourceGroup, groupType models.GroupType) error {
+	if groupType == models.GroupTypeFolder {
+		return fmt.Errorf("m3u provider does not support folders")
+	}
+	return nil
 }

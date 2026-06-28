@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/spf13/cobra"
 )
@@ -80,18 +79,14 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 		return fmt.Errorf("could not find target playlist(s) matching %q", moveTo)
 	}
 
-	policy := wp.GetContainmentPolicy()
-
-	// Validation: Check if tracks can be moved to the chosen target(s)
-	for _, node := range tgt.Nodes {
-		if node.Type == models.GroupTypeFolder && !policy.AllowTracksInFolders {
-			return fmt.Errorf("invalid move: cannot move tracks to folder %q (tracks must live in playlists)", node.Name)
-		}
-		if node.Type == models.GroupTypePlaylist && policy.AllowFoldersInPlaylists {
-			// This part is conceptually reversed, but we're checking if the destination 
-			// is a playlist and the source is tracks. Usually true.
+	// Agnostic Pre-flight Validation
+	for _, target := range tgt.Nodes {
+		if err := wp.ValidateAddTracks(target); err != nil {
+			return err
 		}
 	}
+
+	ctx := getExecContext()
 
 	if dryRun {
 		fmt.Printf("[Dry Run] Would move %d tracks from %d origins to %d targets\n", len(src.Tracks), len(org.Nodes), len(tgt.Nodes))
@@ -102,16 +97,16 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 		if verbose {
 			fmt.Printf("Removing tracks from origin playlist %q...\n", origin.Name)
 		}
-		wp.RemoveTracks(getExecContext(), origin, src.Tracks)
+		wp.RemoveTracks(ctx, origin, src.Tracks)
 	}
 	for _, target := range tgt.Nodes {
 		if verbose {
 			fmt.Printf("Adding tracks to target playlist %q...\n", target.Name)
 		}
-		wp.AddTracks(getExecContext(), target, src.Tracks)
+		wp.AddTracks(ctx, target, src.Tracks)
 	}
 
-	return wp.Save(getExecContext(), "")
+	return wp.Save(ctx, "")
 }
 
 func runMoveGroups(wp provider.WritableProvider, src *Selection, moveTo string) error {
@@ -125,42 +120,35 @@ func runMoveGroups(wp provider.WritableProvider, src *Selection, moveTo string) 
 		return fmt.Errorf("could not find target folder matching %q", moveTo)
 	}
 	targetParent := tgt.Nodes[0]
-	policy := wp.GetContainmentPolicy()
+
+	// Agnostic Pre-flight Validation
+	for _, group := range src.Nodes {
+		if err := wp.ValidateMoveGroup(group, targetParent); err != nil {
+			return err
+		}
+	}
+
+	ctx := getExecContext()
 
 	if dryRun {
 		for _, t := range src.Nodes {
 			fmt.Printf("[Dry Run] Would move %s %q to folder %q\n", src.Location.Resource, t.Name, targetParent.Name)
-			// Validation: Folders/Playlists can only be moved to Folders, not Playlists
-			if targetParent.Type == models.GroupTypePlaylist && !policy.AllowFoldersInPlaylists {
-				return fmt.Errorf("invalid move: cannot move %s to playlist %q (containers must live in folders)", src.Location.Resource, targetParent.Name)
-			}
-			if t.Type == models.GroupTypeFolder && targetParent.Type == models.GroupTypeFolder && !policy.AllowNestedFolders {
-				return fmt.Errorf("invalid move: cannot move folder %q into folder %q (provider does not support nested folders)", t.Name, targetParent.Name)
-			}
 		}
 		return nil
 	}
 
 	for _, t := range src.Nodes {
-		// Validation
-		if targetParent.Type == models.GroupTypePlaylist && !policy.AllowFoldersInPlaylists {
-			return fmt.Errorf("invalid move: cannot move %s to playlist %q (containers must live in folders)", src.Location.Resource, targetParent.Name)
-		}
-		if t.Type == models.GroupTypeFolder && targetParent.Type == models.GroupTypeFolder && !policy.AllowNestedFolders {
-			return fmt.Errorf("invalid move: cannot move folder %q into folder %q (provider does not support nested folders)", t.Name, targetParent.Name)
-		}
-
 		if verbose {
 			fmt.Printf("Moving %s %q into folder %q...\n", src.Location.Resource, t.Name, targetParent.Name)
 		}
-		if err := wp.MoveGroup(getExecContext(), t, targetParent); err != nil {
+		if err := wp.MoveGroup(ctx, t, targetParent); err != nil {
 			fmt.Printf("Warning: failed to move %q: %v\n", t.Name, err)
 			continue
 		}
 		fmt.Printf("Moved %s %q -> %q\n", src.Location.Resource, t.Name, targetParent.Name)
 	}
 
-	return wp.Save(getExecContext(), "")
+	return wp.Save(ctx, "")
 }
 
 func runRenameGroups(wp provider.WritableProvider, src *Selection, newName string) error {
@@ -172,6 +160,8 @@ func runRenameGroups(wp provider.WritableProvider, src *Selection, newName strin
 	}
 
 	target := src.Nodes[0]
+	ctx := getExecContext()
+
 	if verbose {
 		fmt.Printf("Renaming %s %q -> %q...\n", src.Location.Resource, target.Name, newName)
 	}
@@ -181,11 +171,11 @@ func runRenameGroups(wp provider.WritableProvider, src *Selection, newName strin
 		return nil
 	}
 
-	if err := wp.RenameGroup(getExecContext(), target, newName); err != nil {
+	if err := wp.RenameGroup(ctx, target, newName); err != nil {
 		return fmt.Errorf("failed to rename %q: %v", target.Name, err)
 	}
 
 	fmt.Printf("Renamed %q -> %q\n", target.Name, newName)
 
-	return wp.Save(getExecContext(), "")
+	return wp.Save(ctx, "")
 }

@@ -53,13 +53,21 @@ type WritableProvider interface {
 	Provider
 	AddTracks(ctx ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error)
 	RemoveTracks(ctx ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error)
-	CreateGroup(ctx ExecutionContext, parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error)
+	CreateGroup(ctx ExecutionContext, parent models.ResourceGroup, name string, nodeType int, position int) (models.ResourceGroup, error)
 	DeleteGroup(ctx ExecutionContext, node models.ResourceGroup) error
 	RenameGroup(ctx ExecutionContext, node models.ResourceGroup, newName string) error
 	MoveGroup(ctx ExecutionContext, node models.ResourceGroup, targetParent models.ResourceGroup) error
 	
 	// Sync tracks to a specific target within this provider.
 	Sync(ctx ExecutionContext, tracks []models.Track, sourceQuery string, targetQuery string, options SyncOptions) error
+
+	// ModifyTracks applies metadata changes to tracks matching the query.
+	ModifyTracks(ctx ExecutionContext, query string, changes map[string]string) (int, error)
+
+	// Validation methods for pre-flight checks
+	ValidateAddTracks(target models.ResourceGroup) error
+	ValidateMoveGroup(src models.ResourceGroup, target models.ResourceGroup) error
+	ValidateCreateGroup(parent models.ResourceGroup, groupType models.GroupType) error
 
 	// Save persists any in-memory mutations to the given path.
 	Save(ctx ExecutionContext, path string) error

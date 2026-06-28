@@ -66,8 +66,8 @@ func (p *RekordboxProvider) CanTranscode() bool {
 }
 
 func (p *RekordboxProvider) AddTracks(ctx provider.ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error) {
-	if target.Type == models.GroupTypeFolder {
-		return 0, fmt.Errorf("cannot add tracks to folder %q (rekordbox tracks must live in playlists)", target.Name)
+	if err := p.ValidateAddTracks(target); err != nil {
+		return 0, err
 	}
 	var ids []string
 	for _, t := range tracks {
@@ -86,15 +86,14 @@ func (p *RekordboxProvider) RemoveTracks(ctx provider.ExecutionContext, target m
 	return removed, nil
 }
 
-func (p *RekordboxProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
-	if parent.Name != "" && parent.Type == models.GroupTypePlaylist {
-		return models.ResourceGroup{}, fmt.Errorf("cannot create group inside playlist %q (containers must live in folders)", parent.Name)
+func (p *RekordboxProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, nodeType int, position int) (models.ResourceGroup, error) {
+	if err := p.ValidateCreateGroup(parent, models.GroupType(nodeType)); err != nil {
+		return models.ResourceGroup{}, err
 	}
-	
 	if nodeType == 0 {
-		p.Engine.Library.(library.WritableLibrary).CreateContainer(parent.Name, name, -1)
+		p.Engine.Library.(library.WritableLibrary).CreateContainer(parent.Name, name, position)
 	} else {
-		p.Engine.Library.(library.WritableLibrary).AddGroup(parent.Name, name, nil, -1)
+		p.Engine.Library.(library.WritableLibrary).AddGroup(parent.Name, name, nil, position)
 	}
 	return models.ResourceGroup{Name: name, Type: models.GroupType(nodeType)}, nil
 }
@@ -110,13 +109,9 @@ func (p *RekordboxProvider) RenameGroup(ctx provider.ExecutionContext, node mode
 }
 
 func (p *RekordboxProvider) MoveGroup(ctx provider.ExecutionContext, node models.ResourceGroup, targetParent models.ResourceGroup) error {
-	if targetParent.Type == models.GroupTypePlaylist {
-		return fmt.Errorf("cannot move group into playlist %q (containers must live in folders)", targetParent.Name)
+	if err := p.ValidateMoveGroup(node, targetParent); err != nil {
+		return err
 	}
-	if node.Type == models.GroupTypeFolder && targetParent.Type == models.GroupTypeFolder && !p.GetContainmentPolicy().AllowNestedFolders {
-		return fmt.Errorf("nested folders not supported")
-	}
-
 	p.Engine.Library.(library.WritableLibrary).MoveGroup(node.Name, int32(node.Type), targetParent.Name)
 	return nil
 }
@@ -240,6 +235,31 @@ func (p *RekordboxProvider) Sync(ctx provider.ExecutionContext, tracks []models.
 
 	if p.rbXML == nil && !ctx.DryRun {
 		return rbLib.Save(p.path)
+	}
+	return nil
+}
+
+func (p *RekordboxProvider) ModifyTracks(ctx provider.ExecutionContext, query string, changes map[string]string) (int, error) {
+	return 0, fmt.Errorf("metadata modification not yet fully refactored for rekordbox")
+}
+
+func (p *RekordboxProvider) ValidateAddTracks(target models.ResourceGroup) error {
+	if target.Type == models.GroupTypeFolder {
+		return fmt.Errorf("cannot add tracks to folder %q (rekordbox tracks must live in playlists)", target.Name)
+	}
+	return nil
+}
+
+func (p *RekordboxProvider) ValidateMoveGroup(src models.ResourceGroup, target models.ResourceGroup) error {
+	if target.Type == models.GroupTypePlaylist {
+		return fmt.Errorf("cannot move group into playlist %q (containers must live in folders)", target.Name)
+	}
+	return nil
+}
+
+func (p *RekordboxProvider) ValidateCreateGroup(parent models.ResourceGroup, groupType models.GroupType) error {
+	if parent.Name != "" && parent.Type == models.GroupTypePlaylist {
+		return fmt.Errorf("cannot create group inside playlist %q (containers must live in folders)", parent.Name)
 	}
 	return nil
 }

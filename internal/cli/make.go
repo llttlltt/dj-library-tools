@@ -13,16 +13,16 @@ func newMakeCmd() *cobra.Command {
 	var createAt int
 
 	cmd := &cobra.Command{
-	Use:     "mk [resource] [name]",
-	Short:   "Create a new playlist or folder",
-	Long: `Create a new Rekordbox playlist or folder.
+		Use:     "mk [resource] [name]",
+		Short:   "Create a new playlist or folder",
+		Long: `Create a new Rekordbox playlist or folder.
 You can optionally populate it immediately using items from a source.
 
 Example:
   djlt mk rb/playlists "New Arrivals" --from "rb/tracks added:>2024-01-01"`,
-	Args: cobra.ExactArgs(2),
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runCreateCmd(cmd, args, createIn, createFrom, createAt)
+			return runCreateCmd(args, createIn, createFrom, createAt)
 		},
 	}
 	cmd.Flags().StringVar(&createIn, "in", "", "Parent folder for the new resource")
@@ -31,7 +31,7 @@ Example:
 	return cmd
 }
 
-func runCreateCmd(cmd *cobra.Command, args []string, createIn, createFrom string, createAt int) error {
+func runCreateCmd(args []string, createIn, createFrom string, createAt int) error {
 	sel, err := ResolveSelection(args[0], "")
 	if err != nil {
 		return err
@@ -52,40 +52,39 @@ func runCreateCmd(cmd *cobra.Command, args []string, createIn, createFrom string
 		tracks = src.Tracks
 	}
 
-	nodeType := models.GroupTypePlaylist
+	groupType := models.GroupTypePlaylist
 	if sel.Location.Resource == "folders" {
-		nodeType = models.GroupTypeFolder
+		groupType = models.GroupTypeFolder
 	}
 
-	policy := wp.GetContainmentPolicy()
+	// Agnostic Pre-flight Validation
+	if err := wp.ValidateCreateGroup(models.ResourceGroup{Name: createIn}, groupType); err != nil {
+		return err
+	}
+	if len(tracks) > 0 {
+		if err := wp.ValidateAddTracks(models.ResourceGroup{Name: name, Type: groupType}); err != nil {
+			return err
+		}
+	}
+
+	ctx := getExecContext()
 
 	if dryRun {
-		fmt.Printf("[Dry Run] Would create %s %q in folder %q with %d tracks\n", sel.Location.Resource, name, createIn, len(tracks))
-		// Validation: Tracks can only be populated into resources that allow them
-		if len(tracks) > 0 && nodeType == models.GroupTypeFolder && !policy.AllowTracksInFolders {
-			return fmt.Errorf("invalid operation: cannot populate folder %q with tracks (tracks must live in playlists)", name)
-		}
+		fmt.Printf("[Dry Run] Would create %s %q in folder %q at position %d with %d tracks\n", sel.Location.Resource, name, createIn, createAt, len(tracks))
 		return nil
 	}
 
-	// Validation
-	if len(tracks) > 0 && nodeType == models.GroupTypeFolder && !policy.AllowTracksInFolders {
-		return fmt.Errorf("invalid operation: cannot populate folder %q with tracks (tracks must live in playlists)", name)
-	}
-
-	newNode, err := wp.CreateGroup(getExecContext(), models.ResourceGroup{Name: createIn}, name, int(nodeType))
+	newNode, err := wp.CreateGroup(ctx, models.ResourceGroup{Name: createIn}, name, int(groupType), createAt)
 	if err != nil {
 		return err
 	}
 
 	if len(tracks) > 0 {
-		added, _ := wp.AddTracks(getExecContext(), newNode, tracks)
+		added, _ := wp.AddTracks(ctx, newNode, tracks)
 		fmt.Printf("Created %s %q with %d tracks\n", sel.Location.Resource, name, added)
 	} else {
 		fmt.Printf("Created %s %q\n", sel.Location.Resource, name)
 	}
 
-	return wp.Save(getExecContext(), "")
+	return wp.Save(ctx, "")
 }
-
-
