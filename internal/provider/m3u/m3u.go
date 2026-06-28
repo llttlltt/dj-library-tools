@@ -1,18 +1,14 @@
 package m3u
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
-
-	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/library"
 	"github.com/llttlltt/dj-library-tools/internal/m3u"
+	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/provider/factory"
-	"github.com/llttlltt/dj-library-tools/internal/query"
 )
 
 func init() {
@@ -33,9 +29,11 @@ func NewM3UProvider(path string) (*M3UProvider, error) {
 	p := &M3UProvider{path: path}
 	if path != "" {
 		if _, err := os.Stat(path); err == nil {
-			if err := p.load(); err != nil {
+			tracks, err := m3u.ReadM3U8(path)
+			if err != nil {
 				return nil, err
 			}
+			p.tracks = tracks
 		}
 	}
 	return p, nil
@@ -43,24 +41,16 @@ func NewM3UProvider(path string) (*M3UProvider, error) {
 
 func (p *M3UProvider) Name() string { return "m3u" }
 
-func (p *M3UProvider) Tracks() provider.TrackService { return &m3uTrackService{p} }
-func (p *M3UProvider) Groups() provider.GroupService { return &m3uGroupService{p} }
+func (p *M3UProvider) Tracks() provider.TrackService   { return &m3uTrackService{p} }
+func (p *M3UProvider) Groups() provider.GroupService   { return &m3uGroupService{p} }
 func (p *M3UProvider) System() provider.SystemService { return &m3uSystemService{p} }
 
 type m3uTrackService struct{ *M3UProvider }
 
-func (s *m3uTrackService) List(ctx provider.ExecutionContext, queryString string) ([]models.Track, error) {
-	parser := query.NewParser()
-	q := parser.Parse(queryString)
-	eval := query.NewEvaluator(q)
-
-	var results []models.Track
-	for _, t := range s.tracks {
-		if eval.Matches(t) {
-			results = append(results, t)
-		}
-	}
-	return results, nil
+func (s *m3uTrackService) List(ctx provider.ExecutionContext, query string) ([]models.Track, error) {
+	// Use Engine for agnostic querying
+	eng := library.NewEngine(m3u.NewLibrary(s.tracks))
+	return eng.Ls(query, nil)
 }
 
 func (s *m3uTrackService) Update(ctx provider.ExecutionContext, query string, changes map[string]string) (int, error) {
@@ -111,14 +101,10 @@ func (s *m3uTrackService) Sort(ctx provider.ExecutionContext, tracks []models.Tr
 
 type m3uGroupService struct{ *M3UProvider }
 
-func (s *m3uGroupService) List(ctx provider.ExecutionContext, queryString string) ([]models.ResourceGroup, error) {
-	name := filepath.Base(s.path)
-	n := models.ResourceGroup{ID: s.path, Name: name, Type: models.GroupTypePlaylist, Items: len(s.tracks)}
-	parser := query.NewParser()
-	q := parser.Parse(queryString)
-	eval := query.NewEvaluator(q)
-	if eval.MatchesGroup(n) { return []models.ResourceGroup{n}, nil }
-	return nil, nil
+func (s *m3uGroupService) List(ctx provider.ExecutionContext, query string) ([]models.ResourceGroup, error) {
+	// Use Engine for agnostic group querying
+	eng := library.NewEngine(m3u.NewLibrary(s.tracks))
+	return eng.LsGroups(query)
 }
 
 func (s *m3uGroupService) Create(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, gt models.GroupType, pos int) (models.ResourceGroup, error) {
@@ -149,12 +135,15 @@ func (s *m3uSystemService) Capabilities() provider.ProviderCapabilities {
 func (s *m3uSystemService) Containment() provider.ContainmentPolicy { return provider.ContainmentPolicy{} }
 func (s *m3uSystemService) MetadataCapabilities() []string { return []string{"display", "location"} }
 func (s *m3uSystemService) SupportedResources() []string { return []string{"tracks", "playlists"} }
+
 func (s *m3uSystemService) Save(ctx provider.ExecutionContext, path string) error {
 	if path == "" { path = s.path }
 	if path == "" { return fmt.Errorf("no path for M3U save") }
+	
 	f, err := os.Create(path)
 	if err != nil { return err }
 	defer f.Close()
+	
 	m3u.WriteM3U8Header(f)
 	for _, t := range s.tracks {
 		disp := t.Display
@@ -163,36 +152,12 @@ func (s *m3uSystemService) Save(ctx provider.ExecutionContext, path string) erro
 	}
 	return nil
 }
+
 func (s *m3uSystemService) Fix(ctx provider.ExecutionContext, resource string, query string) error { return s.Save(ctx, "") }
+
 func (s *m3uSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, srcQ, tgtQ string, opts provider.SyncOptions) error {
 	if opts.AppendOnly { s.Tracks().Groups().Add(ctx, tracks, models.ResourceGroup{}) } else { s.tracks = tracks }
 	return s.Save(ctx, "")
 }
-func (s *m3uSystemService) Identify(name string, gt models.GroupType) string { return s.path }
 
-func (p *M3UProvider) load() error {
-	f, err := os.Open(p.path)
-	if err != nil { return err }
-	defer f.Close()
-	scanner := bufio.NewScanner(f)
-	var lastDur int
-	var lastDisp string
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#EXTM3U") { continue }
-		if strings.HasPrefix(line, "#EXTINF:") {
-			info := strings.TrimPrefix(line, "#EXTINF:")
-			commaIdx := strings.Index(info, ",")
-			if commaIdx != -1 {
-				if d, err := strconv.Atoi(info[:commaIdx]); err == nil { lastDur = d }
-				lastDisp = strings.TrimSpace(info[commaIdx+1:])
-			}
-			continue
-		}
-		trackPath := line
-		if !filepath.IsAbs(trackPath) { trackPath = filepath.Join(filepath.Dir(p.path), trackPath) }
-		p.tracks = append(p.tracks, models.Track{ID: trackPath, Display: lastDisp, Duration: lastDur, Location: trackPath})
-		lastDur = 0; lastDisp = ""
-	}
-	return scanner.Err()
-}
+func (s *m3uSystemService) Identify(name string, gt models.GroupType) string { return s.path }
