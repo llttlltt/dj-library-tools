@@ -1,6 +1,6 @@
 # M3U / M3U8
 
-The M3U provider allows you to read from and write to standard music playlist files (`.m3u` and `.m3u8`). It treats individual files as playlist resources that can be queried, modified, or synced with other libraries.
+The M3U provider allows you to read from and write to standard music playlist files (`.m3u` and `.m3u8`). It treats individual files as libraries containing track collections.
 
 ## Providers
 
@@ -13,12 +13,8 @@ The M3U provider allows you to read from and write to standard music playlist fi
 
 | Resource | Description | Example |
 | :--- | :--- | :--- |
-| `tracks` | The tracks contained within the file. | `m3u8:/path/to/list.m3u8/tracks` |
-| `playlists` | The M3U file itself as a ResourceGroup (Default). | `m3u8:/path/to/list.m3u8` |
-
-!!! tip "Path Syntax"
-    Unlike other providers, the "Resource" part for M3U is the **file path**. 
-    You can omit `/tracks` to list the playlist itself, or append it to filter the tracks inside.
+| `tracks` | The tracks contained within the file. | `m3u8/tracks --file list.m3u8` |
+| `playlists` | The M3U file itself as a ResourceGroup. | `m3u8/playlists --file list.m3u8` |
 
 ## Fields
 
@@ -41,37 +37,33 @@ The M3U provider parses metadata from `#EXTINF` tags.
 
 ## Technical Details
 
+- **File-Based**: M3U providers are strictly file-based and require the `--file` (`-f`) flag for initialization.
 - **Relative Paths**: When an M3U file is loaded, any relative paths are automatically resolved against the directory containing the `.m3u` file.
-- **UTF-8 Support**: Using the `m3u8` prefix ensures that UTF-8 encoding is handled correctly for non-ASCII characters in file paths or metadata.
-- **Save Operation**: Modifications (adding/removing tracks) are not written to disk until the provider's `Save` method is called. This is handled automatically by commands like `mk`, `rm`, and `sync`.
+- **UTF-8 Support**: Using the `m3u8` alias ensures that UTF-8 encoding is handled correctly for non-ASCII characters in file paths or metadata.
+- **Save Operation**: Modifications (adding/removing tracks) are not written to disk until the provider's `Save` method is called. This is handled automatically by commands like `sync`.
 
 ## Examples
 
 ### Reading
 
-**List tracks in a playlist**
+**List all tracks in a playlist**
 ```bash
-djlt ls m3u8:~/Music/Favorites.m3u8
+djlt ls m3u8/tracks --file ~/Music/Favorites.m3u8
 ```
 
 **Filter tracks within a file**
 ```bash
-djlt ls m3u8:./Techno.m3u8 "artist:Derrick"
+djlt ls m3u8/tracks --file ./Techno.m3u8 "artist:Derrick"
 ```
 
 ### Management
 
-**Create a new playlist from a Rekordbox query**
+**Sync from Rekordbox to M3U8**
 ```bash
-djlt mk m3u8:./Techno.m3u8 "Techno" --from "rb/tracks genre:Techno rating:5"
-```
-
-**Sync from Plex to M3U8**
-```bash
-djlt sync plex/playlists "name:Road Trip" --to m3u8:~/Desktop/RoadTrip.m3u8
+djlt sync "rb/tracks genre:Techno" --to "m3u8/tracks" --to-file "./Techno.m3u8"
 ```
 
 **Remove specific tracks from an M3U8 file**
 ```bash
-djlt rm m3u8:./list.m3u8/tracks "artist:Unknown" --from m3u8:./list.m3u8
+djlt rm m3u8/tracks --file ./list.m3u8 "artist:Unknown"
 ```
