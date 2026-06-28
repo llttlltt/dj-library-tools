@@ -70,7 +70,7 @@ func (p *RekordboxProvider) AddTracks(ctx provider.ExecutionContext, target mode
 	for _, t := range tracks {
 		ids = append(ids, t.ID)
 	}
-	_, added := p.Engine.Library.(library.WritableLibrary).AddTracksToPlaylist(target.Name, ids)
+	_, added := p.Engine.Library.(library.WritableLibrary).AddTracksToGroup(target.Name, ids)
 	return added, nil
 }
 
@@ -79,15 +79,15 @@ func (p *RekordboxProvider) RemoveTracks(ctx provider.ExecutionContext, target m
 	for _, t := range tracks {
 		ids = append(ids, t.ID)
 	}
-	_, removed := p.Engine.Library.(library.WritableLibrary).RemoveTracksFromPlaylist(target.Name, ids)
+	_, removed := p.Engine.Library.(library.WritableLibrary).RemoveTracksFromGroup(target.Name, ids)
 	return removed, nil
 }
 
 func (p *RekordboxProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
 	if nodeType == 0 {
-		p.Engine.Library.(library.WritableLibrary).CreateFolder(parent.Name, name, -1)
+		p.Engine.Library.(library.WritableLibrary).CreateContainer(parent.Name, name, -1)
 	} else {
-		p.Engine.Library.(library.WritableLibrary).AddPlaylist(parent.Name, name, nil, -1)
+		p.Engine.Library.(library.WritableLibrary).AddGroup(parent.Name, name, nil, -1)
 	}
 	return models.ResourceGroup{Name: name, Type: models.GroupType(nodeType)}, nil
 }

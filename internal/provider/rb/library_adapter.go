@@ -53,14 +53,14 @@ func (r *RekordboxLibrary) walkRekordboxPlaylists(nodes []rekordbox.Node, m map[
 	}
 }
 
-func (r *RekordboxLibrary) AddPlaylist(folder, name string, trackIDs []string, position int) {
+func (r *RekordboxLibrary) AddGroup(folder, name string, trackIDs []string, position int) {
 	r.XML.PlaylistsChanged = true
 	var container *[]rekordbox.Node
 	var folderNode *rekordbox.Node
 	if folder == "" {
 		container = &r.XML.Playlists.Node.Node
 	} else {
-		folderNode = r.findOrCreateFolder(folder)
+		folderNode = r.findOrCreateContainer(folder)
 		container = &folderNode.Node
 	}
 
@@ -92,7 +92,7 @@ func (r *RekordboxLibrary) AddPlaylist(folder, name string, trackIDs []string, p
 	}
 }
 
-func (r *RekordboxLibrary) UpdatePlaylist(name string, trackIDs []string) bool {
+func (r *RekordboxLibrary) UpdateGroup(name string, trackIDs []string) bool {
 	r.XML.PlaylistsChanged = true
 	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, name, 1)
 	if node == nil {
@@ -108,7 +108,7 @@ func (r *RekordboxLibrary) UpdatePlaylist(name string, trackIDs []string) bool {
 	return true
 }
 
-func (r *RekordboxLibrary) AddTracksToPlaylist(name string, trackIDs []string) (bool, int) {
+func (r *RekordboxLibrary) AddTracksToGroup(name string, trackIDs []string) (bool, int) {
 	r.XML.PlaylistsChanged = true
 	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, name, 1)
 	if node == nil {
@@ -134,7 +134,7 @@ func (r *RekordboxLibrary) AddTracksToPlaylist(name string, trackIDs []string) (
 	return true, added
 }
 
-func (r *RekordboxLibrary) RemoveTracksFromPlaylist(name string, trackIDs []string) (bool, int) {
+func (r *RekordboxLibrary) RemoveTracksFromGroup(name string, trackIDs []string) (bool, int) {
 	r.XML.PlaylistsChanged = true
 	node, _, _, _ := r.findNodeInTree(&r.XML.Playlists.Node.Node, nil, name, 1)
 	if node == nil {
@@ -158,14 +158,14 @@ func (r *RekordboxLibrary) RemoveTracksFromPlaylist(name string, trackIDs []stri
 	return true, before - len(node.TRACK)
 }
 
-func (r *RekordboxLibrary) CreateFolder(folder, name string, position int) bool {
+func (r *RekordboxLibrary) CreateContainer(folder, name string, position int) bool {
 	r.XML.PlaylistsChanged = true
 	var container *[]rekordbox.Node
 	var folderNode *rekordbox.Node
 	if folder == "" {
 		container = &r.XML.Playlists.Node.Node
 	} else {
-		folderNode = r.findOrCreateFolder(folder)
+		folderNode = r.findOrCreateContainer(folder)
 		container = &folderNode.Node
 	}
 
@@ -215,7 +215,7 @@ func (r *RekordboxLibrary) MoveGroup(name string, nodeType int32, targetFolder s
 		*parentNode.Count--
 	}
 
-	target := r.findOrCreateFolder(targetFolder)
+	target := r.findOrCreateContainer(targetFolder)
 	target.Node = append(target.Node, moved)
 	if target.Count == nil {
 		target.Count = rekordbox.PtrInt32(1)
@@ -242,7 +242,7 @@ func (r *RekordboxLibrary) Save(path string) error {
 	return rekordbox.WriteRekordboxLibrary(path, r.XML)
 }
 
-func (r *RekordboxLibrary) findOrCreateFolder(name string) *rekordbox.Node {
+func (r *RekordboxLibrary) findOrCreateContainer(name string) *rekordbox.Node {
 	nodes := &r.XML.Playlists.Node.Node
 	for i := range *nodes {
 		if (*nodes)[i].Name == name && (*nodes)[i].Type == 0 {
