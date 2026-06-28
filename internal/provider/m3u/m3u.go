@@ -272,6 +272,14 @@ func (p *M3UProvider) Save(ctx provider.ExecutionContext, path string) error {
 	}
 
 	for _, t := range p.tracks {
+		// Self-healing: if track is missing metadata, try to probe it
+		if t.Artist == "" || t.Title == "" {
+			if meta, probeErr := playlist.ExtractMetadata(t.Location); probeErr == nil {
+				t.Artist = meta.Artist
+				t.Title = meta.Title
+			}
+		}
+
 		meta := playlist.AudioMetadata{
 			Artist: t.Artist,
 			Title:  t.Title,
@@ -333,6 +341,9 @@ func (p *M3UProvider) UpdateMetadata(_ provider.ExecutionContext, _ []models.Met
 }
 
 func (p *M3UProvider) Fix(ctx provider.ExecutionContext, resource string, query string) error {
-	// Transfer logic from fix.go
-	return nil
+	// For M3U, "fixing" is just loading and saving, which triggers self-healing
+	if ctx.Verbose {
+		fmt.Printf("Repairing M3U8 tags for %s\n", p.path)
+	}
+	return p.Save(ctx, "")
 }
