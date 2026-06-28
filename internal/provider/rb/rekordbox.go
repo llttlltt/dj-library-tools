@@ -1,4 +1,5 @@
 package rb
+
 import (
 	"fmt"
 	"strings"
@@ -8,11 +9,13 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/query"
 	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
+	"github.com/llttlltt/dj-library-tools/internal/sync"
 )
 
 type RekordboxProvider struct {
 	Engine *library.Engine
 	path   string
+	rbXML  *rekordbox.RekordboxLibraryXML
 }
 
 func (p *RekordboxProvider) Capabilities() provider.ProviderCapabilities {
@@ -33,7 +36,6 @@ func (p *RekordboxProvider) GetContainmentPolicy() provider.ContainmentPolicy {
 		AllowNestedFolders:      true,
 	}
 }
-
 
 func (p *RekordboxProvider) Name() string {
 	return "rb"
@@ -106,6 +108,10 @@ func (p *RekordboxProvider) Save(path string) error {
 
 func NewRekordboxProvider(eng *library.Engine, path string) *RekordboxProvider {
 	return &RekordboxProvider{Engine: eng, path: path}
+}
+
+func NewRekordboxProviderWithXML(eng *library.Engine, rbXML *rekordbox.RekordboxLibraryXML, path string) *RekordboxProvider {
+	return &RekordboxProvider{Engine: eng, rbXML: rbXML, path: path}
 }
 
 func (p *RekordboxProvider) CustomMatch(track models.Track, field string, op query.Operator, value string) bool {
@@ -184,4 +190,34 @@ func (p *RekordboxProvider) GetTrackColorName(hex string) string {
 	case "0X660099": return "purple"
 	}
 	return hex
+}
+
+func (p *RekordboxProvider) Sync(tracks []models.Track, sourceQuery string, targetQuery string, options provider.SyncOptions) error {
+	var rbLib *RekordboxLibrary
+	if p.rbXML != nil {
+		rbLib = NewRekordboxLibrary(p.rbXML)
+	} else {
+		rbXML, err := rekordbox.ReadRekordboxLibrary(p.path)
+		if err != nil {
+			return err
+		}
+		rbLib = NewRekordboxLibrary(rbXML)
+	}
+
+	orch := sync.NewOrchestrator(rbLib, false, false)
+
+	err := orch.SyncToLibrary(tracks, sourceQuery, targetQuery, sync.SyncOptions{
+		ExportDest:   options.ExportDest,
+		ExportFormat: options.ExportFormat,
+		PathMaps:     options.PathMaps,
+	}, options.AppendOnly)
+	
+	if err != nil {
+		return err
+	}
+
+	if p.rbXML == nil {
+		return rbLib.Save(p.path)
+	}
+	return nil
 }

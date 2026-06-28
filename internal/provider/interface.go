@@ -51,6 +51,16 @@ type WritableProvider interface {
 	DeleteNode(node models.ResourceGroup) error
 	RenameNode(node models.ResourceGroup, newName string) error
 	MoveNode(node models.ResourceGroup, targetParent models.ResourceGroup) error
+	// Sync tracks to a specific target within this provider.
+	Sync(tracks []models.Track, sourceQuery string, targetQuery string, options SyncOptions) error
+
 	// Save persists any in-memory mutations to the given path.
 	Save(path string) error
+}
+
+type SyncOptions struct {
+	ExportDest   string
+	ExportFormat string
+	PathMaps     map[string]string
+	AppendOnly   bool
 }
