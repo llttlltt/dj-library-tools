@@ -27,7 +27,7 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 | `album` | String | Album name. |
 | `genre` | String | Genre name. |
 | `bpm` | Numeric | Beats per minute. |
-| `rating` | Numeric | Star rating (0-5 stars). |
+| `rating` | Numeric | Star rating (Standardized 0-255). |
 | `plays` | Numeric | Number of times played. |
 | `playlists` | Mixed | Match by playlist name (String) or number of memberships (Numeric). |
 | `year` | Numeric | Release year. |
@@ -38,9 +38,7 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 | `mix` | String | Track mix/version. |
 | `added` | String | Date added to collection. |
 | `modified` | String | Date track was last modified. |
-| `played` | String | Date track was last played. |
-| `color` | String | Track color (`pink`, `red`, `orange`, `yellow`, `green`, `aqua`, `blue`, `purple`). |
-| `time` | Numeric | Total time in seconds. |
+| `duration` | Numeric | Total time in seconds. |
 | `bitrate` | Numeric | Audio bitrate. |
 | `samplerate` | Numeric | Sample rate in Hz. |
 | `size` | Numeric | File size in bytes. |
@@ -53,11 +51,11 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 | `name` | String | Name of the ResourceGroup. |
 | `parent` | String | Name of the parent folder. |
 | `items` | Numeric | Number of tracks in a playlist, or child ResourceGroups in a folder. |
-| `type` | Numeric | `0` for folder, `1` for playlist. |
+| `kind` | String | `folder` or `playlist`. |
 
 ## Cue Filtering
 
-You can query tracks based on their HotCues and MemoryCues using specific count and property filters.
+You can query tracks based on their HotCues and MemoryCues using numeric count filters or custom color matches.
 
 ### Cue Counts
 
@@ -66,24 +64,14 @@ You can query tracks based on their HotCues and MemoryCues using specific count 
 | `hotcues` | Number of HotCues. | `hotcues:>3` |
 | `memorycues` | Number of MemoryCues. | `memorycues:0` |
 
-### Specific Cue Properties
+### Custom Color Matching
 
-You can target a specific cue by its ID and check its properties using the same plural field name.
+You can search for Hot Cues by color name using the `hotcues` field.
 
-**Syntax**: `field:ID[:Property[:Value]]`
-
-| Resource | IDs | Example |
-| :--- | :--- | :--- |
-| `hotcues` | `a` through `h` | `hotcues:a:red` |
-| `memorycues` | `1`, `2`, ... | `memorycues:1:comment:Break` |
-
-### Available Properties
-
-| Property | Value | Description |
-| :--- | :--- | :--- |
-| **Color** | `Color Name` | Match by cue color (Hot Cues only). |
-| `comment` | `Text` | Substring match on the cue comment. |
-| `loop` | (none) | Match if it is an active loop. |
+| Example | Description |
+| :--- | :--- |
+| `hotcues:red` | Find tracks with at least one Red hot cue. |
+| `hotcues:hotpink` | Find tracks with at least one Hot Pink hot cue. |
 
 ### Color Palettes
 
