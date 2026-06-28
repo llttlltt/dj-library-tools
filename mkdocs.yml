@@ -58,6 +58,7 @@ nav:
     - Workflows:
       - index: guide/workflows/index.md
       - Creating and Updating Playlists: guide/workflows/creating-and-updating-playlists.md
+      - Exporting to Mobile: guide/workflows/exporting-to-mobile.md
       - Cleaning Up: guide/workflows/cleaning-up.md
       - Library Repair: guide/workflows/library-repair.md
       - Metadata Hardening: guide/workflows/metadata-hardening.md
