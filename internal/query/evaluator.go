@@ -206,11 +206,6 @@ func (e *Evaluator) getFieldValue(track models.Track, playlists []string, field 
 	case "modified":
 		return track.DateModified
 	case "color":
-		if e.Matcher != nil {
-			if cm, ok := e.Matcher.(interface{ GetTrackColorName(string) string }); ok {
-				return cm.GetTrackColorName(track.Color)
-			}
-		}
 		return track.Color
 	case "bitrate":
 		return strconv.Itoa(track.Bitrate)
