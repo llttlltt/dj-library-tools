@@ -8,8 +8,8 @@ import (
 type Provider interface {
 	Name() string
 	GetTracks(query string) ([]models.Track, error)
-	GetPlaylists(query string) ([]models.Node, error)
-	GetFolders(query string) ([]models.Node, error)
+	GetPlaylists(query string) ([]models.ResourceGroup, error)
+	GetFolders(query string) ([]models.ResourceGroup, error)
 	// CanTranscode reports whether this provider can supply raw audio for transcoding.
 	CanTranscode() bool
 }
@@ -17,12 +17,12 @@ type Provider interface {
 // WritableProvider extends Provider with modification capabilities.
 type WritableProvider interface {
 	Provider
-	AddTracks(target models.Node, tracks []models.Track) (int, error)
-	RemoveTracks(target models.Node, tracks []models.Track) (int, error)
-	CreateNode(parent models.Node, name string, nodeType int) (models.Node, error)
-	DeleteNode(node models.Node) error
-	RenameNode(node models.Node, newName string) error
-	MoveNode(node models.Node, targetParent models.Node) error
+	AddTracks(target models.ResourceGroup, tracks []models.Track) (int, error)
+	RemoveTracks(target models.ResourceGroup, tracks []models.Track) (int, error)
+	CreateNode(parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error)
+	DeleteNode(node models.ResourceGroup) error
+	RenameNode(node models.ResourceGroup, newName string) error
+	MoveNode(node models.ResourceGroup, targetParent models.ResourceGroup) error
 	// Save persists any in-memory mutations to the given path.
 	Save(path string) error
 }

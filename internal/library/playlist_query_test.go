@@ -1,10 +1,10 @@
-package engine
+package library
 
 import (
 	"path/filepath"
 	"testing"
 
-	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
+	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 )
 
 func TestPlaylistQuery(t *testing.T) {

@@ -145,11 +145,11 @@ func (p *PlexProvider) GetTracks(queryString string) ([]models.Track, error) {
 	return tracks, nil
 }
 
-func (p *PlexProvider) GetFolders(_ string) ([]models.Node, error) {
+func (p *PlexProvider) GetFolders(_ string) ([]models.ResourceGroup, error) {
 	return nil, nil // Plex has no folder concept
 }
 
-func (p *PlexProvider) GetPlaylists(queryString string) ([]models.Node, error) {
+func (p *PlexProvider) GetPlaylists(queryString string) ([]models.ResourceGroup, error) {
 	ctx := context.Background()
 	baseURL, err := p.resolveBaseURL(ctx)
 	if err != nil {
@@ -166,7 +166,7 @@ func (p *PlexProvider) GetPlaylists(queryString string) ([]models.Node, error) {
 		return nil, err
 	}
 
-	var results []models.Node
+	var results []models.ResourceGroup
 	eval := query.NewEvaluator(q)
 
 	for _, pl := range plexPlaylists {
@@ -179,19 +179,19 @@ func (p *PlexProvider) GetPlaylists(queryString string) ([]models.Node, error) {
 	return results, nil
 }
 
-func (p *PlexProvider) CreateNode(parent models.Node, name string, nodeType int) (models.Node, error) {
-	return models.Node{}, fmt.Errorf("plex does not support node creation via API")
+func (p *PlexProvider) CreateNode(parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
+	return models.ResourceGroup{}, fmt.Errorf("plex does not support node creation via API")
 }
 
-func (p *PlexProvider) DeleteNode(node models.Node) error {
+func (p *PlexProvider) DeleteNode(node models.ResourceGroup) error {
 	return fmt.Errorf("plex does not support node deletion via API")
 }
 
-func (p *PlexProvider) RenameNode(node models.Node, newName string) error {
+func (p *PlexProvider) RenameNode(node models.ResourceGroup, newName string) error {
 	return fmt.Errorf("plex does not support node renaming via API")
 }
 
-func (p *PlexProvider) MoveNode(node models.Node, targetParent models.Node) error {
+func (p *PlexProvider) MoveNode(node models.ResourceGroup, targetParent models.ResourceGroup) error {
 	return fmt.Errorf("plex does not support node moving via API")
 }
 

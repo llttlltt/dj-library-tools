@@ -1,4 +1,4 @@
-package engine
+package library
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/query"
-	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
+	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 )
 
 // Engine performs operations on a library using queries

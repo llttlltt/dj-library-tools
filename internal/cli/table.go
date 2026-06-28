@@ -91,7 +91,7 @@ func renderTrackTable(tracks []models.Track) {
 	fmt.Printf("\n%s\n", color.HiGreenString("Matched %d tracks.", len(tracks)))
 }
 
-func renderNodeTable(results []models.Node, resourceType string) {
+func renderNodeTable(results []models.ResourceGroup, resourceType string) {
 	table := Table{
 		Headers: []string{"Items", stringsTitle(resourceType)},
 	}

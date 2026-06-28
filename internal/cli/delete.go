@@ -84,7 +84,7 @@ Example:
 }
 
 func runRemoveMembership(wp provider.WritableProvider, src *Selection, removeOrigins []string) error {
-	var targetNodes []models.Node
+	var targetNodes []models.ResourceGroup
 
 	for _, originStr := range removeOrigins {
 		org, err := ResolveSelection(originStr, "")

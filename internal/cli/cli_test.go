@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
+	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 )
 
 // resetTestState resets the four package-level persistent flag vars.

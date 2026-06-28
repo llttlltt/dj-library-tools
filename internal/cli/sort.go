@@ -48,7 +48,7 @@ func sortTracks(tracks []models.Track, field string) {
 	})
 }
 
-func sortNodes(results []models.Node, field string) {
+func sortNodes(results []models.ResourceGroup, field string) {
 	if field == "" {
 		return
 	}

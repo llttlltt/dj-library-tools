@@ -1,8 +1,8 @@
-package engine
+package library
 
 import (
 	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
+	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 )
 
 // Library defines the interface for a music library source.
@@ -10,7 +10,7 @@ type Library interface {
 	// GetTracks returns all tracks in the library in a neutral format.
 	GetTracks() []models.Track
 	// GetPlaylists returns the nodes of the playlist tree in a neutral format.
-	GetPlaylists() []models.Node
+	GetPlaylists() []models.ResourceGroup
 }
 
 // WritableLibrary extends Library with operations to modify the playlist tree.
@@ -54,13 +54,13 @@ func (r *RekordboxLibrary) GetTracks() []models.Track {
 // in the entire tree. Callers filter by Type to get only playlists or
 // only folders. The flat representation preserves ParentFolder so that
 // queries like name: and parent: work at any nesting depth.
-func (r *RekordboxLibrary) GetPlaylists() []models.Node {
-	var results []models.Node
+func (r *RekordboxLibrary) GetPlaylists() []models.ResourceGroup {
+	var results []models.ResourceGroup
 	collectAllNodes(r.XML.Playlists.Node.Node, "", &results)
 	return results
 }
 
-func collectAllNodes(nodes []rekordbox.Node, parent string, out *[]models.Node) {
+func collectAllNodes(nodes []rekordbox.Node, parent string, out *[]models.ResourceGroup) {
 	for _, n := range nodes {
 		*out = append(*out, n.ToNeutral(parent))
 		if len(n.Node) > 0 {

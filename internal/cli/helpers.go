@@ -73,7 +73,7 @@ func RunBulkOperation(verb string, targetNames []string, itemIDs []string, actio
 type Selection struct {
 	Items    []models.Resource
 	Tracks   []models.Track // Convenience helpers
-	Nodes    []models.Node  // Convenience helpers
+	Nodes    []models.ResourceGroup  // Convenience helpers
 	Location utils.Location
 	Provider provider.Provider
 }
@@ -139,7 +139,7 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 			}
 		}
 	} else {
-		var nodes []models.Node
+		var nodes []models.ResourceGroup
 		var err error
 		if loc.Resource == "folders" {
 			nodes, err = prov.GetFolders(loc.Query)

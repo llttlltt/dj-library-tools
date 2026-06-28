@@ -1,4 +1,4 @@
-package engine
+package library
 
 import (
 	"github.com/llttlltt/dj-library-tools/internal/models"
@@ -6,16 +6,16 @@ import (
 )
 
 // LsPlaylists returns all playlist nodes (Type=1) matching the given query string.
-func (e *Engine) LsPlaylists(queryString string) ([]models.Node, error) {
-	return e.lsNodes(queryString, 1)
+func (e *Engine) LsPlaylists(queryString string) ([]models.ResourceGroup, error) {
+	return e.lsNodes(queryString, models.GroupTypePlaylist)
 }
 
 // LsFolders returns all folder nodes (Type=0) matching the given query string.
-func (e *Engine) LsFolders(queryString string) ([]models.Node, error) {
-	return e.lsNodes(queryString, 0)
+func (e *Engine) LsFolders(queryString string) ([]models.ResourceGroup, error) {
+	return e.lsNodes(queryString, models.GroupTypeFolder)
 }
 
-func (e *Engine) lsNodes(queryString string, nodeType int) ([]models.Node, error) {
+func (e *Engine) lsNodes(queryString string, nodeType models.GroupType) ([]models.ResourceGroup, error) {
 	parser := query.NewParser()
 	q := parser.Parse(queryString)
 	if err := q.ValidateWithFields(query.AllowedNodeFields); err != nil {
@@ -23,12 +23,12 @@ func (e *Engine) lsNodes(queryString string, nodeType int) ([]models.Node, error
 	}
 	eval := query.NewEvaluator(q)
 
-	var matched []models.Node
+	var matched []models.ResourceGroup
 	e.collectNodes(e.Library.GetPlaylists(), eval, nodeType, &matched)
 	return matched, nil
 }
 
-func (e *Engine) collectNodes(nodes []models.Node, eval *query.Evaluator, nodeType int, out *[]models.Node) {
+func (e *Engine) collectNodes(nodes []models.ResourceGroup, eval *query.Evaluator, nodeType models.GroupType, out *[]models.ResourceGroup) {
 	for _, node := range nodes {
 		if node.Type == nodeType {
 			if eval.MatchesNode(node) {

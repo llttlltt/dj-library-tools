@@ -5,8 +5,8 @@ import (
 	"os"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
-	"github.com/llttlltt/dj-library-tools/internal/engine"
-	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
+	"github.com/llttlltt/dj-library-tools/internal/library"
+	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 )
 
 // NewProvider returns a Provider instance for the given name.
@@ -16,7 +16,7 @@ func NewProvider(name string, rbXML *rekordbox.RekordboxLibraryXML, xmlPath stri
 		if rbXML == nil {
 			return nil, fmt.Errorf("rekordbox XML library required")
 		}
-		eng := engine.NewEngine(engine.NewRekordboxLibrary(rbXML))
+		eng := library.NewEngine(library.NewRekordboxLibrary(rbXML))
 		return NewRekordboxProvider(eng, xmlPath), nil
 	case "plex":
 		token := os.Getenv("PLEX_TOKEN")

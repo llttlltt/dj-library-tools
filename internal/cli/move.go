@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/spf13/cobra"
 )
@@ -81,7 +82,7 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 
 	// Validation: Tracks can only be moved to Playlists, not Folders
 	for _, node := range tgt.Nodes {
-		if node.Type == 0 {
+		if node.Type == models.GroupTypeFolder {
 			return fmt.Errorf("invalid move: cannot move tracks to folder %q (tracks must live in playlists)", node.Name)
 		}
 	}

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
+	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 )
 
 // TestPlaylistMembershipMatching verifies that 'playlists' handles both
@@ -163,7 +163,7 @@ func TestEvaluatorMatchesNode(t *testing.T) {
 	tests := []struct {
 		name  string
 		query string
-		node  models.Node
+		node  models.ResourceGroup
 		want  bool
 	}{
 		{"name substring match", "name:Summer", summerVibes, true},

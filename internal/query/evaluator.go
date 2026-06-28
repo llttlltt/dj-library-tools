@@ -10,7 +10,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
+	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 )
 
 // AllowedTrackFields is a list of valid fields for track queries.
@@ -372,14 +372,14 @@ func (e *Evaluator) matchNumericComparison(fieldValue string, targetValue string
 	return false
 }
 
-func (e *Evaluator) MatchesNode(node models.Node) bool {
+func (e *Evaluator) MatchesNode(node models.ResourceGroup) bool {
 	if e.Query.Root == nil {
 		return true
 	}
 	return e.evalNode(e.Query.Root, node)
 }
 
-func (e *Evaluator) evalNode(expr Expression, node models.Node) bool {
+func (e *Evaluator) evalNode(expr Expression, node models.ResourceGroup) bool {
 	switch v := expr.(type) {
 	case Comparison:
 		return e.matchNodeComparison(node, v)
@@ -394,7 +394,7 @@ func (e *Evaluator) evalNode(expr Expression, node models.Node) bool {
 	return false
 }
 
-func (e *Evaluator) matchNodeComparison(node models.Node, c Comparison) bool {
+func (e *Evaluator) matchNodeComparison(node models.ResourceGroup, c Comparison) bool {
 	val := ""
 	switch strings.ToLower(c.Field) {
 	case "name":
@@ -404,7 +404,7 @@ func (e *Evaluator) matchNodeComparison(node models.Node, c Comparison) bool {
 	case "items":
 		val = strconv.Itoa(node.Items)
 	case "type":
-		val = strconv.Itoa(node.Type)
+		val = strconv.Itoa(int(node.Type))
 	}
 	if c.Operator == OpRange {
 		return e.matchRange(val, c.Value)
