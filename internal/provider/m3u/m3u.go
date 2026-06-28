@@ -154,16 +154,18 @@ func (s *m3uSystemService) Save(ctx provider.ExecutionContext, path string) erro
 	return nil
 }
 
-func (s *m3uSystemService) Fix(ctx provider.ExecutionContext, resource string, query string) error { return s.Save(ctx, "") }
+func (s *m3uSystemService) Fix(ctx provider.ExecutionContext, resource string, query string) error {
+	// Let the gated provider handle the preview log.
+	// We only run the actual fix if we reach this point.
+	return s.Save(ctx, "")
+}
 
 func (s *m3uSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, targetQuery string, opts provider.SyncOptions) error {
-	err := sync.SyncToLibrary(m3u.NewLibrary(s.tracks), tracks, targetQuery, sync.SyncOptions{
+	return sync.SyncToLibrary(m3u.NewLibrary(s.tracks), tracks, targetQuery, sync.SyncOptions{
 		ExportDest:   opts.ExportDest,
 		ExportFormat: opts.ExportFormat,
 		PathMaps:     opts.PathMaps,
 	}, ctx.Apply, ctx.Verbose, opts.AppendOnly)
-	if err != nil { return err }
-	return s.Save(ctx, "")
 }
 
 func (s *m3uSystemService) Identify(name string, gt models.GroupKind) string { return s.path }
