@@ -20,12 +20,18 @@ func (l *Library) GetResources(kind string) []models.Resource {
 	
 	switch kind {
 	case "track":
-		tracks, _ := l.client.GetAllTracks(ctx, l.baseURL)
+		tracks, err := l.client.GetAllTracks(ctx, l.baseURL)
+		if err != nil {
+			return nil
+		}
 		for _, t := range tracks {
 			results = append(results, ToNeutralTrack(t))
 		}
 	case "group":
-		playlists, _ := l.client.GetPlaylists(ctx, l.baseURL)
+		playlists, err := l.client.GetPlaylists(ctx, l.baseURL)
+		if err != nil {
+			return nil
+		}
 		for _, p := range playlists {
 			results = append(results, ToNeutralGroup(p))
 		}
