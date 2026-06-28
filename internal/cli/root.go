@@ -5,13 +5,9 @@ import (
 )
 
 var (
-	filePath      string
-	toFilePath    string
-	dryRun        bool
-	verbose       bool
-	jsonOutput    bool
-	filterMissing bool
-	filterExists  bool
+	filePath   string
+	dryRun     bool
+	verbose    bool
 )
 
 // NewRootCmd builds and returns a fully wired root command.
@@ -22,12 +18,8 @@ func NewRootCmd() *cobra.Command {
 		Long:  `A comprehensive CLI tool for managing DJ libraries across multiple providers.`,
 	}
 	root.PersistentFlags().StringVarP(&filePath, "file", "f", "", "Path to the primary library file (Rekordbox XML, M3U, etc.)")
-	root.PersistentFlags().StringVar(&toFilePath, "to-file", "", "Path to the destination library file for sync/move operations")
 	root.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Preview changes without writing")
 	root.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
-	root.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Output results in JSON format")
-	root.PersistentFlags().BoolVar(&filterMissing, "missing", false, "Filter for tracks where the physical file is missing")
-	root.PersistentFlags().BoolVar(&filterExists, "exists", false, "Filter for tracks where the physical file exists")
 
 	root.AddCommand(
 		newListCmd(),

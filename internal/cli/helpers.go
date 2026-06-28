@@ -36,18 +36,14 @@ func getExecContext() provider.ExecutionContext {
 	}
 }
 
-func getResolveOptions() resolver.ResolveOptions {
-	return resolver.ResolveOptions{
-		FilePath:      filePath,
-		FilterMissing: filterMissing,
-		FilterExists:  filterExists,
-		DryRun:        dryRun,
-		Verbose:       verbose,
-	}
-}
-
 func ResolveSelection(locStr string, queryOverride string) (*resolver.Selection, error) {
-	return resolver.ResolveSelection(locStr, queryOverride, getResolveOptions())
+	// Standard resolution with global context
+	opts := resolver.ResolveOptions{
+		FilePath: filePath,
+		DryRun:   dryRun,
+		Verbose:  verbose,
+	}
+	return resolver.ResolveSelection(locStr, queryOverride, opts)
 }
 
 func stringsTitle(s string) string {

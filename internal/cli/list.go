@@ -14,6 +14,9 @@ import (
 func newListCmd() *cobra.Command {
 	var listSort string
 	var listStats bool
+	var jsonOutput bool
+	var filterMissing bool
+	var filterExists bool
 
 	cmd := &cobra.Command{
 		Use:     "ls [resource] [query]",
@@ -25,20 +28,31 @@ func newListCmd() *cobra.Command {
 				queryOverride = strings.Join(args[1:], " ")
 			}
 
-			sel, err := ResolveSelection(args[0], queryOverride)
+			opts := resolver.ResolveOptions{
+				FilePath:      filePath,
+				FilterMissing: filterMissing,
+				FilterExists:  filterExists,
+				DryRun:        dryRun,
+				Verbose:       verbose,
+			}
+
+			sel, err := resolver.ResolveSelection(args[0], queryOverride, opts)
 			if err != nil {
 				return HandleError(err)
 			}
 
 			if listStats {
-				return listProviderStats(sel)
+				return listProviderStats(sel, jsonOutput)
 			}
 
-			return listProvider(sel, listSort)
+			return listProvider(sel, listSort, jsonOutput)
 		},
 	}
 	cmd.Flags().StringVar(&listSort, "sort", "", "Sort results by field (e.g. bpm, artist, title)")
 	cmd.Flags().BoolVar(&listStats, "stats", false, "Show summary statistics for the selection")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output results in JSON format")
+	cmd.Flags().BoolVar(&filterMissing, "missing", false, "Filter for tracks where the physical file is missing")
+	cmd.Flags().BoolVar(&filterExists, "exists", false, "Filter for tracks where the physical file exists")
 	return cmd
 }
 
@@ -52,7 +66,7 @@ type StatResult struct {
 	TotalTempo float64
 }
 
-func listProviderStats(sel *resolver.Selection) error {
+func listProviderStats(sel *resolver.Selection, jsonOutput bool) error {
 	if sel.Location.Resource != "tracks" {
 		return fmt.Errorf("stats only available for track resources")
 	}
@@ -110,7 +124,7 @@ func listProviderStats(sel *resolver.Selection) error {
 	return nil
 }
 
-func listProvider(sel *resolver.Selection, listSort string) error {
+func listProvider(sel *resolver.Selection, listSort string, jsonOutput bool) error {
 	if sel.Location.Resource == "playlists" || sel.Location.Resource == "folders" {
 		if jsonOutput {
 			data, _ := json.MarshalIndent(sel.Groups, "", "  ")
