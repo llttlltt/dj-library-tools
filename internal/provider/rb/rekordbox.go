@@ -266,10 +266,6 @@ func (p *RekordboxProvider) Sync(ctx provider.ExecutionContext, tracks []models.
 	}
 
 	orch := sync.NewOrchestrator(rbLib, ctx.DryRun, ctx.Verbose)
-	if ctx.Verbose {
-		// In a real app we'd attach a listener here, 
-		// but we'll let orchestrator print for now or use the generic listener we built.
-	}
 
 	err := orch.SyncToLibrary(tracks, sourceQuery, targetQuery, sync.SyncOptions{
 		ExportDest:   options.ExportDest,
@@ -367,6 +363,32 @@ func (p *RekordboxProvider) UpdateMetadata(ctx provider.ExecutionContext, matche
 					}
 					target.Comments = match.Source.Comment
 				}
+				if fieldMap["genre"] {
+					if ctx.Verbose {
+						fmt.Printf("  %s Genre: %q -> %q\n", yellow("~"), target.Genre, match.Source.Genre)
+					}
+					target.Genre = match.Source.Genre
+				}
+				if fieldMap["label"] {
+					if ctx.Verbose {
+						fmt.Printf("  %s Label: %q -> %q\n", yellow("~"), target.Label, match.Source.Label)
+					}
+					target.Label = match.Source.Label
+				}
+				if fieldMap["key"] {
+					if ctx.Verbose {
+						fmt.Printf("  %s Key: %q -> %q\n", yellow("~"), target.Tonality, match.Source.Key)
+					}
+					target.Tonality = match.Source.Key
+				}
+				if fieldMap["bpm"] {
+					newBpm := fmt.Sprintf("%.2f", match.Source.BPM)
+					if ctx.Verbose {
+						fmt.Printf("  %s BPM: %q -> %q\n", yellow("~"), target.AverageBpm, newBpm)
+					}
+					target.AverageBpm = newBpm
+				}
+				
 				updateCount++
 				break
 			}
