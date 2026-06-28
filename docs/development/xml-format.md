@@ -1,11 +1,11 @@
 # High-Fidelity Rekordbox XML Formatting
 
-The `pkg/rekordbox` package provides a `TokenStreamFormatter` designed to emit XML that is bit-for-bit compatible with the idiosyncratic formatting used by Rekordbox.
+The `internal/rekordbox` package provides a `TokenStreamFormatter` designed to emit XML that is bit-for-bit compatible with the idiosyncratic formatting used by Rekordbox.
 
 ## Key Formatting Rules
 
 ### 1. Attribute Ordering
-Rekordbox expects attributes in a specific order for different tag types. For example, a `TRACK` node must have `TrackID` before `Name`. These orders are defined in `DefaultProfile()`.
+Rekordbox expects attributes in a specific order for different tag types. For example, a `TRACK` ResourceGroup must have `TrackID` before `Name`. These orders are defined in `DefaultProfile()`.
 
 - **TRACK**: `TrackID`, `Name`, `Artist`, `Composer`, `Album`, ...
 - **NODE (Playlist)**: `Name`, `Type`, `KeyType`, `Entries`
@@ -37,7 +37,7 @@ err := formatter.Format(xmlReader, &output)
 ```
 
 ## Testing
-Formatting rules are pinned by comprehensive tests in `pkg/rekordbox/format_test.go`. Any changes to the wrapping or ordering logic must pass the high-fidelity fixture tests:
+Formatting rules are pinned by comprehensive tests in `internal/rekordbox/format_test.go`. Any changes to the wrapping or ordering logic must pass the high-fidelity fixture tests:
 
 - `20260524 Terracotta - Shortlist (8-space context)`
 - `Drum & Bass (Correct Indent Wrap)`

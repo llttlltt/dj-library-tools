@@ -13,8 +13,8 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 | Resource | Description | Example |
 | :--- | :--- | :--- |
 | `tracks` | The main track collection. | `rb/tracks artist:Four` |
-| `playlists` | Individual playlist nodes. | `rb/playlists name:Inbox` |
-| `folders` | Folder nodes in the playlist tree. | `rb/folders name:House` |
+| `playlists` | Individual playlist ResourceGroups. | `rb/playlists name:Inbox` |
+| `folders` | Folder ResourceGroups in the playlist tree. | `rb/folders name:House` |
 
 ## Fields
 
@@ -50,9 +50,9 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `name` | String | Name of the node. |
+| `name` | String | Name of the ResourceGroup. |
 | `parent` | String | Name of the parent folder. |
-| `items` | Numeric | Number of tracks in a playlist, or child nodes in a folder. |
+| `items` | Numeric | Number of tracks in a playlist, or child ResourceGroups in a folder. |
 | `type` | Numeric | `0` for folder, `1` for playlist. |
 
 ## Cue Filtering
