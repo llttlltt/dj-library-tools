@@ -1,6 +1,9 @@
 package rekordbox
 
-import "testing"
+import (
+	"testing"
+
+)
 
 func TestNode_ToNeutral_Entries(t *testing.T) {
 	t.Run("playlist uses Entries", func(t *testing.T) {

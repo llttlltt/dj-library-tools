@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/llttlltt/dj-library-tools/internal/engine"
+	"github.com/llttlltt/dj-library-tools/internal/library"
 	"github.com/llttlltt/dj-library-tools/internal/media"
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/plex"
@@ -15,13 +15,13 @@ import (
 
 type Orchestrator struct {
 	PlexClient *plex.Client
-	Library    engine.WritableLibrary
+	Library    library.WritableLibrary
 	SyncEngine *Engine
 	DryRun     bool
 	Verbose    bool
 }
 
-func NewOrchestrator(plexClient *plex.Client, lib engine.WritableLibrary, dryRun, verbose bool) *Orchestrator {
+func NewOrchestrator(plexClient *plex.Client, lib library.WritableLibrary, dryRun, verbose bool) *Orchestrator {
 	return &Orchestrator{
 		PlexClient: plexClient,
 		Library:    lib,
@@ -207,13 +207,13 @@ const PlexSyncFolder = "Plex Sync"
 // Engine manages sync operations against a music library.
 type Engine struct {
 	PlexClient *plex.Client
-	Library    engine.WritableLibrary
+	Library    library.WritableLibrary
 	Matcher    *Matcher
 }
 
 // NewEngine creates a sync Engine backed by the given library.
 // plexClient may be nil if the caller only needs playlist write operations or Save.
-func NewEngine(plexClient *plex.Client, lib engine.WritableLibrary) *Engine {
+func NewEngine(plexClient *plex.Client, lib library.WritableLibrary) *Engine {
 	return &Engine{
 		PlexClient: plexClient,
 		Library:    lib,
@@ -271,7 +271,7 @@ func (e *Engine) CreateFolder(folder, name string, position int) bool {
 }
 
 // RenameNode renames the first node matching name and nodeType anywhere in the tree.
-// nodeType: 0=folder, 1=playlist.
+// nodeType: models.GroupTypeFolder=folder, 1=playlist.
 // Returns false if no matching node is found.
 func (e *Engine) RenameNode(name, newName string, nodeType int32) bool {
 	return e.Library.RenameNode(name, newName, nodeType)

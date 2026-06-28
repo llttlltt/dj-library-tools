@@ -71,7 +71,7 @@ func runCreateCmd(cmd *cobra.Command, args []string, createIn, createFrom string
 		return fmt.Errorf("invalid operation: cannot populate folder %q with tracks (tracks must live in playlists)", name)
 	}
 
-	newNode, err := wp.CreateNode(models.Node{Name: createIn}, name, nodeType)
+	newNode, err := wp.CreateNode(models.ResourceGroup{Name: createIn}, name, nodeType)
 	if err != nil {
 		return err
 	}

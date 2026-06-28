@@ -49,18 +49,18 @@ func (t Track) ToNeutral() models.Track {
 	return mt
 }
 
-func (n Node) ToNeutral(parentFolder string) models.Node {
+func (n Node) ToNeutral(parentFolder string) models.ResourceGroup {
 	// Folders (Type=0) store their child-node count in Count;
 	// playlists (Type=1) store their track count in Entries.
 	items := DerefInt32(n.Entries)
 	if n.Type == 0 {
 		items = DerefInt32(n.Count)
 	}
-	return models.Node{
+	return models.ResourceGroup{
 		Name:         n.Name,
 		Items:        int(items),
 		ParentFolder: parentFolder,
-		Type:         int(n.Type),
+		Type:         models.GroupType(n.Type),
 		Raw:          n,
 	}
 }

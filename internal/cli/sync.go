@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
-	"github.com/llttlltt/dj-library-tools/internal/engine"
+	"github.com/llttlltt/dj-library-tools/internal/library"
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
@@ -89,7 +89,7 @@ func syncToRekordbox(src, tgt *Selection, exportDest, exportFormat string, appen
 		return err
 	}
 
-	orch := sync.NewOrchestrator(nil, engine.NewRekordboxLibrary(rbXML), dryRun, verbose)
+	orch := sync.NewOrchestrator(nil, library.NewRekordboxLibrary(rbXML), dryRun, verbose)
 
 	tracks, err := src.Provider.GetTracks(src.Location.Query)
 	if err != nil {
@@ -106,7 +106,7 @@ func syncToRekordbox(src, tgt *Selection, exportDest, exportFormat string, appen
 	}
 
 	if !dryRun {
-		return engine.NewRekordboxLibrary(rbXML).Save(path)
+		return library.NewRekordboxLibrary(rbXML).Save(path)
 	}
 	return nil
 }
@@ -123,7 +123,7 @@ func syncToM3U(src, tgt *Selection) error {
 	}
 
 	wp := tgt.Provider.(provider.WritableProvider)
-	added, err := wp.AddTracks(models.Node{}, tracks)
+	added, err := wp.AddTracks(models.ResourceGroup{}, tracks)
 	if err != nil {
 		return err
 	}

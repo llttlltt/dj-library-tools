@@ -106,10 +106,10 @@ func (p *M3UProvider) GetTracks(queryString string) ([]models.Track, error) {
 	return results, nil
 }
 
-func (p *M3UProvider) GetPlaylists(queryString string) ([]models.Node, error) {
+func (p *M3UProvider) GetPlaylists(queryString string) ([]models.ResourceGroup, error) {
 	// An M3U file is itself a single playlist
 	name := filepath.Base(p.path)
-	n := models.Node{
+	n := models.ResourceGroup{
 		ID:    p.path,
 		Name:  name,
 		Type:  1,
@@ -119,12 +119,12 @@ func (p *M3UProvider) GetPlaylists(queryString string) ([]models.Node, error) {
 	q := query.NewParser().Parse(queryString)
 	eval := query.NewEvaluator(q)
 	if eval.MatchesNode(n) {
-		return []models.Node{n}, nil
+		return []models.ResourceGroup{n}, nil
 	}
 	return nil, nil
 }
 
-func (p *M3UProvider) GetFolders(_ string) ([]models.Node, error) {
+func (p *M3UProvider) GetFolders(_ string) ([]models.ResourceGroup, error) {
 	return nil, nil
 }
 
@@ -132,7 +132,7 @@ func (p *M3UProvider) CanTranscode() bool {
 	return true
 }
 
-func (p *M3UProvider) AddTracks(target models.Node, tracks []models.Track) (int, error) {
+func (p *M3UProvider) AddTracks(target models.ResourceGroup, tracks []models.Track) (int, error) {
 	added := 0
 	existing := make(map[string]bool)
 	for _, t := range p.tracks {
@@ -149,7 +149,7 @@ func (p *M3UProvider) AddTracks(target models.Node, tracks []models.Track) (int,
 	return added, nil
 }
 
-func (p *M3UProvider) RemoveTracks(target models.Node, tracks []models.Track) (int, error) {
+func (p *M3UProvider) RemoveTracks(target models.ResourceGroup, tracks []models.Track) (int, error) {
 	toRemove := make(map[string]bool)
 	for _, t := range tracks {
 		toRemove[t.Location] = true
@@ -168,20 +168,20 @@ func (p *M3UProvider) RemoveTracks(target models.Node, tracks []models.Track) (i
 	return removed, nil
 }
 
-func (p *M3UProvider) CreateNode(parent models.Node, name string, nodeType int) (models.Node, error) {
+func (p *M3UProvider) CreateNode(parent models.ResourceGroup, name string, nodeType int) (models.ResourceGroup, error) {
 	if nodeType == 0 {
-		return models.Node{}, fmt.Errorf("m3u provider does not support folders")
+		return models.ResourceGroup{}, fmt.Errorf("m3u provider does not support folders")
 	}
 	// For M3U, "creating a node" just means setting the path if it wasn't already.
 	// But usually the path is provided in the location.
-	return models.Node{Name: name, Type: 1}, nil
+	return models.ResourceGroup{Name: name, Type: models.GroupTypePlaylist}, nil
 }
 
-func (p *M3UProvider) DeleteNode(node models.Node) error {
+func (p *M3UProvider) DeleteNode(node models.ResourceGroup) error {
 	return os.Remove(p.path)
 }
 
-func (p *M3UProvider) RenameNode(node models.Node, newName string) error {
+func (p *M3UProvider) RenameNode(node models.ResourceGroup, newName string) error {
 	newPath := filepath.Join(filepath.Dir(p.path), newName)
 	if err := os.Rename(p.path, newPath); err != nil {
 		return err
@@ -190,7 +190,7 @@ func (p *M3UProvider) RenameNode(node models.Node, newName string) error {
 	return nil
 }
 
-func (p *M3UProvider) MoveNode(node models.Node, targetParent models.Node) error {
+func (p *M3UProvider) MoveNode(node models.ResourceGroup, targetParent models.ResourceGroup) error {
 	return fmt.Errorf("m3u provider does not support move")
 }
 

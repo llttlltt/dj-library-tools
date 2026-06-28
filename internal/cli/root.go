@@ -6,7 +6,7 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
-	"github.com/llttlltt/dj-library-tools/pkg/rekordbox"
+	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 	"github.com/spf13/cobra"
 )
 

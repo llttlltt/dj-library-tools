@@ -36,7 +36,7 @@ func TestSortTracks(t *testing.T) {
 }
 
 func TestSortNodes(t *testing.T) {
-	nodes := []models.Node{
+	nodes := []models.ResourceGroup{
 		{Name: "Z", Items: 10},
 		{Name: "A", Items: 50},
 		{Name: "M", Items: 5},

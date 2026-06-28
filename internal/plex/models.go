@@ -99,8 +99,8 @@ func (t Track) ToNeutral() models.Track {
 	return mt
 }
 
-func (p Playlist) ToNeutralNode() models.Node {
-	return models.Node{
+func (p Playlist) ToNeutralNode() models.ResourceGroup {
+	return models.ResourceGroup{
 		Name:    p.Title,
 		Items:   p.LeafCount,
 		Type:    1,

@@ -44,20 +44,27 @@ func (t Track) GetID() string   { return t.ID }
 func (t Track) GetName() string { return t.Title }
 func (t Track) GetKind() string { return "track" }
 
-// Node represents a container like a playlist or folder.
-type Node struct {
+// ResourceGroup represents a container like a playlist or folder.
+type ResourceGroup struct {
 	ID           string
 	Name         string
 	Items        int
 	ParentFolder string
-	Type         int // 0: Folder, 1: Playlist
+	Type         GroupType
 	Raw          interface{}
 }
 
-func (n Node) GetID() string   { return n.ID }
-func (n Node) GetName() string { return n.Name }
-func (n Node) GetKind() string {
-	if n.Type == 0 {
+type GroupType int
+
+const (
+	GroupTypeFolder   GroupType = 0
+	GroupTypePlaylist GroupType = 1
+)
+
+func (n ResourceGroup) GetID() string   { return n.ID }
+func (n ResourceGroup) GetName() string { return n.Name }
+func (n ResourceGroup) GetKind() string {
+	if n.Type == GroupTypeFolder {
 		return "folder"
 	}
 	return "playlist"

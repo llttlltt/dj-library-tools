@@ -48,7 +48,7 @@ func TestM3UProvider_AddRemoveSave(t *testing.T) {
 	newTracks := []models.Track{
 		{Title: "New Track", Artist: "New Artist", Location: "/tmp/new.mp3"},
 	}
-	added, err := p.AddTracks(models.Node{}, newTracks)
+	added, err := p.AddTracks(models.ResourceGroup{}, newTracks)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, added)
 
@@ -64,7 +64,7 @@ func TestM3UProvider_AddRemoveSave(t *testing.T) {
 	assert.Equal(t, "New Track", tracks[0].Title)
 
 	// Remove
-	removed, err := p2.RemoveTracks(models.Node{}, tracks)
+	removed, err := p2.RemoveTracks(models.ResourceGroup{}, tracks)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, removed)
 	assert.Len(t, p2.tracks, 0)
