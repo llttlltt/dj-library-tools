@@ -19,7 +19,7 @@ func ToNeutralTrack(t rekordbox.Track) models.Track {
 		Label:        t.Label,
 		Year:         int(t.Year),
 		Location:     t.Location,
-		Rating:       int(t.Rating / 51),
+		Rating:       int(t.Rating), // Rekordbox already uses 0-255 in XML
 		Plays:        int(t.PlayCount),
 		DateAdded:    t.DateAdded,
 		DateModified: t.DateModified,
