@@ -43,24 +43,39 @@ func (t *Transcoder) Transcode(source, dest string) error {
 		return fmt.Errorf("source file not found: %s", source)
 	}
 
-	cmdStr, ok := t.Config.Formats[t.Config.Format]
-	if !ok {
-		return fmt.Errorf("unsupported format: %s", t.Config.Format)
+	// 3. Resolve command arguments
+	args, err := t.resolveCommandArgs(source, dest)
+	if err != nil {
+		return err
 	}
 
-	// Replace variables in the ffmpeg command string
-	cmdStr = strings.ReplaceAll(cmdStr, "$source", source)
-	cmdStr = strings.ReplaceAll(cmdStr, "$dest", dest)
-
-	// Split the command string into parts
-	parts := strings.Fields(cmdStr)
-	if len(parts) == 0 {
-		return fmt.Errorf("invalid command for format %s", t.Config.Format)
-	}
-
-	if output, err := t.Runner.Run(parts[0], parts[1:]...); err != nil {
+	if output, err := t.Runner.Run(args[0], args[1:]...); err != nil {
 		return fmt.Errorf("ffmpeg error: %v, output: %s", err, string(output))
 	}
 
 	return nil
+}
+
+func (t *Transcoder) resolveCommandArgs(source, dest string) ([]string, error) {
+	cmdStr, ok := t.Config.Formats[t.Config.Format]
+	if !ok {
+		return nil, fmt.Errorf("unsupported format: %s", t.Config.Format)
+	}
+
+	// We use a simple replacement for the placeholders, but we MUST NOT split by fields
+	// after replacement because that breaks paths with spaces.
+	// Instead, we split the template first, then replace tokens in each part.
+	rawParts := strings.Fields(cmdStr)
+	if len(rawParts) == 0 {
+		return nil, fmt.Errorf("invalid command for format %s", t.Config.Format)
+	}
+
+	resolvedParts := make([]string, len(rawParts))
+	for i, p := range rawParts {
+		p = strings.ReplaceAll(p, "$source", source)
+		p = strings.ReplaceAll(p, "$dest", dest)
+		resolvedParts[i] = p
+	}
+
+	return resolvedParts, nil
 }
