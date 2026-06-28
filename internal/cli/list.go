@@ -26,7 +26,7 @@ func newListCmd() *cobra.Command {
 
 			sel, err := ResolveSelection(args[0], queryOverride)
 			if err != nil {
-				return err
+				return HandleError(err)
 			}
 
 			if listStats {

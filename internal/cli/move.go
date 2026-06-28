@@ -35,7 +35,7 @@ Example:
 			}
 			src, err := ResolveSelection(args[0], queryOverride)
 			if err != nil {
-				return err
+				return HandleError(err)
 			}
 
 			wp, ok := src.Provider.(provider.WritableProvider)
@@ -82,7 +82,7 @@ func runMoveTracks(wp provider.WritableProvider, src *Selection, moveFrom, moveT
 	// Agnostic Pre-flight Validation
 	for _, target := range tgt.Groups {
 		if err := wp.ValidateAddTracks(target); err != nil {
-			return err
+			return HandleError(err)
 		}
 	}
 
@@ -124,7 +124,7 @@ func runMoveGroups(wp provider.WritableProvider, src *Selection, moveTo string) 
 	// Agnostic Pre-flight Validation
 	for _, group := range src.Groups {
 		if err := wp.ValidateMoveGroup(group, targetParent); err != nil {
-			return err
+			return HandleError(err)
 		}
 	}
 

@@ -50,13 +50,13 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 			}
 			src, err := ResolveSelection(args[0], queryOverride)
 			if err != nil {
-				return err
+				return HandleError(err)
 			}
 
 			for _, targetStr := range syncTo {
 				tgt, err := ResolveSelection(targetStr, "")
 				if err != nil {
-					return err
+					return HandleError(err)
 				}
 
 				wp, ok := tgt.Provider.(provider.WritableProvider)
@@ -83,7 +83,7 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 					AppendOnly:   syncAppend,
 				})
 				if err != nil {
-					return err
+					return HandleError(err)
 				}
 
 				// 2. Metadata Sync (if requested)
@@ -98,7 +98,7 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 						matches := sync.NewOrchestrator(nil, dryRun, verbose).WithMatcher(matcher).Join(src.Tracks, matchFields)
 						
 						if err := wp.UpdateMetadata(getExecContext(), matches, metadataFields); err != nil {
-							return err
+							return HandleError(err)
 						}
 					}
 				}
