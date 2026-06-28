@@ -144,22 +144,3 @@ func DerefInt32(p *int32) int32 {
 	}
 	return *p
 }
-
-type FolderNode struct {
-	// Type = "0" (FOLDER)
-	BaseNode
-	XMLName xml.Name `xml:"NODE"`
-	Count   int32    `xml:"Count,attr"`
-	Node    []Node   `xml:"NODE"`
-}
-
-type PlaylistNode struct {
-	// Type = "1" (PLAYLIST)
-	BaseNode
-	XMLName xml.Name `xml:"NODE"`
-	Entries int32    `xml:"Entries,attr"` // Number of TRACK in PLAYLIST
-	KeyType int32    `xml:"KeyType,attr"` // Kind of identification - "0" (Track ID) | "1" (Location)
-	TRACK   []struct {
-		Key string `xml:"Key,attr"` // Identification of track - "Track ID" or "Location" in "COLLECTION"
-	} `xml:"TRACK"`
-}
