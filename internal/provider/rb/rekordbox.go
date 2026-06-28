@@ -45,12 +45,20 @@ func (p *RekordboxProvider) GetTracks(ctx provider.ExecutionContext, query strin
 	return p.Engine.Ls(query, p)
 }
 
-func (p *RekordboxProvider) GetPlaylists(ctx provider.ExecutionContext, query string) ([]models.ResourceGroup, error) {
-	return p.Engine.LsPlaylists(query)
+func (p *RekordboxProvider) GetPlaylists(ctx provider.ExecutionContext, queryString string) ([]models.ResourceGroup, error) {
+	fullQuery := "type:1"
+	if queryString != "" {
+		fullQuery = "(" + queryString + ") && type:1"
+	}
+	return p.Engine.LsGroups(fullQuery)
 }
 
-func (p *RekordboxProvider) GetFolders(ctx provider.ExecutionContext, query string) ([]models.ResourceGroup, error) {
-	return p.Engine.LsFolders(query)
+func (p *RekordboxProvider) GetFolders(ctx provider.ExecutionContext, queryString string) ([]models.ResourceGroup, error) {
+	fullQuery := "type:0"
+	if queryString != "" {
+		fullQuery = "(" + queryString + ") && type:0"
+	}
+	return p.Engine.LsGroups(fullQuery)
 }
 
 func (p *RekordboxProvider) CanTranscode() bool {
@@ -204,7 +212,7 @@ func (p *RekordboxProvider) Sync(ctx provider.ExecutionContext, tracks []models.
 		rbLib = NewRekordboxLibrary(rbXML)
 	}
 
-	orch := sync.NewOrchestrator(rbLib, false, false)
+	orch := sync.NewOrchestrator(rbLib, ctx.DryRun, ctx.Verbose)
 
 	err := orch.SyncToLibrary(tracks, sourceQuery, targetQuery, sync.SyncOptions{
 		ExportDest:   options.ExportDest,
@@ -216,7 +224,7 @@ func (p *RekordboxProvider) Sync(ctx provider.ExecutionContext, tracks []models.
 		return err
 	}
 
-	if p.rbXML == nil {
+	if p.rbXML == nil && !ctx.DryRun {
 		return rbLib.Save(p.path)
 	}
 	return nil
