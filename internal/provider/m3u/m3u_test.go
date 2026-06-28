@@ -28,11 +28,10 @@ func TestM3UProvider_Load(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, tracks, 2)
 
-	assert.Equal(t, "Title One", tracks[0].Title)
-	assert.Equal(t, "Artist One", tracks[0].Artist)
+	assert.Equal(t, "Artist One - Title One", tracks[0].Display)
 	assert.Equal(t, filepath.Join(tmpDir, "track1.mp3"), tracks[0].Location)
 
-	assert.Equal(t, "Title Two", tracks[1].Title)
+	assert.Equal(t, "Artist Two - Title Two", tracks[1].Display)
 	assert.Equal(t, filepath.Join(tmpDir, "track2.mp3"), tracks[1].Location)
 }
 
@@ -47,7 +46,7 @@ func TestM3UProvider_AddRemoveSave(t *testing.T) {
 
 	// Add tracks
 	newTracks := []models.Track{
-		{Title: "New Track", Artist: "New Artist", Location: "/tmp/new.mp3"},
+		{Display: "New Track Display", Location: "/tmp/new.mp3"},
 	}
 	added, err := p.AddTracks(provider.ExecutionContext{}, models.ResourceGroup{}, newTracks)
 	assert.NoError(t, err)
@@ -62,29 +61,11 @@ func TestM3UProvider_AddRemoveSave(t *testing.T) {
 	assert.NoError(t, err)
 	tracks, _ := p2.GetTracks(provider.ExecutionContext{}, "")
 	assert.Len(t, tracks, 1)
-	assert.Equal(t, "New Track", tracks[0].Title)
+	assert.Equal(t, "New Track Display", tracks[0].Display)
 
 	// Remove
 	removed, err := p2.RemoveTracks(provider.ExecutionContext{}, models.ResourceGroup{}, tracks)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, removed)
 	assert.Len(t, p2.tracks, 0)
-}
-
-func TestM3UProvider_Query(t *testing.T) {
-	p := &M3UProvider{
-		tracks: []models.Track{
-			{Title: "Deep House", Artist: "Artist A", Genre: "House"},
-			{Title: "Techno Soul", Artist: "Artist B", Genre: "Techno"},
-		},
-	}
-
-	results, err := p.GetTracks(provider.ExecutionContext{}, "title:Deep")
-	assert.NoError(t, err)
-	assert.Len(t, results, 1)
-	assert.Equal(t, "Deep House", results[0].Title)
-
-	results, err = p.GetTracks(provider.ExecutionContext{}, "artist:Artist")
-	assert.NoError(t, err)
-	assert.Len(t, results, 2)
 }

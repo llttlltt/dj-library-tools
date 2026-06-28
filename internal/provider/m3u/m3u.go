@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
@@ -52,7 +53,8 @@ func (p *M3UProvider) load() error {
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
-	var currentMeta m3u.AudioMetadata
+	var lastDuration int
+	var lastDisplay string
 	var tracks []models.Track
 
 	for scanner.Scan() {
@@ -65,35 +67,31 @@ func (p *M3UProvider) load() error {
 			info := strings.TrimPrefix(line, "#EXTINF:")
 			commaIdx := strings.Index(info, ",")
 			if commaIdx != -1 {
-				metaStr := info[commaIdx+1:]
-				if strings.Contains(metaStr, " - ") {
-					parts := strings.SplitN(metaStr, " - ", 2)
-					currentMeta.Artist = strings.TrimSpace(parts[0])
-					currentMeta.Title = strings.TrimSpace(parts[1])
-				} else {
-					currentMeta.Title = strings.TrimSpace(metaStr)
+				durStr := info[:commaIdx]
+				if d, err := strconv.Atoi(durStr); err == nil {
+					lastDuration = d
 				}
+				lastDisplay = strings.TrimSpace(info[commaIdx+1:])
 			}
 			continue
 		}
 
+		// It's a path
 		trackPath := line
 		if !filepath.IsAbs(trackPath) {
 			trackPath = filepath.Join(filepath.Dir(p.path), trackPath)
 		}
 
-		title := currentMeta.Title
-		if title == "" {
-			title = filepath.Base(trackPath)
-		}
-
 		tracks = append(tracks, models.Track{
 			ID:       trackPath,
-			Title:    title,
-			Artist:   currentMeta.Artist,
+			Display:  lastDisplay,
+			Duration: lastDuration,
 			Location: trackPath,
 		})
-		currentMeta = m3u.AudioMetadata{}
+		
+		// Reset for next track
+		lastDuration = 0
+		lastDisplay = ""
 	}
 
 	p.tracks = tracks
@@ -272,22 +270,16 @@ func (p *M3UProvider) Save(ctx provider.ExecutionContext, path string) error {
 	}
 
 	for _, t := range p.tracks {
-		// Self-healing: if track is missing metadata, try to probe it
-		if t.Artist == "" || t.Title == "" {
-			if meta, probeErr := m3u.ExtractMetadata(t.Location); probeErr == nil {
-				t.Artist = meta.Artist
-				t.Title = meta.Title
-			}
+		// Use Display name directly, fallback to filename
+		displayName := t.Display
+		if displayName == "" {
+			displayName = filepath.Base(t.Location)
 		}
 
-		meta := m3u.AudioMetadata{
-			Artist: t.Artist,
-			Title:  t.Title,
-			Album:  t.Album,
-		}
-		if err := m3u.WriteM3U8Entry(f, meta, t.Location, float64(t.Duration)); err != nil {
-			return err
-		}
+		// For M3U8, we're writing a generic display string
+		// Note: We're not doing ID3 tag probing here to keep it strictly native
+		err := m3u.WriteM3U8EntryRaw(f, displayName, t.Location, float64(t.Duration))
+		if err != nil { return err }
 	}
 
 	return nil
@@ -333,7 +325,7 @@ func (p *M3UProvider) SupportedResources() []string {
 }
 
 func (p *M3UProvider) MetadataCapabilities() []string {
-	return []string{"title", "artist", "duration"}
+	return []string{"display", "duration", "location"}
 }
 
 func (p *M3UProvider) UpdateMetadata(_ provider.ExecutionContext, _ []models.MetadataMatch, _ []string) error {
@@ -341,9 +333,5 @@ func (p *M3UProvider) UpdateMetadata(_ provider.ExecutionContext, _ []models.Met
 }
 
 func (p *M3UProvider) Fix(ctx provider.ExecutionContext, resource string, query string) error {
-	// For M3U, "fixing" is just loading and saving, which triggers self-healing
-	if ctx.Verbose {
-		fmt.Printf("Repairing M3U8 tags for %s\n", p.path)
-	}
 	return p.Save(ctx, "")
 }

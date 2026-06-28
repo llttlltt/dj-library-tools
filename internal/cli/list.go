@@ -138,7 +138,7 @@ func listProvider(sel *Selection, listSort string) error {
 	}
 
 	sortTracks(sel, sel.Tracks, listSort) //nolint:staticcheck
-	renderTrackTable(sel.Tracks)
+	renderTrackTable(sel.Location.Provider, sel.Tracks)
 	return nil
 }
 
