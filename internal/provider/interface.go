@@ -45,8 +45,8 @@ type ReadableProvider interface {
 	GetFolders(ctx ExecutionContext, query string) ([]models.ResourceGroup, error)
 	
 	// Sort operations
-	SortTracks(tracks []models.Track, field string)
-	SortGroups(groups []models.ResourceGroup, field string)
+	SortTracks(ctx ExecutionContext, tracks []models.Track, field string)
+	SortGroups(ctx ExecutionContext, groups []models.ResourceGroup, field string)
 }
 
 // SearchableProvider is an optional interface for providers with server-side search.

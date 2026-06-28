@@ -10,6 +10,7 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/query"
 	"github.com/llttlltt/dj-library-tools/internal/rekordbox"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
+	"github.com/llttlltt/dj-library-tools/internal/utils"
 )
 
 type RekordboxProvider struct {
@@ -59,6 +60,14 @@ func (p *RekordboxProvider) GetFolders(ctx provider.ExecutionContext, queryStrin
 		fullQuery = "(" + queryString + ") && type:0"
 	}
 	return p.Engine.LsGroups(fullQuery)
+}
+
+func (p *RekordboxProvider) SortTracks(ctx provider.ExecutionContext, tracks []models.Track, field string) {
+	utils.SortTracksAgnostic(tracks, field)
+}
+
+func (p *RekordboxProvider) SortGroups(ctx provider.ExecutionContext, groups []models.ResourceGroup, field string) {
+	utils.SortGroupsAgnostic(groups, field)
 }
 
 func (p *RekordboxProvider) CanTranscode() bool {
@@ -262,12 +271,4 @@ func (p *RekordboxProvider) ValidateCreateGroup(parent models.ResourceGroup, gro
 		return fmt.Errorf("cannot create group inside playlist %q (containers must live in folders)", parent.Name)
 	}
 	return nil
-}
-
-func (p *RekordboxProvider) SortTracks(tracks []models.Track, field string) {
-	// Re-use logic from cli/sort.go or implement custom RB sorting
-}
-
-func (p *RekordboxProvider) SortGroups(groups []models.ResourceGroup, field string) {
-	// Re-use logic from cli/sort.go
 }

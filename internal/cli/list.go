@@ -121,7 +121,7 @@ func listProvider(sel *Selection, listSort string) error {
 			return nil
 		}
 
-		sortNodes(sel.Nodes, listSort)
+		sortGroups(sel, sel.Nodes, listSort)
 		renderNodeTable(sel.Nodes, sel.Location.Resource[:len(sel.Location.Resource)-1])
 		return nil
 	}
@@ -137,7 +137,7 @@ func listProvider(sel *Selection, listSort string) error {
 		return nil
 	}
 
-	sortTracks(sel.Tracks, listSort) //nolint:staticcheck
+	sortTracks(sel, sel.Tracks, listSort) //nolint:staticcheck
 	renderTrackTable(sel.Tracks)
 	return nil
 }
