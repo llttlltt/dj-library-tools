@@ -52,39 +52,34 @@ The Rekordbox provider interacts directly with your exported XML library. It all
 | `items` | Numeric | Number of tracks in a playlist, or child ResourceGroups in a folder. |
 | `kind` | String | `folder` or `playlist`. |
 
-## Deep Metadata (Path Queries)
+## Collections (Path Queries)
 
-Rekordbox supports advanced path-based queries for deep analysis of cues and beatgrids.
+Rekordbox supports advanced path-based queries for deep analysis of cues and beatgrids. 
 
 **Syntax**: `Collection . Index / Property - Stat`
 
-### Beatgrids
+| Collection | Description | Properties | Stats |
+| :--- | :--- | :--- | :--- |
+| `beatgrids` | Beatgrid markers and tempo information. | `bpm`, `position` | `-count`, `-drift`, `-density` |
+| `hotcues` | Performance pads (A-H). | `color`, `name`, `position` | `-count` |
+| `memorycues` | Standard markers. | `color`, `name`, `position` | `-count` |
 
-Find tracks that might need re-analysis (many markers but no BPM change):
-`rb/tracks "beatgrids/bpm-drift:<0.1 && beatgrids-count:>10"`
+### Property Reference
 
-Find "busy" variable grids:
-`rb/tracks "beatgrids-density:>60"`
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `bpm` | Numeric | Beats per minute at the marker. |
+| `position` | Numeric | Time in seconds from the start of the track. |
+| `color` | String | Color name (e.g., `red`, `skyblue`). |
+| `name` | String | User-assigned label or comment. |
 
-| Path | Description |
-| :--- | :--- |
-| `beatgrids-count` | Total number of markers. |
-| `beatgrids-density` | Markers per minute of track duration. |
-| `beatgrids/bpm-drift` | Difference between Max and Min BPM markers. |
-| `beatgrids.N/bpm` | BPM value of the Nth marker. |
-| `beatgrids.N/position` | Position (seconds) of the Nth marker. |
+### Stat Reference
 
-### Cues (HotCues & MemoryCues)
-
-Search for specific pad colors or named sections:
-`rb/tracks "hotcues.1/color:red && memorycues/name:Break"`
-
-| Path | Description |
-| :--- | :--- |
-| `hotcues-count` | Total number of hotcues. |
-| `hotcues/color` | Match if ANY hotcue has this color. |
-| `hotcues.N/color` | Color of the Nth hotcue. |
-| `hotcues.N/name` | Name of the Nth hotcue. |
+| Stat | Type | Description |
+| :--- | :--- | :--- |
+| `-count` | Numeric | Total number of items in the collection. |
+| `-drift` | Numeric | Difference between the Maximum and Minimum property values. |
+| `-density` | Numeric | Items per minute (based on track duration). |
 
 ## Color Palettes
 
@@ -139,7 +134,24 @@ Use the following names to match the 16-color pad palette (e.g. `hotcues.1/color
 
 ## Examples
 
-### Tracks
+### Deep Analysis (Paths)
+
+**Identify unstable "dynamic" grids**
+```bash
+djlt ls rb/tracks "beatgrids/bpm-drift:>0.5 && beatgrids-count:>10"
+```
+
+**Find tracks with red HotCue A**
+```bash
+djlt ls rb/tracks "hotcues.1/color:red"
+```
+
+**Find "busy" grids with high marker density**
+```bash
+djlt ls rb/tracks "beatgrids-density:>60"
+```
+
+### Basic Metadata
 
 **High-energy House**
 ```bash
@@ -167,4 +179,3 @@ djlt ls rb/folders "name:Sets"
 ```bash
 djlt ls rb/playlists "name:2023"
 ```
-
