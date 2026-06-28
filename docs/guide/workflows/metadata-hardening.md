@@ -11,12 +11,14 @@ djlt ls rb/tracks "beatgrids:0"
 ```
 
 ### 2. Standardize Color Coding
-Use color coding to flag tracks that need specific types of work. For example, use **Red** for tracks that have broken metadata and **Green** for those that are "Performance Ready".
+Use color coding to flag tracks that need specific types of work. You can query by track color or by the color of specific cue points.
 
 ```bash
 # Find all "Red" tracks that you've since analyzed (have hotcues)
-# and need to be marked as "Green"
 djlt ls rb/tracks "color:red && hotcues:>3"
+
+# Advanced: Find tracks where the first Hot Cue (A) is specifically Red
+djlt ls rb/tracks "hotcues:a:red"
 ```
 
 ### 3. Reconcile from External Sources
