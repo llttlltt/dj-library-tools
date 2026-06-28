@@ -1,170 +1,174 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
+	"github.com/llttlltt/dj-library-tools/internal/plex"
 	"github.com/spf13/cobra"
 )
 
 func newConfigCmd() *cobra.Command {
-	var cfgUnset, cfgList bool
-
 	cmd := &cobra.Command{
-	Use:   "config [key] [value]",
-	Short: "View or update application configuration",
-	Long: `Manage djlt configuration using dot-namespaced keys. Settings are stored in ~/.config/djlt/config.json.
-
-## Keys
-
-- **plex.host**: Plex server hostname or IP.
-- **plex.port**: Plex server port (default: 32400).
-- **plex.token**: Plex authentication token (usually set via 'djlt auth --plex').
-- **plex.map**: Remote-to-local path map entry. Used to bridge Plex remote paths to your local mount points.
-- **rekordbox.file-path**: Absolute path to your Rekordbox XML export file.
-
-## Examples
-
-**List all settings**
-  djlt config --list
-
-**Configure Rekordbox library**
-  djlt config rekordbox.file-path ~/Documents/rekordbox.xml
-
-**Set up Plex connection**
-  djlt config plex.host 192.168.1.50
-  djlt config plex.port 32400
-
-**Add a Plex path mapping**
-  djlt config plex.map /music/remote:/Volumes/Music
-
-**Remove a specific path mapping**
-  djlt config --unset plex.map /music/remote
-
-**Unset a scalar value**
-  djlt config --unset plex.host`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, _ := config.LoadAppConfig()
-
-			if cfgList || len(args) == 0 {
-			printConfig(cfg)
-			return nil
-		}
-
-			key := args[0]
-
-			if cfgUnset {
-				return runConfigUnset(cfg, key, args[1:])
-			}
-
-			if len(args) == 1 {
-				return runConfigGet(cfg, key)
-			}
-
-			return runConfigSet(cfg, key, args[1])
-		},
+		Use:   "config",
+		Short: "Manage application configuration",
 	}
-	cmd.Flags().BoolVar(&cfgList, "list", false, "Show all configuration values")
-	cmd.Flags().BoolVar(&cfgUnset, "unset", false, "Remove a configuration value")
+
+	cmd.AddCommand(
+		newConfigListCmd(),
+		newConfigPlexCmd(),
+		newConfigRekordboxCmd(),
+	)
+
 	return cmd
 }
 
-func runConfigSet(cfg *config.AppConfig, key, value string) error {
-	switch key {
-	case "plex.host":
-		cfg.Plex.Host = value
-		fmt.Printf("plex.host = %s\n", value)
-	case "plex.port":
-		port, err := strconv.Atoi(value)
-		if err != nil {
-			return fmt.Errorf("plex.port must be an integer, got %q", value)
-		}
-		cfg.Plex.Port = port
-		fmt.Printf("plex.port = %d\n", port)
-	case "plex.token":
-		cfg.Plex.Token = value
-		fmt.Println("plex.token updated")
-	case "plex.map":
-		parts := strings.SplitN(value, ":", 2)
-		if len(parts) != 2 {
-			return fmt.Errorf("plex.map value must be remote:local, got %q", value)
-		}
-		if cfg.PathMaps == nil {
-			cfg.PathMaps = make(map[string]string)
-		}
-		cfg.PathMaps[parts[0]] = parts[1]
-		fmt.Printf("plex.map %s -> %s\n", parts[0], parts[1])
-	case "rekordbox.file-path":
-		cfg.Rekordbox.PrimaryFilePath = value
-		fmt.Printf("rekordbox.file-path = %s\n", value)
-	default:
-		return fmt.Errorf("unknown config key %q; run 'djlt config --help' for valid keys", key)
+func newConfigListCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list",
+		Short: "Show all configuration values",
+		Run: func(cmd *cobra.Command, args []string) {
+			cfg, _ := config.LoadAppConfig()
+			fmt.Printf("plex.host = %s\n", cfg.Plex.Host)
+			fmt.Printf("plex.port = %d\n", cfg.Plex.Port)
+			fmt.Printf("plex.token = %s\n", maskToken(cfg.Plex.Token))
+			fmt.Printf("rekordbox.primary_file_path = %s\n", cfg.Rekordbox.PrimaryFilePath)
+			for remote, local := range cfg.PathMaps {
+				fmt.Printf("path_map = %s:%s\n", remote, local)
+			}
+		},
 	}
-	return config.SaveAppConfig(cfg)
 }
 
-func runConfigGet(cfg *config.AppConfig, key string) error {
-	switch key {
-	case "plex.host":
-		fmt.Println(cfg.Plex.Host)
-	case "plex.port":
-		fmt.Println(cfg.Plex.Port)
-	case "plex.token":
-		fmt.Println(maskToken(cfg.Plex.Token))
-	case "plex.map":
-		for remote, local := range cfg.PathMaps {
-			fmt.Printf("%s:%s\n", remote, local)
-		}
-	case "rekordbox.file-path":
-		fmt.Println(cfg.Rekordbox.PrimaryFilePath)
-	default:
-		return fmt.Errorf("unknown config key %q; run 'djlt config --help' for valid keys", key)
+func newConfigPlexCmd() *cobra.Command {
+	plexCmd := &cobra.Command{
+		Use:   "plex",
+		Short: "Configure Plex settings",
 	}
-	return nil
+
+	plexCmd.AddCommand(
+		&cobra.Command{
+			Use:   "host [value]",
+			Short: "Set or get Plex host",
+			Args:  cobra.MaximumNArgs(1),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				cfg, _ := config.LoadAppConfig()
+				if len(args) == 0 {
+					fmt.Println(cfg.Plex.Host)
+					return nil
+				}
+				cfg.Plex.Host = args[0]
+				return config.SaveAppConfig(cfg)
+			},
+		},
+		&cobra.Command{
+			Use:   "port [value]",
+			Short: "Set or get Plex port",
+			Args:  cobra.MaximumNArgs(1),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				cfg, _ := config.LoadAppConfig()
+				if len(args) == 0 {
+					fmt.Println(cfg.Plex.Port)
+					return nil
+				}
+				port, err := strconv.Atoi(args[0])
+				if err != nil {
+					return fmt.Errorf("port must be an integer")
+				}
+				cfg.Plex.Port = port
+				return config.SaveAppConfig(cfg)
+			},
+		},
+		&cobra.Command{
+			Use:   "auth",
+			Short: "Interactive Plex authentication (PIN flow)",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return runPlexAuth()
+			},
+		},
+		&cobra.Command{
+			Use:   "map [remote:local]",
+			Short: "Add a path mapping",
+			Args:  cobra.ExactArgs(1),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				parts := strings.SplitN(args[0], ":", 2)
+				if len(parts) != 2 {
+					return fmt.Errorf("format must be remote:local")
+				}
+				cfg, _ := config.LoadAppConfig()
+				if cfg.PathMaps == nil {
+					cfg.PathMaps = make(map[string]string)
+				}
+				cfg.PathMaps[parts[0]] = parts[1]
+				return config.SaveAppConfig(cfg)
+			},
+		},
+	)
+
+	return plexCmd
 }
 
-func runConfigUnset(cfg *config.AppConfig, key string, rest []string) error {
-	switch key {
-	case "plex.host":
-		cfg.Plex.Host = ""
-		fmt.Println("unset plex.host")
-	case "plex.port":
-		cfg.Plex.Port = 0
-		fmt.Println("unset plex.port")
-	case "plex.token":
-		cfg.Plex.Token = ""
-		fmt.Println("unset plex.token")
-	case "plex.map":
-		if len(rest) == 0 {
-			return fmt.Errorf("--unset plex.map requires the remote path to remove")
-		}
-		remote := rest[0]
-		if cfg.PathMaps == nil {
-			return fmt.Errorf("no path maps configured")
-		}
-		if _, exists := cfg.PathMaps[remote]; !exists {
-			return fmt.Errorf("no path map found for %q", remote)
-		}
-		delete(cfg.PathMaps, remote)
-		fmt.Printf("removed plex.map %s\n", remote)
-	case "rekordbox.file-path":
-		cfg.Rekordbox.PrimaryFilePath = ""
-		fmt.Println("unset rekordbox.file-path")
-	default:
-		return fmt.Errorf("unknown config key %q; run 'djlt config --help' for valid keys", key)
+func newConfigRekordboxCmd() *cobra.Command {
+	rbCmd := &cobra.Command{
+		Use:   "rb",
+		Short: "Configure Rekordbox settings",
 	}
-	return config.SaveAppConfig(cfg)
+
+	rbCmd.AddCommand(
+		&cobra.Command{
+			Use:   "file [path]",
+			Short: "Set or get primary Rekordbox XML path",
+			Args:  cobra.MaximumNArgs(1),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				cfg, _ := config.LoadAppConfig()
+				if len(args) == 0 {
+					fmt.Println(cfg.Rekordbox.PrimaryFilePath)
+					return nil
+				}
+				cfg.Rekordbox.PrimaryFilePath = args[0]
+				return config.SaveAppConfig(cfg)
+			},
+		},
+	)
+
+	return rbCmd
 }
 
-func printConfig(cfg *config.AppConfig) {
-	fmt.Printf("plex.host = %s\n", cfg.Plex.Host)
-	fmt.Printf("plex.port = %d\n", cfg.Plex.Port)
-	fmt.Printf("plex.token = %s\n", maskToken(cfg.Plex.Token))
-	fmt.Printf("rekordbox.file-path = %s\n", cfg.Rekordbox.PrimaryFilePath)
-	for remote, local := range cfg.PathMaps {
-		fmt.Printf("plex.map = %s:%s\n", remote, local)
+func runPlexAuth() error {
+	client := plex.NewClient("")
+	pin, err := client.RequestPin(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to request pin: %w", err)
+	}
+
+	fmt.Printf("Please visit: https://app.plex.tv/auth/#!?code=%s&context%%5Bdevice%%5D%%5Bproduct%%5D=%s&clientID=%s\n", pin.Code, plex.ClientName, plex.AppID)
+	fmt.Printf("Waiting for authentication...\n")
+
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+	timeout := time.After(5 * time.Minute)
+
+	for {
+		select {
+		case <-timeout:
+			return fmt.Errorf("authentication timed out")
+		case <-ticker.C:
+			status, err := client.CheckPin(context.Background(), pin.ID)
+			if err != nil {
+				return fmt.Errorf("failed to check pin status: %w", err)
+			}
+
+			if status.AuthToken != "" {
+				fmt.Printf("Successfully authenticated!\n")
+				cfg, _ := config.LoadAppConfig()
+				cfg.Plex.Token = status.AuthToken
+				return config.SaveAppConfig(cfg)
+			}
+		}
 	}
 }
 
@@ -174,5 +178,3 @@ func maskToken(t string) string {
 	}
 	return t[:4] + "...." + t[len(t)-4:]
 }
-
-
