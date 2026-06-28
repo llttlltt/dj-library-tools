@@ -14,10 +14,10 @@ DJ Library Tools CLI
 A comprehensive CLI tool for managing DJ libraries across multiple providers.
 ## See also
 
-* [djlt config](config.md)	 - Manage application configuration
-* [djlt edit](edit.md)	 - Update metadata, repair paths, or fix library issues
-* [djlt ls](ls.md)	 - List items from a location (e.g. rb/tracks title:Oceans)
-* [djlt mk](mk.md)	 - Create a new playlist or folder
-* [djlt mv](mv.md)	 - Move items between locations
-* [djlt rm](rm.md)	 - Permanently delete resources or remove membership
-* [djlt sync](sync.md)	 - Keep a playlist or metadata in sync with a track query
+* [djlt config](djlt_config.md)	 - Manage application configuration
+* [djlt edit](djlt_edit.md)	 - Update metadata, repair paths, or fix library issues
+* [djlt ls](djlt_ls.md)	 - List items from a location (e.g. rb/tracks title:Oceans)
+* [djlt mk](djlt_mk.md)	 - Create a new playlist or folder
+* [djlt mv](djlt_mv.md)	 - Move items between locations
+* [djlt rm](djlt_rm.md)	 - Permanently delete resources or remove membership
+* [djlt sync](djlt_sync.md)	 - Keep a playlist or metadata in sync with a track query

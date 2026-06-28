@@ -18,15 +18,16 @@ Configure Plex settings
 
 ## See also
 
-* [djlt config](../index.md)	 - Manage application configuration
-* [djlt config plex auth](auth.md)	 - Interactive Plex authentication (PIN flow)
-* [djlt config plex host](host.md)	 - Set or get Plex host
-* [djlt config plex map](map.md)	 - Add a path mapping
-* [djlt config plex port](port.md)	 - Set or get Plex port
+* [djlt config](index.md)	 - Manage application configuration
+* [djlt config plex auth](plex.md#auth)	 - Interactive Plex authentication (PIN flow)
+* [djlt config plex host](plex.md#host)	 - Set or get Plex host
+* [djlt config plex map](plex.md#map)	 - Add a path mapping
+* [djlt config plex port](plex.md#port)	 - Set or get Plex port
 
 ---
 
-# config plex auth
+<a name="auth"></a>
+## config plex auth
 
 Interactive Plex authentication (PIN flow)
 
@@ -50,11 +51,12 @@ djlt config plex auth [flags]
 
 ## See also
 
-* [djlt config plex](index.md)	 - Configure Plex settings
+* [djlt config plex](plex.md)	 - Configure Plex settings
 
 ---
 
-# config plex host
+<a name="host"></a>
+## config plex host
 
 Set or get Plex host
 
@@ -78,11 +80,12 @@ djlt config plex host [value] [flags]
 
 ## See also
 
-* [djlt config plex](index.md)	 - Configure Plex settings
+* [djlt config plex](plex.md)	 - Configure Plex settings
 
 ---
 
-# config plex map
+<a name="map"></a>
+## config plex map
 
 Add a path mapping
 
@@ -106,11 +109,12 @@ djlt config plex map [remote:local] [flags]
 
 ## See also
 
-* [djlt config plex](index.md)	 - Configure Plex settings
+* [djlt config plex](plex.md)	 - Configure Plex settings
 
 ---
 
-# config plex port
+<a name="port"></a>
+## config plex port
 
 Set or get Plex port
 
@@ -134,4 +138,4 @@ djlt config plex port [value] [flags]
 
 ## See also
 
-* [djlt config plex](index.md)	 - Configure Plex settings
+* [djlt config plex](plex.md)	 - Configure Plex settings

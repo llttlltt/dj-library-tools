@@ -18,12 +18,13 @@ Configure Rekordbox settings
 
 ## See also
 
-* [djlt config](../index.md)	 - Manage application configuration
-* [djlt config rb file](file.md)	 - Set or get primary Rekordbox XML path
+* [djlt config](index.md)	 - Manage application configuration
+* [djlt config rb file](rb.md#file)	 - Set or get primary Rekordbox XML path
 
 ---
 
-# config rb file
+<a name="file"></a>
+## config rb file
 
 Set or get primary Rekordbox XML path
 
@@ -47,4 +48,4 @@ djlt config rb file [path] [flags]
 
 ## See also
 
-* [djlt config rb](index.md)	 - Configure Rekordbox settings
+* [djlt config rb](rb.md)	 - Configure Rekordbox settings
