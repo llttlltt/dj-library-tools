@@ -260,3 +260,15 @@ func (p *M3UProvider) Save(path string) error {
 
 	return nil
 }
+
+func (p *M3UProvider) Sync(tracks []models.Track, sourceQuery string, targetQuery string, options provider.SyncOptions) error {
+	if options.AppendOnly {
+		_, err := p.AddTracks(models.ResourceGroup{}, tracks)
+		if err != nil {
+			return err
+		}
+	} else {
+		p.tracks = tracks
+	}
+	return p.Save("")
+}

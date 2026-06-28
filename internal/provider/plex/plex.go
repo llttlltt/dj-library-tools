@@ -245,3 +245,7 @@ func (p *PlexProvider) resolveBaseURL(ctx context.Context) (string, error) {
 
 	return "", fmt.Errorf("could not find an active Plex server")
 }
+
+func (p *PlexProvider) Sync(tracks []models.Track, sourceQuery string, targetQuery string, options provider.SyncOptions) error {
+	return fmt.Errorf("sync not supported for plex")
+}

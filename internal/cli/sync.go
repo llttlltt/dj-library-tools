@@ -4,12 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/llttlltt/dj-library-tools/internal/config"
-	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
-	"github.com/llttlltt/dj-library-tools/internal/provider/rb"
-	"github.com/llttlltt/dj-library-tools/internal/sync"
-	"github.com/llttlltt/dj-library-tools/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -58,18 +53,27 @@ match the source. By default, it removes tracks from the target that no longer m
 					return err
 				}
 
-				if _, ok := tgt.Provider.(provider.WritableProvider); ok {
-					if tgt.Location.Provider == "m3u" || tgt.Location.Provider == "m3u8" {
-						if err := syncToM3U(src, tgt); err != nil {
-							return err
-						}
-					} else {
-						if err := syncToRekordbox(src, tgt, exportDest, exportFormat, syncAppend); err != nil {
-							return err
-						}
+				wp, ok := tgt.Provider.(provider.WritableProvider)
+				if !ok {
+					return fmt.Errorf("unsupported sync target: %s (provider is read-only)", tgt.Location.Provider)
+				}
+
+				if dryRun {
+					action := "sync"
+					if syncAppend {
+						action = "append to"
 					}
-				} else {
-					return fmt.Errorf("unsupported sync target: %s → %s", src.Location.Provider, tgt.Location.Provider)
+					fmt.Printf("[Dry Run] Would %s playlist %q with %d tracks\n", action, tgt.Location.Query, len(src.Tracks))
+					continue
+				}
+
+				err = wp.Sync(src.Tracks, src.Location.Query, tgt.Location.Query, provider.SyncOptions{
+					ExportDest:   exportDest,
+					ExportFormat: exportFormat,
+					AppendOnly:   syncAppend,
+				})
+				if err != nil {
+					return err
 				}
 			}
 			return nil
@@ -80,59 +84,4 @@ match the source. By default, it removes tracks from the target that no longer m
 	cmd.Flags().StringVar(&exportFormat, "format", "mp3", "Target format for exported files")
 	cmd.Flags().BoolVar(&syncAppend, "append", false, "Append new tracks without removing existing ones")
 	return cmd
-}
-
-func syncToRekordbox(src, tgt *Selection, exportDest, exportFormat string, appendOnly bool) error {
-	cfg, _ := config.LoadAppConfig()
-	rbXML, path, err := loadXMLFunc()
-	if err != nil {
-		return err
-	}
-
-	orch := sync.NewOrchestrator(nil, rb.NewRekordboxLibrary(rbXML), dryRun, verbose)
-
-	tracks, err := src.Provider.GetTracks(src.Location.Query)
-	if err != nil {
-		return err
-	}
-
-	err = orch.SyncToLibrary(tracks, src.Location.Query, tgt.Location.Query, sync.SyncOptions{
-		ExportDest:   exportDest,
-		ExportFormat: exportFormat,
-		PathMaps:     cfg.PathMaps,
-	}, appendOnly)
-	if err != nil {
-		return err
-	}
-
-	if !dryRun {
-		return rb.NewRekordboxLibrary(rbXML).Save(path)
-	}
-	return nil
-}
-
-func syncToM3U(src, tgt *Selection) error {
-	tracks, err := src.Provider.GetTracks(src.Location.Query)
-	if err != nil {
-		return err
-	}
-
-	if dryRun {
-		fmt.Printf("[Dry Run] Would sync %d tracks to %s\n", len(tracks), tgt.Location.Resource)
-		return nil
-	}
-
-	wp := tgt.Provider.(provider.WritableProvider)
-	added, err := wp.AddTracks(models.ResourceGroup{}, tracks)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Synced %d tracks to %s\n", added, tgt.Location.Resource)
-	return wp.Save(tgt.Location.Resource)
-}
-
-func syncPlexToM3U8(src, tgt utils.Location) error {
-	fmt.Printf("M3U8 sync not yet refactored to Orchestrator\n")
-	return nil
 }

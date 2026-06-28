@@ -8,24 +8,21 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/library"
 	"github.com/llttlltt/dj-library-tools/internal/media"
 	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/llttlltt/dj-library-tools/internal/plex"
 	"github.com/vbauerster/mpb/v8"
 	"github.com/vbauerster/mpb/v8/decor"
 )
 
 type Orchestrator struct {
-	PlexClient *plex.Client
 	Library    library.WritableLibrary
 	SyncEngine *Engine
 	DryRun     bool
 	Verbose    bool
 }
 
-func NewOrchestrator(plexClient *plex.Client, lib library.WritableLibrary, dryRun, verbose bool) *Orchestrator {
+func NewOrchestrator(lib library.WritableLibrary, dryRun, verbose bool) *Orchestrator {
 	return &Orchestrator{
-		PlexClient: plexClient,
 		Library:    lib,
-		SyncEngine: NewEngine(plexClient, lib),
+		SyncEngine: NewEngine(lib),
 		DryRun:     dryRun,
 		Verbose:    verbose,
 	}
@@ -37,7 +34,7 @@ type SyncOptions struct {
 	PathMaps     map[string]string
 }
 
-// SyncToLibrary matches a slice of neutral tracks against the RB collection,
+// SyncToLibrary matches a slice of neutral tracks against the collection,
 // optionally transcodes them, then injects or appends to the named playlist.
 func (o *Orchestrator) SyncToLibrary(tracks []models.Track, query string, playlistName string, opts SyncOptions, appendOnly bool) error {
 	var transcoder *media.Transcoder
@@ -201,23 +198,20 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, query string, playli
 	return nil
 }
 
-// PlexSyncFolder is the top-level folder name injected into Rekordbox by djlt.
-const PlexSyncFolder = "Plex Sync"
+// DefaultSyncFolder is the top-level folder name used for sync operations.
+const DefaultSyncFolder = "Synced"
 
 // Engine manages sync operations against a music library.
 type Engine struct {
-	PlexClient *plex.Client
-	Library    library.WritableLibrary
-	Matcher    *Matcher
+	Library library.WritableLibrary
+	Matcher *Matcher
 }
 
 // NewEngine creates a sync Engine backed by the given library.
-// plexClient may be nil if the caller only needs playlist write operations or Save.
-func NewEngine(plexClient *plex.Client, lib library.WritableLibrary) *Engine {
+func NewEngine(lib library.WritableLibrary) *Engine {
 	return &Engine{
-		PlexClient: plexClient,
-		Library:    lib,
-		Matcher:    NewMatcher(lib.GetTracks()),
+		Library: lib,
+		Matcher: NewMatcher(lib.GetTracks()),
 	}
 }
 
@@ -232,7 +226,6 @@ type SyncResult struct {
 // UpsertPlaylist creates or replaces a named playlist inside folder.
 // When folder is empty the playlist is placed at the root level.
 // position is the 0-indexed position in the folder. -1 appends to the end.
-// trackIDs must be Rekordbox TrackID strings (KeyType=0).
 func (e *Engine) UpsertPlaylist(folder, name string, trackIDs []string, position int) *SyncResult {
 	updated := e.Library.UpdatePlaylist(name, trackIDs)
 	if !updated {
@@ -246,14 +239,12 @@ func (e *Engine) UpsertPlaylist(folder, name string, trackIDs []string, position
 	}
 }
 
-// InjectPlaylist upserts a named playlist under PlexSyncFolder.
-// Preserved for backward compatibility; delegates to UpsertPlaylist.
+// InjectPlaylist upserts a named playlist under DefaultSyncFolder.
 func (e *Engine) InjectPlaylist(name string, trackIDs []string) *SyncResult {
-	return e.UpsertPlaylist(PlexSyncFolder, name, trackIDs, -1)
+	return e.UpsertPlaylist(DefaultSyncFolder, name, trackIDs, -1)
 }
 
 // AddTracksToPlaylist appends trackIDs to a named playlist anywhere in the tree.
-// Duplicate IDs are silently ignored.
 // Returns (true, addedCount) if the playlist was found, (false, 0) otherwise.
 func (e *Engine) AddTracksToPlaylist(name string, trackIDs []string) (bool, int) {
 	return e.Library.AddTracksToPlaylist(name, trackIDs)
@@ -271,33 +262,21 @@ func (e *Engine) CreateFolder(folder, name string, position int) bool {
 }
 
 // RenameNode renames the first node matching name and nodeType anywhere in the tree.
-// nodeType: models.GroupTypeFolder=folder, 1=playlist.
-// Returns false if no matching node is found.
 func (e *Engine) RenameNode(name, newName string, nodeType int32) bool {
 	return e.Library.RenameNode(name, newName, nodeType)
 }
 
-// MoveNode detaches the first node matching name and nodeType from its current location
-// and re-attaches it inside targetFolder (creating the folder if it does not exist).
-// Returns false if the node is not found.
+// MoveNode detaches the first node matching name and nodeType from its current location.
 func (e *Engine) MoveNode(name string, nodeType int32, targetFolder string) bool {
 	return e.Library.MoveNode(name, nodeType, targetFolder)
 }
 
 // RemoveNode removes the first node matching name and nodeType from anywhere in the tree.
-// Returns false if no matching node is found.
 func (e *Engine) RemoveNode(name string, nodeType int32) bool {
 	return e.Library.RemoveNode(name, nodeType)
 }
 
-// RemovePlaylist removes a named playlist from anywhere in the tree.
-// Preserved for backward compatibility; delegates to RemoveNode.
-func (e *Engine) RemovePlaylist(name string) bool {
-	return e.RemoveNode(name, 1)
-}
-
-// MatchTracks matches a slice of neutral tracks against the Rekordbox collection,
-// returning only results at or above minConfidence.
+// MatchTracks matches a slice of neutral tracks against the collection.
 func (e *Engine) MatchTracks(tracks []models.Track, minConfidence float64) []MatchResult {
 	out := make([]MatchResult, 0, len(tracks))
 	for _, t := range tracks {
@@ -312,9 +291,4 @@ func (e *Engine) MatchTracks(tracks []models.Track, minConfidence float64) []Mat
 // Save writes the modified library back to disk.
 func (e *Engine) Save(path string) error {
 	return e.Library.Save(path)
-}
-
-// SaveXML is an alias for Save for backward compatibility.
-func (e *Engine) SaveXML(path string) error {
-	return e.Save(path)
 }
