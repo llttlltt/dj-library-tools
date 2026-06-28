@@ -275,7 +275,7 @@ func (s *rekordboxSystemService) Sync(ctx provider.ExecutionContext, tracks []mo
 }
 
 func (s *rekordboxSystemService) Identify(name string, groupType models.GroupType) string {
-	return name
+	return rekordbox.Identify(name, groupType)
 }
 
 // --- Custom Matching (Internal for Engine) ---
