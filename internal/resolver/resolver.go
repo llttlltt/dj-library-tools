@@ -40,9 +40,14 @@ func ResolveSelection(locStr string, queryOverride string, opts ResolveOptions) 
 	}
 
 	cfg, _ := config.LoadAppConfig()
-	
+
+	filePath := opts.FilePath
+	if filePath == "" && loc.Provider == "rb" {
+		filePath = cfg.Rekordbox.PrimaryFilePath
+	}
+
 	factoryOpts := factory.ProviderOptions{
-		FilePath: opts.FilePath,
+		FilePath: filePath,
 		Config:   cfg,
 	}
 
