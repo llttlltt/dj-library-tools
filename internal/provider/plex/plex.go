@@ -286,7 +286,7 @@ func (p *PlexProvider) Sync(_ provider.ExecutionContext, _ []models.Track, _ str
 	return provider.ErrReadOnly
 }
 
-func (p *PlexProvider) ModifyTracks(_ provider.ExecutionContext, _ string, _ map[string]string) (int, error) {
+func (p *PlexProvider) UpdateTracks(_ provider.ExecutionContext, _ string, _ map[string]string) (int, error) {
 	return 0, provider.ErrReadOnly
 }
 

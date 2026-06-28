@@ -19,10 +19,10 @@ type WritableLibrary interface {
 	CreateGroup(parentID, name string, groupType models.GroupType, position int) (models.ResourceGroup, error)
 	// DeleteGroup removes a group from the library.
 	DeleteGroup(groupID string, groupType models.GroupType) error
-	// LinkTracks adds track memberships to a group.
-	LinkTracks(groupID string, trackIDs []string) (int, error)
-	// UnlinkTracks removes track memberships from a group.
-	UnlinkTracks(groupID string, trackIDs []string) (int, error)
+	// AddTracks adds track memberships to a group.
+	AddTracks(groupID string, trackIDs []string) (int, error)
+	// RemoveTracks removes track memberships from a group.
+	RemoveTracks(groupID string, trackIDs []string) (int, error)
 	// UpdateGroup replaces all track memberships in a group.
 	UpdateGroup(groupID string, trackIDs []string) error
 	// RenameGroup renames a group.

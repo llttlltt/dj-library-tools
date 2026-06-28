@@ -24,7 +24,7 @@ func init() {
 		if err != nil {
 			return nil, fmt.Errorf("failed to read rekordbox library: %w", err)
 		}
-		eng := library.NewEngine(NewRekordboxLibrary(rbXML))
+		eng := library.NewEngine(rekordbox.NewLibrary(rbXML))
 		return NewRekordboxProviderWithXML(eng, rbXML, opts.FilePath), nil
 	})
 	factory.Register("rekordbox", func(opts factory.ProviderOptions) (provider.Provider, error) {
@@ -109,7 +109,7 @@ func (p *RekordboxProvider) AddTracks(ctx provider.ExecutionContext, target mode
 			fmt.Printf("  %s %s - %s\n", color.GreenString("+"), t.Artist, t.Title)
 		}
 	}
-	return p.Engine.Library.(library.WritableLibrary).LinkTracks(target.ID, ids)
+	return p.Engine.Library.(library.WritableLibrary).AddTracks(target.ID, ids)
 }
 
 func (p *RekordboxProvider) RemoveTracks(ctx provider.ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error) {
@@ -120,7 +120,7 @@ func (p *RekordboxProvider) RemoveTracks(ctx provider.ExecutionContext, target m
 			fmt.Printf("  %s %s - %s\n", color.RedString("-"), t.Artist, t.Title)
 		}
 	}
-	return p.Engine.Library.(library.WritableLibrary).UnlinkTracks(target.ID, ids)
+	return p.Engine.Library.(library.WritableLibrary).RemoveTracks(target.ID, ids)
 }
 
 func (p *RekordboxProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, groupType models.GroupType, position int) (models.ResourceGroup, error) {
@@ -172,11 +172,11 @@ func (p *RekordboxProvider) MoveTracks(ctx provider.ExecutionContext, source mod
 	}
 
 	if !ctx.DryRun {
-		added, err := p.Engine.Library.(library.WritableLibrary).LinkTracks(target.ID, ids)
+		added, err := p.Engine.Library.(library.WritableLibrary).AddTracks(target.ID, ids)
 		if err != nil {
 			return 0, err
 		}
-		removed, err := p.Engine.Library.(library.WritableLibrary).UnlinkTracks(source.ID, ids)
+		removed, err := p.Engine.Library.(library.WritableLibrary).RemoveTracks(source.ID, ids)
 		if err != nil {
 			return added, err
 		}
@@ -283,15 +283,15 @@ func (p *RekordboxProvider) GetTrackColorName(hex string) string {
 }
 
 func (p *RekordboxProvider) Sync(ctx provider.ExecutionContext, tracks []models.Track, sourceQuery string, targetQuery string, options provider.SyncOptions) error {
-	var rbLib *RekordboxLibrary
+	var rbLib *rekordbox.Library
 	if p.rbXML != nil {
-		rbLib = NewRekordboxLibrary(p.rbXML)
+		rbLib = rekordbox.NewLibrary(p.rbXML)
 	} else {
 		rbXML, err := rekordbox.ReadRekordboxLibrary(p.path)
 		if err != nil {
 			return err
 		}
-		rbLib = NewRekordboxLibrary(rbXML)
+		rbLib = rekordbox.NewLibrary(rbXML)
 	}
 
 	orch := sync.NewOrchestrator(rbLib, ctx.DryRun, ctx.Verbose)
@@ -312,7 +312,7 @@ func (p *RekordboxProvider) Sync(ctx provider.ExecutionContext, tracks []models.
 	return nil
 }
 
-func (p *RekordboxProvider) ModifyTracks(ctx provider.ExecutionContext, query string, changes map[string]string) (int, error) {
+func (p *RekordboxProvider) UpdateTracks(ctx provider.ExecutionContext, query string, changes map[string]string) (int, error) {
 	return 0, fmt.Errorf("metadata modification not yet fully refactored for rekordbox")
 }
 

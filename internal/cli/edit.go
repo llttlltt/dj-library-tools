@@ -81,7 +81,7 @@ Examples:
 
 				for id, newPath := range relocated {
 					changes := map[string]string{"location": newPath}
-					wp.ModifyTracks(ctx, "id:"+id, changes)
+					wp.UpdateTracks(ctx, "id:"+id, changes)
 				}
 				
 				return wp.Save(ctx, "")
@@ -103,7 +103,7 @@ Examples:
 					return nil
 				}
 
-				count, err := wp.ModifyTracks(ctx, sel.Location.Query, changes)
+				count, err := wp.UpdateTracks(ctx, sel.Location.Query, changes)
 				if err != nil {
 					return err
 				}

@@ -56,7 +56,7 @@ func (m *MockProvider) MoveTracks(_ provider.ExecutionContext, _ models.Resource
 func (m *MockProvider) Sync(_ provider.ExecutionContext, _ []models.Track, _, _ string, _ provider.SyncOptions) error {
 	return nil
 }
-func (m *MockProvider) ModifyTracks(_ provider.ExecutionContext, _ string, _ map[string]string) (int, error) { return 0, nil }
+func (m *MockProvider) UpdateTracks(_ provider.ExecutionContext, _ string, _ map[string]string) (int, error) { return 0, nil }
 func (m *MockProvider) ValidateAddTracks(_ models.ResourceGroup) error { return nil }
 func (m *MockProvider) ValidateMoveGroup(_, _ models.ResourceGroup) error { return nil }
 func (m *MockProvider) ValidateCreateGroup(_ models.ResourceGroup, _ models.GroupType) error { return nil }

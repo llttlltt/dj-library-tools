@@ -220,7 +220,7 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, sourceQuery string, 
 
 	if !o.DryRun {
 		if appendOnly {
-			o.Library.LinkTracks(playlistName, trackIDs)
+			o.Library.AddTracks(playlistName, trackIDs)
 		} else {
 			err := o.Library.UpdateGroup(playlistName, trackIDs)
 			if err != nil {
