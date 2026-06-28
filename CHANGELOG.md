@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.9.0](https://github.com/llttlltt/dj-library-tools/compare/v1.8.0...v1.9.0) (2026-06-28)
+
+
+### Features
+
+* implement := operator for strict exact equality in queries ([898267a](https://github.com/llttlltt/dj-library-tools/commit/898267a77f0ab343d4d0a877d15485842b934db3))
+* implement active capability gating for providers ([fde00cb](https://github.com/llttlltt/dj-library-tools/commit/fde00cbb0d116983492323c3fec9e7e92e3e81b0))
+* implement inference-driven sort field validation ([d02daf6](https://github.com/llttlltt/dj-library-tools/commit/d02daf69ae5092fe2aaba38445506754879cf7b7))
+* implement universal dynamic table rendering for list command ([e96c2a8](https://github.com/llttlltt/dj-library-tools/commit/e96c2a8d229a37e8ec3ed749d803807a0e53fbca))
+* **provider/m3u:** implement strict native fields and update cli rendering ([5925a2a](https://github.com/llttlltt/dj-library-tools/commit/5925a2ad47411c8a8f1abddd502d67c114018b54))
+* restore hierarchical cue matching in Rekordbox core ([4a84c7d](https://github.com/llttlltt/dj-library-tools/commit/4a84c7dba98d3a02e06a26eca5ed7da317b0ad1e))
+
+
+### Bug Fixes
+
+* ensure providers are registered and config paths are respected ([fe2f22f](https://github.com/llttlltt/dj-library-tools/commit/fe2f22f366ab3353aff6235b55cca758492c5f42))
+* resolve table alignment issues caused by ANSI color codes ([2b68d52](https://github.com/llttlltt/dj-library-tools/commit/2b68d52baa179e6fd6331f9405ef5dc2625dd658))
+
 ## [1.8.0](https://github.com/llttlltt/dj-library-tools/compare/v1.7.2...v1.8.0) (2026-06-28)
 
 
