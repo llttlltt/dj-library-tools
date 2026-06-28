@@ -59,10 +59,7 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 					return HandleError(err)
 				}
 
-				wp, ok := tgt.Provider.(provider.WritableProvider)
-				if !ok {
-					return fmt.Errorf("unsupported sync target: %s (provider is read-only)", tgt.Location.Provider)
-				}
+				prov := tgt.Provider
 
 				if dryRun {
 					action := "sync"
@@ -77,7 +74,7 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 				}
 
 				// 1. Membership Sync
-				err = wp.Sync(getExecContext(), src.Tracks, src.Location.Query, tgt.Location.Query, provider.SyncOptions{
+				err = prov.System().Sync(getExecContext(), src.Tracks, src.Location.Query, tgt.Location.Query, provider.SyncOptions{
 					ExportDest:   exportDest,
 					ExportFormat: exportFormat,
 					AppendOnly:   syncAppend,
@@ -91,13 +88,13 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 					// We need to resolve the library of the target provider to perform the join
 					// This is a slight leak - let's see how we can make Join more agnostic.
 					// For now, let's allow it if we can get target tracks.
-					targetTracks, err := wp.GetResources(getExecContext(), "tracks", "")
+					targetTracks, err := prov.Tracks().List(getExecContext(), "")
 					if err == nil {
 						// Match datasets
-						matcher := sync.NewMatcher(provider.ToTrackSlice(targetTracks)).WithKeys(matchFields)
+						matcher := sync.NewMatcher(targetTracks).WithKeys(matchFields)
 						matches := sync.NewOrchestrator(nil, dryRun, verbose).WithMatcher(matcher).Join(src.Tracks, matchFields)
 						
-						if err := wp.UpdateMetadata(getExecContext(), matches, metadataFields); err != nil {
+						if err := prov.Tracks().UpdateBatch(getExecContext(), matches, metadataFields); err != nil {
 							return HandleError(err)
 						}
 					}

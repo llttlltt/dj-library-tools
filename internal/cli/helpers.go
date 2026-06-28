@@ -130,9 +130,17 @@ func ResolveSelection(locStr string, queryOverride string) (*Selection, error) {
 	sel := &Selection{Location: loc, Provider: prov}
 	ctx := getExecContext()
 	
-	items, err := prov.GetResources(ctx, loc.Resource, loc.Query)
-	if err != nil {
-		return nil, err
+	var items []models.Resource
+	if loc.Resource == "tracks" {
+		tracks, err := prov.Tracks().List(ctx, loc.Query)
+		if err != nil { return nil, err }
+		for _, t := range tracks { items = append(items, t) }
+	} else if loc.Resource == "playlists" || loc.Resource == "folders" {
+		groups, err := prov.Groups().List(ctx, loc.Query)
+		if err != nil { return nil, err }
+		for _, g := range groups { items = append(items, g) }
+	} else {
+		return nil, fmt.Errorf("unsupported resource type: %s", loc.Resource)
 	}
 
 	// Apply physical health filtering if flags are set
