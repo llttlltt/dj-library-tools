@@ -156,8 +156,8 @@ func (s *m3uSystemService) Save(ctx provider.ExecutionContext, path string) erro
 
 func (s *m3uSystemService) Fix(ctx provider.ExecutionContext, resource string, query string) error { return s.Save(ctx, "") }
 
-func (s *m3uSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, srcQ, tgtQ string, opts provider.SyncOptions) error {
-	err := sync.SyncToLibrary(m3u.NewLibrary(s.tracks), tracks, srcQ, tgtQ, sync.SyncOptions{
+func (s *m3uSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, targetQuery string, opts provider.SyncOptions) error {
+	err := sync.SyncToLibrary(m3u.NewLibrary(s.tracks), tracks, targetQuery, sync.SyncOptions{
 		ExportDest:   opts.ExportDest,
 		ExportFormat: opts.ExportFormat,
 		PathMaps:     opts.PathMaps,

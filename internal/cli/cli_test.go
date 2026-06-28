@@ -43,7 +43,7 @@ func (s *mockSystemService) MetadataCapabilities() []string { return nil }
 func (s *mockSystemService) SupportedResources() []string { return nil }
 func (s *mockSystemService) Save(_ provider.ExecutionContext, _ string) error { return nil }
 func (s *mockSystemService) Fix(_ provider.ExecutionContext, _, _ string) error { return nil }
-func (s *mockSystemService) Sync(_ provider.ExecutionContext, _ []models.Track, _, _ string, _ provider.SyncOptions) error { return nil }
+func (s *mockSystemService) Sync(_ provider.ExecutionContext, _ []models.Track, _ string, _ provider.SyncOptions) error { return nil }
 func (s *mockSystemService) Identify(_ string, _ models.GroupType) string { return "" }
 
 func TestResolveSelection(t *testing.T) {

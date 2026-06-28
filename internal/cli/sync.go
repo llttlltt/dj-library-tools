@@ -73,12 +73,12 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 					continue
 				}
 
-				// 1. Membership Sync
-				err = prov.System().Sync(getExecContext(), src.Tracks, src.Location.Query, tgt.Location.Query, provider.SyncOptions{
-					ExportDest:   exportDest,
-					ExportFormat: exportFormat,
-					AppendOnly:   syncAppend,
-				})
+	// 1. Membership Sync
+	err = prov.System().Sync(getExecContext(), src.Tracks, tgt.Location.Query, provider.SyncOptions{
+		ExportDest:   exportDest,
+		ExportFormat: exportFormat,
+		AppendOnly:   syncAppend,
+	})
 				if err != nil {
 					return HandleError(err)
 				}

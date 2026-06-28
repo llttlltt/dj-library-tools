@@ -104,7 +104,7 @@ func (s *plexSystemService) MetadataCapabilities() []string { return []string{"r
 func (s *plexSystemService) SupportedResources() []string { return []string{"tracks", "playlists"} }
 func (s *plexSystemService) Save(ctx provider.ExecutionContext, path string) error { return nil }
 func (s *plexSystemService) Fix(ctx provider.ExecutionContext, resource, query string) error { return provider.ErrReadOnly }
-func (s *plexSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, srcQ, tgtQ string, opts provider.SyncOptions) error { return provider.ErrReadOnly }
+func (s *plexSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, targetQuery string, opts provider.SyncOptions) error { return provider.ErrReadOnly }
 func (s *plexSystemService) Identify(name string, gt models.GroupType) string { return "" }
 
 func (p *PlexProvider) resolveBaseURL(ctx context.Context) (string, error) {
