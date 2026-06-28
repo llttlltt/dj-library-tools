@@ -65,11 +65,9 @@ func generateDocs(cmd *cobra.Command, dir string) error {
 		return nil
 	}
 
-	// 3. Special Case: Plex and RB (Merge children into index)
+	// 3. Special Case: Plex and RB (Merge children into a single .md file)
 	if isConfigChild && isPlexOrRB {
-		subDir := filepath.Join(dir, name)
-		os.MkdirAll(subDir, 0755)
-		path := filepath.Join(subDir, "index.md")
+		path := filepath.Join(dir, name+".md")
 		f, err := os.Create(path)
 		if err != nil { return err }
 		defer f.Close()
