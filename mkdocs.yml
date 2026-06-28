@@ -75,10 +75,9 @@ nav:
         - mk: commands/mk.md
         - mv: commands/mv.md
         - rm: commands/rm.md
-        - config:
-          - index: commands/config/index.md
-          - list: commands/config/list.md
-          - plex: commands/config/plex/index.md
-          - rb: commands/config/rb/index.md
+        - config: commands/config/index.md
+        - list: commands/config/list.md
+        - plex: commands/config/plex/index.md
+        - rb: commands/config/rb/index.md
   - Development:
     - Architecture: development/architecture.md
