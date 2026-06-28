@@ -20,7 +20,7 @@ The Plex provider interacts with your Plex Media Server via its API using the pa
 ### Scoped Aggregation
 When using the `playlists:` field with a substring match (`:`), the provider will aggregate tracks from **all** playlists that match the query.
 
-For example, `plex/tracks playlists:DJ` will combine tracks from "DJ Crate 1", "DJ Crate 2", etc., into a single deduplicated list. To target a single playlist exclusively, use the exact match operator: `playlists="DJ Crate 1"`.
+For example, `plex/tracks playlists:DJ` will combine tracks from "DJ Crate 1", "DJ Crate 2", etc., into a single deduplicated list. To target a single playlist exclusively, use the exact match operator: `playlists:="DJ Crate 1"`.
 
 ## Authentication
 
