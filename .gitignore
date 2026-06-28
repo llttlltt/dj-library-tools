@@ -39,3 +39,4 @@ tsbuildinfo
 .idea/
 *.swp
 *.swo
+docs/agent/
