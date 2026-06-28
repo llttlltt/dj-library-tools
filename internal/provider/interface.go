@@ -43,6 +43,7 @@ type BaseProvider interface {
 	GetContainmentPolicy() ContainmentPolicy
 	CustomMatch(track models.Track, field string, op query.Operator, value string) bool
 	CanTranscode() bool
+	SupportedResources() []string
 }
 
 // ReadableProvider extends BaseProvider with read operations.
@@ -79,6 +80,9 @@ type WritableProvider interface {
 	ValidateAddTracks(target models.ResourceGroup) error
 	ValidateMoveGroup(src models.ResourceGroup, target models.ResourceGroup) error
 	ValidateCreateGroup(parent models.ResourceGroup, groupType models.GroupType) error
+
+	// IdentifyGroup returns the provider-specific ID for a group name and type.
+	IdentifyGroup(name string, groupType models.GroupType) string
 
 	Save(ctx ExecutionContext, path string) error
 }
