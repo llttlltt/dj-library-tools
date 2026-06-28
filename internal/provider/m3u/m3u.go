@@ -10,8 +10,18 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/playlist"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
+	"github.com/llttlltt/dj-library-tools/internal/provider/factory"
 	"github.com/llttlltt/dj-library-tools/internal/query"
 )
+
+func init() {
+	factory.Register("m3u", func(opts factory.ProviderOptions) (provider.Provider, error) {
+		return NewM3UProvider(opts.FilePath)
+	})
+	factory.Register("m3u8", func(opts factory.ProviderOptions) (provider.Provider, error) {
+		return factory.NewProvider("m3u", opts)
+	})
+}
 
 type M3UProvider struct {
 	path   string
@@ -167,7 +177,6 @@ func (p *M3UProvider) GetResources(ctx provider.ExecutionContext, resource strin
 }
 
 func (p *M3UProvider) SortTracks(_ provider.ExecutionContext, tracks []models.Track, field string) {
-	// Simple M3U sorting
 }
 
 func (p *M3UProvider) SortGroups(_ provider.ExecutionContext, groups []models.ResourceGroup, field string) {
@@ -224,7 +233,7 @@ func (p *M3UProvider) DeleteGroup(ctx provider.ExecutionContext, node models.Res
 	return os.Remove(p.path)
 }
 
-func (p *M3UProvider) RenameGroup(ctx provider.ExecutionContext, node models.ResourceGroup, newName string) error {
+func (p *M3UProvider) RenameGroup(ctx provider.ExecutionContext, node models.ResourceGroup, newName string, groupType models.GroupType) error {
 	newPath := filepath.Join(filepath.Dir(p.path), newName)
 	if err := os.Rename(p.path, newPath); err != nil {
 		return err
@@ -288,7 +297,7 @@ func (p *M3UProvider) Sync(ctx provider.ExecutionContext, tracks []models.Track,
 	return p.Save(ctx, "")
 }
 
-func (p *M3UProvider) ModifyTracks(ctx provider.ExecutionContext, query string, changes map[string]string) (int, error) {
+func (p *M3UProvider) ModifyTracks(_ provider.ExecutionContext, _ string, _ map[string]string) (int, error) {
 	return 0, fmt.Errorf("m3u provider does not support metadata modification")
 }
 
@@ -307,10 +316,10 @@ func (p *M3UProvider) ValidateCreateGroup(parent models.ResourceGroup, groupType
 	return nil
 }
 
-func (p *M3UProvider) SupportedResources() []string {
-	return []string{"tracks", "playlists"}
+func (p *M3UProvider) IdentifyGroup(_ string, _ models.GroupType) string {
+	return p.path
 }
 
-func (p *M3UProvider) IdentifyGroup(name string, groupType models.GroupType) string {
-	return p.path
+func (p *M3UProvider) SupportedResources() []string {
+	return []string{"tracks", "playlists"}
 }
