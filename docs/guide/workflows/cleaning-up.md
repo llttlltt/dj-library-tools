@@ -43,8 +43,10 @@ djlt rm rb/tracks "rating:1" --from "rb/playlists name:'Recent Imports'"
 ---
 
 ## Safety First
-Before performing any removal or deletion, always run the command with `--dry-run` to see exactly which tracks will be affected.
+By default, all `djlt` commands run in **Preview mode**. This allows you to see exactly what would happen without modifying your library.
+
+Once you are satisfied with the preview, add the **`--apply`** flag to commit the changes:
 
 ```bash
-djlt rm rb/tracks "rating:1" --from "..." --dry-run
+djlt rm rb/tracks "rating:1" --from "..." --apply
 ```

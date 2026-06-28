@@ -89,4 +89,4 @@ The selection engine uses a recursive descent parser and a generic evaluator. It
 ### Cobra Command Factory
 Each verb is created by a `newXxxCmd()` constructor function. Flag variables are captured in closures, so each command instance carries its own isolated state. `NewRootCmd()` wires all constructors together and is the sole entry point used by both the production binary (`var RootCmd = NewRootCmd()`) and tests (`root := NewRootCmd()`).
 
-The four persistent flags (`--file`, `--dry-run`, `--verbose`, `--json`) are still bound to package-level vars shared across all verbs. Tests reset these four vars in `resetTestState()` before creating a new root command. No `pflag.Changed` traversal is needed because each `NewRootCmd()` call produces a fresh flag set.
+The three persistent flags (`--file`, `--apply`, `--verbose`) are still bound to package-level vars shared across all verbs. Tests reset these four vars in `resetTestState()` before creating a new root command. No `pflag.Changed` traversal is needed because each `NewRootCmd()` call produces a fresh flag set.
