@@ -35,11 +35,24 @@ type Track struct {
 	Mix           string
 
 	// Advanced DJ Metadata
-	HotCues       int
-	MemoryCues    int
-	BeatgridCount int
+	CuePoints    []CuePoint
+	TempoMarkers []TempoMarker
 
 	Raw interface{}
+}
+
+// CuePoint represents a specific marker in a track (HotCue or Memory Cue).
+type CuePoint struct {
+	Name     string
+	Position float64 // In seconds
+	Color    string
+	Num      int // -1 for memory cues, 0+ for hotcues
+}
+
+// TempoMarker represents a BPM marker for a beatgrid.
+type TempoMarker struct {
+	Position float64 // In seconds
+	BPM      float64
 }
 
 func (t Track) GetID() string   { return t.ID }

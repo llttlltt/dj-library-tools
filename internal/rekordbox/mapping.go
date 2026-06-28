@@ -34,16 +34,22 @@ func ToNeutralTrack(t Track) models.Track {
 		mt.BPM, _ = strconv.ParseFloat(t.AverageBpm, 64)
 	}
 
-	mt.HotCues = 0
-	mt.MemoryCues = 0
 	for _, pm := range t.PositionMark {
-		if pm.Num != -1 {
-			mt.HotCues++
-		} else {
-			mt.MemoryCues++
-		}
+		mt.CuePoints = append(mt.CuePoints, models.CuePoint{
+			Name:     pm.Name,
+			Position: parsePosition(pm.Start),
+			Color:    GetHotCueColorName(pm),
+			Num:      int(pm.Num),
+		})
 	}
-	mt.BeatgridCount = len(t.Tempo)
+
+	for _, tm := range t.Tempo {
+		bpm, _ := strconv.ParseFloat(tm.Bpm, 64)
+		mt.TempoMarkers = append(mt.TempoMarkers, models.TempoMarker{
+			Position: parsePosition(tm.Inizio),
+			BPM:      bpm,
+		})
+	}
 	
 	if t.Colour != "" {
 		mt.Color = GetTrackColorName(t.Colour)
@@ -52,6 +58,11 @@ func ToNeutralTrack(t Track) models.Track {
 	}
 
 	return mt
+}
+
+func parsePosition(s string) float64 {
+	v, _ := strconv.ParseFloat(s, 64)
+	return v
 }
 
 func ToNeutralGroup(n Node, parentFolder string) models.ResourceGroup {

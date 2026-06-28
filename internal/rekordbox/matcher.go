@@ -12,30 +12,28 @@ import (
 func CustomMatch(track models.Track, field string, op query.Operator, value string) bool {
 	target := strings.ToLower(value)
 
-	if rt, ok := track.Raw.(Track); ok {
-		if field == "hotcues" {
-			for _, pm := range rt.PositionMark {
-				if pm.Num == -1 { continue }
-				if matchCueMetadata(pm, target, op) { return true }
-			}
-		} else if field == "memorycues" {
-			for _, pm := range rt.PositionMark {
-				if pm.Num != -1 { continue }
-				if matchCueMetadata(pm, target, op) { return true }
-			}
+	if field == "hotcues" {
+		for _, cp := range track.CuePoints {
+			if cp.Num == -1 { continue }
+			if matchCuePoint(cp, target, op) { return true }
+		}
+	} else if field == "memorycues" {
+		for _, cp := range track.CuePoints {
+			if cp.Num != -1 { continue }
+			if matchCuePoint(cp, target, op) { return true }
 		}
 	}
 	return false
 }
 
-func matchCueMetadata(pm PositionMark, target string, op query.Operator) bool {
+func matchCuePoint(cp models.CuePoint, target string, op query.Operator) bool {
 	if op == query.OpExact {
-		if strings.EqualFold(pm.Name, target) { return true }
-	} else if strings.Contains(strings.ToLower(pm.Name), target) {
+		if strings.EqualFold(cp.Name, target) { return true }
+	} else if strings.Contains(strings.ToLower(cp.Name), target) {
 		return true
 	}
 
-	colorName := strings.ToLower(GetHotCueColorName(pm))
+	colorName := strings.ToLower(cp.Color)
 	if op == query.OpExact {
 		if colorName == target { return true }
 	} else if strings.Contains(colorName, target) {
