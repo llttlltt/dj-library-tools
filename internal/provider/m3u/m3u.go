@@ -134,7 +134,10 @@ func (s *m3uSystemService) Capabilities() provider.ProviderCapabilities {
 	return provider.ProviderCapabilities{CanWrite: true, IsFileBased: true}
 }
 func (s *m3uSystemService) Containment() provider.ContainmentPolicy { return provider.ContainmentPolicy{} }
-func (s *m3uSystemService) MetadataCapabilities() []string { return []string{"display", "location"} }
+func (s *m3uSystemService) MetadataCapabilities() []string {
+	return provider.ResolveAvailableFields(s.Capabilities())
+}
+
 func (s *m3uSystemService) SupportedResources() []string { return []string{"tracks", "playlists"} }
 func (s *m3uSystemService) TableHeaders() []string {
 	return []string{"duration", "display", "location"}
