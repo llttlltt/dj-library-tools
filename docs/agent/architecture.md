@@ -20,4 +20,5 @@ The system follows a nested, resource-oriented service structure:
 - **Provider Registry**: All providers must self-register via `init()` in their respective packages under `internal/provider/`.
 - **Discovery-Driven CLI**: The CLI must interact through standardized services. Avoid type-assertions to specific providers where possible.
 - **Execution Context**: Always pass `provider.ExecutionContext` to respect runtime flags like `DryRun`.
-- **UI Decoupling**: Core packages must not import UI libraries (e.g., `mpb`, `color`). These belong in the Provider or CLI layer.
+- **UI Decoupling**: Core packages must not import UI libraries (e.g., `mpb`, `color`) or write directly to Stdout. All user feedback must be channeled through the `Feedback` interface in the `ExecutionContext`.
+- **Provider-Driven UI**: The CLI should remain a thin, dynamic wrapper. It must use provider services (like `TableHeaders()`) to determine its presentation logic rather than hardcoding provider-specific behavior.

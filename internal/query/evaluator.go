@@ -6,37 +6,17 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/models"
 )
 
-// TrackSchema defines which track fields are numeric.
-var TrackSchema = map[string]FieldType{
-	"playlists":  TypeNumeric,
-	"hotcues":    TypeNumeric,
-	"memorycues": TypeNumeric,
-	"beatgrids":  TypeNumeric,
-	"rating":     TypeNumeric,
-	"plays":      TypeNumeric,
-	"year":       TypeNumeric,
-	"bpm":        TypeNumeric,
-	"bitrate":    TypeNumeric,
-	"samplerate": TypeNumeric,
-	"size":       TypeNumeric,
-	"duration":   TypeNumeric,
-}
+// Allowed Fields (Derived from models at startup)
+var AllowedTrackFields []string
+var AllowedGroupFields []string
 
-// GroupSchema defines which group fields are numeric.
-var GroupSchema = map[string]FieldType{
-	"items": TypeNumeric,
-}
-
-// Allowed Fields (hardcoded for now to avoid circular dependency or reflection)
-var AllowedTrackFields = []string{
-	"playlists", "title", "artist", "album", "bpm", "key", "genre", "comment",
-	"year", "label", "rating", "plays", "added", "modified", "color", "bitrate",
-	"samplerate", "size", "beatgrids", "hotcues", "memorycues", "id", "location",
-	"remixer", "mix", "display", "duration",
-}
-
-var AllowedGroupFields = []string{
-	"name", "parent", "folder", "items", "kind",
+func init() {
+	for k := range models.TrackFields {
+		AllowedTrackFields = append(AllowedTrackFields, k)
+	}
+	for k := range models.GroupFields {
+		AllowedGroupFields = append(AllowedGroupFields, k)
+	}
 }
 
 type CustomMatcher interface {

@@ -9,12 +9,13 @@ djlt ls [resource] [query] [flags]
 ### Options
 
 ```
-      --exists        Filter for tracks where the physical file exists
-  -h, --help          help for ls
-      --json          Output results in JSON format
-      --missing       Filter for tracks where the physical file is missing
-      --sort string   Sort results by field (e.g. bpm, artist, title)
-      --stats         Show summary statistics for the selection
+      --columns strings   Comma-separated list of columns to display
+      --exists            Filter for tracks where the physical file exists
+  -h, --help              help for ls
+      --json              Output results in JSON format
+      --missing           Filter for tracks where the physical file is missing
+      --sort string       Sort results by field (e.g. bpm, artist, title)
+      --stats             Show summary statistics for the selection
 ```
 
 ### Inherited Options

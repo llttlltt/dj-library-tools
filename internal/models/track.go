@@ -1,8 +1,6 @@
 package models
 
 import (
-	"fmt"
-	"strconv"
 )
 
 // Track is the provider-neutral representation of a music track.
@@ -54,59 +52,8 @@ func (t Track) GetKind() string { return "track" }
 
 // Value returns a string representation of a track property for querying.
 func (t Track) Value(key string) string {
-	switch key {
-	case "id":
-		return t.ID
-	case "location":
-		return t.Location
-	case "display":
-		return t.Display
-	case "title":
-		return t.Title
-	case "artist":
-		return t.Artist
-	case "album":
-		return t.Album
-	case "genre":
-		return t.Genre
-	case "comment":
-		return t.Comment
-	case "label":
-		return t.Label
-	case "year":
-		return strconv.Itoa(t.Year)
-	case "color":
-		return t.Color
-	case "bpm":
-		return fmt.Sprintf("%.2f", t.BPM)
-	case "key":
-		return t.Key
-	case "rating":
-		return strconv.Itoa(t.Rating)
-	case "plays":
-		return strconv.Itoa(t.Plays)
-	case "added":
-		return t.DateAdded
-	case "modified":
-		return t.DateModified
-	case "bitrate":
-		return strconv.Itoa(t.Bitrate)
-	case "samplerate":
-		return strconv.Itoa(t.SampleRate)
-	case "size":
-		return strconv.FormatInt(t.Size, 10)
-	case "remixer":
-		return t.Remixer
-	case "mix":
-		return t.Mix
-	case "hotcues":
-		return strconv.Itoa(t.countCues(CueTypeHot))
-	case "memorycues":
-		return strconv.Itoa(t.countCues(CueTypeMemory))
-	case "beatgrids":
-		return strconv.Itoa(len(t.TempoMarkers))
-	case "duration":
-		return strconv.Itoa(t.Duration)
+	if def, ok := TrackFields[key]; ok {
+		return def.Accessor(t)
 	}
 	return ""
 }
@@ -120,6 +67,10 @@ func (t Track) countCues(cueType CueType) int {
 	}
 	return count
 }
+
+func (t Track) Hotcues() int    { return t.countCues(CueTypeHot) }
+func (t Track) Memorycues() int { return t.countCues(CueTypeMemory) }
+func (t Track) Beatgrids() int  { return len(t.TempoMarkers) }
 
 // CuePoint represents a specific marker or performance pad in a track.
 type CuePoint struct {
