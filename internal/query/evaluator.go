@@ -216,13 +216,13 @@ func (e *Evaluator) getFieldValue(track models.Track, playlists []string, field 
 	case "hotcues":
 		count := 0
 		for _, cp := range track.CuePoints {
-			if cp.Num != -1 { count++ }
+			if cp.Type == models.CueTypeHot { count++ }
 		}
 		return strconv.Itoa(count)
 	case "memorycues":
 		count := 0
 		for _, cp := range track.CuePoints {
-			if cp.Num == -1 { count++ }
+			if cp.Type == models.CueTypeMemory { count++ }
 		}
 		return strconv.Itoa(count)
 	case "beatgrids":

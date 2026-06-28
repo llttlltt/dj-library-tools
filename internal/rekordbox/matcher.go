@@ -14,12 +14,12 @@ func CustomMatch(track models.Track, field string, op query.Operator, value stri
 
 	if field == "hotcues" {
 		for _, cp := range track.CuePoints {
-			if cp.Num == -1 { continue }
+			if cp.Type == models.CueTypeMemory { continue }
 			if matchCuePoint(cp, target, op) { return true }
 		}
 	} else if field == "memorycues" {
 		for _, cp := range track.CuePoints {
-			if cp.Num != -1 { continue }
+			if cp.Type != models.CueTypeMemory { continue }
 			if matchCuePoint(cp, target, op) { return true }
 		}
 	}

@@ -18,7 +18,7 @@ func UpdateBatch(rbXML *RekordboxLibraryXML, matches []models.MetadataMatch, fie
 			target := &rbXML.Collection.TRACK[i]
 			if fmt.Sprintf("%d", target.TrackID) == match.Target.ID {
 				if fieldMap["beatgrids"] {
-					if rt, ok := match.Source.Raw.(Track); ok {
+					if rt, ok := match.Source.ImplementationState.(Track); ok {
 						target.Tempo = rt.Tempo
 					}
 				}

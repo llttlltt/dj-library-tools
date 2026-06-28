@@ -2,6 +2,7 @@ package plex
 
 import (
 	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/utils"
 )
 
 func ToNeutralTrack(t Track) models.Track {
@@ -12,8 +13,8 @@ func ToNeutralTrack(t Track) models.Track {
 		Album:  t.Album,
 		BPM:    t.BPM,
 		Key:    t.KeyTag,
-		Rating: models.NormalizeRating(t.UserRating, 10.0), // Plex uses a 10-point internal scale
-		Raw:    t,
+		Rating: utils.NormalizeRating(t.UserRating, 10.0), // Plex uses a 10-point internal scale
+		ImplementationState: t,
 	}
 	if len(t.Media) > 0 && len(t.Media[0].Part) > 0 {
 		mt.Location = t.Media[0].Part[0].File
@@ -27,6 +28,6 @@ func ToNeutralGroup(p Playlist) models.ResourceGroup {
 		Name:  p.Title,
 		Items: p.LeafCount,
 		Type:  models.GroupTypePlaylist,
-		Raw:   p,
+		ImplementationState: p,
 	}
 }
