@@ -77,11 +77,12 @@ djlt rm rb/tracks "rating:0" --from "rb/playlists name:Inbox"
 ```
 
 ### `config`
-View or update persistent application settings.
+View or update persistent application settings and provider authentication.
 
 ```bash
-djlt config primary-file-path "/path/to/export.xml"
-djlt config --list
+djlt config rb file "/path/to/export.xml"
+djlt config plex auth
+djlt config list
 ```
 
 ---

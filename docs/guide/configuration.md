@@ -4,23 +4,34 @@
 
 You should rarely need to edit this file manually. Instead, use the built-in `config` command to manage your settings safely.
 
-## Quick Start
+## Core Settings
 
-### 1. Set your Rekordbox XML path
-This is the most important setting. It tells `djlt` where to find your library.
+### Rekordbox
+The primary setting for Rekordbox is the path to your XML export file.
 ```bash
-djlt config rekordbox.xml-path "/path/to/your/export.xml"
+djlt config rb file "/path/to/your/export.xml"
 ```
 
-### 2. Verify your settings
-You can print your entire configuration at any time:
+### Plex
+Plex configuration requires a host, port, and authentication token.
 ```bash
-djlt config --list
+djlt config plex host 192.168.1.50
+djlt config plex port 32400
 ```
-
-## Detailed Reference
-
-For a complete list of all available keys (Plex connection, Path mapping, etc.) and advanced examples, see the full **[djlt config](../commands/config.md)** command documentation.
 
 !!! tip "Authentication"
-    While you can set `plex.token` via the config command, it is recommended to use **`djlt auth --plex`** to handle the OAuth flow automatically.
+    While you can set the token manually, it is recommended to use **`djlt config plex auth`** to handle the interactive PIN flow automatically.
+
+### Path Mapping
+Path maps allow you to bridge remote file paths (from a NAS or Plex server) to your local mount points.
+```bash
+djlt config plex map /music/remote:/Volumes/Music
+```
+
+## Viewing Settings
+You can print your entire configuration at any time:
+```bash
+djlt config list
+```
+
+For more advanced examples, see the full **[djlt config](../commands/config.md)** command documentation.

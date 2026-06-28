@@ -26,7 +26,7 @@ For example, `plex/tracks playlists:DJ` will combine tracks from "DJ Crate 1", "
 
 Plex requires a valid authentication token. You can set this up using:
 ```bash
-djlt auth --plex
+djlt config plex auth
 ```
 
 ---
