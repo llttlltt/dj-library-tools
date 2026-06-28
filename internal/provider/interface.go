@@ -1,8 +1,16 @@
 package provider
 
 import (
+	"errors"
+
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/query"
+)
+
+var (
+	ErrReadOnly            = errors.New("provider is read-only")
+	ErrInvalidParent       = errors.New("invalid parent for this group type")
+	ErrUnsupportedResource = errors.New("resource type not supported by this provider")
 )
 
 // ProviderCapabilities defines what a provider is able to do.
@@ -40,13 +48,9 @@ type BaseProvider interface {
 // ReadableProvider extends BaseProvider with read operations.
 type ReadableProvider interface {
 	BaseProvider
-	GetTracks(ctx ExecutionContext, query string) ([]models.Track, error)
-	GetPlaylists(ctx ExecutionContext, query string) ([]models.ResourceGroup, error)
-	GetFolders(ctx ExecutionContext, query string) ([]models.ResourceGroup, error)
-
-	// GetResources is the unified entry point for all resource types.
+	// GetResources is the primary discovery method for all resource types (tracks, playlists, folders).
 	GetResources(ctx ExecutionContext, resource string, query string) ([]models.Resource, error)
-
+	
 	// Sort operations
 	SortTracks(ctx ExecutionContext, tracks []models.Track, field string)
 	SortGroups(ctx ExecutionContext, groups []models.ResourceGroup, field string)
@@ -63,7 +67,7 @@ type WritableProvider interface {
 	ReadableProvider
 	AddTracks(ctx ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error)
 	RemoveTracks(ctx ExecutionContext, target models.ResourceGroup, tracks []models.Track) (int, error)
-	CreateGroup(ctx ExecutionContext, parent models.ResourceGroup, name string, nodeType int, position int) (models.ResourceGroup, error)
+	CreateGroup(ctx ExecutionContext, parent models.ResourceGroup, name string, groupType models.GroupType, position int) (models.ResourceGroup, error)
 	DeleteGroup(ctx ExecutionContext, node models.ResourceGroup) error
 	RenameGroup(ctx ExecutionContext, node models.ResourceGroup, newName string) error
 	MoveGroup(ctx ExecutionContext, node models.ResourceGroup, targetParent models.ResourceGroup) error

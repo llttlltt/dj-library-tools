@@ -42,24 +42,29 @@ func (p *RekordboxProvider) Name() string {
 	return "rb"
 }
 
-func (p *RekordboxProvider) GetTracks(ctx provider.ExecutionContext, query string) ([]models.Track, error) {
-	return p.Engine.Ls(query, p)
-}
-
-func (p *RekordboxProvider) GetPlaylists(ctx provider.ExecutionContext, queryString string) ([]models.ResourceGroup, error) {
-	fullQuery := "type:1"
-	if queryString != "" {
-		fullQuery = "(" + queryString + ") && type:1"
+func (p *RekordboxProvider) GetResources(ctx provider.ExecutionContext, resource string, query string) ([]models.Resource, error) {
+	var items []models.Resource
+	switch resource {
+	case "tracks":
+		tracks, err := p.Engine.Ls(query, p)
+		if err != nil { return nil, err }
+		for _, t := range tracks { items = append(items, t) }
+	case "playlists":
+		fullQuery := "type:1"
+		if query != "" { fullQuery = "(" + query + ") && type:1" }
+		groups, err := p.Engine.LsGroups(fullQuery)
+		if err != nil { return nil, err }
+		for _, g := range groups { items = append(items, g) }
+	case "folders":
+		fullQuery := "type:0"
+		if query != "" { fullQuery = "(" + query + ") && type:0" }
+		groups, err := p.Engine.LsGroups(fullQuery)
+		if err != nil { return nil, err }
+		for _, g := range groups { items = append(items, g) }
+	default:
+		return nil, provider.ErrUnsupportedResource
 	}
-	return p.Engine.LsGroups(fullQuery)
-}
-
-func (p *RekordboxProvider) GetFolders(ctx provider.ExecutionContext, queryString string) ([]models.ResourceGroup, error) {
-	fullQuery := "type:0"
-	if queryString != "" {
-		fullQuery = "(" + queryString + ") && type:0"
-	}
-	return p.Engine.LsGroups(fullQuery)
+	return items, nil
 }
 
 func (p *RekordboxProvider) SortTracks(ctx provider.ExecutionContext, tracks []models.Track, field string) {
@@ -95,16 +100,16 @@ func (p *RekordboxProvider) RemoveTracks(ctx provider.ExecutionContext, target m
 	return removed, nil
 }
 
-func (p *RekordboxProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, nodeType int, position int) (models.ResourceGroup, error) {
-	if err := p.ValidateCreateGroup(parent, models.GroupType(nodeType)); err != nil {
+func (p *RekordboxProvider) CreateGroup(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, groupType models.GroupType, position int) (models.ResourceGroup, error) {
+	if err := p.ValidateCreateGroup(parent, groupType); err != nil {
 		return models.ResourceGroup{}, err
 	}
-	if nodeType == 0 {
+	if groupType == models.GroupTypeFolder {
 		p.Engine.Library.(library.WritableLibrary).CreateContainer(parent.Name, name, position)
 	} else {
 		p.Engine.Library.(library.WritableLibrary).AddGroup(parent.Name, name, nil, position)
 	}
-	return models.ResourceGroup{Name: name, Type: models.GroupType(nodeType)}, nil
+	return models.ResourceGroup{Name: name, Type: groupType}, nil
 }
 
 func (p *RekordboxProvider) DeleteGroup(ctx provider.ExecutionContext, node models.ResourceGroup) error {
@@ -271,25 +276,4 @@ func (p *RekordboxProvider) ValidateCreateGroup(parent models.ResourceGroup, gro
 		return fmt.Errorf("cannot create group inside playlist %q (containers must live in folders)", parent.Name)
 	}
 	return nil
-}
-
-func (p *RekordboxProvider) GetResources(ctx provider.ExecutionContext, resource string, query string) ([]models.Resource, error) {
-	var items []models.Resource
-	switch resource {
-	case "tracks":
-		tracks, err := p.GetTracks(ctx, query)
-		if err != nil { return nil, err }
-		for _, t := range tracks { items = append(items, t) }
-	case "playlists":
-		groups, err := p.GetPlaylists(ctx, query)
-		if err != nil { return nil, err }
-		for _, g := range groups { items = append(items, g) }
-	case "folders":
-		groups, err := p.GetFolders(ctx, query)
-		if err != nil { return nil, err }
-		for _, g := range groups { items = append(items, g) }
-	default:
-		return nil, fmt.Errorf("unknown resource: %s", resource)
-	}
-	return items, nil
 }

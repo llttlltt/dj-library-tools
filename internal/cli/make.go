@@ -74,7 +74,7 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int) erro
 		return nil
 	}
 
-	newNode, err := wp.CreateGroup(ctx, models.ResourceGroup{Name: createIn}, name, int(groupType), createAt)
+	newNode, err := wp.CreateGroup(ctx, models.ResourceGroup{Name: createIn}, name, groupType, createAt)
 	if err != nil {
 		return err
 	}
