@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/resolver"
 	"github.com/spf13/cobra"
 )
 
@@ -13,6 +14,8 @@ func newEditCmd() *cobra.Command {
 	var relocateDir string
 	var matchFields []string
 	var repair bool
+	var filterMissing bool
+	var filterExists bool
 
 	cmd := &cobra.Command{
 		Use:   "edit [selection] [query]",
@@ -35,7 +38,15 @@ Examples:
 				queryOverride = strings.Join(args[1:], " ")
 			}
 
-			sel, err := ResolveSelection(args[0], queryOverride)
+			opts := resolver.ResolveOptions{
+				FilePath:      filePath,
+				FilterMissing: filterMissing,
+				FilterExists:  filterExists,
+				DryRun:        dryRun,
+				Verbose:       verbose,
+			}
+
+			sel, err := resolver.ResolveSelection(args[0], queryOverride, opts)
 			if err != nil {
 				return err
 			}
@@ -60,7 +71,7 @@ Examples:
 			// 2. Handle Relocation
 			if relocateDir != "" {
 				// We keep the relocation logic here as it's a cross-provider 'Search & Patch' orchestration
-				// but it calls ModifyTracks on the provider for the actual write.
+				// but it calls UpdateTracks on the provider for the actual write.
 				relocated := prov.(interface {
 					Relocate(tracks []models.Track, dir string, match []string) map[string]string
 				}).Relocate(sel.Tracks, relocateDir, matchFields)
@@ -116,6 +127,8 @@ Examples:
 	cmd.Flags().StringVar(&relocateDir, "relocate", "", "Search this directory to repair missing file paths")
 	cmd.Flags().StringSliceVar(&matchFields, "match", []string{"filename"}, "Criteria to use for relocation matching")
 	cmd.Flags().BoolVar(&repair, "repair", false, "Perform provider-specific health/formatting repairs")
+	cmd.Flags().BoolVar(&filterMissing, "missing", false, "Filter for tracks where the physical file is missing")
+	cmd.Flags().BoolVar(&filterExists, "exists", false, "Filter for tracks where the physical file exists")
 
 	return cmd
 }

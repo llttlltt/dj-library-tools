@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/provider"
+	"github.com/llttlltt/dj-library-tools/internal/resolver"
 	"github.com/llttlltt/dj-library-tools/internal/sync"
 	"github.com/spf13/cobra"
 )
@@ -14,6 +15,7 @@ func newSyncCmd() *cobra.Command {
 	var exportDest, exportFormat string
 	var syncAppend bool
 	var metadataFields, matchFields []string
+	var toFilePath string
 
 	cmd := &cobra.Command{
 		Use:   "sync [source-resource] [source-query] --to [target-resource] [target-query]",
@@ -48,13 +50,29 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 			if len(args) > 1 {
 				queryOverride = strings.Join(args[1:], " ")
 			}
-			src, err := ResolveSelection(args[0], queryOverride)
+
+			srcOpts := resolver.ResolveOptions{
+				FilePath: filePath,
+				DryRun:   dryRun,
+				Verbose:  verbose,
+			}
+
+			src, err := resolver.ResolveSelection(args[0], queryOverride, srcOpts)
 			if err != nil {
 				return HandleError(err)
 			}
 
 			for _, targetStr := range syncTo {
-				tgt, err := ResolveSelection(targetStr, "")
+				tgtOpts := resolver.ResolveOptions{
+					FilePath: toFilePath,
+					DryRun:   dryRun,
+					Verbose:  verbose,
+				}
+				if tgtOpts.FilePath == "" {
+					tgtOpts.FilePath = filePath
+				}
+
+				tgt, err := resolver.ResolveSelection(targetStr, "", tgtOpts)
 				if err != nil {
 					return HandleError(err)
 				}
@@ -73,24 +91,20 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 					continue
 				}
 
-	// 1. Membership Sync
-	err = prov.System().Sync(getExecContext(), src.Tracks, tgt.Location.Query, provider.SyncOptions{
-		ExportDest:   exportDest,
-		ExportFormat: exportFormat,
-		AppendOnly:   syncAppend,
-	})
+				// 1. Membership Sync
+				err = prov.System().Sync(getExecContext(), src.Tracks, tgt.Location.Query, provider.SyncOptions{
+					ExportDest:   exportDest,
+					ExportFormat: exportFormat,
+					AppendOnly:   syncAppend,
+				})
 				if err != nil {
 					return HandleError(err)
 				}
 
 				// 2. Metadata Sync (if requested)
 				if len(metadataFields) > 0 {
-					// We need to resolve the library of the target provider to perform the join
-					// This is a slight leak - let's see how we can make Join more agnostic.
-					// For now, let's allow it if we can get target tracks.
 					targetTracks, err := prov.Tracks().List(getExecContext(), "")
 					if err == nil {
-						// Match datasets
 						matcher := sync.NewMatcher(targetTracks).WithKeys(matchFields)
 						matches := sync.NewOrchestrator(nil, dryRun, verbose).WithMatcher(matcher).Join(src.Tracks, matchFields)
 						
@@ -109,5 +123,6 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 	cmd.Flags().BoolVar(&syncAppend, "append", false, "Append new tracks without removing existing ones")
 	cmd.Flags().StringSliceVar(&metadataFields, "metadata", []string{}, "Metadata fields to synchronize (e.g. beatgrids, rating)")
 	cmd.Flags().StringSliceVar(&matchFields, "match", []string{"artist", "title"}, "Fields to use for matching tracks")
+	cmd.Flags().StringVar(&toFilePath, "to-file", "", "Path to the destination library file for sync/move operations")
 	return cmd
 }
