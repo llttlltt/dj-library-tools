@@ -78,12 +78,6 @@ func runMoveTracks(prov provider.Provider, src *resolver.Selection, moveFrom, mo
 	}
 
 	ctx := getExecContext()
-
-	if !apply {
-		fmt.Printf("[Dry Run] Would move %d tracks from %d origins to %d targets\n", len(src.Tracks), len(org.Groups), len(tgt.Groups))
-		return nil
-	}
-
 	totalMoved := 0
 	for _, origin := range org.Groups {
 		for _, target := range tgt.Groups {
@@ -95,7 +89,9 @@ func runMoveTracks(prov provider.Provider, src *resolver.Selection, moveFrom, mo
 		}
 	}
 
-	fmt.Printf("Successfully moved %d tracks.\n", totalMoved)
+	if ctx.Apply {
+		fmt.Printf("Successfully moved %d tracks.\n", totalMoved)
+	}
 	return prov.System().Save(ctx, "")
 }
 
@@ -113,22 +109,17 @@ func runMoveGroups(prov provider.Provider, src *resolver.Selection, moveTo strin
 
 	ctx := getExecContext()
 
-	if !apply {
-		for _, t := range src.Groups {
-			fmt.Printf("[Dry Run] Would move %s %q to folder %q\n", src.Location.Resource, t.Name, targetParent.Name)
-		}
-		return nil
-	}
-
 	for _, t := range src.Groups {
-		if verbose {
+		if verbose && ctx.Apply {
 			fmt.Printf("Moving %s %q into folder %q...\n", src.Location.Resource, t.Name, targetParent.Name)
 		}
 		if err := prov.Groups().Update(ctx, t, "", &targetParent); err != nil {
 			fmt.Printf("Warning: failed to move %q: %v\n", t.Name, err)
 			continue
 		}
-		fmt.Printf("Moved %s %q -> %q\n", src.Location.Resource, t.Name, targetParent.Name)
+		if ctx.Apply {
+			fmt.Printf("Moved %s %q -> %q\n", src.Location.Resource, t.Name, targetParent.Name)
+		}
 	}
 
 	return prov.System().Save(ctx, "")
@@ -145,20 +136,17 @@ func runRenameGroups(prov provider.Provider, src *resolver.Selection, newName st
 	target := src.Groups[0]
 	ctx := getExecContext()
 
-	if verbose {
+	if verbose && ctx.Apply {
 		fmt.Printf("Renaming %s %q -> %q...\n", src.Location.Resource, target.Name, newName)
-	}
-
-	if !apply {
-		fmt.Printf("[Dry Run] Would rename %q to %q\n", target.Name, newName)
-		return nil
 	}
 
 	if err := prov.Groups().Update(ctx, target, newName, nil); err != nil {
 		return fmt.Errorf("failed to rename %q: %v", target.Name, err)
 	}
 
-	fmt.Printf("Renamed %q -> %q\n", target.Name, newName)
+	if ctx.Apply {
+		fmt.Printf("Renamed %q -> %q\n", target.Name, newName)
+	}
 
 	return prov.System().Save(ctx, "")
 }

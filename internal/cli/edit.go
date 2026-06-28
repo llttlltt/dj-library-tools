@@ -42,7 +42,7 @@ Examples:
 				FilePath:      filePath,
 				FilterMissing: filterMissing,
 				FilterExists:  filterExists,
-				Apply:        apply,
+				Apply:         apply,
 				Verbose:       verbose,
 			}
 
@@ -52,37 +52,27 @@ Examples:
 			}
 
 			prov := sel.Provider
-
 			ctx := getExecContext()
 
 			// 1. Handle Repairs
 			if repair {
-				if !apply {
-					fmt.Printf("[Dry Run] Would perform repair on %s/%s\n", sel.Location.Provider, sel.Location.Resource)
-					return nil
-				}
 				if err := prov.System().Fix(ctx, sel.Location.Resource, sel.Location.Query); err != nil {
 					return err
 				}
-				fmt.Println("Repair completed successfully.")
+				if ctx.Apply {
+					fmt.Println("Repair completed successfully.")
+				}
 				return prov.System().Save(ctx, "")
 			}
 
 			// 2. Handle Relocation
 			if relocateDir != "" {
-				// We keep the relocation logic here as it's a cross-provider 'Search & Patch' orchestration
-				// but it calls UpdateTracks on the provider for the actual write.
 				relocated := prov.(interface {
 					Relocate(tracks []models.Track, dir string, match []string) map[string]string
 				}).Relocate(sel.Tracks, relocateDir, matchFields)
 				
 				if len(relocated) == 0 {
 					fmt.Println("No tracks were relocated.")
-					return nil
-				}
-
-				if !apply {
-					fmt.Printf("[Dry Run] Would update paths for %d tracks\n", len(relocated))
 					return nil
 				}
 
@@ -105,17 +95,14 @@ Examples:
 					changes[parts[0]] = parts[1]
 				}
 
-				if !apply {
-					fmt.Printf("[Dry Run] Would apply changes %v to %d tracks\n", changes, len(sel.Tracks))
-					return nil
-				}
-
 				count, err := prov.Tracks().Update(ctx, sel.Location.Query, changes)
 				if err != nil {
 					return err
 				}
 
-				fmt.Printf("Successfully modified %d tracks.\n", count)
+				if ctx.Apply {
+					fmt.Printf("Successfully modified %d tracks.\n", count)
+				}
 				return prov.System().Save(ctx, "")
 			}
 

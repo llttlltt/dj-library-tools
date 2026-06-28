@@ -57,27 +57,23 @@ func runDeleteResources(prov provider.Provider, ctx provider.ExecutionContext, s
 	for _, item := range sel.Items {
 		if node, ok := item.(models.ResourceGroup); ok {
 			if recursive && node.Kind == models.GroupKindFolder {
-				// Recursive delete: find children and delete them first
-				// This is a simple CLI-side orchestration
+				// Recursive delete orchestration
 				children, _ := prov.Groups().List(ctx, fmt.Sprintf("parent:%q", node.Name))
-				
 				for _, c := range children {
-					if apply { prov.Groups().Delete(ctx, c) }
+					prov.Groups().Delete(ctx, c)
 				}
 			}
 
-			if !apply {
-				fmt.Printf("[Dry Run] Would delete %s %q\n", node.GetKind(), node.Name)
-				continue
-			}
-			if err := sel.Provider.Groups().Delete(ctx, node); err != nil {
+			if err := prov.Groups().Delete(ctx, node); err != nil {
 				return HandleError(err)
 			}
-			fmt.Printf("Deleted %s %q\n", node.GetKind(), node.Name)
+			if ctx.Apply {
+				fmt.Printf("Deleted %s %q\n", node.GetKind(), node.Name)
+			}
 		}
 	}
 
-	return sel.Provider.System().Save(ctx, "")
+	return prov.System().Save(ctx, "")
 }
 
 func runRemoveMembership(prov provider.Provider, ctx provider.ExecutionContext, sel *resolver.Selection, from []string) error {
@@ -93,14 +89,12 @@ func runRemoveMembership(prov provider.Provider, ctx provider.ExecutionContext, 
 		}
 
 		for _, target := range org.Groups {
-			if !apply {
-				fmt.Printf("[Dry Run] Would remove %d tracks from playlist %q\n", len(sel.Tracks), target.Name)
-				continue
-			}
 			removed, _ := prov.Tracks().Groups().Remove(ctx, sel.Tracks, target)
-			fmt.Printf("Removed %d tracks from %q\n", removed, target.Name)
+			if ctx.Apply {
+				fmt.Printf("Removed %d tracks from %q\n", removed, target.Name)
+			}
 		}
 	}
 
-	return sel.Provider.System().Save(ctx, "")
+	return prov.System().Save(ctx, "")
 }
