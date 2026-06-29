@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/resolver"
 	"github.com/spf13/cobra"
 )
@@ -56,7 +57,12 @@ Examples:
 
 			// 1. Handle Repairs
 			if repair {
-				if err := prov.System().Fix(ctx, sel.Location.Resource, sel.Location.Query); err != nil {
+				fixOpts := provider.FixOptions{
+					Actions: map[provider.FixType][]string{
+						provider.FixPaths: {"relocate"},
+					},
+				}
+				if _, err := prov.System().Fix(ctx, *sel, fixOpts); err != nil {
 					return err
 				}
 				if ctx.Apply {
@@ -67,6 +73,8 @@ Examples:
 
 			// 2. Handle Relocation
 			if relocateDir != "" {
+				// Redirect to 'fix --paths relocate' logic if preferred, 
+				// but for now keeping compatible with existing 'edit' workflow.
 				relocated := prov.(interface {
 					Relocate(tracks []models.Track, dir string, match []string) map[string]string
 				}).Relocate(sel.Tracks, relocateDir, matchFields)

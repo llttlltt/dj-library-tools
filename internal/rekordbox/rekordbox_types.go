@@ -137,6 +137,21 @@ type Node struct {
 // PtrInt32 returns a pointer to the given int32 value.
 func PtrInt32(v int32) *int32 { return &v }
 
+func (r *RekordboxLibraryXML) FindGroupInTree(nodes *[]Node, parent *Node, name string, nodeType int32) (*Node, *Node, *[]Node, int) {
+	for i := range *nodes {
+		n := &(*nodes)[i]
+		if n.Name == name && n.Type == nodeType {
+			return n, parent, nodes, i
+		}
+		if len(n.Node) > 0 {
+			if found, foundParent, foundSlice, idx := r.FindGroupInTree(&n.Node, n, name, nodeType); found != nil {
+				return found, foundParent, foundSlice, idx
+			}
+		}
+	}
+	return nil, nil, nil, -1
+}
+
 // DerefInt32 safely dereferences an *int32, returning 0 for a nil pointer.
 func DerefInt32(p *int32) int32 {
 	if p == nil {

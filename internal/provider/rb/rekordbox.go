@@ -229,8 +229,71 @@ func (s *rekordboxSystemService) Save(ctx provider.ExecutionContext, path string
 	return s.engine.Library.(library.WritableLibrary).Save(path)
 }
 
-func (s *rekordboxSystemService) Fix(ctx provider.ExecutionContext, resource string, query string) error {
-	return nil
+func (s *rekordboxSystemService) Fix(ctx provider.ExecutionContext, selection provider.Selection, options provider.FixOptions) (int, error) {
+	totalAffected := 0
+
+	for fixType, targets := range options.Actions {
+		switch fixType {
+		case provider.FixDuplicates:
+			for _, target := range targets {
+				if target == "members" {
+					affected, err := s.fixDuplicateMembers(ctx, selection)
+					if err != nil {
+						return totalAffected, err
+					}
+					totalAffected += affected
+				}
+			}
+		}
+	}
+
+	return totalAffected, nil
+}
+
+func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionContext, selection provider.Selection) (int, error) {
+	totalRemoved := 0
+	
+	// We only care about playlists for duplicate membership fixing
+	for _, res := range selection.Items {
+		group, ok := res.(models.ResourceGroup)
+		if !ok || group.Kind != models.GroupKindPlaylist {
+			continue
+		}
+
+		node, _, _, _ := s.rbXML.FindGroupInTree(&s.rbXML.Playlists.Node.Node, nil, group.ID, 1)
+		if node == nil {
+			continue
+		}
+
+		seen := make(map[string]bool)
+		var kept []struct {
+			Key string `xml:"Key,attr"`
+		}
+		
+		removed := 0
+		for _, t := range node.TRACK {
+			if seen[t.Key] {
+				removed++
+			} else {
+				seen[t.Key] = true
+				kept = append(kept, t)
+			}
+		}
+
+		if removed > 0 {
+			if ctx.Apply {
+				node.TRACK = kept
+				node.Entries = rekordbox.PtrInt32(int32(len(kept)))
+				s.rbXML.PlaylistsChanged = true
+			}
+			if ctx.Verbose {
+				fmt.Printf("Playlist %q: removed %d duplicate tracks\n", group.Name, removed)
+			}
+			totalRemoved += removed
+		}
+	}
+	
+	return totalRemoved, nil
 }
 
 func (s *rekordboxSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, targetQuery string, options provider.SyncOptions) error {

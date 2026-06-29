@@ -160,10 +160,10 @@ func (s *m3uSystemService) Save(ctx provider.ExecutionContext, path string) erro
 	return nil
 }
 
-func (s *m3uSystemService) Fix(ctx provider.ExecutionContext, resource string, query string) error {
+func (s *m3uSystemService) Fix(ctx provider.ExecutionContext, selection provider.Selection, options provider.FixOptions) (int, error) {
 	// Let the gated provider handle the preview log.
 	// We only run the actual fix if we reach this point.
-	return s.Save(ctx, "")
+	return 0, s.Save(ctx, "")
 }
 
 func (s *m3uSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, targetQuery string, opts provider.SyncOptions) error {

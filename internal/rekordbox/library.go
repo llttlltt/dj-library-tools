@@ -268,18 +268,7 @@ func (r *Library) findOrCreateContainer(name string) *Node {
 }
 
 func (r *Library) findGroupInTree(nodes *[]Node, parent *Node, name string, nodeType int32) (*Node, *Node, *[]Node, int) {
-	for i := range *nodes {
-		n := &(*nodes)[i]
-		if n.Name == name && n.Type == nodeType {
-			return n, parent, nodes, i
-		}
-		if len(n.Node) > 0 {
-			if found, foundParent, foundSlice, idx := r.findGroupInTree(&n.Node, n, name, nodeType); found != nil {
-				return found, foundParent, foundSlice, idx
-			}
-		}
-	}
-	return nil, nil, nil, -1
+	return r.XML.FindGroupInTree(nodes, parent, name, nodeType)
 }
 
 // NewLibrary creates a new Library wrapper for a Rekordbox XML.
