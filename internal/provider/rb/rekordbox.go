@@ -323,7 +323,11 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 				}
 				ctx.Feedback.OnTable(headers, rows)
 			}
-			fmt.Printf("Playlist %q: %d tracks total, %d duplicates found\n", group.Name, totalTracks, removed)
+
+			fmt.Printf("%s:\n", group.Name)
+			fmt.Printf("- Total tracks: %d\n", totalTracks)
+			fmt.Printf("- Duplicate tracks: %d\n", removed)
+			fmt.Printf("- Remaining tracks: %d\n", totalTracks-removed)
 			fmt.Println()
 		}
 

@@ -73,16 +73,15 @@ Examples:
 			prov := sel.Provider
 			ctx := getExecContext()
 
-			count, err := prov.System().Fix(ctx, *sel, fixOpts)
-			if err != nil {
+			if _, err := prov.System().Fix(ctx, *sel, fixOpts); err != nil {
 				return err
 			}
 
 			if ctx.Apply {
-				fmt.Printf("Successfully performed repairs. %d items affected.\n", count)
+				fmt.Printf("Successfully performed repairs.\n")
 				return prov.System().Save(ctx, "")
 			} else {
-				fmt.Printf("Preview: %d items would be affected. Run with --apply to persist changes.\n", count)
+				fmt.Printf("Run with --apply to persist changes.\n")
 			}
 
 			return nil
