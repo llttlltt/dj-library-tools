@@ -282,18 +282,26 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 		}
 
 		removed := 0
-		var removedLog []string
+		type removedInfo struct {
+			pos, firstPos int
+			artist, title, id string
+		}
+		var removedRows []removedInfo
 
 		for i, t := range node.TRACK {
 			pos := i + 1
 			if firstPos, dup := seenAt[t.Key]; dup {
 				removed++
 				if ctx.Verbose {
+					info := removedInfo{pos: pos, firstPos: firstPos, id: t.Key}
 					if track, ok := trackLookup[t.Key]; ok {
-						removedLog = append(removedLog, fmt.Sprintf("  - Removed: %s - %s (ID: %s) at pos %d (kept original at pos %d)", track.Artist, track.Title, track.ID, pos, firstPos))
+						info.artist = track.Artist
+						info.title = track.Title
 					} else {
-						removedLog = append(removedLog, fmt.Sprintf("  - Removed: [Unknown Track] (ID: %s) at pos %d (kept original at pos %d)", t.Key, pos, firstPos))
+						info.artist = "[Unknown]"
+						info.title = "[Unknown]"
 					}
+					removedRows = append(removedRows, info)
 				}
 			} else {
 				seenAt[t.Key] = pos
@@ -303,8 +311,21 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 
 		if removed > 0 || ctx.Verbose {
 			fmt.Printf("Playlist %q: %d tracks total, %d duplicates found\n", group.Name, totalTracks, removed)
-			for _, line := range removedLog {
-				fmt.Println(line)
+			if ctx.Verbose && len(removedRows) > 0 {
+				tbl := utils.Table{
+					Headers: []string{"POS", "ORIG", "ARTIST", "TITLE", "ID"},
+				}
+				for _, r := range removedRows {
+					tbl.Rows = append(tbl.Rows, []string{
+						fmt.Sprintf("%d", r.pos),
+						fmt.Sprintf("%d", r.firstPos),
+						r.artist,
+						r.title,
+						r.id,
+					})
+				}
+				tbl.Render()
+				fmt.Println()
 			}
 		}
 
