@@ -252,7 +252,17 @@ func (s *rekordboxSystemService) Fix(ctx provider.ExecutionContext, selection pr
 
 func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionContext, selection provider.Selection) (int, error) {
 	totalRemoved := 0
-	
+
+	// Build track lookup map if verbose to show track names
+	var trackLookup map[string]models.Track
+	if ctx.Verbose {
+		trackLookup = make(map[string]models.Track)
+		for _, rt := range s.rbXML.Collection.TRACK {
+			t := rekordbox.ToNeutralTrack(rt)
+			trackLookup[t.ID] = t
+		}
+	}
+
 	// We only care about playlists for duplicate membership fixing
 	for _, res := range selection.Items {
 		group, ok := res.(models.ResourceGroup)
@@ -265,33 +275,46 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 			continue
 		}
 
+		totalTracks := len(node.TRACK)
 		seen := make(map[string]bool)
 		var kept []struct {
 			Key string `xml:"Key,attr"`
 		}
-		
+
 		removed := 0
+		var removedLog []string
+
 		for _, t := range node.TRACK {
 			if seen[t.Key] {
 				removed++
+				if ctx.Verbose {
+					if track, ok := trackLookup[t.Key]; ok {
+						removedLog = append(removedLog, fmt.Sprintf("  - Removed: %s - %s (ID: %s)", track.Artist, track.Title, track.ID))
+					} else {
+						removedLog = append(removedLog, fmt.Sprintf("  - Removed: [Unknown Track] (ID: %s)", t.Key))
+					}
+				}
 			} else {
 				seen[t.Key] = true
 				kept = append(kept, t)
 			}
 		}
 
-		if removed > 0 {
+		if removed > 0 || ctx.Verbose {
+			fmt.Printf("Playlist %q: %d tracks total, %d duplicates found\n", group.Name, totalTracks, removed)
+			for _, line := range removedLog {
+				fmt.Println(line)
+			}
+		}
+
+		if removed > 0 && ctx.Apply {
 			node.TRACK = kept
 			node.Entries = rekordbox.PtrInt32(int32(len(kept)))
 			s.rbXML.PlaylistsChanged = true
-			
-			if ctx.Verbose {
-				fmt.Printf("Playlist %q: removed %d duplicate tracks\n", group.Name, removed)
-			}
-			totalRemoved += removed
 		}
+		totalRemoved += removed
 	}
-	
+
 	return totalRemoved, nil
 }
 
