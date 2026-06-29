@@ -14,13 +14,7 @@ import (
 )
 
 // Selection represents a resolved set of resources from a provider.
-type Selection struct {
-	Items    []models.Resource
-	Tracks   []models.Track
-	Groups   []models.ResourceGroup
-	Location utils.Location
-	Provider provider.Provider
-}
+type Selection = provider.Selection
 
 // ResolveOptions holds configuration for selection resolution.
 type ResolveOptions struct {

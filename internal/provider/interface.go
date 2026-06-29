@@ -3,6 +3,7 @@ package provider
 import (
 	"github.com/llttlltt/dj-library-tools/internal/djerr"
 	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/utils"
 )
 
 var (
@@ -118,6 +119,30 @@ type GroupService interface {
 	Sort(ctx ExecutionContext, groups []models.ResourceGroup, field string)
 }
 
+// FixType defines the kind of repair operation to perform.
+type FixType string
+
+const (
+	FixDuplicates FixType = "duplicates" // Remove duplicate tracks/memberships
+	FixMetadata   FixType = "metadata"   // Normalize or fix metadata fields
+	FixPaths      FixType = "paths"      // Repair broken file paths
+	FixOrphans    FixType = "orphans"    // Remove orphaned resources
+)
+
+// FixOptions defines targets for each fix type.
+type FixOptions struct {
+	Actions map[FixType][]string
+}
+
+// Selection represents a resolved set of resources from a provider.
+type Selection struct {
+	Items    []models.Resource
+	Tracks   []models.Track
+	Groups   []models.ResourceGroup
+	Location utils.Location
+	Provider Provider
+}
+
 // SystemService handles provider-wide configuration, maintenance, and orchestration.
 type SystemService interface {
 	Capabilities() ProviderCapabilities
@@ -129,8 +154,8 @@ type SystemService interface {
 	// Save writes changes to persistent storage.
 	Save(ctx ExecutionContext, path string) error
 
-	// Fix performs health/formatting repairs.
-	Fix(ctx ExecutionContext, resource string, query string) error
+	// Fix performs health/formatting repairs based on options.
+	Fix(ctx ExecutionContext, selection Selection, options FixOptions) (int, error)
 
 	// Sync orchestrates a full library sync.
 	Sync(ctx ExecutionContext, tracks []models.Track, targetQuery string, options SyncOptions) error

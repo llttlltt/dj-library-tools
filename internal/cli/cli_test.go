@@ -43,7 +43,7 @@ func (s *mockSystemService) MetadataCapabilities() []string { return nil }
 func (s *mockSystemService) TableHeaders() []string         { return []string{"BPM", "Artist", "Title"} }
 func (s *mockSystemService) SupportedResources() []string   { return nil }
 func (s *mockSystemService) Save(_ provider.ExecutionContext, _ string) error { return nil }
-func (s *mockSystemService) Fix(_ provider.ExecutionContext, _, _ string) error { return nil }
+func (s *mockSystemService) Fix(_ provider.ExecutionContext, _ provider.Selection, _ provider.FixOptions) (int, error) { return 0, nil }
 func (s *mockSystemService) Sync(_ provider.ExecutionContext, _ []models.Track, _ string, _ provider.SyncOptions) error { return nil }
 func (s *mockSystemService) Identify(_ string, _ models.GroupKind) string { return "" }
 
