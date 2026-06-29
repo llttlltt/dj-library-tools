@@ -36,3 +36,54 @@ func ExpandPath(path string) string {
 	}
 	return path
 }
+
+// Table represents a simple console table.
+type Table struct {
+	Headers []string
+	Rows    [][]string
+}
+
+// Render writes the table to standard out.
+func (t *Table) Render() {
+	if len(t.Rows) == 0 {
+		return
+	}
+
+	colWidths := make([]int, len(t.Headers))
+	for i, h := range t.Headers {
+		colWidths[i] = len(h)
+	}
+
+	for _, row := range t.Rows {
+		for i, val := range row {
+			if len(val) > colWidths[i] {
+				colWidths[i] = len(val)
+			}
+		}
+	}
+
+	// Limit column widths for certain columns to keep table compact
+	for i, h := range t.Headers {
+		if h == "ARTIST" || h == "TITLE" {
+			if colWidths[i] > 30 {
+				colWidths[i] = 30
+			}
+		}
+	}
+
+	for i, h := range t.Headers {
+		fmt.Printf("%-*s ", colWidths[i], strings.ToUpper(h))
+	}
+	fmt.Println()
+
+	for _, row := range t.Rows {
+		for i, val := range row {
+			text := val
+			if (t.Headers[i] == "ARTIST" || t.Headers[i] == "TITLE") && len(text) > colWidths[i] {
+				text = text[:colWidths[i]-3] + "..."
+			}
+			fmt.Printf("%-*s ", colWidths[i], text)
+		}
+		fmt.Println()
+	}
+}
