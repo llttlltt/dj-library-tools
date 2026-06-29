@@ -4,31 +4,24 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/llttlltt/dj-library-tools/internal/provider"
 	"github.com/llttlltt/dj-library-tools/internal/resolver"
 	"github.com/spf13/cobra"
 )
 
 func newEditCmd() *cobra.Command {
 	var setFields []string
-	var relocateDir string
-	var matchFields []string
-	var repair bool
 	var filterMissing bool
 	var filterExists bool
 
 	cmd := &cobra.Command{
 		Use:   "edit [selection] [query]",
-		Short: "Update metadata, repair paths, or fix library issues",
-		Long: `A unified command for modifying resource state.
+		Short: "Update metadata for resources",
+		Long: `Modify metadata fields for tracks or other resources.
+For library maintenance (deduplication, path repair), use 'djlt fix'.
 
 Examples:
   # Set a comment for tracks
-  djlt edit rb/tracks playlists:Inbox --set comment:Great
-
-  # Relocate missing files
-  djlt edit rb/tracks --missing --relocate "/Volumes/Media/Music"`,
+  djlt edit rb/tracks playlists:Inbox --set comment:Great`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			queryOverride := ""
@@ -52,45 +45,7 @@ Examples:
 			prov := sel.Provider
 			ctx := getExecContext()
 
-			// 1. Handle Repairs
-			if repair {
-				fixOpts := provider.FixOptions{
-					Actions: map[provider.FixType][]string{
-						provider.FixPaths: {"relocate"},
-					},
-				}
-				if _, err := prov.System().Fix(ctx, *sel, fixOpts); err != nil {
-					return err
-				}
-				if ctx.Apply {
-					fmt.Println("Repair completed successfully.")
-					return prov.System().Save(ctx, "")
-				}
-				return nil
-			}
-
-			// 2. Handle Relocation
-			if relocateDir != "" {
-				// Redirect to 'fix --paths relocate' logic if preferred, 
-				// but for now keeping compatible with existing 'edit' workflow.
-				relocated := prov.(interface {
-					Relocate(tracks []models.Track, dir string, match []string) map[string]string
-				}).Relocate(sel.Tracks, relocateDir, matchFields)
-				
-				if len(relocated) == 0 {
-					fmt.Println("No tracks were relocated.")
-					return nil
-				}
-
-				for id, newPath := range relocated {
-					changes := map[string]string{"location": newPath}
-					prov.Tracks().Update(ctx, "id:"+id, changes)
-				}
-				
-				return prov.System().Save(ctx, "")
-			}
-
-			// 3. Handle Metadata Updates
+			// Handle Metadata Updates
 			if len(setFields) > 0 {
 				changes := make(map[string]string)
 				for _, f := range setFields {
@@ -117,14 +72,8 @@ Examples:
 	}
 
 	cmd.Flags().StringSliceVar(&setFields, "set", []string{}, "Metadata fields to update (key:value)")
-	cmd.Flags().StringVar(&relocateDir, "relocate", "", "Search this directory to repair missing file paths")
-	cmd.Flags().StringSliceVar(&matchFields, "match", []string{"filename"}, "Criteria to use for relocation matching")
-	cmd.Flags().BoolVar(&repair, "repair", false, "Perform provider-specific health/formatting repairs")
 	cmd.Flags().BoolVar(&filterMissing, "missing", false, "Filter for tracks where the physical file is missing")
 	cmd.Flags().BoolVar(&filterExists, "exists", false, "Filter for tracks where the physical file exists")
-
-	cmd.Flags().MarkHidden("repair")
-	cmd.Flags().MarkHidden("relocate")
 
 	return cmd
 }
