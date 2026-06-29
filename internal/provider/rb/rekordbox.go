@@ -311,14 +311,14 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 
 		if removed > 0 || ctx.Verbose {
 			if ctx.Verbose && len(removedRows) > 0 {
-				headers := []string{"pos", "artist", "title", "id"}
+				headers := []string{"pos", "id", "title", "artist"}
 				var rows [][]string
 				for _, r := range removedRows {
 					rows = append(rows, []string{
 						fmt.Sprintf("%d, %d", r.firstPos, r.pos),
-						r.artist,
-						r.title,
 						r.id,
+						r.title,
+						r.artist,
 					})
 				}
 				ctx.Feedback.OnTable(headers, rows)
