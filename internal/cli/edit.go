@@ -122,8 +122,8 @@ Examples:
 	cmd.Flags().BoolVar(&filterMissing, "missing", false, "Filter for tracks where the physical file is missing")
 	cmd.Flags().BoolVar(&filterExists, "exists", false, "Filter for tracks where the physical file exists")
 
-	cmd.Flags().MarkDeprecated("repair", "use 'djlt fix' instead")
-	cmd.Flags().MarkDeprecated("relocate", "use 'djlt fix --paths relocate' instead")
+	cmd.Flags().MarkHidden("repair")
+	cmd.Flags().MarkHidden("relocate")
 
 	return cmd
 }
