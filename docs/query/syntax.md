@@ -67,4 +67,4 @@ Stats allow you to perform calculations on a collection.
 
 ## Advanced Filters
 
-Some providers support advanced filtering patterns (e.g., membership checks or cue properties). See the individual **[Providers](query/providers/index.md)** pages for details on which fields support these.
+Some providers support advanced filtering patterns (e.g., membership checks or cue properties). See the individual **[Providers](../providers/index.md)** pages for details on which fields support these.

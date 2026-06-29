@@ -1,6 +1,6 @@
 # edit
 
-Update metadata, repair paths, or fix library issues
+Update metadata for resources
 
 ```
 djlt edit [selection] [query] [flags]
@@ -8,11 +8,10 @@ djlt edit [selection] [query] [flags]
 ### Options
 
 ```
-      --exists          Filter for tracks where the physical file exists
-  -h, --help            help for edit
-      --match strings   Criteria to use for relocation matching (default [filename])
-      --missing         Filter for tracks where the physical file is missing
-      --set strings     Metadata fields to update (key:value)
+      --exists        Filter for tracks where the physical file exists
+  -h, --help          help for edit
+      --missing       Filter for tracks where the physical file is missing
+      --set strings   Metadata fields to update (key:value)
 ```
 
 ### Inherited Options
@@ -23,14 +22,12 @@ djlt edit [selection] [query] [flags]
   -v, --verbose       Enable verbose logging
 ```
 
-A unified command for modifying resource state.
+Modify metadata fields for tracks or other resources.
+For library maintenance (deduplication, path repair), use 'djlt fix'.
 
 Examples:
   # Set a comment for tracks
   djlt edit rb/tracks playlists:Inbox --set comment:Great
-
-  # Relocate missing files
-  djlt edit rb/tracks --missing --relocate "/Volumes/Media/Music"
 
 ## See also
 

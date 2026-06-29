@@ -33,7 +33,7 @@ Examples:
   djlt fix rb/tracks "genre:Techno" --metadata artist,album
 
   # Repair broken file paths for missing tracks
-  djlt fix rb/tracks --missing --paths relocate
+  djlt fix rb/tracks --missing --paths normalize
 
 ## See also
 
