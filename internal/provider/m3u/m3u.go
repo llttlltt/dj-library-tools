@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"github.com/llttlltt/dj-library-tools/internal/library"
 	"github.com/llttlltt/dj-library-tools/internal/m3u"
 	"github.com/llttlltt/dj-library-tools/internal/models"
@@ -161,9 +162,31 @@ func (s *m3uSystemService) Save(ctx provider.ExecutionContext, path string) erro
 }
 
 func (s *m3uSystemService) Fix(ctx provider.ExecutionContext, selection provider.Selection, options provider.FixOptions) (int, error) {
-	// Let the gated provider handle the preview log.
-	// We only run the actual fix if we reach this point.
-	return 0, s.Save(ctx, "")
+	totalAffected := 0
+
+	for fixType, targets := range options.Actions {
+		switch fixType {
+		case provider.FixPaths:
+			for _, target := range targets {
+				if target == "normalize" {
+					res, err := m3u.FixPlaylist(s.path, m3u.FixOptions{
+						M3U8:    strings.HasSuffix(s.path, ".m3u8"),
+						Verbose: ctx.Verbose,
+					})
+					if err != nil {
+						return totalAffected, err
+					}
+					// If FixPlaylist is destructive/in-place, we've already "applied"
+					// but provider contract says we only apply if ctx.Apply is true.
+					// m3u.FixPlaylist seems to write to a temp file then rename,
+					// which is effectively 'Apply'.
+					totalAffected += res.TotalTracks
+				}
+			}
+		}
+	}
+
+	return totalAffected, nil
 }
 
 func (s *m3uSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, targetQuery string, opts provider.SyncOptions) error {
