@@ -24,16 +24,24 @@ type CustomMatcher interface {
 }
 
 type Evaluator struct {
-	Query   Query
-	Matcher CustomMatcher
+	Query     Query
+	Matcher   CustomMatcher
+	pathCache map[string]string // key: "trackID:path"
 }
 
 func NewEvaluator(q Query) *Evaluator {
-	return &Evaluator{Query: q}
+	return &Evaluator{
+		Query:     q,
+		pathCache: make(map[string]string),
+	}
 }
 
 func NewEvaluatorWithMatcher(q Query, m CustomMatcher) *Evaluator {
-	return &Evaluator{Query: q, Matcher: m}
+	return &Evaluator{
+		Query:     q,
+		Matcher:   m,
+		pathCache: make(map[string]string),
+	}
 }
 
 func (e *Evaluator) Matches(track models.Track) bool {
@@ -86,10 +94,18 @@ func (e *Evaluator) matchComparison(track models.Track, playlists []string, c Co
 
 	// Path-based resolution
 	if isPath(c.Field) {
-		val, ok := ResolvePath(track, c.Field)
-		if ok {
-			return Compare(c.Field, val, targetValue, c.Operator)
+		cacheKey := track.ID + ":" + c.Field
+		val, ok := e.pathCache[cacheKey]
+		if !ok {
+			var found bool
+			val, found = ResolvePath(track, c.Field)
+			if found {
+				e.pathCache[cacheKey] = val
+			} else {
+				return false
+			}
 		}
+		return Compare(c.Field, val, targetValue, c.Operator)
 	}
 
 	// Membership domain

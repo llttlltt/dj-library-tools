@@ -7,6 +7,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/llttlltt/dj-library-tools/internal/models"
 	"github.com/llttlltt/dj-library-tools/internal/provider"
+	"github.com/llttlltt/dj-library-tools/internal/query"
 	"github.com/llttlltt/dj-library-tools/internal/utils"
 )
 
@@ -40,7 +41,16 @@ func renderTrackTable(prov provider.Provider, tracks []models.Track, columns []s
 	for _, tr := range tracks {
 		row := make([]string, len(columns))
 		for i, col := range columns {
-			row[i] = tr.Value(strings.ToLower(col))
+			field := strings.ToLower(col)
+			val := tr.Value(field)
+			
+			// If not a standard field, try path resolution
+			if val == "" && (strings.ContainsAny(field, "./-")) {
+				if pVal, ok := query.ResolvePath(tr, field); ok {
+					val = pVal
+				}
+			}
+			row[i] = val
 		}
 		t.Rows = append(t.Rows, row)
 	}
