@@ -11,40 +11,9 @@ import (
 // ResolvePath takes a track and a path-based field (e.g., beatgrids/bpm-drift)
 // and returns the calculated value.
 func ResolvePath(track models.Track, path string) (string, bool) {
-	// 1. Identify Stat
-	stat := ""
-	cleanPath := path
-	if idx := strings.LastIndex(path, "-"); idx != -1 {
-		stat = path[idx+1:]
-		cleanPath = path[:idx]
-	}
-
-	// 2. Identify Index
-	index := -1
-	collectionPart := cleanPath
-	if idx := strings.Index(cleanPath, "."); idx != -1 {
-		indexStr := ""
-		if slashIdx := strings.Index(cleanPath, "/"); slashIdx != -1 {
-			indexStr = cleanPath[idx+1 : slashIdx]
-			collectionPart = cleanPath[:idx]
-		} else {
-			indexStr = cleanPath[idx+1:]
-			collectionPart = cleanPath[:idx]
-		}
-		
-		val, err := strconv.Atoi(indexStr)
-		if err == nil {
-			index = val - 1 // 1-based to 0-based
-		}
-	}
-
-	// 3. Identify Property
-	property := ""
-	if idx := strings.Index(cleanPath, "/"); idx != -1 {
-		property = cleanPath[idx+1:]
-		if index == -1 {
-			collectionPart = cleanPath[:idx]
-		}
+	collectionPart, index, property, stat := ParsePath(path)
+	if collectionPart == "" {
+		return "", false
 	}
 
 	// 4. Resolve Collection
@@ -91,7 +60,7 @@ func ResolvePath(track models.Track, path string) (string, bool) {
 
 	// 7. Apply Stat
 	if stat != "" {
-		if fn, ok := Stats[stat]; ok {
+		if fn, ok := GetStat(stat); ok {
 			return fn(values), true
 		}
 	}
@@ -103,6 +72,79 @@ func ResolvePath(track models.Track, path string) (string, bool) {
 	}
 
 	return "", true
+}
+
+// ParsePath decomposes a path into its constituent parts.
+func ParsePath(path string) (collection string, index int, property string, stat string) {
+	index = -1
+	cleanPath := path
+	if idx := strings.LastIndex(path, "-"); idx != -1 {
+		stat = path[idx+1:]
+		cleanPath = path[:idx]
+	}
+
+	collectionPart := cleanPath
+	if idx := strings.Index(cleanPath, "."); idx != -1 {
+		indexStr := ""
+		if slashIdx := strings.Index(cleanPath, "/"); slashIdx != -1 {
+			indexStr = cleanPath[idx+1 : slashIdx]
+			collectionPart = cleanPath[:idx]
+		} else {
+			indexStr = cleanPath[idx+1:]
+			collectionPart = cleanPath[:idx]
+		}
+		
+		val, err := strconv.Atoi(indexStr)
+		if err == nil {
+			index = val - 1 // 1-based to 0-based
+		}
+	}
+
+	if idx := strings.Index(cleanPath, "/"); idx != -1 {
+		property = cleanPath[idx+1:]
+		if index == -1 {
+			collectionPart = cleanPath[:idx]
+		}
+	}
+
+	return strings.ToLower(collectionPart), index, property, stat
+}
+
+// ValidatePath checks if a path string is semantically valid according to models.
+func ValidatePath(path string) error {
+	collection, index, property, stat := ParsePath(path)
+
+	// 1. Validate Collection
+	fields, ok := models.CollectionFields[collection]
+	if !ok {
+		return fmt.Errorf("unrecognized collection %q", collection)
+	}
+
+	// 2. Validate Property (if present)
+	if property != "" {
+		if _, ok := fields[property]; !ok {
+			return fmt.Errorf("collection %q does not have property %q", collection, property)
+		}
+	}
+
+	// 3. Validate Stat (if present)
+	if stat != "" {
+		if stat == "density" {
+			return nil
+		}
+		if _, ok := GetStat(stat); !ok {
+			return fmt.Errorf("unrecognized stat %q", stat)
+		}
+	}
+
+	// 4. Validate Indexing
+	if index != -1 && (stat != "" || property == "") {
+		// Indexing is allowed with property (hotcues.1/color) 
+		// but not with stats (beatgrids.1-count is nonsensical)
+		// and we need a property if indexed (hotcues.1 is ambiguous but we allow it as "name")
+	}
+
+	return nil
 }
 
 func resolveCueProperty(cp models.CuePoint, prop string) string {

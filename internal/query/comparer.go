@@ -15,14 +15,22 @@ func getFieldKind(field string) models.FieldKind {
 
 	// Handle path-based fields
 	if strings.ContainsAny(field, "./-") {
-		// Stats and certain properties are numeric
-		if strings.Contains(field, "-drift") || 
-		   strings.Contains(field, "-density") || 
-		   strings.Contains(field, "-count") ||
-		   strings.Contains(field, "/bpm") ||
-		   strings.Contains(field, "/position") {
+		collection, _, property, stat := ParsePath(field)
+		
+		// 1. Stats are numeric (except possibly custom ones, but currently all are)
+		if stat != "" {
 			return models.KindNumeric
 		}
+
+		// 2. Look up property in collection definition
+		if fields, ok := models.CollectionFields[collection]; ok {
+			if kind, ok := fields[property]; ok {
+				return kind
+			}
+		}
+
+		// Default for collections (e.g. hotcues.1 is usually treated as a name)
+		return models.KindString
 	}
 
 	if def, ok := models.TrackFields[field]; ok {

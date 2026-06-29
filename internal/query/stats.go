@@ -8,12 +8,33 @@ import (
 // StatFunction defines a calculation performed on a slice of values.
 type StatFunction func(values []string) string
 
-// Stats maps stat names (without the hyphen) to their implementation.
-var Stats = map[string]StatFunction{
-	"count": func(values []string) string {
+var statsRegistry = make(map[string]StatFunction)
+
+// RegisterStat adds a new statistical function to the registry.
+func RegisterStat(name string, fn StatFunction) {
+	statsRegistry[name] = fn
+}
+
+// GetStat returns a statistical function by name.
+func GetStat(name string) (StatFunction, bool) {
+	fn, ok := statsRegistry[name]
+	return fn, ok
+}
+
+// GetStatNames returns a list of all registered statistical functions.
+func GetStatNames() []string {
+	var names []string
+	for name := range statsRegistry {
+		names = append(names, name)
+	}
+	return names
+}
+
+func init() {
+	RegisterStat("count", func(values []string) string {
 		return fmt.Sprintf("%d", len(values))
-	},
-	"min": func(values []string) string {
+	})
+	RegisterStat("min", func(values []string) string {
 		if len(values) == 0 {
 			return "0"
 		}
@@ -25,8 +46,8 @@ var Stats = map[string]StatFunction{
 			}
 		}
 		return fmt.Sprintf("%.4f", min)
-	},
-	"max": func(values []string) string {
+	})
+	RegisterStat("max", func(values []string) string {
 		if len(values) == 0 {
 			return "0"
 		}
@@ -38,8 +59,8 @@ var Stats = map[string]StatFunction{
 			}
 		}
 		return fmt.Sprintf("%.4f", max)
-	},
-	"avg": func(values []string) string {
+	})
+	RegisterStat("avg", func(values []string) string {
 		if len(values) == 0 {
 			return "0"
 		}
@@ -48,8 +69,8 @@ var Stats = map[string]StatFunction{
 			sum += parseToFloat(v)
 		}
 		return fmt.Sprintf("%.4f", sum/float64(len(values)))
-	},
-	"drift": func(values []string) string {
+	})
+	RegisterStat("drift", func(values []string) string {
 		if len(values) == 0 {
 			return "0"
 		}
@@ -70,8 +91,8 @@ var Stats = map[string]StatFunction{
 			}
 		}
 		return fmt.Sprintf("%.4f", max-min)
-	},
-	"jitter": func(values []string) string {
+	})
+	RegisterStat("jitter", func(values []string) string {
 		if len(values) < 2 {
 			return "0"
 		}
@@ -83,8 +104,8 @@ var Stats = map[string]StatFunction{
 			prev = curr
 		}
 		return fmt.Sprintf("%.4f", diffSum/float64(len(values)-1))
-	},
-	"redundancy": func(values []string) string {
+	})
+	RegisterStat("redundancy", func(values []string) string {
 		if len(values) < 2 {
 			return "0"
 		}
@@ -98,13 +119,11 @@ var Stats = map[string]StatFunction{
 			prev = curr
 		}
 		return fmt.Sprintf("%.0f", (float64(matches)/float64(len(values)-1))*100.0)
-	},
-	"stability": func(values []string) string {
+	})
+	RegisterStat("stability", func(values []string) string {
 		if len(values) < 2 {
 			return "100"
 		}
-		// Composite: 100 - (drift * 5) - (jitter * 20)
-		// We'll cap it at 0-100.
 		var min, max float64
 		diffSum := 0.0
 		first := true
@@ -127,7 +146,7 @@ var Stats = map[string]StatFunction{
 		score := 100.0 - (drift * 10.0) - (jitter * 50.0)
 		if score < 0 { score = 0 }
 		return fmt.Sprintf("%.0f", score)
-	},
+	})
 }
 
 // DensityStat calculates markers per minute.
