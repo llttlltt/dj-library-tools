@@ -28,10 +28,7 @@ Examples:
   djlt edit rb/tracks playlists:Inbox --set comment:Great
 
   # Relocate missing files
-  djlt edit rb/tracks --missing --relocate "/Volumes/Media/Music"
-
-  # Run provider-specific repairs (formerly 'fix')
-  djlt edit rb/tracks --repair`,
+  djlt edit rb/tracks --missing --relocate "/Volumes/Media/Music"`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			queryOverride := ""
@@ -124,6 +121,9 @@ Examples:
 	cmd.Flags().BoolVar(&repair, "repair", false, "Perform provider-specific health/formatting repairs")
 	cmd.Flags().BoolVar(&filterMissing, "missing", false, "Filter for tracks where the physical file is missing")
 	cmd.Flags().BoolVar(&filterExists, "exists", false, "Filter for tracks where the physical file exists")
+
+	cmd.Flags().MarkDeprecated("repair", "use 'djlt fix' instead")
+	cmd.Flags().MarkDeprecated("relocate", "use 'djlt fix --paths relocate' instead")
 
 	return cmd
 }
