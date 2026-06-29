@@ -312,7 +312,7 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 		if removed > 0 || ctx.Verbose {
 			fmt.Printf("Playlist %q: %d tracks total, %d duplicates found\n", group.Name, totalTracks, removed)
 			if ctx.Verbose && len(removedRows) > 0 {
-				headers := []string{"POS", "ORIG", "ARTIST", "TITLE", "ID"}
+				headers := []string{"pos", "orig", "artist", "title", "id"}
 				var rows [][]string
 				for _, r := range removedRows {
 					rows = append(rows, []string{
