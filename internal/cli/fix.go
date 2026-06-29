@@ -30,7 +30,7 @@ Examples:
   djlt fix rb/tracks "genre:Techno" --metadata artist,album
 
   # Repair broken file paths for missing tracks
-  djlt fix rb/tracks --missing --paths relocate`,
+  djlt fix rb/tracks --missing --paths normalize`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			queryOverride := ""
