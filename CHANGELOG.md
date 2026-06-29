@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.10.0](https://github.com/llttlltt/dj-library-tools/compare/v1.9.0...v1.10.0) (2026-06-29)
+
+
+### Features
+
+* **cli:** implement compact table rendering for fix feedback ([63b9375](https://github.com/llttlltt/dj-library-tools/commit/63b937552a4f125b1df0d2effb4a8df1cad80b34))
+* implement multi-purpose 'fix' command and provider-agnostic repair system ([a865af4](https://github.com/llttlltt/dj-library-tools/commit/a865af4a62b6f4be7124b80bcc6a758ef7c4a3ae))
+* **m3u:** implement path normalization in fix command ([61ad3a8](https://github.com/llttlltt/dj-library-tools/commit/61ad3a813c5562e9528972be1996a803ea62a18b))
+* **models:** define queryable collections and property metadata ([84afb6a](https://github.com/llttlltt/dj-library-tools/commit/84afb6a03a5ac29f5a06c3a09a93e52a55c3891d))
+* **query:** add stats and path logic files ([249a4c3](https://github.com/llttlltt/dj-library-tools/commit/249a4c3c15baa67762014c7061b8a9bd0ee78d76))
+* **query:** implement full suite of stats including min, max, avg, jitter, and stability ([c71c7d3](https://github.com/llttlltt/dj-library-tools/commit/c71c7d35de510ddf70eb7bb8f35efa182b6287bf))
+* **query:** implement path-based resolution and stats engine ([d6cadcc](https://github.com/llttlltt/dj-library-tools/commit/d6cadccc58a5c2f126f047881d0ee35c332510e3))
+* **query:** normalize redundancy stat to 0-100 percentage scale ([a9772fc](https://github.com/llttlltt/dj-library-tools/commit/a9772fc44bb035289d032bac7f4f3e25c39f3f3a))
+* **query:** treat playlists as a collection with folder properties ([53f7554](https://github.com/llttlltt/dj-library-tools/commit/53f75541ff028769254b60b51aaec2312298119b))
+* **rb:** consolidate deduplication position display ([6dfea05](https://github.com/llttlltt/dj-library-tools/commit/6dfea0522c30962835b692f293db6ba7acb160d1))
+* **rb:** enhance deduplication logs with track positions ([cebc492](https://github.com/llttlltt/dj-library-tools/commit/cebc492e6300da0dbed3229516fcba802289f435))
+* **rb:** finalize deduplication audit feedback ([c9a7ecc](https://github.com/llttlltt/dj-library-tools/commit/c9a7eccc5d8526c75bf33eb5cfdcbcb654aa1322))
+* **rb:** improve feedback for playlist deduplication ([f7d0679](https://github.com/llttlltt/dj-library-tools/commit/f7d0679972723f62d4cee8d6900396a8d1a6ddb0))
+* **rb:** refine deduplication audit table layout ([156975a](https://github.com/llttlltt/dj-library-tools/commit/156975a078daa61c6ac7ff0039d21ccd2b39e2b0))
+* **rekordbox:** extract color utilities to separate file ([8186451](https://github.com/llttlltt/dj-library-tools/commit/8186451df051443300edf1a58d89f5b4c444cb19))
+* **resolver:** add path capability validation and numeric mapping ([ebe7651](https://github.com/llttlltt/dj-library-tools/commit/ebe7651cc0acb0b23b0cdbc910ed65746dad4a6a))
+
+
+### Bug Fixes
+
+* **cli:** align headers and columns in shared table utility ([73a9e69](https://github.com/llttlltt/dj-library-tools/commit/73a9e69329af7bbeeea3c10784c6ea3543408ae4))
+* **cli:** preserve heading casing in shared table utility ([d7ded35](https://github.com/llttlltt/dj-library-tools/commit/d7ded35bdba826e997b68ceddcc18d640978be51))
+* **m3u:** ensure 'fix' command respects dry-run mode for path normalization ([bc04fc4](https://github.com/llttlltt/dj-library-tools/commit/bc04fc4e3fe696a9630811749783bae166281184))
+* **query:** remove redundant static count fields and implement path-aware validation ([789ba4c](https://github.com/llttlltt/dj-library-tools/commit/789ba4cdc7b243ccc284748ba60f72e03a4bdf59))
+* **rb:** improve query robustness and folder-aware maintenance ([35ce354](https://github.com/llttlltt/dj-library-tools/commit/35ce3545ca946c7a96f309cde661285e3fb98bca))
+
 ## [1.9.0](https://github.com/llttlltt/dj-library-tools/compare/v1.8.0...v1.9.0) (2026-06-28)
 
 
