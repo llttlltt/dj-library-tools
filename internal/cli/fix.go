@@ -73,6 +73,15 @@ Examples:
 			prov := sel.Provider
 			ctx := getExecContext()
 
+			if len(sel.Items) == 0 {
+				queryMsg := ""
+				if sel.Location.Query != "" {
+					queryMsg = fmt.Sprintf(" with query %q", sel.Location.Query)
+				}
+				fmt.Printf("No items found matching the selection: %q%s\n", sel.Location.Resource, queryMsg)
+				return nil
+			}
+
 			if _, err := prov.System().Fix(ctx, *sel, fixOpts); err != nil {
 				return err
 			}

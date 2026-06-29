@@ -19,11 +19,11 @@ type ProgressListener interface {
 }
 
 type Orchestrator struct {
-	Library    library.WritableLibrary
-	Apply     bool
-	Verbose    bool
-	Listener   ProgressListener
-	Matcher    *Matcher
+	Library  library.WritableLibrary
+	Apply    bool
+	Verbose  bool
+	Listener ProgressListener
+	Matcher  *Matcher
 }
 
 func NewOrchestrator(lib library.WritableLibrary, apply, verbose bool) *Orchestrator {
@@ -34,12 +34,12 @@ func NewOrchestrator(lib library.WritableLibrary, apply, verbose bool) *Orchestr
 			tracks = append(tracks, r.(models.Track))
 		}
 	}
-	
+
 	return &Orchestrator{
-		Library:    lib,
-		Apply:     apply,
-		Verbose:    verbose,
-		Matcher:    NewMatcher(tracks),
+		Library: lib,
+		Apply:   apply,
+		Verbose: verbose,
+		Matcher: NewMatcher(tracks),
 	}
 }
 
@@ -63,12 +63,12 @@ type SyncOptions struct {
 // SyncToLibrary is a high-level helper that coordinates a full sync from source tracks to a target library.
 func SyncToLibrary(lib library.WritableLibrary, tracks []models.Track, targetQuery string, options SyncOptions, apply, verbose bool, appendOnly bool) error {
 	orch := NewOrchestrator(lib, apply, verbose)
-	
+
 	// Perform metadata reconciliation if requested
 	if len(options.MetadataFields) > 0 {
 		orch.Matcher = NewMatcher(orch.getExistingTracks()).WithKeys(options.MatchFields)
 		matches := orch.Join(tracks, options.MatchFields)
-		
+
 		if err := orch.Library.(interface {
 			UpdateMetadata(matches []models.MetadataMatch, fields []string) error
 		}).UpdateMetadata(matches, options.MetadataFields); err != nil {
@@ -82,7 +82,7 @@ func SyncToLibrary(lib library.WritableLibrary, tracks []models.Track, targetQue
 // Join matches source tracks against the target library using the specified keys.
 func (o *Orchestrator) Join(sourceTracks []models.Track, matchFields []string) []models.MetadataMatch {
 	var matches []models.MetadataMatch
-	
+
 	for _, st := range sourceTracks {
 		match := o.Matcher.Match(st)
 		if match.TargetTrack != nil && match.Confidence >= 0.8 {
@@ -92,17 +92,19 @@ func (o *Orchestrator) Join(sourceTracks []models.Track, matchFields []string) [
 			})
 		}
 	}
-	
+
 	return matches
 }
 
 // Relocate searches for physical files for the given tracks in the searchDir.
 func (o *Orchestrator) Relocate(tracks []models.Track, searchDir string, matchFields []string) map[string]string {
 	relocated := make(map[string]string)
-	
+
 	fileMap := make(map[string][]string)
 	filepath.Walk(searchDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() { return nil }
+		if err != nil || info.IsDir() {
+			return nil
+		}
 		name := strings.ToLower(info.Name())
 		fileMap[name] = append(fileMap[name], path)
 		return nil
@@ -111,7 +113,9 @@ func (o *Orchestrator) Relocate(tracks []models.Track, searchDir string, matchFi
 	for _, t := range tracks {
 		filename := strings.ToLower(filepath.Base(t.Location))
 		candidates, ok := fileMap[filename]
-		if !ok { continue }
+		if !ok {
+			continue
+		}
 
 		for _, candidate := range candidates {
 			relocated[t.ID] = candidate
@@ -142,7 +146,7 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opt
 	}
 
 	type transcodeJob struct {
-		track models.Track
+		track  models.Track
 		target *models.Track
 	}
 	jobs := make(chan transcodeJob, len(tracks))
@@ -163,7 +167,9 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opt
 				if track.Location == "" {
 					errors <- fmt.Errorf("no media file for: %s - %s", track.Artist, track.Title)
 					results <- ""
-					if o.Listener != nil { o.Listener.OnTrackEnd() }
+					if o.Listener != nil {
+						o.Listener.OnTrackEnd()
+					}
 					continue
 				}
 
@@ -173,7 +179,9 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opt
 					} else {
 						results <- ""
 					}
-					if o.Listener != nil { o.Listener.OnTrackEnd() }
+					if o.Listener != nil {
+						o.Listener.OnTrackEnd()
+					}
 					continue
 				}
 
@@ -185,7 +193,9 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opt
 				if err != nil {
 					errors <- fmt.Errorf("path error for %s: %v", track.Title, err)
 					results <- ""
-					if o.Listener != nil { o.Listener.OnTrackEnd() }
+					if o.Listener != nil {
+						o.Listener.OnTrackEnd()
+					}
 					continue
 				}
 
@@ -193,21 +203,27 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opt
 				if _, err := os.Stat(transcoder.ApplyPathMap(sourceFile)); err != nil {
 					errors <- fmt.Errorf("source not found for %s: %s", track.Title, sourceFile)
 					results <- ""
-					if o.Listener != nil { o.Listener.OnTrackEnd() }
+					if o.Listener != nil {
+						o.Listener.OnTrackEnd()
+					}
 					continue
 				}
 
-				if !o.Apply {
+				if o.Apply {
 					if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
 						errors <- fmt.Errorf("mkdir error for %s: %v", track.Title, err)
 						results <- ""
-						if o.Listener != nil { o.Listener.OnTrackEnd() }
+						if o.Listener != nil {
+							o.Listener.OnTrackEnd()
+						}
 						continue
 					}
 					if err := transcoder.Transcode(sourceFile, destPath); err != nil {
 						errors <- fmt.Errorf("transcode error for %s: %v", track.Title, err)
 						results <- ""
-						if o.Listener != nil { o.Listener.OnTrackEnd() }
+						if o.Listener != nil {
+							o.Listener.OnTrackEnd()
+						}
 						continue
 					}
 				}
@@ -217,7 +233,9 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opt
 				} else {
 					results <- ""
 				}
-				if o.Listener != nil { o.Listener.OnTrackEnd() }
+				if o.Listener != nil {
+					o.Listener.OnTrackEnd()
+				}
 			}
 		}()
 	}
@@ -231,7 +249,7 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opt
 		jobs <- transcodeJob{track: track, target: targetTrack}
 	}
 	close(jobs)
-	
+
 	var trackIDs []string
 	for i := 0; i < len(tracks); i++ {
 		if res := <-results; res != "" {
@@ -240,16 +258,30 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opt
 	}
 	close(errors)
 	for err := range errors {
-		if o.Verbose { fmt.Printf("  Error: %v\n", err) }
+		if o.Verbose {
+			fmt.Printf("  Error: %v\n", err)
+		}
 	}
 
-	if !o.Apply {
+	if o.Apply {
 		if appendOnly {
 			o.Library.AddTracks(targetID, trackIDs)
 		} else {
 			err := o.Library.UpdateGroup(targetID, trackIDs)
 			if err != nil {
-				o.Library.CreateGroup("", targetID, models.GroupKindPlaylist, -1)
+				// If the targetID looks like a query (contains ':'), do NOT create it.
+				// This prevents creating playlists named "name:Something".
+				if strings.Contains(targetID, ":") {
+					return fmt.Errorf("could not find target playlist %q for synchronization", targetID)
+				}
+				
+				// Use only the base name if targetID is a path
+				newName := targetID
+				if idx := strings.LastIndex(targetID, "/"); idx != -1 {
+					newName = targetID[idx+1:]
+				}
+				
+				o.Library.CreateGroup("", newName, models.GroupKindPlaylist, -1)
 				o.Library.UpdateGroup(targetID, trackIDs)
 			}
 		}

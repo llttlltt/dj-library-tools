@@ -1,7 +1,9 @@
 package rekordbox
 
 import (
+	"html"
 	"strconv"
+	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/models"
 )
@@ -9,13 +11,13 @@ import (
 func ToNeutralTrack(t Track) models.Track {
 	mt := models.Track{
 		ID:           strconv.Itoa(t.TrackID),
-		Title:        t.Name,
-		Artist:       t.Artist,
-		Album:        t.Album,
+		Title:        strings.TrimSpace(html.UnescapeString(t.Name)),
+		Artist:       strings.TrimSpace(html.UnescapeString(t.Artist)),
+		Album:        strings.TrimSpace(html.UnescapeString(t.Album)),
 		Key:          t.Tonality,
-		Genre:        t.Genre,
-		Comment:      t.Comments,
-		Label:        t.Label,
+		Genre:        strings.TrimSpace(html.UnescapeString(t.Genre)),
+		Comment:      strings.TrimSpace(html.UnescapeString(t.Comments)),
+		Label:        strings.TrimSpace(html.UnescapeString(t.Label)),
 		Year:         int(t.Year),
 		Location:     t.Location,
 		Rating:       int(t.Rating), // Rekordbox already uses 0-255 in XML
@@ -71,10 +73,11 @@ func parsePosition(s string) float64 {
 }
 
 func ToNeutralGroup(n Node, parentFolder string) models.ResourceGroup {
+	name := strings.TrimSpace(html.UnescapeString(n.Name))
 	// Construction of the ID: use full path to ensure uniqueness
-	id := n.Name
+	id := name
 	if parentFolder != "" {
-		id = parentFolder + "/" + n.Name
+		id = parentFolder + "/" + name
 	}
 
 	groupKind := models.GroupKindPlaylist
@@ -90,7 +93,7 @@ func ToNeutralGroup(n Node, parentFolder string) models.ResourceGroup {
 	}
 	return models.ResourceGroup{
 		ID:                  id,
-		Name:                n.Name,
+		Name:                name,
 		Items:               int(items),
 		ParentFolder:        parentFolder,
 		Kind:                groupKind,

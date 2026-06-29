@@ -51,7 +51,7 @@ func (p *Parser) parsePart(word string) []Token {
 	rest := word[sepIdx:] // starts with : or =
 
 	// Ensure we don't treat quoted values inside the word as part of the operator
-	if strings.Contains(field, "\"") || strings.Contains(field, "'") {
+	if strings.ContainsAny(field, "\"'") {
 		return []Token{{Kind: TokenValue, Value: word}}
 	}
 	
@@ -131,8 +131,6 @@ func (p *Parser) tokenize(input string) []Token {
 			tokens = append(tokens, Token{Kind: TokenLParen, Value: "("})
 		case ')':
 			tokens = append(tokens, Token{Kind: TokenRParen, Value: ")"})
-		case '!', '-':
-			tokens = append(tokens, Token{Kind: TokenNot, Value: "!"})
 		case '&':
 			if i+1 < len(runes) && runes[i+1] == '&' {
 				tokens = append(tokens, Token{Kind: TokenAnd, Value: "&&"})
@@ -146,12 +144,29 @@ func (p *Parser) tokenize(input string) []Token {
 		case '"', '\'':
 			quote := r
 			val, end := p.readQuoted(runes, i, quote)
-			if val == "" {
-				tokens = append(tokens, Token{Kind: TokenValue, Value: `""`, Quoted: true})
+			// Check if this was preceded by a field name (e.g., name:"Value")
+			if len(tokens) > 0 && tokens[len(tokens)-1].Kind == TokenField && tokens[len(tokens)-1].Value != "" {
+				// The field is already there, just add the value
+				tokens = append(tokens, Token{Kind: TokenValue, Value: val, Quoted: true})
+			} else if i > 0 && runes[i-1] == ':' {
+				// This is the value part of a field:value pair where the colon was already tokenized
+				tokens = append(tokens, Token{Kind: TokenValue, Value: val, Quoted: true})
 			} else {
+				// Bare quoted value
 				tokens = append(tokens, Token{Kind: TokenValue, Value: val, Quoted: true})
 			}
 			i = end
+		case '!', '-':
+			// Look ahead: only treat as NOT if it's start of token AND not preceded by an operator
+			// This prevents - inside field values (like name:Sorting/1 - Inbox) from being seen as NOT.
+			isStartOfToken := i == 0 || unicode.IsSpace(runes[i-1]) || runes[i-1] == '('
+			if isStartOfToken && i+1 < len(runes) && !unicode.IsSpace(runes[i+1]) && runes[i+1] != '=' {
+				tokens = append(tokens, Token{Kind: TokenNot, Value: "!"})
+			} else {
+				word, end := p.readWord(runes, i)
+				tokens = append(tokens, Token{Kind: TokenValue, Value: word})
+				i = end
+			}
 		default:
 			word, end := p.readWord(runes, i)
 			wordLower := strings.ToLower(word)
@@ -176,6 +191,12 @@ func (p *Parser) readQuoted(runes []rune, start int, quote rune) (string, int) {
 	var sb strings.Builder
 	for i := start + 1; i < len(runes); i++ {
 		if runes[i] == quote {
+			// If followed by another quote, it's an escaped quote
+			if i+1 < len(runes) && runes[i+1] == quote {
+				sb.WriteRune(quote)
+				i++
+				continue
+			}
 			return sb.String(), i
 		}
 		sb.WriteRune(runes[i])
@@ -188,7 +209,9 @@ func (p *Parser) readWord(runes []rune, start int) (string, int) {
 	i := start
 	for ; i < len(runes); i++ {
 		r := runes[i]
-		if unicode.IsSpace(r) || r == '(' || r == ')' || r == '!' || r == '&' || r == '|' || r == '"' || r == '\'' {
+		// Special handling for operators: keep them separate if they are syntactically meaningful.
+		// We allow ' inside words for contractions, but it still functions as a quote if it starts the word.
+		if unicode.IsSpace(r) || r == '(' || r == ')' || r == '!' || r == '&' || r == '|' || r == '"' {
 			break
 		}
 		sb.WriteRune(r)
@@ -318,9 +341,22 @@ func (p *Parser) parsePrimary() Expression {
 			val = ""
 		}
 
+		// Trim surrounding quotes if present
+		if len(val) >= 2 {
+			if (val[0] == '"' && val[len(val)-1] == '"') || (val[0] == '\'' && val[len(val)-1] == '\'') {
+				val = val[1 : len(val)-1]
+			}
+		}
+
 		return Comparison{Field: token.Value, Operator: op, Value: val, Quoted: quoted}
 	case TokenValue:
-		return Comparison{Field: "", Operator: OpSubstring, Value: token.Value, Quoted: token.Quoted}
+		val := token.Value
+		if len(val) >= 2 {
+			if (val[0] == '"' && val[len(val)-1] == '"') || (val[0] == '\'' && val[len(val)-1] == '\'') {
+				val = val[1 : len(val)-1]
+			}
+		}
+		return Comparison{Field: "", Operator: OpSubstring, Value: val, Quoted: token.Quoted}
 	}
 	return nil
 }
