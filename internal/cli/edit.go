@@ -64,8 +64,9 @@ Examples:
 				}
 				if ctx.Apply {
 					fmt.Println("Repair completed successfully.")
+					return prov.System().Save(ctx, "")
 				}
-				return prov.System().Save(ctx, "")
+				return nil
 			}
 
 			// 2. Handle Relocation

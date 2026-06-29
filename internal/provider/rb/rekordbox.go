@@ -281,11 +281,10 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 		}
 
 		if removed > 0 {
-			if ctx.Apply {
-				node.TRACK = kept
-				node.Entries = rekordbox.PtrInt32(int32(len(kept)))
-				s.rbXML.PlaylistsChanged = true
-			}
+			node.TRACK = kept
+			node.Entries = rekordbox.PtrInt32(int32(len(kept)))
+			s.rbXML.PlaylistsChanged = true
+			
 			if ctx.Verbose {
 				fmt.Printf("Playlist %q: removed %d duplicate tracks\n", group.Name, removed)
 			}

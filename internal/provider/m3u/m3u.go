@@ -169,12 +169,6 @@ func (s *m3uSystemService) Fix(ctx provider.ExecutionContext, selection provider
 		case provider.FixPaths:
 			for _, target := range targets {
 				if target == "normalize" {
-					if !ctx.Apply {
-						// For normalize, we can't easily count without running it, 
-						// but we can report that the file would be processed.
-						totalAffected += len(s.tracks)
-						continue
-					}
 					res, err := m3u.FixPlaylist(s.path, m3u.FixOptions{
 						M3U8:    strings.HasSuffix(s.path, ".m3u8"),
 						Verbose: ctx.Verbose,
@@ -182,10 +176,6 @@ func (s *m3uSystemService) Fix(ctx provider.ExecutionContext, selection provider
 					if err != nil {
 						return totalAffected, err
 					}
-					// If FixPlaylist is destructive/in-place, we've already "applied"
-					// but provider contract says we only apply if ctx.Apply is true.
-					// m3u.FixPlaylist seems to write to a temp file then rename,
-					// which is effectively 'Apply'.
 					totalAffected += res.TotalTracks
 				}
 			}
