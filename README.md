@@ -25,16 +25,16 @@ go install github.com/llttlltt/dj-library-tools/cmd/djlt@latest
 
 ```bash
 # 1. Set your master Rekordbox XML path
-djlt config rekordbox.xml-path ~/Documents/rekordbox.xml
+djlt config rb file ~/Documents/rekordbox.xml
 
 # 2. Authenticate with Plex (Optional)
-djlt auth --plex
+djlt config plex auth
 
 # 3. Query your library
 djlt ls rb/tracks "genre:House && bpm:124..128"
 
 # 4. Sync a Plex playlist to Rekordbox
-djlt sync plex/playlists name:Summer --to "rb/playlists name:'Plex Sync'"
+djlt sync "plex/playlists name:Summer" --to "rb/playlists name:'Plex Sync'"
 ```
 
 ## Contributing

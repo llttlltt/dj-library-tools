@@ -4,9 +4,9 @@
 
 ## Available Providers
 
-- **[Rekordbox (rb)](rekordbox/index.md)**: Manage your local collection, playlists, and folders.
-- **[Plex (plex)](plex/index.md)**: Sync data from your Plex Media Server.
-- **[M3U / M3U8 (m3u/m3u8)](m3u/index.md)**: Read and write standard music playlist files.
+- **[Rekordbox (rb)](rekordbox.md)**: Manage your local collection, playlists, and folders.
+- **[Plex (plex)](plex.md)**: Sync data from your Plex Media Server.
+- **[M3U / M3U8 (m3u/m3u8)](m3u.md)**: Read and write standard music playlist files.
 
 ---
 

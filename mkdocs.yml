@@ -46,46 +46,50 @@ extra:
   generator: false
 
 nav:
+  - Home: index.md
   - Guide:
+    - index: guide/index.md
     - Getting Started: guide/getting-started.md
     - Configuration: guide/configuration.md
-    - Syntax: guide/syntax.md
+    - Commands Overview: guide/commands.md
+  - Query:
+    - Syntax: query/syntax.md
     - Providers:
-      - Overview: guide/query/providers/index.md
-      - Rekordbox: guide/query/providers/rekordbox/index.md
-      - Plex: guide/query/providers/plex/index.md
-      - M3U: guide/query/providers/m3u/index.md
-    - Workflows:
-      - index: guide/workflows/index.md
-      - Creating and Updating Playlists: guide/workflows/creating-and-updating-playlists.md
-      - Exporting to Mobile: guide/workflows/exporting-to-mobile.md
-      - Cleaning Up: guide/workflows/cleaning-up.md
-      - Library Repair: guide/workflows/library-repair.md
-      - Metadata Hardening: guide/workflows/metadata-hardening.md
-      - Metadata Reconciliation: guide/workflows/metadata-reconciliation.md
-      - Organizing by Complexity: guide/workflows/organizing-by-complexity.md
-      - Organizing Resources: guide/workflows/organizing-resources.md
-    - Commands:
-      - index: guide/commands/index.md
-      - Reference:
-        - index: commands/index.md
-        - ls: commands/ls.md
-        - sync: commands/sync.md
-        - edit: commands/edit.md
-        - mk: commands/mk.md
-        - mv: commands/mv.md
-        - rm: commands/rm.md
-        - config:
-          - index: commands/config/index.md
-          - list: commands/config/list.md
-          - plex:
-            - index: commands/config/plex/index.md
-            - auth: commands/config/plex/auth.md
-            - host: commands/config/plex/host.md
-            - port: commands/config/plex/port.md
-            - map: commands/config/plex/map.md
-          - rb:
-            - index: commands/config/rb/index.md
-            - file: commands/config/rb/file.md
+      - index: providers/index.md
+      - Rekordbox: providers/rekordbox.md
+      - Plex: providers/plex.md
+      - M3U: providers/m3u.md
+  - Workflows:
+    - index: workflows/index.md
+    - Creating and Updating Playlists: workflows/creating-and-updating-playlists.md
+    - Exporting to Mobile: workflows/exporting-to-mobile.md
+    - Cleaning Up: workflows/cleaning-up.md
+    - Library Repair: workflows/library-repair.md
+    - Metadata Hardening: workflows/metadata-hardening.md
+    - Metadata Reconciliation: workflows/metadata-reconciliation.md
+    - Organizing by Complexity: workflows/organizing-by-complexity.md
+    - Organizing Resources: workflows/organizing-resources.md
+  - Commands Reference:
+    - index: commands/index.md
+    - ls: commands/ls.md
+    - sync: commands/sync.md
+    - edit: commands/edit.md
+    - fix: commands/fix.md
+    - mk: commands/mk.md
+    - mv: commands/mv.md
+    - rm: commands/rm.md
+    - config:
+      - index: commands/config/index.md
+      - list: commands/config/list.md
+      - plex:
+        - index: commands/config/plex/index.md
+        - auth: commands/config/plex/auth.md
+        - host: commands/config/plex/host.md
+        - port: commands/config/plex/port.md
+        - map: commands/config/plex/map.md
+      - rb:
+        - index: commands/config/rb/index.md
+        - file: commands/config/rb/file.md
   - Development:
     - Architecture: development/architecture.md
+    - XML Format: development/xml-format.md
