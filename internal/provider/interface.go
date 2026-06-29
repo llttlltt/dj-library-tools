@@ -58,6 +58,7 @@ type ExecutionContext struct {
 type Feedback interface {
 	OnPreview(message string)
 	OnSuccess(message string)
+	OnTable(headers []string, rows [][]string)
 }
 
 // Provider is the entry point for all provider-specific operations.
