@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/llttlltt/dj-library-tools/compare/v1.10.0...v1.11.0) (2026-06-29)
+
+
+### Features
+
+* **rb:** implement comprehensive fix logic and consolidate maintenance ([292fa40](https://github.com/llttlltt/dj-library-tools/commit/292fa4093c4932ff946ef64a55cd1a01143c1520))
+
 ## [1.10.0](https://github.com/llttlltt/dj-library-tools/compare/v1.9.0...v1.10.0) (2026-06-29)
 
 
