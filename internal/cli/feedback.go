@@ -16,6 +16,11 @@ func (f *TerminalFeedback) OnSuccess(msg string) {
 	fmt.Printf("%s %s\n", color.GreenString("✔"), msg)
 }
 
+func (f *TerminalFeedback) OnStart(total int64)         {}
+func (f *TerminalFeedback) OnTrackStart(trackTitle string) {}
+func (f *TerminalFeedback) OnTrackEnd()                    {}
+
+func (f *TerminalFeedback) OnComplete() {}
 func (f *TerminalFeedback) OnTable(headers []string, rows [][]string) {
 	headerFmt := color.New(color.FgCyan, color.Bold, color.Underline).SprintFunc()
 	t := utils.Table{

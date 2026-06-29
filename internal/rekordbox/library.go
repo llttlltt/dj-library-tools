@@ -76,12 +76,20 @@ func (r *Library) CreateGroup(parentID, name string, groupKind models.GroupKind,
 	r.XML.PlaylistsChanged = true
 	var container *[]Node
 	var folderNode *Node
-	
+
 	if parentID == "" {
 		container = &r.XML.Playlists.Node.Node
 	} else {
-		folderNode = r.findOrCreateContainer(parentID)
-		container = &folderNode.Node
+		// Use the recursive search to find the correct folder
+		foundNode, _, _, _ := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, parentID, 0)
+		if foundNode == nil {
+			// Fallback to creating at root if parent not found
+			folderNode = r.findOrCreateContainer(parentID)
+			container = &folderNode.Node
+		} else {
+			folderNode = foundNode
+			container = &folderNode.Node
+		}
 	}
 
 	nodeType := 1 // Playlist
@@ -109,11 +117,10 @@ func (r *Library) CreateGroup(parentID, name string, groupKind models.GroupKind,
 	}
 
 	if folderNode != nil {
-		if folderNode.Count == nil {
-			folderNode.Count = PtrInt32(1)
-		} else {
-			*folderNode.Count++
-		}
+		count := int32(len(folderNode.Node))
+		folderNode.Count = &count
+	} else {
+		r.XML.Playlists.Node.Count = int32(len(r.XML.Playlists.Node.Node))
 	}
 	return ToNeutralGroup(node, parentID), nil
 }
@@ -130,15 +137,19 @@ func (r *Library) DeleteGroup(groupID string, groupKind models.GroupKind) error 
 		return fmt.Errorf("group not found")
 	}
 	*parentSlice = append((*parentSlice)[:idx], (*parentSlice)[idx+1:]...)
-	if parentNode != nil && parentNode.Count != nil && *parentNode.Count > 0 {
-		*parentNode.Count--
+	if parentNode != nil {
+		count := int32(len(*parentSlice))
+		parentNode.Count = &count
+	} else {
+		r.XML.Playlists.Node.Count = int32(len(r.XML.Playlists.Node.Node))
 	}
 	return nil
 }
 
 func (r *Library) AddTracks(groupID string, trackIDs []string) (int, error) {
 	r.XML.PlaylistsChanged = true
-	node, _, _, _ := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, groupID, 1)
+	// Search recursively for playlist (Type 1) matching ID or Name
+	node, _, _, _ := r.findGroupInTreeByID(&r.XML.Playlists.Node.Node, nil, groupID, 1)
 	if node == nil {
 		return 0, fmt.Errorf("playlist not found")
 	}
@@ -158,13 +169,15 @@ func (r *Library) AddTracks(groupID string, trackIDs []string) (int, error) {
 			added++
 		}
 	}
-	node.Entries = PtrInt32(int32(len(node.TRACK)))
+	count := int32(len(node.TRACK))
+	node.Entries = &count
 	return added, nil
 }
 
 func (r *Library) RemoveTracks(groupID string, trackIDs []string) (int, error) {
 	r.XML.PlaylistsChanged = true
-	node, _, _, _ := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, groupID, 1)
+	// Search recursively for playlist (Type 1) matching ID or Name
+	node, _, _, _ := r.findGroupInTreeByID(&r.XML.Playlists.Node.Node, nil, groupID, 1)
 	if node == nil {
 		return 0, fmt.Errorf("playlist not found")
 	}
@@ -182,13 +195,15 @@ func (r *Library) RemoveTracks(groupID string, trackIDs []string) (int, error) {
 		}
 	}
 	node.TRACK = kept
-	node.Entries = PtrInt32(int32(len(node.TRACK)))
+	count := int32(len(node.TRACK))
+	node.Entries = &count
 	return before - len(node.TRACK), nil
 }
 
 func (r *Library) UpdateGroup(groupID string, trackIDs []string) error {
 	r.XML.PlaylistsChanged = true
-	node, _, _, _ := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, groupID, 1)
+	// Search recursively for playlist (Type 1) matching ID or Name
+	node, _, _, _ := r.findGroupInTreeByID(&r.XML.Playlists.Node.Node, nil, groupID, 1)
 	if node == nil {
 		return fmt.Errorf("playlist not found")
 	}
@@ -198,7 +213,8 @@ func (r *Library) UpdateGroup(groupID string, trackIDs []string) error {
 			Key string `xml:"Key,attr"`
 		}{Key: id})
 	}
-	node.Entries = PtrInt32(int32(len(trackIDs)))
+	count := int32(len(trackIDs))
+	node.Entries = &count
 	return nil
 }
 
@@ -229,16 +245,29 @@ func (r *Library) MoveGroup(groupID string, groupKind models.GroupKind, targetPa
 
 	moved := *node
 	*parentSlice = append((*parentSlice)[:idx], (*parentSlice)[idx+1:]...)
-	if parentNode != nil && parentNode.Count != nil && *parentNode.Count > 0 {
-		*parentNode.Count--
+	if parentNode != nil {
+		count := int32(len(*parentSlice))
+		parentNode.Count = &count
+	} else {
+		r.XML.Playlists.Node.Count = int32(len(r.XML.Playlists.Node.Node))
 	}
 
-	target := r.findOrCreateContainer(targetParentID)
-	target.Node = append(target.Node, moved)
-	if target.Count == nil {
-		target.Count = PtrInt32(1)
+	var targetNodes *[]Node
+	var targetFolder *Node
+
+	if targetParentID == "" {
+		targetNodes = &r.XML.Playlists.Node.Node
 	} else {
-		*target.Count++
+		targetFolder = r.findOrCreateContainer(targetParentID)
+		targetNodes = &targetFolder.Node
+	}
+
+	*targetNodes = append(*targetNodes, moved)
+	if targetFolder != nil {
+		count := int32(len(*targetNodes))
+		targetFolder.Count = &count
+	} else {
+		r.XML.Playlists.Node.Count = int32(len(r.XML.Playlists.Node.Node))
 	}
 	return nil
 }
@@ -253,6 +282,12 @@ func (r *Library) Save(path string) error {
 }
 
 func (r *Library) findOrCreateContainer(name string) *Node {
+	// Try recursive search first
+	node, _, _, _ := r.findGroupInTree(&r.XML.Playlists.Node.Node, nil, name, 0)
+	if node != nil {
+		return node
+	}
+
 	nodes := &r.XML.Playlists.Node.Node
 	for i := range *nodes {
 		if (*nodes)[i].Name == name && (*nodes)[i].Type == 0 {
@@ -265,6 +300,36 @@ func (r *Library) findOrCreateContainer(name string) *Node {
 		Count: PtrInt32(0),
 	})
 	return &(*nodes)[len(*nodes)-1]
+}
+
+func (r *Library) findGroupInTreeByID(nodes *[]Node, parent *Node, id string, nodeType int32) (*Node, *Node, *[]Node, int) {
+	// Try finding by exact name first (legacy support)
+	if node, p, s, i := r.findGroupInTree(nodes, parent, id, nodeType); node != nil {
+		return node, p, s, i
+	}
+
+	// Try finding by path ID
+	return r.findGroupInTreeRecursive(nodes, parent, "", id, nodeType)
+}
+
+func (r *Library) findGroupInTreeRecursive(nodes *[]Node, parent *Node, parentPath string, targetID string, nodeType int32) (*Node, *Node, *[]Node, int) {
+	for i := range *nodes {
+		n := &(*nodes)[i]
+		currentPath := n.Name
+		if parentPath != "" {
+			currentPath = parentPath + "/" + n.Name
+		}
+
+		if currentPath == targetID && n.Type == nodeType {
+			return n, parent, nodes, i
+		}
+		if len(n.Node) > 0 {
+			if found, foundParent, foundSlice, idx := r.findGroupInTreeRecursive(&n.Node, n, currentPath, targetID, nodeType); found != nil {
+				return found, foundParent, foundSlice, idx
+			}
+		}
+	}
+	return nil, nil, nil, -1
 }
 
 func (r *Library) findGroupInTree(nodes *[]Node, parent *Node, name string, nodeType int32) (*Node, *Node, *[]Node, int) {

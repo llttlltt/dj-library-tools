@@ -270,7 +270,7 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 			continue
 		}
 
-		node, _, _, _ := s.rbXML.FindGroupInTree(&s.rbXML.Playlists.Node.Node, nil, group.ID, 1)
+		node, _, _, _ := s.rbXML.FindGroupInTree(&s.rbXML.Playlists.Node.Node, nil, group.Name, 1)
 		if node == nil {
 			continue
 		}
@@ -309,27 +309,28 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 			}
 		}
 
-		if removed > 0 || ctx.Verbose {
-			if ctx.Verbose && len(removedRows) > 0 {
-				headers := []string{"pos", "id", "title", "artist"}
-				var rows [][]string
-				for _, r := range removedRows {
-					rows = append(rows, []string{
-						fmt.Sprintf("%d, %d", r.firstPos, r.pos),
-						r.id,
-						r.title,
-						r.artist,
-					})
-				}
-				ctx.Feedback.OnTable(headers, rows)
+		if ctx.Verbose && len(removedRows) > 0 {
+			headers := []string{"pos", "id", "title", "artist"}
+			var rows [][]string
+			for _, r := range removedRows {
+				rows = append(rows, []string{
+					fmt.Sprintf("%d, %d", r.firstPos, r.pos),
+					r.id,
+					r.title,
+					r.artist,
+				})
 			}
-
-			fmt.Printf("%s:\n", group.Name)
-			fmt.Printf("- Total tracks: %d\n", totalTracks)
-			fmt.Printf("- Duplicate tracks: %d\n", removed)
-			fmt.Printf("- Remaining tracks: %d\n", totalTracks-removed)
+			ctx.Feedback.OnTable(headers, rows)
 			fmt.Println()
 		}
+
+		fmt.Printf("%s:\n", group.Name)
+		fmt.Printf("- Total tracks: %d\n", totalTracks)
+		if removed > 0 {
+			fmt.Printf("- Duplicate tracks: %d\n", removed)
+			fmt.Printf("- Remaining tracks: %d\n", totalTracks-removed)
+		}
+		fmt.Println()
 
 		if removed > 0 && ctx.Apply {
 			node.TRACK = kept
