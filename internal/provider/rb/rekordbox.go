@@ -276,7 +276,7 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 		}
 
 		totalTracks := len(node.TRACK)
-		seen := make(map[string]bool)
+		seenAt := make(map[string]int) // ID -> 1-based index
 		var kept []struct {
 			Key string `xml:"Key,attr"`
 		}
@@ -284,18 +284,19 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 		removed := 0
 		var removedLog []string
 
-		for _, t := range node.TRACK {
-			if seen[t.Key] {
+		for i, t := range node.TRACK {
+			pos := i + 1
+			if firstPos, dup := seenAt[t.Key]; dup {
 				removed++
 				if ctx.Verbose {
 					if track, ok := trackLookup[t.Key]; ok {
-						removedLog = append(removedLog, fmt.Sprintf("  - Removed: %s - %s (ID: %s)", track.Artist, track.Title, track.ID))
+						removedLog = append(removedLog, fmt.Sprintf("  - Removed: %s - %s (ID: %s) at pos %d (kept original at pos %d)", track.Artist, track.Title, track.ID, pos, firstPos))
 					} else {
-						removedLog = append(removedLog, fmt.Sprintf("  - Removed: [Unknown Track] (ID: %s)", t.Key))
+						removedLog = append(removedLog, fmt.Sprintf("  - Removed: [Unknown Track] (ID: %s) at pos %d (kept original at pos %d)", t.Key, pos, firstPos))
 					}
 				}
 			} else {
-				seen[t.Key] = true
+				seenAt[t.Key] = pos
 				kept = append(kept, t)
 			}
 		}
