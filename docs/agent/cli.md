@@ -6,7 +6,7 @@
   - `hotcues.1/color:red` (Target specific index)
   - `beatgrids/bpm-drift:<0.1` (Target aggregate calculation)
   - `beatgrids-density:>60` (Target collection metric)
-- **1-Based Indexing**: Always use 1-based indexing for collections in the query syntax to align with DJ software UI (e.g., Hotcue 1-8).
+- **1-Based Indexing**: Always use 1-based indexing for collections in the query syntax and for positional flags. E.g., Hotcue 1-8 in query syntax; `mk --at 1` inserts at the first position. For the `mk` command, the named sentinels `start` and `end` are preferred over `--at 1` and omitting the flag respectively. `--at 0` and negative values are errors.
 - **Separator Hierarchy**:
   - `.` (Dot) for **Index**
   - `/` (Slash) for **Property**
