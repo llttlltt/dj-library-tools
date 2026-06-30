@@ -73,7 +73,7 @@ type ListResult struct {
 }
 
 func (o *Orchestrator) List(ctx context.Context, locStr string, queryOverride string, opts RunOptions, sortBy string) (*ListResult, error) {
-	sel, prov, err := resolver.ResolveSelection(locStr, queryOverride, o.buildResolveOptions(opts))
+	sel, prov, err := resolver.ResolveSelection(ctx, locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (o *Orchestrator) List(ctx context.Context, locStr string, queryOverride st
 }
 
 func (o *Orchestrator) Stats(ctx context.Context, locStr, queryOverride string, opts RunOptions) (*StatResult, error) {
-	sel, _, err := resolver.ResolveSelection(locStr, queryOverride, o.buildResolveOptions(opts))
+	sel, _, err := resolver.ResolveSelection(ctx, locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return nil, err
 	}
@@ -166,12 +166,12 @@ type FixOptions struct {
 }
 
 func (o *Orchestrator) Sync(ctx context.Context, sourceLoc, targetLoc string, queryOverride string, opts RunOptions, syncOpts SyncOptions) error {
-	src, _, err := resolver.ResolveSelection(sourceLoc, queryOverride, o.buildResolveOptions(opts))
+	src, _, err := resolver.ResolveSelection(ctx, sourceLoc, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return err
 	}
 
-	tgt, prov, err := resolver.ResolveSelection(targetLoc, "", o.buildResolveOptions(opts))
+	tgt, prov, err := resolver.ResolveSelection(ctx, targetLoc, "", o.buildResolveOptions(opts))
 	if err != nil {
 		return err
 	}
@@ -211,12 +211,12 @@ type SyncDiff struct {
 }
 
 func (o *Orchestrator) GetSyncDiff(ctx context.Context, sourceLoc, targetLoc string, queryOverride string, opts RunOptions, appendOnly bool) (*SyncDiff, error) {
-	src, _, err := resolver.ResolveSelection(sourceLoc, queryOverride, o.buildResolveOptions(opts))
+	src, _, err := resolver.ResolveSelection(ctx, sourceLoc, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return nil, err
 	}
 
-	tgt, prov, err := resolver.ResolveSelection(targetLoc, "", o.buildResolveOptions(opts))
+	tgt, prov, err := resolver.ResolveSelection(ctx, targetLoc, "", o.buildResolveOptions(opts))
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +262,7 @@ func (o *Orchestrator) GetSyncDiff(ctx context.Context, sourceLoc, targetLoc str
 }
 
 func (o *Orchestrator) Fix(ctx context.Context, locStr string, queryOverride string, opts RunOptions, fixOpts FixOptions) (int, error) {
-	sel, prov, err := resolver.ResolveSelection(locStr, queryOverride, o.buildResolveOptions(opts))
+	sel, prov, err := resolver.ResolveSelection(ctx, locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return 0, err
 	}
@@ -290,7 +290,7 @@ func (o *Orchestrator) Fix(ctx context.Context, locStr string, queryOverride str
 }
 
 func (o *Orchestrator) Edit(ctx context.Context, locStr string, queryOverride string, opts RunOptions, changes map[string]string) (int, error) {
-	sel, prov, err := resolver.ResolveSelection(locStr, queryOverride, o.buildResolveOptions(opts))
+	sel, prov, err := resolver.ResolveSelection(ctx, locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return 0, err
 	}
@@ -307,7 +307,7 @@ func (o *Orchestrator) Edit(ctx context.Context, locStr string, queryOverride st
 }
 
 func (o *Orchestrator) Make(ctx context.Context, locStr string, name string, opts RunOptions, groupKind models.GroupKind, position int, fromLoc string) (models.ResourceGroup, error) {
-	_, prov, err := resolver.ResolveSelection(locStr, "", o.buildResolveOptions(opts))
+	_, prov, err := resolver.ResolveSelection(ctx, locStr, "", o.buildResolveOptions(opts))
 	if err != nil {
 		return models.ResourceGroup{}, err
 	}
@@ -318,7 +318,7 @@ func (o *Orchestrator) Make(ctx context.Context, locStr string, name string, opt
 	}
 
 	if fromLoc != "" {
-		src, _, err := resolver.ResolveSelection(fromLoc, "", o.buildResolveOptions(opts))
+		src, _, err := resolver.ResolveSelection(ctx, fromLoc, "", o.buildResolveOptions(opts))
 		if err != nil {
 			return newNode, err
 		}
@@ -337,7 +337,7 @@ func (o *Orchestrator) Make(ctx context.Context, locStr string, name string, opt
 }
 
 func (o *Orchestrator) Move(ctx context.Context, locStr string, queryOverride string, opts RunOptions, moveTo string, moveFrom string, moveName string) (int, error) {
-	src, prov, err := resolver.ResolveSelection(locStr, queryOverride, o.buildResolveOptions(opts))
+	src, prov, err := resolver.ResolveSelection(ctx, locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return 0, err
 	}
@@ -349,11 +349,11 @@ func (o *Orchestrator) Move(ctx context.Context, locStr string, queryOverride st
 		}
 		count = 1
 	} else if src.Location.Resource == "tracks" {
-		org, _, err := resolver.ResolveSelection(moveFrom, "", o.buildResolveOptions(opts))
+		org, _, err := resolver.ResolveSelection(ctx, moveFrom, "", o.buildResolveOptions(opts))
 		if err != nil {
 			return 0, err
 		}
-		tgt, _, err := resolver.ResolveSelection(moveTo, "", o.buildResolveOptions(opts))
+		tgt, _, err := resolver.ResolveSelection(ctx, moveTo, "", o.buildResolveOptions(opts))
 		if err != nil {
 			return 0, err
 		}
@@ -366,7 +366,7 @@ func (o *Orchestrator) Move(ctx context.Context, locStr string, queryOverride st
 		}
 		count = len(src.Tracks)
 	} else {
-		tgt, _, err := resolver.ResolveSelection(moveTo, "", o.buildResolveOptions(opts))
+		tgt, _, err := resolver.ResolveSelection(ctx, moveTo, "", o.buildResolveOptions(opts))
 		if err != nil {
 			return 0, err
 		}
@@ -386,7 +386,7 @@ func (o *Orchestrator) Move(ctx context.Context, locStr string, queryOverride st
 }
 
 func (o *Orchestrator) Delete(ctx context.Context, locStr string, queryOverride string, opts RunOptions, fromLocs []string, recursive bool) (int, error) {
-	sel, prov, err := resolver.ResolveSelection(locStr, queryOverride, o.buildResolveOptions(opts))
+	sel, prov, err := resolver.ResolveSelection(ctx, locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return 0, err
 	}
@@ -409,7 +409,7 @@ func (o *Orchestrator) Delete(ctx context.Context, locStr string, queryOverride 
 		}
 	} else {
 		for _, fromStr := range fromLocs {
-			org, _, err := resolver.ResolveSelection(fromStr, "", o.buildResolveOptions(opts))
+			org, _, err := resolver.ResolveSelection(ctx, fromStr, "", o.buildResolveOptions(opts))
 			if err != nil {
 				return 0, err
 			}

@@ -25,7 +25,7 @@ type ResolveOptions struct {
 }
 
 // ResolveSelection resolves a location string into a Selection.
-func ResolveSelection(locStr string, queryOverride string, opts ResolveOptions) (*Selection, provider.Provider, error) {
+func ResolveSelection(ctx context.Context, locStr string, queryOverride string, opts ResolveOptions) (*Selection, provider.Provider, error) {
 	if locStr == "" {
 		return &Selection{}, nil, nil
 	}
@@ -49,18 +49,18 @@ func ResolveSelection(locStr string, queryOverride string, opts ResolveOptions) 
 	}
 
 	sel := &Selection{Location: loc}
-	ctx := provider.ExecutionContext{
+	execCtx := provider.ExecutionContext{
 		Apply:    opts.Apply,
 		Verbose:  opts.Verbose,
 		Feedback: opts.Feedback,
 	}
-	if ctx.Feedback == nil {
-		ctx.Feedback = provider.NoopFeedback{}
+	if execCtx.Feedback == nil {
+		execCtx.Feedback = provider.NoopFeedback{}
 	}
 
 	var items []models.Resource
 	if loc.Resource == "tracks" {
-		tracks, err := prov.Tracks().List(context.Background(), ctx, loc.Query)
+		tracks, err := prov.Tracks().List(ctx, execCtx, loc.Query)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -68,7 +68,7 @@ func ResolveSelection(locStr string, queryOverride string, opts ResolveOptions) 
 			items = append(items, t)
 		}
 	} else if loc.Resource == "playlists" || loc.Resource == "folders" {
-		groups, err := prov.Groups().List(context.Background(), ctx, loc.Query)
+		groups, err := prov.Groups().List(ctx, execCtx, loc.Query)
 		if err != nil {
 			return nil, nil, err
 		}
