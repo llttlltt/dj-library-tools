@@ -44,9 +44,6 @@ export function WorkflowDetail({
 	const resultById: Record<string, StepResult> = Object.fromEntries(
 		(result?.steps ?? []).map((r) => [r.step_id, r]),
 	);
-	const syncSteps = workflow.steps.filter((s) => s.kind === "sync").length;
-	const diffLoaded = diffs.length > 0 || syncSteps === 0;
-
 	return (
 		<div className="flex flex-col h-full">
 			{/* ── toolbar ── */}
@@ -101,7 +98,7 @@ export function WorkflowDetail({
 						type="button"
 						size="sm"
 						onClick={() => setRunConfirm(true)}
-						disabled={!diffLoaded || busy}
+						disabled={busy}
 					>
 						▶ Run
 					</Button>
@@ -121,7 +118,7 @@ export function WorkflowDetail({
 
 			{/* ── steps ── */}
 			<div className="flex-1 overflow-auto p-6">
-				<div className="flex flex-col gap-4 max-w-3xl">
+				<div className="flex flex-col gap-4">
 					{workflow.steps.length === 0 && (
 						<p className="text-sm text-muted-foreground italic">
 							No steps. Press Edit to add some.

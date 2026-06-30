@@ -23,7 +23,7 @@ export default function App() {
 		<div className="flex h-screen bg-background text-foreground overflow-hidden">
 			{/* ── sidebar ───────────────────────────────────────────────── */}
 			<aside className="w-52 shrink-0 flex flex-col border-r border-border bg-[hsl(240_10%_5%)]">
-				<div className="px-4 py-5 border-b border-border">
+				<div className="h-14 flex items-center px-4 border-b border-border">
 					<span className="text-sm font-semibold text-foreground">
 						DJ Library Tools
 					</span>

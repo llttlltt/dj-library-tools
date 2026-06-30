@@ -16,9 +16,11 @@ func main() {
 	app := gui.NewApp()
 
 	err := wails.Run(&options.App{
-		Title:  "DJ Library Tools",
-		Width:  1280,
-		Height: 800,
+		Title:     "DJ Library Tools",
+		Width:     1280,
+		Height:    800,
+		MinWidth:  1024,
+		MinHeight: 700,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

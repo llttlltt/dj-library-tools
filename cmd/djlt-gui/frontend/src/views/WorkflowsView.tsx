@@ -147,6 +147,8 @@ export default function WorkflowsView() {
 			const saved = asWorkflow(await SaveWorkflow(wf as never));
 			setSelected(saved);
 			await load();
+			setDiffs([]);
+			setResult(null);
 			setMode("view");
 		} catch (e) {
 			setError(String(e));
@@ -178,7 +180,7 @@ export default function WorkflowsView() {
 	// ── LIST ─────────────────────────────────────────────────────────────────
 	if (mode === "list")
 		return (
-			<div className="p-6 max-w-2xl">
+			<div className="p-6">
 				<div className="flex items-center justify-between mb-6">
 					<div>
 						<h1 className="text-lg font-semibold">Workflows</h1>
