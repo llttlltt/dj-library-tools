@@ -1,0 +1,24 @@
+Selection Summary
+Total Tracks:   792
+Average BPM:    124.01
+
+Top Genres
+House                49
+Electronic           42
+Drum and bass, House, Jungle, Uk garage 30
+Dancehall            26
+Disco, Jazz-funk, Latin, Psychedelic, Soul 23
+
+Top Artists
+Floating Points      16
+Templeton Peck       13
+K15                  13
+Four Tet             12
+Daphni               11
+
+Top Keys
+8A                   82
+7A                   75
+5A                   74
+9A                   68
+4A                   60

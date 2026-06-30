@@ -1,0 +1,56 @@
+Items playlist                                                                 
+0     CUE Analysis Playlist                                                    
+0     Sorting/2 - Tagging Inbox (Beatgrids:>1 & Cue:=S.O.S.)                   
+3     Shows                                                                    
+4     Afterhours                                                               
+4     Sunset                                                                   
+4     Sunrise                                                                  
+6     Sets                                                                     
+7     Sorting/0 - Marked for Removal                                           
+7     Sorting                                                                  
+8     DJ Intro Outro                                                           
+8     Genres                                                                   
+10    Intro / Outro                                                            
+14    Afterhours/Afterhours - Downer                                           
+17    Sunrise/Sunrise - Downers                                                
+19    Afterhours/Afterhours - Peak                                             
+19    Sets/2026-05-16 Terracotta Lamma - Prep #1                               
+20    Sets/2026-01-10 Disco to House #1                                        
+23    Sets/2026-05-23 Terracotta Lamma - Prep #2                               
+27    Sunrise/Sunrise - Peak                                                   
+29    Sets/2026-05-09 Jitterbug Session #1                                     
+31    Sunrise/Sunrise - Hold                                                   
+31    Sunset/Sunset - Downer                                                   
+33    Sets/2026-05-24 Terracotta Lamma                                         
+35    Afterhours/Afterhours - Hold                                             
+37    Afterhours/Afterhours - Builders                                         
+46    Sunset/Sunset - Peak                                                     
+46    Sets/2026-06-20 Mike's BBQ                                               
+48    Shows/20260524 Terracotta                                                
+49    Sunrise/Sunrise - Builders                                               
+53    Genres/Ambient                                                           
+66    Sunset/Sunset - Hold                                                     
+78    Genres/Techno                                                            
+79    Sunset/Sunset - Builders                                                 
+81    Genres/Drum & Bass, Jungle, Breakbeat, Bassline                          
+98    DJ Yeet #26Q2 - Albums                                                   
+104   Shows/20260524 Terracotta - Shortlist                                    
+114   Shows/20260619 Mike's BBQ                                                
+114   Sorting/2 - Tagging Inbox (Beatgrids:=1 & Cue:=S.O.S.)                   
+133   Genres/Electronic, IDM                                                   
+155   Sorting/1 - Existing Inbox (Beatgrids:>1 & Beatgrids/BPM-Redundancy:>80) 
+173   Genres/~                                                                 
+200   DJ Yeet #26Q2                                                            
+201   Genres/Disco                                                             
+211   Played - Most                                                            
+245   Sorting/1 - Memory Cue Inbox (Beatgrids:=1 & !Cue=:S.O.S.)               
+247   Genres/Jazz, Soul, Funk                                                  
+293   DJ Crate #25                                                             
+335   Genres/House                                                             
+359   Sorting/5 - Beatgrids:=1                                                 
+371   Fresh & Unplayed                                                         
+389   DJ Crate #26                                                             
+433   Sorting/5 - Beatgrids:>1                                                 
+581   Played - Never                                                           
+
+Matched 53 playlist.
