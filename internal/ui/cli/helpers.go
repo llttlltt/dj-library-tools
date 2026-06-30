@@ -8,7 +8,6 @@ import (
 	djerrors "github.com/llttlltt/dj-library-tools/internal/core/errors"
 	"github.com/llttlltt/dj-library-tools/internal/providers"
 	"github.com/llttlltt/dj-library-tools/internal/services/orchestrator"
-	"github.com/llttlltt/dj-library-tools/internal/services/resolver"
 )
 
 func getOrchestrator() *orchestrator.Orchestrator {
@@ -54,19 +53,6 @@ func getExecContext() provider.ExecutionContext {
 		Verbose:  verbose,
 		Feedback: &TerminalFeedback{},
 	}
-}
-
-func ResolveSelection(locStr string, queryOverride string) (*resolver.Selection, provider.Provider, error) {
-	cfg, _ := config.LoadAppConfig()
-	// Standard resolution with global context
-	opts := resolver.ResolveOptions{
-		FilePath:             filePath,
-		RekordboxPrimaryPath: cfg.Rekordbox.PrimaryFilePath,
-		Apply:                apply,
-		Verbose:              verbose,
-		Feedback:             &TerminalFeedback{},
-	}
-	return resolver.ResolveSelection(locStr, queryOverride, opts)
 }
 
 func stringsTitle(s string) string {

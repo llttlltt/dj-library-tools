@@ -26,11 +26,6 @@ func (f *TerminalFeedback) OnStatus(msg string) {
 	fmt.Println(msg)
 }
 
-func (f *TerminalFeedback) OnStart(total int64)         {}
-func (f *TerminalFeedback) OnTrackStart(trackTitle string) {}
-func (f *TerminalFeedback) OnTrackEnd()                    {}
-
-func (f *TerminalFeedback) OnComplete() {}
 func (f *TerminalFeedback) OnProgress(done, total int) {
 	fmt.Printf("\rProcessing: [%d/%d]", done, total)
 	if done == total {
