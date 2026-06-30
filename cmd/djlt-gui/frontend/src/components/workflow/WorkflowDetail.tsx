@@ -3,11 +3,18 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Separator } from "@/components/ui/separator";
-import type { StepDiff, StepResult, Workflow, WorkflowResult } from "@/types";
+import type {
+	Source,
+	StepDiff,
+	StepResult,
+	Workflow,
+	WorkflowResult,
+} from "@/types";
 import { StepCard } from "./StepCard";
 
 interface DetailProps {
 	workflow: Workflow;
+	sources: Source[];
 	diffs: StepDiff[];
 	result: WorkflowResult | null;
 	mode: "view" | "applying";
@@ -23,6 +30,7 @@ interface DetailProps {
 
 export function WorkflowDetail({
 	workflow,
+	sources,
 	diffs,
 	result,
 	mode,
@@ -47,7 +55,7 @@ export function WorkflowDetail({
 	return (
 		<div className="flex flex-col h-full">
 			{/* ── toolbar ── */}
-			<div className="flex items-center gap-2 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] sticky top-0 z-10">
+			<div className="flex h-14 items-center gap-2 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] sticky top-0 z-10">
 				<Button type="button" variant="ghost" size="sm" onClick={onBack}>
 					<ArrowLeft className="h-4 w-4 mr-1.5" /> Workflows
 				</Button>
@@ -129,6 +137,7 @@ export function WorkflowDetail({
 							key={step.id || `step-${i}`}
 							step={step}
 							index={i}
+							sources={sources}
 							diff={diffById[step.id]}
 							result={resultById[step.id]}
 							showResult={mode === "applying"}

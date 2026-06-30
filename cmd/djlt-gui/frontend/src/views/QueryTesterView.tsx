@@ -18,9 +18,16 @@ export default function QueryTesterView() {
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: only default on mount
 	useEffect(() => {
 		ListSources()
-			.then((s) => setSources(asSources(s)))
+			.then((s) => {
+				const loaded = asSources(s);
+				setSources(loaded);
+				if (loaded.length > 0 && !sourceID) {
+					setSourceID(loaded[0].id);
+				}
+			})
 			.catch(() => {});
 	}, []);
 
@@ -48,7 +55,7 @@ export default function QueryTesterView() {
 				<span className="text-sm font-semibold">Query Tester</span>
 			</div>
 			<div className="flex-1 overflow-auto p-6">
-				<div className="flex flex-col gap-6 max-w-2xl">
+				<div className="flex flex-col gap-6">
 					<QueryTesterControls
 						sources={sources}
 						sourceID={sourceID}

@@ -187,109 +187,109 @@ export default function WorkflowsView({
 	// ── LIST ─────────────────────────────────────────────────────────────────
 	if (mode === "list")
 		return (
-			<div className="p-6">
-				<div className="flex items-center justify-between mb-6">
-					<div>
-						<h1 className="text-lg font-semibold">Workflows</h1>
-						<p className="text-sm text-muted-foreground mt-0.5">
-							Automate your library maintenance
-						</p>
-					</div>
+			<div className="flex flex-col h-full">
+				<div className="h-14 flex items-center gap-2 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] sticky top-0 z-10">
+					<span className="text-sm font-semibold">Workflows</span>
+					<div className="flex-1" />
 					<Button size="sm" onClick={handleNew} disabled={busy}>
 						<Plus className="h-4 w-4 mr-1.5" /> New Workflow
 					</Button>
 				</div>
-				{error && <p className="text-sm text-destructive mb-4">{error}</p>}
-				{wfList.length === 0 ? (
-					<p className="text-sm text-muted-foreground italic">
-						No workflows yet.
-					</p>
-				) : (
-					<div className="flex flex-col gap-2">
-						{wfList.map((w) => (
-							<Card
-								key={w.id}
-								className="cursor-pointer hover:border-border/80 transition-colors"
-								onClick={() => openWorkflow(w)}
-							>
-								<CardHeader className="flex-row items-center justify-between py-3 px-4 gap-0">
-									<div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
-										<span className="text-sm font-medium truncate">
-											{w.name}
-										</span>
-										<span className="text-xs text-muted-foreground shrink-0">
-											{w.steps?.length ?? 0} step
-											{w.steps?.length !== 1 ? "s" : ""}
-										</span>
-									</div>
-									<div className="flex items-center gap-0.5">
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon"
-											title="Run"
-											onClick={(e) => {
-												e.stopPropagation();
-												setRunTarget(w);
-											}}
-										>
-											<PlayCircle className="h-4 w-4 text-emerald-500" />
-										</Button>
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon"
-											title="Preview"
-											onClick={(e) => {
-												e.stopPropagation();
-												openPreview(w);
-											}}
-										>
-											<Eye className="h-4 w-4 text-blue-400" />
-										</Button>
-										<Button
-											type="button"
-											variant="ghost"
-											size="icon"
-											title="Delete"
-											onClick={(e) => {
-												e.stopPropagation();
-												setDeleteTarget(w);
-											}}
-										>
-											<Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-										</Button>
-										<ChevronRight className="h-4 w-4 text-muted-foreground ml-1" />
-									</div>
-								</CardHeader>
-							</Card>
-						))}
-					</div>
-				)}
+				<div className="flex-1 overflow-auto p-6">
+					<div className="flex flex-col gap-6">
+						{error && <p className="text-sm text-destructive mb-4">{error}</p>}
+						{wfList.length === 0 ? (
+							<p className="text-sm text-muted-foreground italic">
+								No workflows yet.
+							</p>
+						) : (
+							<div className="flex flex-col gap-2">
+								{wfList.map((w) => (
+									<Card
+										key={w.id}
+										className="cursor-pointer hover:border-border/80 transition-colors"
+										onClick={() => openWorkflow(w)}
+									>
+										<CardHeader className="flex-row items-center justify-between py-3 px-4 gap-0">
+											<div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
+												<span className="text-sm font-medium truncate">
+													{w.name}
+												</span>
+												<span className="text-xs text-muted-foreground shrink-0">
+													{w.steps?.length ?? 0} step
+													{w.steps?.length !== 1 ? "s" : ""}
+												</span>
+											</div>
+											<div className="flex items-center gap-0.5">
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon"
+													title="Run"
+													onClick={(e) => {
+														e.stopPropagation();
+														setRunTarget(w);
+													}}
+												>
+													<PlayCircle className="h-4 w-4 text-emerald-500" />
+												</Button>
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon"
+													title="Preview"
+													onClick={(e) => {
+														e.stopPropagation();
+														openPreview(w);
+													}}
+												>
+													<Eye className="h-4 w-4 text-blue-400" />
+												</Button>
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon"
+													title="Delete"
+													onClick={(e) => {
+														e.stopPropagation();
+														setDeleteTarget(w);
+													}}
+												>
+													<Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+												</Button>
+												<ChevronRight className="h-4 w-4 text-muted-foreground ml-1" />
+											</div>
+										</CardHeader>
+									</Card>
+								))}
+							</div>
+						)}
 
-				{/* Run confirm — list level */}
-				{runTarget && (
-					<ConfirmDialog
-						open={true}
-						title={`Run "${runTarget.name}"?`}
-						description="Changes will be applied to your library. This cannot be undone."
-						confirmLabel="Run"
-						onConfirm={() => confirmRun(runTarget)}
-						onCancel={() => setRunTarget(null)}
-					/>
-				)}
-				{/* Delete confirm — list level */}
-				{deleteTarget && (
-					<ConfirmDialog
-						open={true}
-						title={`Delete "${deleteTarget.name}"?`}
-						description="This workflow will be permanently removed."
-						confirmLabel="Delete"
-						destructive
-						onConfirm={() => handleDelete(deleteTarget.id)}
-						onCancel={() => setDeleteTarget(null)}
-					/>
-				)}
+						{/* Run confirm — list level */}
+						{runTarget && (
+							<ConfirmDialog
+								open={true}
+								title={`Run "${runTarget.name}"?`}
+								description="Changes will be applied to your library. This cannot be undone."
+								confirmLabel="Run"
+								onConfirm={() => confirmRun(runTarget)}
+								onCancel={() => setRunTarget(null)}
+							/>
+						)}
+						{/* Delete confirm — list level */}
+						{deleteTarget && (
+							<ConfirmDialog
+								open={true}
+								title={`Delete "${deleteTarget.name}"?`}
+								description="This workflow will be permanently removed."
+								confirmLabel="Delete"
+								destructive
+								onConfirm={() => handleDelete(deleteTarget.id)}
+								onCancel={() => setDeleteTarget(null)}
+							/>
+						)}
+					</div>
+				</div>
 			</div>
 		);
 
@@ -318,6 +318,7 @@ export default function WorkflowsView({
 		return (
 			<WorkflowDetail
 				workflow={selected}
+				sources={sources}
 				diffs={diffs}
 				result={result}
 				mode={mode}

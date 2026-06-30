@@ -34,6 +34,7 @@ interface QueryTesterProps {
 	initialSourceID?: string;
 	initialResource?: string;
 	initialQuery?: string;
+	onApply?: (query: string) => void;
 }
 
 const asSources = (x: unknown) => (x ?? []) as Source[];
@@ -45,6 +46,7 @@ export function QueryTester({
 	initialSourceID,
 	initialResource,
 	initialQuery,
+	onApply,
 }: QueryTesterProps) {
 	const [sources, setSources] = useState<Source[]>([]);
 	const [sourceID, setSourceID] = useState(initialSourceID ?? "");
@@ -109,6 +111,7 @@ export function QueryTester({
 					onResource={setResource}
 					onQuery={setQuery}
 					onTest={handleTest}
+					onApply={onApply}
 				/>
 				<QueryTesterResults result={result} error={error} />
 			</SheetContent>
@@ -128,6 +131,7 @@ interface ControlsProps {
 	onResource: (v: string) => void;
 	onQuery: (v: string) => void;
 	onTest: () => void;
+	onApply?: (query: string) => void;
 }
 
 export function QueryTesterControls({
@@ -140,6 +144,7 @@ export function QueryTesterControls({
 	onResource,
 	onQuery,
 	onTest,
+	onApply,
 }: ControlsProps) {
 	return (
 		<div className="flex flex-col gap-3">
@@ -152,11 +157,13 @@ export function QueryTesterControls({
 						<SelectValue placeholder="Select a source…" />
 					</SelectTrigger>
 					<SelectContent>
-						{sources.map((s) => (
-							<SelectItem key={s.id} value={s.id}>
-								{s.name}
-							</SelectItem>
-						))}
+						{[...sources]
+							.sort((a, b) => a.name.localeCompare(b.name))
+							.map((s) => (
+								<SelectItem key={s.id} value={s.id}>
+									{s.name}
+								</SelectItem>
+							))}
 					</SelectContent>
 				</Select>
 			</div>
@@ -192,22 +199,36 @@ export function QueryTesterControls({
 				/>
 			</div>
 
-			<Button
-				type="button"
-				size="sm"
-				onClick={onTest}
-				disabled={loading || !sourceID}
-				className="self-start"
-			>
-				{loading ? (
-					<>
-						<Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-						Testing…
-					</>
-				) : (
-					"Test"
+			<div className="flex gap-2">
+				<Button
+					type="button"
+					size="sm"
+					onClick={onTest}
+					disabled={loading || !sourceID}
+					className="self-start"
+				>
+					{loading ? (
+						<>
+							<Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+							Testing…
+						</>
+					) : (
+						"Test"
+					)}
+				</Button>
+
+				{onApply && (
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() => onApply(query)}
+						disabled={!query}
+					>
+						Use this query
+					</Button>
 				)}
-			</Button>
+			</div>
 		</div>
 	);
 }

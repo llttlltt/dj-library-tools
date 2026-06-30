@@ -23,6 +23,7 @@ export interface QueryTesterOpts {
 	sourceID?: string;
 	resource?: string;
 	query?: string;
+	onApply?: (query: string) => void;
 }
 
 export default function App() {
@@ -80,6 +81,7 @@ export default function App() {
 				initialSourceID={queryTesterOpts.sourceID}
 				initialResource={queryTesterOpts.resource}
 				initialQuery={queryTesterOpts.query}
+				onApply={queryTesterOpts.onApply}
 			/>
 		</div>
 	);

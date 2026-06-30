@@ -57,14 +57,10 @@ export default function SourcesView() {
 	}
 
 	return (
-		<div className="p-6">
-			<div className="flex items-center justify-between mb-6">
-				<div>
-					<h1 className="text-lg font-semibold">Sources</h1>
-					<p className="text-sm text-muted-foreground mt-0.5">
-						Provider connections for your DJ libraries
-					</p>
-				</div>
+		<div className="flex flex-col h-full">
+			<div className="h-14 flex items-center gap-2 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] sticky top-0 z-10">
+				<span className="text-sm font-semibold">Sources</span>
+				<div className="flex-1" />
 				<Button
 					type="button"
 					size="sm"
@@ -76,50 +72,53 @@ export default function SourcesView() {
 					<Plus className="h-4 w-4 mr-1.5" /> Add Source
 				</Button>
 			</div>
+			<div className="flex-1 overflow-auto p-6">
+				{error && <p className="text-sm text-destructive mb-4">{error}</p>}
 
-			{error && <p className="text-sm text-destructive mb-4">{error}</p>}
+				{sources.length === 0 ? (
+					<p className="text-sm text-muted-foreground italic">
+						No sources configured. Add one to get started.
+					</p>
+				) : (
+					<div className="flex flex-col gap-3">
+						{[...sources]
+							.sort((a, b) => a.name.localeCompare(b.name))
+							.map((s) => (
+								<SourceCard
+									key={s.id}
+									source={s}
+									onEdit={(src) => {
+										setEditTarget(src);
+										setFormOpen(true);
+									}}
+									onDelete={(src) => setDeleteTarget(src)}
+								/>
+							))}
+					</div>
+				)}
 
-			{sources.length === 0 ? (
-				<p className="text-sm text-muted-foreground italic">
-					No sources configured. Add one to get started.
-				</p>
-			) : (
-				<div className="flex flex-col gap-3">
-					{sources.map((s) => (
-						<SourceCard
-							key={s.id}
-							source={s}
-							onEdit={(src) => {
-								setEditTarget(src);
-								setFormOpen(true);
-							}}
-							onDelete={(src) => setDeleteTarget(src)}
-						/>
-					))}
-				</div>
-			)}
-
-			<SourceForm
-				open={formOpen}
-				initial={editTarget}
-				onClose={() => {
-					setFormOpen(false);
-					setEditTarget(null);
-				}}
-				onSubmit={handleSubmit}
-			/>
-
-			{deleteTarget && (
-				<ConfirmDialog
-					open={true}
-					title={`Delete "${deleteTarget.name}"?`}
-					description="This source will be permanently removed."
-					confirmLabel="Delete"
-					destructive
-					onConfirm={() => confirmDelete(deleteTarget)}
-					onCancel={() => setDeleteTarget(null)}
+				<SourceForm
+					open={formOpen}
+					initial={editTarget}
+					onClose={() => {
+						setFormOpen(false);
+						setEditTarget(null);
+					}}
+					onSubmit={handleSubmit}
 				/>
-			)}
+
+				{deleteTarget && (
+					<ConfirmDialog
+						open={true}
+						title={`Delete "${deleteTarget.name}"?`}
+						description="This source will be permanently removed."
+						confirmLabel="Delete"
+						destructive
+						onConfirm={() => confirmDelete(deleteTarget)}
+						onCancel={() => setDeleteTarget(null)}
+					/>
+				)}
+			</div>
 		</div>
 	);
 }

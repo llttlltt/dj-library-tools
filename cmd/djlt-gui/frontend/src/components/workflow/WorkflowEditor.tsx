@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { QueryTesterOpts } from "@/App";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -39,11 +40,13 @@ export function EpEditRow({
 					<SelectValue placeholder="Source" />
 				</SelectTrigger>
 				<SelectContent>
-					{sources.map((s) => (
-						<SelectItem key={s.id} value={s.id}>
-							{s.name}
-						</SelectItem>
-					))}
+					{[...sources]
+						.sort((a, b) => a.name.localeCompare(b.name))
+						.map((s) => (
+							<SelectItem key={s.id} value={s.id}>
+								{s.name}
+							</SelectItem>
+						))}
 				</SelectContent>
 			</Select>
 			<Input
@@ -70,6 +73,7 @@ export function EpEditRow({
 							sourceID: ep.source_id,
 							resource: ep.resource,
 							query: ep.query ?? "",
+							onApply: (q) => onChange({ query: q }),
 						})
 					}
 				>
@@ -115,6 +119,7 @@ export function WorkflowEditor({
 	const [wf, setWf] = useState<Workflow>(() =>
 		JSON.parse(JSON.stringify(workflow)),
 	);
+	const [deleteStepIdx, setDeleteStepIdx] = useState<number | null>(null);
 	const firstSrcId = sources[0]?.id ?? "";
 
 	const mutSteps = (fn: (steps: Step[]) => Step[]) =>
@@ -163,7 +168,7 @@ export function WorkflowEditor({
 
 	return (
 		<div className="flex flex-col h-full">
-			<div className="flex items-center gap-2 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] sticky top-0 z-10">
+			<div className="h-14 flex items-center gap-2 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] sticky top-0 z-10">
 				<Button
 					type="button"
 					variant="ghost"
@@ -195,9 +200,8 @@ export function WorkflowEditor({
 					{busy ? "Saving…" : "Save"}
 				</Button>
 			</div>
-
 			<div className="flex-1 overflow-auto p-6">
-				<div className="flex flex-col gap-3 max-w-3xl">
+				<div className="flex flex-col gap-3">
 					{wf.steps.length === 0 && (
 						<p className="text-sm text-muted-foreground italic py-2">
 							No steps yet — add one below.
@@ -230,9 +234,7 @@ export function WorkflowEditor({
 										variant="ghost"
 										size="icon"
 										className="h-7 w-7"
-										onClick={() =>
-											mutSteps((ss) => ss.filter((_, j) => j !== si))
-										}
+										onClick={() => setDeleteStepIdx(si)}
 									>
 										<X className="h-3.5 w-3.5 text-muted-foreground" />
 									</Button>
@@ -325,6 +327,21 @@ export function WorkflowEditor({
 					</button>
 				</div>
 			</div>
+
+			<ConfirmDialog
+				open={deleteStepIdx !== null}
+				title="Remove this step?"
+				description="This step and its configuration will be removed from the workflow."
+				confirmLabel="Remove"
+				destructive
+				onConfirm={() => {
+					if (deleteStepIdx !== null) {
+						mutSteps((ss) => ss.filter((_, j) => j !== deleteStepIdx));
+					}
+					setDeleteStepIdx(null);
+				}}
+				onCancel={() => setDeleteStepIdx(null)}
+			/>
 		</div>
 	);
 }

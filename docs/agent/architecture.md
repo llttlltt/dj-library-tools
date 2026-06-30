@@ -17,7 +17,7 @@ The system follows a strict layered architecture with a one-way dependency flow:
 2. **Infra** (`internal/infra/`): Adapters to external processes/OS (ffmpeg, system calls).
 3. **Providers** (`internal/providers/`): Library sources and native format authority (co-located). Registered via factory.
 4. **Services** (`internal/services/`): UI-agnostic business logic and orchestration (resolver, sync engine, orchestrator facade).
-5. **UI** (`internal/ui/`): Presentation layer. `cli` today; `gui` later.
+5. **UI** (`internal/ui/`): Presentation layer. `cli` and `gui`.
 
 ## Track-Centric Service Design
 

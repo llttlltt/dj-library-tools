@@ -4,42 +4,15 @@ Instructions for keeping the library's sorting and inbox hierarchy synchronized.
 
 ## Sorting Folder Maintenance
 
-**Mandatory Protocol**: Always run these commands **without** `--apply` first to verify the diff. Use `--verbose` to see specific track additions and removals.
+These maintenance routines are now available as **Workflows** in the GUI (`cmd/djlt-gui`). They can be executed by selecting the workflow and pressing **Preview** to verify changes before clicking **Run**.
 
-1. **Existing Inbox (Beatgrids:>1 & BPM-Redundancy:>80)**:
+| Workflow | Source Query | Target Playlist Pattern |
+|----------|--------------|-------------------------|
+| Existing Inbox | `beatgrids/bpm-redundancy:>80 && beatgrids-count:>1` | `Existing.*Inbox` |
+| Memory Cue Inbox | `beatgrids-count:1 && !memorycues/name:S.O.S.` | `Memory.*Cue.*Inbox` |
+| Tagging Inbox (Beatgrids:=1) | `beatgrids-count:1 && memorycues/name:S.O.S.` | `Tagging.*Inbox.*Beatgrids:=1` |
+| Tagging Inbox (Beatgrids:>1) | `beatgrids-count:>1 && memorycues/name:S.O.S.` | `Tagging.*Inbox.*Beatgrids:>1` |
+| 5 - Beatgrids:=1 (Total) | `beatgrids-count:1` | `5.*Beatgrids:=1$` |
+| 5 - Beatgrids:>1 (Total) | `beatgrids-count:>1` | `5.*Beatgrids:>1$` |
 
-   ```bash
-   ./djlt sync "rb/tracks" "beatgrids/bpm-redundancy:>80 && beatgrids-count:>1" --to "rb/playlists name::Existing.*Inbox" --verbose
-   ```
-
-2. **Memory Cue Inbox (Beatgrids:=1 & !Cue=:S.O.S.)**:
-
-   ```bash
-   ./djlt sync "rb/tracks" "beatgrids-count:1 && !memorycues/name:S.O.S." --to "rb/playlists name::Memory.*Cue.*Inbox" --verbose
-   ```
-
-3. **Tagging Inbox (Beatgrids:=1 & Cue:=S.O.S.)**:
-
-   ```bash
-   ./djlt sync "rb/tracks" "beatgrids-count:1 && memorycues/name:S.O.S." --to "rb/playlists name::Tagging.*Inbox.*Beatgrids:=1" --verbose
-   ```
-
-4. **Tagging Inbox (Beatgrids:>1 & Cue:=S.O.S.)**:
-
-   ```bash
-   ./djlt sync "rb/tracks" "beatgrids-count:>1 && memorycues/name:S.O.S." --to "rb/playlists name::Tagging.*Inbox.*Beatgrids:>1" --verbose
-   ```
-
-5. **Beatgrids:=1 (Total)**:
-
-   ```bash
-   ./djlt sync "rb/tracks" "beatgrids-count:1" --to "rb/playlists name::5.*Beatgrids:=1$" --verbose
-   ```
-
-6. **Beatgrids:>1 (Total)**:
-
-   ```bash
-   ./djlt sync "rb/tracks" "beatgrids-count:>1" --to "rb/playlists name::5.*Beatgrids:>1$" --verbose
-   ```
-
-*Note: Add `--apply` only after verifying the verbose output and requesting permission or are explicitly told so.*
+**Mandatory Protocol**: Always run the **Preview** first to verify the track additions and removals. Only click **Run** after confirming the diff is correct.
