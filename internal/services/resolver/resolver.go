@@ -68,7 +68,17 @@ func ResolveSelection(ctx context.Context, locStr string, queryOverride string, 
 			items = append(items, t)
 		}
 	} else if loc.Resource == "playlists" || loc.Resource == "folders" {
-		groups, err := prov.Groups().List(ctx, execCtx, loc.Query)
+		kindFilter := "kind:=playlist"
+		if loc.Resource == "folders" {
+			kindFilter = "kind:=folder"
+		}
+		effectiveQuery := loc.Query
+		if effectiveQuery != "" {
+			effectiveQuery = effectiveQuery + " " + kindFilter
+		} else {
+			effectiveQuery = kindFilter
+		}
+		groups, err := prov.Groups().List(ctx, execCtx, effectiveQuery)
 		if err != nil {
 			return nil, nil, err
 		}
