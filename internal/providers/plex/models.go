@@ -57,7 +57,7 @@ type Track struct {
 	Artist         string  `json:"grandparentTitle"`
 	Album          string  `json:"parentTitle"`
 	BPM            float64 `json:"bpm"`
-	KeyTag         string  `json:"key"`
+	KeyTag         string  `json:"keyTag,omitempty"`
 	UserRating     float64 `json:"userRating"` // Plex usually 0-10 or 0-5
 	Media          []Media `json:"Media"`
 }

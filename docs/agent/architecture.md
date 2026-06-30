@@ -4,7 +4,20 @@
 >
 > **"The Provider is a shell; the Package is the authority."**
 
-This means that `internal/provider` packages should only handle orchestration, CLI feedback, and mapping execution context. All domain-specific intelligence (XML manipulation, API client logic, metadata reconciliation, color mapping, and hierarchical cue matching) must live in the core implementation package (e.g., `internal/rekordbox`).
+This means that `internal/providers` packages should only handle orchestration, and mapping execution context. All domain-specific intelligence (XML manipulation, API client logic, metadata reconciliation, color mapping, and hierarchical cue matching) is co-located in the provider package.
+
+## Layered Architecture
+
+The system follows a strict layered architecture with a one-way dependency flow:
+
+`ui ──> services ──> providers ──> core`
+(everyone may import `core`; `core` imports nothing under `internal/`)
+
+1. **Core** (`internal/core/`): Pure domain. Models, query engine, shared errors, location parsing. Zero knowledge of providers, formats, infra, or presentation.
+2. **Infra** (`internal/infra/`): Adapters to external processes/OS (ffmpeg, system calls).
+3. **Providers** (`internal/providers/`): Library sources and native format authority (co-located). Registered via factory.
+4. **Services** (`internal/services/`): UI-agnostic business logic and orchestration (resolver, sync engine, orchestrator facade).
+5. **UI** (`internal/ui/`): Presentation layer. `cli` today; `gui` later.
 
 ## Track-Centric Service Design
 
@@ -17,20 +30,15 @@ The system follows a nested, resource-oriented service structure:
 
 ## Hard Boundaries
 
-- **Models as Source of Truth**: Neutral models (`Track`, `ResourceGroup`) are the sole authorities on their queryable data. They must implement a `Value(key string) string` method to represent their properties, driven by the central registry in `internal/models/metadata.go`.
-- **Universal Field Registry**: All queryable and displayable fields must be defined in `internal/models/metadata.go`. This registry links field names to types, accessors, and required provider capabilities.
+- **Models as Source of Truth**: Neutral models (`Track`, `ResourceGroup`) are the sole authorities on their queryable data. They must implement a `Value(key string) string` method to represent their properties, driven by the central registry in `internal/core/models/metadata.go`.
+- **Universal Field Registry**: All queryable and displayable fields must be defined in `internal/core/models/metadata.go`. This registry links field names to types, accessors, and required provider capabilities. Beatgrids, cues, and ratings are deliberate domain capabilities shared across DJ tools, not Rekordbox-specific leaks.
 - **Deep Discovery**: Provider methods for resource selection or modification (e.g., `UpdateGroup`, `CreateGroup`) must be recursive by default. Searching for a container by name should span the entire hierarchy unless explicitly restricted.
-- **Generic Query Logic**: The `internal/query` package must remain 100% generic logic. It must not have knowledge of specific fields like "Artist" or "BPM."
-- **Implementation Authority**: Implementation packages (`rekordbox`, `plex`, `m3u`) are the sole authorities on their data formats. They must handle their own mapping to neutral models.
-- **Hierarchical Path Resolution**: Complex metadata (Cues, Markers, Playlists) must be queried via a standardized Path Resolver. This avoids implementation-specific matchers and ensures a consistent interface across all deep metadata.
-- **One Way to Query**: Avoid aliases or "convenience" static fields for data that is accessible via collections. Use the dynamic path system (Path Resolver) as the single source of truth for all collection-based data (the "Single Path Policy").
-- **Strict Agnosticism**: Core packages (`models`, `library`, `query`, `sync`, `utils`) must NEVER import specific implementation packages.
-- **Provider Registry**: All providers must self-register via `init()` in their respective packages under `internal/provider/`.
-- **Discovery-Driven CLI**: The CLI must interact through standardized services. Avoid type-assertions to specific providers where possible.
-- **Execution Context**: Always pass `provider.ExecutionContext`.
-- **Persistence Responsibility**: The **CLI** and other consumer layers (e.g., GUI) are the sole authorities on persistence. Provider methods (e.g., `Fix`, `Update`) should perform modifications in-memory or on the current state; the caller must explicitly call `Save()` to commit changes to disk.
-- **Safe-by-Default CLI**: All CLI commands that modify state must be non-destructive by default. The `--apply` flag is the universal gatekeeper for the `Save()` operation.
-- **Structural Integrity**: Implementation packages (e.g., `rekordbox`) are responsible for maintaining the internal consistency of their data formats. This includes recalculating counts (e.g., `Entries` in playlists, `Count` in folders) and handling recursive structural lookups for parentage.
-- **Hierarchical Responsibility**: Structural changes (Move, Delete) must explicitly synchronize the counts of both the source and destination parent containers, including special nodes like `ROOT`.
-- **UI Decoupling**: Core packages must not import UI libraries or write directly to Stdout. All user feedback must be channeled through the `Feedback` interface in the `ExecutionContext`.
-- **Provider-Driven UI**: The CLI should remain a thin, dynamic wrapper. It must use provider services (like `TableHeaders()`) to determine its presentation logic rather than hardcoding provider-specific behavior.
+- **Generic Query Logic**: The `internal/core/query` package must remain 100% generic logic. It must not have knowledge of specific fields like "Artist" or "BPM."
+- **Implementation Authority**: Implementation packages (`rekordbox`, `plex`, `m3u`) are the sole authorities on their data formats. They handle their own mapping to neutral models.
+- **Hierarchical Path Resolution**: Complex metadata (Cues, Markers, Playlists) must be queried via a standardized Path Resolver.
+- **Strict Agnosticism**: Core packages must NEVER import specific implementation packages or anything under `internal/ui`.
+- **Provider Registry**: All providers must self-register via `init()` in their respective packages under `internal/providers/`.
+- **Persistence Responsibility**: The **UIs** (CLI/GUI) are the sole authorities on persistence. Provider methods perform modifications in-memory; the caller must explicitly call `Save()` to commit changes, typically orchestrated via the `orchestrator` service.
+- **Safe-by-Default**: All mutating operations must be non-destructive by default. The `--apply` flag (CLI) or "Apply" button (GUI) is the universal gatekeeper for the `Save()` operation.
+- **UI Decoupling**: Core, infra, providers, and services must not import UI libraries or write directly to Stdout/Stderr. All user feedback must be channeled through the `Feedback` interface.
+- **Orchestrator Facade**: All UI interactions should flow through the `internal/services/orchestrator` to ensure consistent behavior across different presentation layers.

@@ -1,93 +1,44 @@
-# Architecture
+# Architecture Protocols
 
-`djlt` is structured as a Go monorepo.
-
-## Directory Structure
-
-- `cmd/djlt/`: CLI entry points. Uses a **Verb-Centric** architecture.
-- `internal/`: UI-agnostic core logic.
-    - `cli/`: The **Surgical 6** verb implementations (`list`, `sync`, `make`, `move`, `remove`, `config`). Each verb is a single file; no provider-specific logic lives here.
-    - `engine/`: Universal search and analysis engine (aliased as `library` in some contexts). Abstracted via the `Library` and `WritableLibrary` interfaces. Works exclusively with neutral `models`.
-    - `models/`: Central domain models (`Track`, `ResourceGroup`, `Resource`) that provide a provider-agnostic language for the entire monorepo.
-    - `provider/`: Thin coordination layer that translates CLI context to domain services. Houses specialized implementations for Rekordbox, Plex, and M3U.
-    - `rekordbox/`: Domain core for Pioneer Rekordbox. Authority on XML parsing, identity resolution, custom query matching (cues/colors), and metadata updates.
-    - `plex/`: Domain core for Plex Media Server. Authority on API interaction and mapping to neutral models.
-    - `m3u/`: Domain core for M3U playlists. Authority on parsing and formatting.
-    - `query/`: Lexer/Parser and Evaluator for the selection syntax.
-    - `sync/`: Multi-threaded orchestration for data movement and XML injection.
-    - `media/`: Parallel FFmpeg transcoding. Abstracted via the `sys.Runner` interface.
-    - `sys/`: System abstractions for I/O and command execution.
-- `pkg/`: Publicly accessible packages.
-    - `rekordbox/`: XML types and a **High-Fidelity Formatter**. This package ensures that any XML modified by `djlt` is indistinguishable from one exported by Rekordbox, preserving idiosyncratic attribute ordering and wrapping rules.
-
-## Core Concepts
-
-### The Surgical 6
-
-The CLI exposes exactly six top-level verbs. Legacy commands (`add`, `remove`, `rename`, `stat`) have been absorbed into these verbs via flags:
-
-| Verb | Alias | Absorbed | Key Flag |
-| :--- | :---- | :------- | :------- |
-| `list` | `ls` | `stat` | `--stats` |
-| `sync` | — | `add` | `--append` |
-| `make` | `mk`, `create` | — | `--from` |
-| `move` | `mv` | `rename` | `--name` |
-| `remove` | `rm` | `remove` | `--from` |
-| `config` | — | — | — |
-
-The `remove` verb distinguishes two semantically different operations via `--from`:
-- **Resource Deletion** (`rm rb/playlists name:Inbox`): permanently removes the ResourceGroup from the library.
-- **Membership Removal** (`rm rb/tracks title:X --from "rb/playlists name:Inbox"`): unlinks tracks from a playlist without deleting them.
-
-### Service-Oriented Domain (Track-Centric)
-
-`djlt` uses a hierarchical service architecture to manage library data. This structure places the **Track** at the center of the domain model, reflecting that a track exists independently of its container.
-
-- **`Tracks()`**: The primary service for music data.
-    - `List()`: Query tracks.
-    - `Update()`: Modify metadata.
-    - **`Groups()`**: Sub-service for track organization.
-        - `Add()` / `Remove()` / `Move()`: Manage memberships as an attribute of track organization.
-- **`Groups()`**: Structural management for containers themselves.
-    - `Create()` / `Delete()`: Manage the existence of Playlists and Folders.
-    - `Update()`: Rename or move a group within the folder tree.
-- **`System()`**: Global library maintenance (Save, Fix, Sync).
-
-### The Implementation Mantra
-
+## The Core Mantra
+>
 > **"The Provider is a shell; the Package is the authority."**
 
-To prevent **Leaky Abstractions**, `internal/provider` packages are restricted to:
-1. Handling CLI-specific output (colors, progress bars).
-2. Mapping execution context (e.g., `DryRun` flags).
-3. Coordinating between the domain core and the query engine.
+This means that `internal/providers` packages should only handle orchestration, and mapping execution context. All domain-specific intelligence (XML manipulation, API client logic, metadata reconciliation, color mapping, and hierarchical cue matching) is co-located in the provider package.
 
-All implementation-specific intelligence—such as how to parse a Rekordbox cue point, how to map a Plex rating, or how to inject metadata into an XML stream—must live in the corresponding implementation package (`rekordbox`, `plex`, `m3u`).
+## Layered Architecture
 
-### High-Fidelity XML Formatting
-Rekordbox is sensitive to the structure of its XML. The `TokenStreamFormatter` in `internal/rekordbox` implements several rules to match this:
-- **Attribute Ordering**: Attributes for `TRACK`, `NODE`, `POSITION_MARK`, etc., are sorted according to a specific schema.
-- **Smart Wrapping**: Attributes are wrapped onto new lines only when the total decoded line length exceeds 88 characters.
-- **Self-Closing Tags**: Empty tags are automatically converted to self-closing format (`<TAG/>`).
-- **Entity Encoding**: Specific character escaping rules for ampersands, quotes, and other special characters.
+The system follows a strict layered architecture with a one-way dependency flow:
 
-### Selection Engine
-The selection engine uses a recursive descent parser and a generic evaluator. It is 100% decoupled from the domain models:
+`ui ──> services ──> providers ──> core`
+(everyone may import `core`; `core` imports nothing under `internal/`)
 
-- **Source of Truth**: The evaluator asks objects for their string representation via a `Value(key)` method. This allows any struct to be queryable without changing the engine.
-- **Logic vs. Data**: The query engine owns the logic of boolean evaluation and numeric/string semantics, while the models own the data representation.
-- **Performance**: Uses direct accessor mapping instead of reflection for O(1) property extraction in search loops.
-- **Operators**: Supports `&&`, `||`, `!`, `>`, `<`, `..` (range), `:` (substring), `:=` (exact), and `::` (regex).
+1. **Core** (`internal/core/`): Pure domain. Models, query engine, shared errors, location parsing. Zero knowledge of providers, formats, infra, or presentation.
+2. **Infra** (`internal/infra/`): Adapters to external processes/OS (ffmpeg, system calls).
+3. **Providers** (`internal/providers/`): Library sources and native format authority (co-located). Registered via factory.
+4. **Services** (`internal/services/`): UI-agnostic business logic and orchestration (resolver, sync engine, orchestrator facade).
+5. **UI** (`internal/ui/`): Presentation layer. `cli` today; `gui` later.
 
-### Test Boundaries and Interfaces
-`djlt` uses explicit interfaces to decouple core logic from external dependencies:
-- **`Library`**: Decouples implementation-specific storage from the query `Engine`, allowing for agnostic search across different data formats.
-- **`Feedback`**: An interface in the execution context that allows implementation packages to provide user feedback (e.g. preview messages) without depending on terminal libraries or Stdout.
-- **`Provider`**: Service-registry interface that exposes the hierarchical `Tracks()`, `Groups()`, and `System()` domains.
-- **`Resource`**: A universal interface for any item in a library (Track, ResourceGroup), allowing for generic movement and listing logic.
-- **`sys.FileSystem` & `sys.Runner`**: Abstract the OS environment (Filesystem, FFmpeg), enabling side-effect-free testing of media and sync operations.
+## Track-Centric Service Design
 
-### Cobra Command Factory
-Each verb is created by a `newXxxCmd()` constructor function. Flag variables are captured in closures, so each command instance carries its own isolated state. `NewRootCmd()` wires all constructors together and is the sole entry point used by both the production binary (`var RootCmd = NewRootCmd()`) and tests (`root := NewRootCmd()`).
+The system follows a nested, resource-oriented service structure:
 
-The three persistent flags (`--file`, `--apply`, `--verbose`) are still bound to package-level vars shared across all verbs. Tests reset these four vars in `resetTestState()` before creating a new root command. No `pflag.Changed` traversal is needed because each `NewRootCmd()` call produces a fresh flag set.
+- **`Tracks()`**: The primary entry point for managed music data.
+- **`Tracks().Groups()`**: Handles memberships (Add/Remove/Move).
+- **`Groups()`**: Handles structural containers (Create/Delete Playlists and Folders).
+- **`System()`**: Handles global maintenance (Save, Fix, Sync).
+
+## Hard Boundaries
+
+- **Models as Source of Truth**: Neutral models (`Track`, `ResourceGroup`) are the sole authorities on their queryable data. They must implement a `Value(key string) string` method to represent their properties, driven by the central registry in `internal/core/models/metadata.go`.
+- **Universal Field Registry**: All queryable and displayable fields must be defined in `internal/core/models/metadata.go`. This registry links field names to types, accessors, and required provider capabilities. Beatgrids, cues, and ratings are deliberate domain capabilities shared across DJ tools, not Rekordbox-specific leaks.
+- **Deep Discovery**: Provider methods for resource selection or modification (e.g., `UpdateGroup`, `CreateGroup`) must be recursive by default. Searching for a container by name should span the entire hierarchy unless explicitly restricted.
+- **Generic Query Logic**: The `internal/core/query` package must remain 100% generic logic. It must not have knowledge of specific fields like "Artist" or "BPM."
+- **Implementation Authority**: Implementation packages (`rekordbox`, `plex`, `m3u`) are the sole authorities on their data formats. They handle their own mapping to neutral models.
+- **Hierarchical Path Resolution**: Complex metadata (Cues, Markers, Playlists) must be queried via a standardized Path Resolver.
+- **Strict Agnosticism**: Core packages must NEVER import specific implementation packages or anything under `internal/ui`.
+- **Provider Registry**: All providers must self-register via `init()` in their respective packages under `internal/providers/`.
+- **Persistence Responsibility**: The **UIs** (CLI/GUI) are the sole authorities on persistence. Provider methods perform modifications in-memory; the caller must explicitly call `Save()` to commit changes, typically orchestrated via the `orchestrator` service.
+- **Safe-by-Default**: All mutating operations must be non-destructive by default. The `--apply` flag (CLI) or "Apply" button (GUI) is the universal gatekeeper for the `Save()` operation.
+- **UI Decoupling**: Core, infra, providers, and services must not import UI libraries or write directly to Stdout/Stderr. All user feedback must be channeled through the `Feedback` interface.
+- **Orchestrator Facade**: All UI interactions should flow through the `internal/services/orchestrator` to ensure consistent behavior across different presentation layers.
