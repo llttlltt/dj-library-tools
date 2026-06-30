@@ -41,4 +41,6 @@ The system follows a nested, resource-oriented service structure:
 - **Persistence Responsibility**: The **UIs** (CLI/GUI) are the sole authorities on persistence. Provider methods perform modifications in-memory; the caller must explicitly call `Save()` to commit changes, typically orchestrated via the `orchestrator` service.
 - **Safe-by-Default**: All mutating operations must be non-destructive by default. The `--apply` flag (CLI) or "Apply" button (GUI) is the universal gatekeeper for the `Save()` operation.
 - **UI Decoupling**: Core, infra, providers, and services must not import UI libraries or write directly to Stdout/Stderr. All user feedback must be channeled through the `Feedback` interface.
-- **Orchestrator Facade**: All UI interactions should flow through the `internal/services/orchestrator` to ensure consistent behavior across different presentation layers.
+- **Orchestrator Facade**: All UI interactions flow through the `internal/services/orchestrator`. It is the single seam between presentation and logic, owning statistics computation, sorting, and default table columns. It returns inert data only.
+- **Inert Results**: `Orchestrator.List` returns a `ListResult` containing pure data and metadata (like `DefaultColumns`). It never returns a mutable `Provider` handle to the UI.
+- **Option Ownership**: The orchestrator defines its own option DTOs (e.g., `SyncOptions`, `FixOptions`). UIs construct these types, and the orchestrator maps them to internal provider types.
