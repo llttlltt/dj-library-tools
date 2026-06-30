@@ -38,7 +38,7 @@ Before using `djlt`, you need to tell it where your Rekordbox XML library is loc
 
 ## Seeing Your Music
 
-Once configured, you can explore your library using the `list` command. `djlt` uses a consistent **[Selection Syntax](syntax.md)** across all providers.
+Once configured, you can explore your library using the `list` command. `djlt` uses a consistent **[Selection Syntax](../query/syntax.md)** across all providers.
 
 ### Basic Searching
 To list tracks from your Rekordbox library matching a specific criteria:
@@ -87,6 +87,6 @@ djlt ls rb/tracks "rating:>=4" --stats
 
 Now that you've mastered the basics, continue your journey:
 
-- **[Syntax](syntax.md)**: Master the query language and operators.
-- **[Providers](query/providers/index.md)**: Explore all available resources in Rekordbox and Plex.
+- **[Syntax](../query/syntax.md)**: Master the query language and operators.
+- **[Providers](../providers/index.md)**: Explore all available resources in Rekordbox and Plex.
 - **[CLI Reference](../commands/index.md)**: Comprehensive guide to all commands and flags.

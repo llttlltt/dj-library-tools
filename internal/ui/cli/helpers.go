@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -34,14 +33,16 @@ func HandleError(err error) error {
 		return nil
 	}
 
-	if errors.Is(err, djerrors.ErrReadOnly) {
+	kind := djerrors.KindOf(err)
+	switch kind {
+	case djerrors.KindReadOnly:
 		return fmt.Errorf("operation failed: this provider is read-only")
-	}
-	if errors.Is(err, djerrors.ErrUnsupportedResource) {
+	case djerrors.KindUnsupportedResource:
 		return fmt.Errorf("operation failed: this resource type is not supported by the provider")
-	}
-	if errors.Is(err, djerrors.ErrInvalidParent) {
+	case djerrors.KindInvalidParent:
 		return fmt.Errorf("operation failed: cannot create the resource in that location (structural constraint)")
+	case djerrors.KindNotFound:
+		return fmt.Errorf("operation failed: resource not found")
 	}
 
 	return err

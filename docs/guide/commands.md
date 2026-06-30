@@ -87,4 +87,4 @@ djlt config list
 
 ---
 
-For full flag details, see the **[CLI Reference](../../commands/index.md)**.
+For full flag details, see the **[CLI Reference](../commands/index.md)**.

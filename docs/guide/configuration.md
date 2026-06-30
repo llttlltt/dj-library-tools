@@ -34,4 +34,4 @@ You can print your entire configuration at any time:
 djlt config list
 ```
 
-For more advanced examples, see the full **[djlt config](../commands/config.md)** command documentation.
+For more advanced examples, see the full **[djlt config](../commands/config/index.md)** command documentation.

@@ -88,5 +88,5 @@ djlt ls rb/tracks "rating:>=4" --stats
 Now that you've mastered the basics, continue your journey:
 
 - **[Syntax](../query/syntax.md)**: Master the query language and operators.
-- **[Providers](query/providers/index.md)**: Explore all available resources in Rekordbox and Plex.
+- **[Providers](../providers/index.md)**: Explore all available resources in Rekordbox and Plex.
 - **[CLI Reference](../commands/index.md)**: Comprehensive guide to all commands and flags.

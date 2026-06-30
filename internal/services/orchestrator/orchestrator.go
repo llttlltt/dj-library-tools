@@ -52,8 +52,9 @@ func (o *Orchestrator) buildExecContext(opts RunOptions) provider.ExecutionConte
 }
 
 type ListResult struct {
-	Tracks []models.Track
-	Groups []models.ResourceGroup
+	Resource string
+	Tracks   []models.Track
+	Groups   []models.ResourceGroup
 	Provider provider.Provider
 }
 
@@ -64,6 +65,7 @@ func (o *Orchestrator) List(ctx context.Context, locStr string, queryOverride st
 	}
 
 	return &ListResult{
+		Resource: sel.Location.Resource,
 		Tracks:   sel.Tracks,
 		Groups:   sel.Groups,
 		Provider: prov,
