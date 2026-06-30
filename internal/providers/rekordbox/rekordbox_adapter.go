@@ -3,10 +3,6 @@ package rekordbox
 import (
 	"context"
 	"fmt"
-	"net/url"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/services/library"
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
@@ -237,431 +233,56 @@ func (s *rekordboxSystemService) Fix(ctx context.Context, ectx provider.Executio
 	totalAffected := 0
 
 	for fixType, targets := range options.Actions {
+		var res FixData
+		var err error
 		switch fixType {
 		case provider.FixDuplicates:
 			for _, target := range targets {
 				if target == "members" {
-					affected, err := s.fixDuplicateMembers(ctx, ectx, selection)
-					if err != nil {
-						return totalAffected, err
-					}
-					totalAffected += affected
+					res, err = FixDuplicateMembers(ctx, s.rbXML, selection, ectx.Apply)
 				}
 				if target == "tracks" {
-					affected, err := s.fixDuplicateTracks(ctx, ectx, selection)
-					if err != nil {
-						return totalAffected, err
-					}
-					totalAffected += affected
+					res, err = FixDuplicateTracks(ctx, s.rbXML, selection, ectx.Apply)
 				}
+				if err != nil { return totalAffected, err }
+				s.reportFix(ectx, res, string(fixType), target)
+				totalAffected += res.TotalApplied
 			}
 		case provider.FixMetadata:
-			affected, err := s.fixMetadataNormalization(ctx, ectx, selection, targets)
-			if err != nil {
-				return totalAffected, err
-			}
-			totalAffected += affected
+			res, err = FixMetadataNormalization(ctx, s.rbXML, selection, targets, ectx.Apply)
+			if err != nil { return totalAffected, err }
+			s.reportFix(ectx, res, string(fixType), "metadata")
+			totalAffected += res.TotalApplied
 		case provider.FixPaths:
-			affected, err := s.fixPaths(ctx, ectx, selection, targets)
-			if err != nil {
-				return totalAffected, err
-			}
-			totalAffected += affected
+			res, err = FixPaths(ctx, s.rbXML, selection, targets, ectx.Apply)
+			if err != nil { return totalAffected, err }
+			s.reportFix(ectx, res, string(fixType), "paths")
+			totalAffected += res.TotalApplied
 		}
 	}
 
 	return totalAffected, nil
 }
 
-func (s *rekordboxSystemService) fixPaths(ctx context.Context, ectx provider.ExecutionContext, selection provider.Selection, targets []string) (int, error) {
-	totalRelocated := 0
-	
-	// Determine strategy
-	strategies := make(map[string]bool)
-	for _, t := range targets {
-		strategies[strings.ToLower(t)] = true
+func (s *rekordboxSystemService) reportFix(ectx provider.ExecutionContext, res FixData, fixType, target string) {
+	if res.TotalIdentified == 0 {
+		return
 	}
-
-	// 1. Identify tracks to check
-	var toProcess []*Track
-	if len(selection.Tracks) > 0 {
-		idMap := make(map[string]*Track)
-		for i := range s.rbXML.Collection.TRACK {
-			id := fmt.Sprintf("%d", s.rbXML.Collection.TRACK[i].TrackID)
-			idMap[id] = &s.rbXML.Collection.TRACK[i]
+	for _, d := range res.Details {
+		if d.Table != nil && ectx.Verbose {
+			ectx.Feedback.OnTable(d.Table.Headers, d.Table.Rows)
 		}
-		for _, t := range selection.Tracks {
-			if rt, ok := idMap[t.ID]; ok {
-				toProcess = append(toProcess, rt)
-			}
-		}
-	} else {
-		for i := range s.rbXML.Collection.TRACK {
-			toProcess = append(toProcess, &s.rbXML.Collection.TRACK[i])
+		if d.From != "" && ectx.Verbose {
+			fmt.Printf("Relocating %s\n  From: %s\n  To:   %s\n", d.TrackName, d.From, d.To)
 		}
 	}
 
-	for _, rt := range toProcess {
-		select {
-		case <-ctx.Done():
-			return totalRelocated, ctx.Err()
-		default:
-		}
-		originalLocation := rt.Location
-		if originalLocation == "" {
-			continue
-		}
-
-		// Decode URI to physical path
-		u, err := url.Parse(originalLocation)
-		if err != nil {
-			continue
-		}
-		currentPath := u.Path
-		
-		// Check if file exists
-		if _, err := os.Stat(currentPath); err == nil {
-			continue // File is already healthy
-		}
-
-		// File is missing, try to find it
-		newPath := ""
-
-		// Strategy: Normalize (Case sensitivity fix, extension fix)
-		if strategies["normalize"] {
-			exts := []string{".mp3", ".m4a", ".wav", ".flac", ".aif", ".aiff"}
-			base := strings.TrimSuffix(currentPath, filepath.Ext(currentPath))
-			for _, ext := range exts {
-				testPath := base + ext
-				if _, err := os.Stat(testPath); err == nil {
-					newPath = testPath
-					break
-				}
-			}
-		}
-
-		if newPath != "" {
-			totalRelocated++
-			if ectx.Verbose {
-				fmt.Printf("Relocating %s\n  From: %s\n  To:   %s\n", rt.Name, currentPath, newPath)
-			}
-			if ectx.Apply {
-				u.Path = newPath
-				rt.Location = u.String()
-				s.rbXML.CollectionChanged = true
-			}
-		} else {
-			if ectx.Verbose {
-				fmt.Printf("Missing file for %s: %s\n", rt.Name, currentPath)
-			}
-		}
-	}
-
-	if totalRelocated > 0 {
-		fmt.Printf("Identified %d missing tracks that can be relocated.\n", totalRelocated)
-		if ectx.Apply {
-			fmt.Printf("Relocated %d tracks in the library.\n", totalRelocated)
-		} else {
-			fmt.Println("Run with --apply to commit these relocations.")
-		}
-	} else {
-		fmt.Println("No paths required repair.")
-	}
-
-	return totalRelocated, nil
-}
-
-func (s *rekordboxSystemService) fixMetadataNormalization(ctx context.Context, ectx provider.ExecutionContext, selection provider.Selection, targets []string) (int, error) {
-	totalFixed := 0
-
-	// Map of TrackID to Track pointer for selection lookup
-	idMap := make(map[string]*Track)
-	for i := range s.rbXML.Collection.TRACK {
-		id := fmt.Sprintf("%d", s.rbXML.Collection.TRACK[i].TrackID)
-		idMap[id] = &s.rbXML.Collection.TRACK[i]
-	}
-
-	// Determine which tracks to process
-	var toProcess []*Track
-	if len(selection.Tracks) > 0 {
-		for _, t := range selection.Tracks {
-			if rt, ok := idMap[t.ID]; ok {
-				toProcess = append(toProcess, rt)
-			}
-		}
-	} else {
-		for i := range s.rbXML.Collection.TRACK {
-			toProcess = append(toProcess, &s.rbXML.Collection.TRACK[i])
-		}
-	}
-
-	// Field targets
-	normalizeAll := len(targets) == 0 || (len(targets) == 1 && targets[0] == "all")
-	targetMap := make(map[string]bool)
-	for _, t := range targets {
-		targetMap[strings.ToLower(t)] = true
-	}
-
-	for _, rt := range toProcess {
-		select {
-		case <-ctx.Done():
-			return totalFixed, ctx.Err()
-		default:
-		}
-		fixed := false
-		
-		// 1. Trim Whitespace
-		if normalizeAll || targetMap["artist"] {
-			if rt.Artist != strings.TrimSpace(rt.Artist) {
-				rt.Artist = strings.TrimSpace(rt.Artist)
-				fixed = true
-			}
-		}
-		if normalizeAll || targetMap["title"] {
-			if rt.Name != strings.TrimSpace(rt.Name) {
-				rt.Name = strings.TrimSpace(rt.Name)
-				fixed = true
-			}
-		}
-		if normalizeAll || targetMap["album"] {
-			if rt.Album != strings.TrimSpace(rt.Album) {
-				rt.Album = strings.TrimSpace(rt.Album)
-				fixed = true
-			}
-		}
-		if normalizeAll || targetMap["genre"] {
-			if rt.Genre != strings.TrimSpace(rt.Genre) {
-				rt.Genre = strings.TrimSpace(rt.Genre)
-				fixed = true
-			}
-		}
-
-		// 2. Clear "None" or placeholder values
-		if normalizeAll || targetMap["comments"] {
-			lowerComment := strings.ToLower(rt.Comments)
-			if lowerComment == "none" || lowerComment == "nil" {
-				rt.Comments = ""
-				fixed = true
-			}
-		}
-
-		if fixed {
-			totalFixed++
-			if ectx.Verbose {
-				fmt.Printf("Normalized metadata for: %s - %s\n", rt.Artist, rt.Name)
-			}
-		}
-	}
-
-	if totalFixed > 0 {
-		fmt.Printf("Identified %d tracks with metadata requiring normalization.\n", totalFixed)
-		if ectx.Apply {
-			s.rbXML.CollectionChanged = true
-			fmt.Printf("Applied normalization to %d tracks.\n", totalFixed)
-		} else {
-			fmt.Println("Run with --apply to persist changes.")
-		}
-	} else {
-		fmt.Println("No metadata normalization required.")
-	}
-
-	return totalFixed, nil
-}
-
-func (s *rekordboxSystemService) fixDuplicateTracks(ctx context.Context, ectx provider.ExecutionContext, selection provider.Selection) (int, error) {
-	totalRemoved := 0
-
-	// Use the entire collection if no tracks are selected
-	tracks := selection.Tracks
-	if len(tracks) == 0 {
-		for _, rt := range s.rbXML.Collection.TRACK {
-			tracks = append(tracks, ToNeutralTrack(rt))
-		}
-	}
-
-	// 1. Identify duplicates based on Artist, Title, and Size
-	// We use Artist+Title+Size as a strong proxy for identical files.
-	type identity struct {
-		artist, title string
-		size          int64
-	}
-
-	seen := make(map[identity]string) // identity -> first ID seen
-	toRemove := make(map[string]bool)
-
-	for _, t := range tracks {
-		select {
-		case <-ctx.Done():
-			return 0, ctx.Err()
-		default:
-		}
-		id := identity{
-			artist: strings.ToLower(t.Artist),
-			title:  strings.ToLower(t.Title),
-			size:   t.Size,
-		}
-
-		if firstID, dup := seen[id]; dup {
-			toRemove[t.ID] = true
-			if ectx.Verbose {
-				fmt.Printf("Duplicate track found: %s - %s (ID: %s, Dupe of: %s)\n", t.Artist, t.Title, t.ID, firstID)
-			}
-		} else {
-			seen[id] = t.ID
-		}
-	}
-
-	if len(toRemove) == 0 {
-		fmt.Println("No duplicate tracks found in the master collection.")
-		return 0, nil
-	}
-
-	fmt.Printf("Found %d duplicate tracks in the master collection.\n", len(toRemove))
-
+	fmt.Printf("Identified %d %s/%s issues.\n", res.TotalIdentified, fixType, target)
 	if ectx.Apply {
-		// 2. Remove from COLLECTION
-		before := len(s.rbXML.Collection.TRACK)
-		newTracks := s.rbXML.Collection.TRACK[:0]
-		for _, rt := range s.rbXML.Collection.TRACK {
-			id := fmt.Sprintf("%d", rt.TrackID)
-			if !toRemove[id] {
-				newTracks = append(newTracks, rt)
-			}
-		}
-		s.rbXML.Collection.TRACK = newTracks
-		s.rbXML.Collection.Entries = int32(len(newTracks))
-		s.rbXML.CollectionChanged = true
-
-		// 3. Remove from PLAYLISTS (all memberships)
-		s.removeTrackIDsFromPlaylists(&s.rbXML.Playlists.Node.Node, toRemove)
-
-		totalRemoved = before - len(newTracks)
-		fmt.Printf("Removed %d duplicate tracks and cleaned up playlist memberships.\n", totalRemoved)
+		fmt.Printf("Applied %d repairs.\n", res.TotalApplied)
 	} else {
-		fmt.Println("Run with --apply to remove these duplicates.")
+		fmt.Println("Run with --apply to commit these repairs.")
 	}
-
-	return len(toRemove), nil
-}
-
-func (s *rekordboxSystemService) removeTrackIDsFromPlaylists(nodes *[]Node, ids map[string]bool) {
-	for i := range *nodes {
-		node := &(*nodes)[i]
-		if node.Type == 1 { // Playlist
-			before := len(node.TRACK)
-			kept := node.TRACK[:0]
-			for _, t := range node.TRACK {
-				if !ids[t.Key] {
-					kept = append(kept, t)
-				}
-			}
-			if len(kept) != before {
-				node.TRACK = kept
-				node.Entries = PtrInt32(int32(len(kept)))
-				s.rbXML.PlaylistsChanged = true
-			}
-		}
-		if len(node.Node) > 0 {
-			s.removeTrackIDsFromPlaylists(&node.Node, ids)
-		}
-	}
-}
-func (s *rekordboxSystemService) fixDuplicateMembers(ctx context.Context, ectx provider.ExecutionContext, selection provider.Selection) (int, error) {
-	totalRemoved := 0
-
-	// Build track lookup map if verbose to show track names
-	var trackLookup map[string]models.Track
-	if ectx.Verbose {
-		trackLookup = make(map[string]models.Track)
-		for _, rt := range s.rbXML.Collection.TRACK {
-			t := ToNeutralTrack(rt)
-			trackLookup[t.ID] = t
-		}
-	}
-
-	// We only care about playlists for duplicate membership fixing
-	for _, res := range selection.Items {
-		select {
-		case <-ctx.Done():
-			return totalRemoved, ctx.Err()
-		default:
-		}
-		group, ok := res.(models.ResourceGroup)
-		if !ok || group.Kind != models.GroupKindPlaylist {
-			continue
-		}
-
-		node, _, _, _ := s.rbXML.FindGroupInTree(&s.rbXML.Playlists.Node.Node, nil, group.Name, 1)
-		if node == nil {
-			continue
-		}
-
-		totalTracks := len(node.TRACK)
-		seenAt := make(map[string]int) // ID -> 1-based index
-		var kept []struct {
-			Key string `xml:"Key,attr"`
-		}
-
-		removed := 0
-		type removedInfo struct {
-			pos, firstPos int
-			artist, title, id string
-		}
-		var removedRows []removedInfo
-
-		for i, t := range node.TRACK {
-			pos := i + 1
-			if firstPos, dup := seenAt[t.Key]; dup {
-				removed++
-				if ectx.Verbose {
-					info := removedInfo{pos: pos, firstPos: firstPos, id: t.Key}
-					if track, ok := trackLookup[t.Key]; ok {
-						info.artist = track.Artist
-						info.title = track.Title
-					} else {
-						info.artist = "[Unknown]"
-						info.title = "[Unknown]"
-					}
-					removedRows = append(removedRows, info)
-				}
-			} else {
-				seenAt[t.Key] = pos
-				kept = append(kept, t)
-			}
-		}
-
-		if ectx.Verbose && len(removedRows) > 0 {
-			headers := []string{"pos", "id", "title", "artist"}
-			var rows [][]string
-			for _, r := range removedRows {
-				rows = append(rows, []string{
-					fmt.Sprintf("%d, %d", r.firstPos, r.pos),
-					r.id,
-					r.title,
-					r.artist,
-				})
-			}
-			ectx.Feedback.OnTable(headers, rows)
-			fmt.Println()
-		}
-
-		fmt.Printf("%s:\n", group.Name)
-		fmt.Printf("- Total tracks: %d\n", totalTracks)
-		if removed > 0 {
-			fmt.Printf("- Duplicate tracks: %d\n", removed)
-			fmt.Printf("- Remaining tracks: %d\n", totalTracks-removed)
-		}
-		fmt.Println()
-
-		if removed > 0 && ectx.Apply {
-			node.TRACK = kept
-			node.Entries = PtrInt32(int32(len(kept)))
-			s.rbXML.PlaylistsChanged = true
-		}
-		totalRemoved += removed
-	}
-
-	return totalRemoved, nil
 }
 
 func (s *rekordboxSystemService) Sync(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, targetQuery string, options provider.SyncOptions) error {
