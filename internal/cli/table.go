@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/llttlltt/dj-library-tools/internal/provider"
-	"github.com/llttlltt/dj-library-tools/internal/query"
-	"github.com/llttlltt/dj-library-tools/internal/utils"
+	"github.com/llttlltt/dj-library-tools/internal/core/models"
+	"github.com/llttlltt/dj-library-tools/internal/providers"
+	"github.com/llttlltt/dj-library-tools/internal/core/query"
+	"github.com/llttlltt/dj-library-tools/internal/ui/cli/render"
 )
 
 type Table struct {
@@ -22,7 +22,7 @@ func (f *Table) Render() {
 	}
 
 	headerFmt := color.New(color.FgCyan, color.Bold, color.Underline).SprintFunc()
-	t := utils.Table{
+	t := render.Table{
 		Headers: f.Headers,
 		Rows:    f.Rows,
 		HeaderFormat: func(s string) string {

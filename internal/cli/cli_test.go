@@ -3,8 +3,8 @@ package cli
 import (
 	"testing"
 
-	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/llttlltt/dj-library-tools/internal/provider"
+	"github.com/llttlltt/dj-library-tools/internal/core/models"
+	"github.com/llttlltt/dj-library-tools/internal/providers"
 )
 
 type MockProvider struct{}

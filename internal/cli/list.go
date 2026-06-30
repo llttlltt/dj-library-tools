@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/llttlltt/dj-library-tools/internal/models"
-	"github.com/llttlltt/dj-library-tools/internal/query"
-	"github.com/llttlltt/dj-library-tools/internal/resolver"
+	"github.com/llttlltt/dj-library-tools/internal/core/models"
+	"github.com/llttlltt/dj-library-tools/internal/core/query"
+	"github.com/llttlltt/dj-library-tools/internal/services/resolver"
 	"github.com/spf13/cobra"
 )
 

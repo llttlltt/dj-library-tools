@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/llttlltt/dj-library-tools/internal/models"
+	"github.com/llttlltt/dj-library-tools/internal/core/models"
 	"github.com/spf13/cobra"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/llttlltt/dj-library-tools/internal/resolver"
+	"github.com/llttlltt/dj-library-tools/internal/services/resolver"
 	"github.com/spf13/cobra"
 )
 

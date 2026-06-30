@@ -6,9 +6,9 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/cli"
 
 	// Register Providers
-	_ "github.com/llttlltt/dj-library-tools/internal/provider/m3u"
-	_ "github.com/llttlltt/dj-library-tools/internal/provider/plex"
-	_ "github.com/llttlltt/dj-library-tools/internal/provider/rb"
+	_ "github.com/llttlltt/dj-library-tools/internal/providers/m3u"
+	_ "github.com/llttlltt/dj-library-tools/internal/providers/plex"
+	_ "github.com/llttlltt/dj-library-tools/internal/providers/rekordbox"
 )
 
 func main() {

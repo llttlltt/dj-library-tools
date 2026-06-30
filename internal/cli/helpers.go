@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/llttlltt/dj-library-tools/internal/djerr"
-	"github.com/llttlltt/dj-library-tools/internal/provider"
-	"github.com/llttlltt/dj-library-tools/internal/resolver"
+	"github.com/llttlltt/dj-library-tools/internal/config"
+	djerrors "github.com/llttlltt/dj-library-tools/internal/core/errors"
+	"github.com/llttlltt/dj-library-tools/internal/providers"
+	"github.com/llttlltt/dj-library-tools/internal/services/resolver"
 )
 
 // HandleError provides user-friendly messages for sentinel provider errors.
@@ -16,13 +17,13 @@ func HandleError(err error) error {
 		return nil
 	}
 
-	if errors.Is(err, djerr.ErrReadOnly) {
+	if errors.Is(err, djerrors.ErrReadOnly) {
 		return fmt.Errorf("operation failed: this provider is read-only")
 	}
-	if errors.Is(err, djerr.ErrUnsupportedResource) {
+	if errors.Is(err, djerrors.ErrUnsupportedResource) {
 		return fmt.Errorf("operation failed: this resource type is not supported by the provider")
 	}
-	if errors.Is(err, djerr.ErrInvalidParent) {
+	if errors.Is(err, djerrors.ErrInvalidParent) {
 		return fmt.Errorf("operation failed: cannot create the resource in that location (structural constraint)")
 	}
 
@@ -38,11 +39,14 @@ func getExecContext() provider.ExecutionContext {
 }
 
 func ResolveSelection(locStr string, queryOverride string) (*resolver.Selection, error) {
+	cfg, _ := config.LoadAppConfig()
 	// Standard resolution with global context
 	opts := resolver.ResolveOptions{
-		FilePath: filePath,
-		Apply:    apply,
-		Verbose:  verbose,
+		FilePath:             filePath,
+		RekordboxPrimaryPath: cfg.Rekordbox.PrimaryFilePath,
+		Apply:                apply,
+		Verbose:              verbose,
+		Feedback:             &TerminalFeedback{},
 	}
 	return resolver.ResolveSelection(locStr, queryOverride, opts)
 }

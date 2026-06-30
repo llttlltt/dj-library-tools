@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
-	"github.com/llttlltt/dj-library-tools/internal/plex"
+	"github.com/llttlltt/dj-library-tools/internal/providers/plex"
 	"github.com/spf13/cobra"
 )
 
