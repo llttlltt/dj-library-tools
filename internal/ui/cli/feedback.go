@@ -27,6 +27,12 @@ func (f *TerminalFeedback) OnTrackStart(trackTitle string) {}
 func (f *TerminalFeedback) OnTrackEnd()                    {}
 
 func (f *TerminalFeedback) OnComplete() {}
+func (f *TerminalFeedback) OnProgress(done, total int) {
+	fmt.Printf("\rProcessing: [%d/%d]", done, total)
+	if done == total {
+		fmt.Println()
+	}
+}
 func (f *TerminalFeedback) OnTable(headers []string, rows [][]string) {
 	headerFmt := color.New(color.FgCyan, color.Bold, color.Underline).SprintFunc()
 	t := render.Table{

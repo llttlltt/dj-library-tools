@@ -61,6 +61,7 @@ type Feedback interface {
 	OnPreview(message string)
 	OnSuccess(message string)
 	OnWarning(message string)
+	OnProgress(done, total int)
 	OnTable(headers []string, rows [][]string)
 }
 

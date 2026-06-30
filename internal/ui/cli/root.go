@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"github.com/spf13/cobra"
 )
 
@@ -37,6 +38,6 @@ func NewRootCmd() *cobra.Command {
 // RootCmd is the singleton used by the production binary.
 var RootCmd = NewRootCmd()
 
-func Execute() error {
-	return RootCmd.Execute()
+func ExecuteContext(ctx context.Context) error {
+	return RootCmd.ExecuteContext(ctx)
 }

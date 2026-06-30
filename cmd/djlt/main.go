@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"os"
+	"os/signal"
 
 	"github.com/llttlltt/dj-library-tools/internal/ui/cli"
 
@@ -12,7 +14,10 @@ import (
 )
 
 func main() {
-	if err := cli.Execute(); err != nil {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	if err := cli.ExecuteContext(ctx); err != nil {
 		os.Exit(1)
 	}
 }

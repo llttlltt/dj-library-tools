@@ -14,6 +14,7 @@ import (
 
 type ProgressListener interface {
 	OnStart(total int64)
+	OnProgress(done, total int64)
 	OnTrackStart(trackTitle string)
 	OnTrackEnd()
 	OnComplete()
@@ -266,6 +267,7 @@ func (o *Orchestrator) SyncToLibrary(ctx context.Context, tracks []models.Track,
 	close(jobs)
 
 	var trackIDs []string
+	var done int64
 	for i := 0; i < len(tracks); i++ {
 		select {
 		case <-ctx.Done():
@@ -273,6 +275,10 @@ func (o *Orchestrator) SyncToLibrary(ctx context.Context, tracks []models.Track,
 		case res := <-results:
 			if res != "" {
 				trackIDs = append(trackIDs, res)
+			}
+			done++
+			if o.Listener != nil {
+				o.Listener.OnProgress(done, int64(len(tracks)))
 			}
 		}
 	}

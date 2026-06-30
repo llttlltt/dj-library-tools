@@ -112,4 +112,5 @@ type mockFeedback struct{}
 func (f *mockFeedback) OnPreview(message string)           {}
 func (f *mockFeedback) OnSuccess(message string)           {}
 func (f *mockFeedback) OnWarning(message string)           {}
+func (f *mockFeedback) OnProgress(done, total int)         {}
 func (f *mockFeedback) OnTable(headers []string, rows [][]string) {}
