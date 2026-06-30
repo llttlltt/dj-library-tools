@@ -293,12 +293,10 @@ func toStringSlice(v interface{}) ([]string, bool) {
 }
 
 // sourceLocation resolves an Endpoint to a provider location string of the
-// form "<provider>/<resource>" with any query carried via the orchestrator
-// queryOverride parameter separately.
+// form "<source-id>/<resource>". The resolver handles UUID lookup and config hydration.
 func sourceLocation(ep config.Endpoint) (string, error) {
-	src, err := config.FindSourceByID(ep.SourceID)
-	if err != nil {
-		return "", fmt.Errorf("endpoint source %q: %w", ep.SourceID, err)
+	if ep.SourceID == "" {
+		return "", fmt.Errorf("source id missing in endpoint")
 	}
-	return src.Provider + "/" + ep.Resource, nil
+	return ep.SourceID + "/" + ep.Resource, nil
 }

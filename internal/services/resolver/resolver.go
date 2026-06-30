@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/core/location"
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
 	"github.com/llttlltt/dj-library-tools/internal/core/query"
@@ -21,6 +22,9 @@ type ResolveOptions struct {
 	RekordboxPrimaryPath string
 	Apply                bool
 	Verbose              bool
+	Host                 string
+	Port                 int
+	Token                string
 	Feedback             provider.Feedback
 }
 
@@ -35,12 +39,41 @@ func ResolveSelection(ctx context.Context, locStr string, queryOverride string, 
 	}
 
 	filePath := opts.FilePath
+	host := opts.Host
+	port := opts.Port
+	token := opts.Token
+
+	// If provider is a UUID, load the Source and use its config
+	if len(loc.Provider) == 36 && strings.Contains(loc.Provider, "-") {
+		src, err := config.FindSourceByID(loc.Provider)
+		if err == nil {
+			loc.Provider = src.Provider // replace UUID with "rb", "plex" etc.
+
+			// Override options with Source config
+			if fp, ok := src.Config["file_path"]; ok {
+				filePath = fp
+			}
+			if h, ok := src.Config["host"]; ok {
+				host = h
+			}
+			if p, ok := src.Config["port"]; ok {
+				fmt.Sscanf(p, "%d", &port)
+			}
+			if t, ok := src.Config["token"]; ok {
+				token = t
+			}
+		}
+	}
+
 	if filePath == "" && loc.Provider == "rb" {
 		filePath = opts.RekordboxPrimaryPath
 	}
 
 	factoryOpts := factory.ProviderOptions{
 		FilePath: filePath,
+		Host:     host,
+		Port:     port,
+		Token:    token,
 	}
 
 	prov, err := factory.NewProvider(loc.Provider, factoryOpts)

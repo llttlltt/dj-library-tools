@@ -153,6 +153,9 @@ export function QueryTesterControls({
 	onTest,
 	onApply,
 }: ControlsProps) {
+	const selectedSource = sources.find((s) => s.id === sourceID);
+	const supportsFolders = selectedSource?.provider === "rb";
+
 	return (
 		<div className="flex flex-col gap-3">
 			<div className="flex flex-col gap-1">
@@ -186,7 +189,9 @@ export function QueryTesterControls({
 					<SelectContent>
 						<SelectItem value="tracks">tracks</SelectItem>
 						<SelectItem value="playlists">playlists</SelectItem>
-						<SelectItem value="folders">folders</SelectItem>
+						{supportsFolders && (
+							<SelectItem value="folders">folders</SelectItem>
+						)}
 					</SelectContent>
 				</Select>
 			</div>

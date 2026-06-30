@@ -282,15 +282,8 @@ type QueryResult struct {
 // It runs a read-only List against the given Source and returns a QueryResult
 // that covers both track resources and group resources (playlists/folders).
 func (a *App) PreviewQuery(sourceID, resource, query string) (QueryResult, error) {
-	src, err := config.FindSourceByID(sourceID)
-	if err != nil {
-		return QueryResult{}, fmt.Errorf("source not found: %w", err)
-	}
 	runOpts := orchestrator.RunOptions{}
-	if fp, ok := src.Config["file_path"]; ok {
-		runOpts.FilePath = fp
-	}
-	res, err := a.orch.List(a.ctx, src.Provider+"/"+resource, query, runOpts, "")
+	res, err := a.orch.List(a.ctx, sourceID+"/"+resource, query, runOpts, "")
 	if err != nil {
 		return QueryResult{}, err
 	}

@@ -48,6 +48,9 @@ type RunOptions struct {
 	FilePath string
 	Apply    bool
 	Verbose  bool
+	Host     string
+	Port     int
+	Token    string
 }
 
 func (o *Orchestrator) buildResolveOptions(opts RunOptions) resolver.ResolveOptions {
@@ -56,6 +59,9 @@ func (o *Orchestrator) buildResolveOptions(opts RunOptions) resolver.ResolveOpti
 		RekordboxPrimaryPath: o.RekordboxPrimaryPath,
 		Apply:                opts.Apply,
 		Verbose:              opts.Verbose,
+		Host:                 opts.Host,
+		Port:                 opts.Port,
+		Token:                opts.Token,
 		Feedback:             o.Feedback,
 	}
 }
