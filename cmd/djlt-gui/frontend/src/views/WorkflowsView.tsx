@@ -2,6 +2,7 @@ import { ChevronRight, Eye, PlayCircle, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { WorkflowDetail } from "@/components/workflow/WorkflowDetail";
 import { WorkflowEditor } from "@/components/workflow/WorkflowEditor";
 import type { Source, StepDiff, Workflow, WorkflowResult } from "@/types";
@@ -32,6 +33,8 @@ export default function WorkflowsView() {
 	const [result, setResult] = useState<WorkflowResult | null>(null);
 	const [error, setError] = useState("");
 	const [busy, setBusy] = useState(false);
+	const [runTarget, setRunTarget] = useState<Workflow | null>(null);
+	const [deleteTarget, setDeleteTarget] = useState<Workflow | null>(null);
 
 	const load = useCallback(async () => {
 		try {
@@ -76,7 +79,8 @@ export default function WorkflowsView() {
 		setBusy(false);
 	}
 
-	async function openRun(w: Workflow) {
+	async function confirmRun(w: Workflow) {
+		setRunTarget(null);
 		setError("");
 		setDiffs([]);
 		setResult(null);
@@ -126,9 +130,11 @@ export default function WorkflowsView() {
 	}
 
 	async function handleDelete(id: string) {
+		setDeleteTarget(null);
 		try {
 			await DeleteWorkflow(id);
 			await load();
+			backToList();
 		} catch (e) {
 			setError(String(e));
 		}
@@ -215,7 +221,7 @@ export default function WorkflowsView() {
 											title="Run"
 											onClick={(e) => {
 												e.stopPropagation();
-												openRun(w);
+												setRunTarget(w);
 											}}
 										>
 											<PlayCircle className="h-4 w-4 text-emerald-500" />
@@ -239,7 +245,7 @@ export default function WorkflowsView() {
 											title="Delete"
 											onClick={(e) => {
 												e.stopPropagation();
-												handleDelete(w.id);
+												setDeleteTarget(w);
 											}}
 										>
 											<Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
@@ -250,6 +256,30 @@ export default function WorkflowsView() {
 							</Card>
 						))}
 					</div>
+				)}
+
+				{/* Run confirm — list level */}
+				{runTarget && (
+					<ConfirmDialog
+						open={true}
+						title={`Run "${runTarget.name}"?`}
+						description="Changes will be applied to your library. This cannot be undone."
+						confirmLabel="Run"
+						onConfirm={() => confirmRun(runTarget)}
+						onCancel={() => setRunTarget(null)}
+					/>
+				)}
+				{/* Delete confirm — list level */}
+				{deleteTarget && (
+					<ConfirmDialog
+						open={true}
+						title={`Delete "${deleteTarget.name}"?`}
+						description="This workflow will be permanently removed."
+						confirmLabel="Delete"
+						destructive
+						onConfirm={() => handleDelete(deleteTarget.id)}
+						onCancel={() => setDeleteTarget(null)}
+					/>
 				)}
 			</div>
 		);
@@ -284,9 +314,9 @@ export default function WorkflowsView() {
 				busy={busy}
 				error={error}
 				onEdit={() => setMode("edit")}
-				onApply={handleRun}
+				onRun={handleRun}
 				onPreview={() => fetchDiff(selected.id)}
-				onDelete={() => handleDelete(selected.id).then(backToList)}
+				onDelete={() => handleDelete(selected.id)}
 				onPreviewAgain={() => fetchDiff(selected.id)}
 				onBack={backToList}
 			/>

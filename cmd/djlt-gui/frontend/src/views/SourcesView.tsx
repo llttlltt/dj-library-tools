@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { SourceCard } from "@/components/source/SourceCard";
 import { type Provider, SourceForm } from "@/components/source/SourceForm";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { Source } from "@/types";
 import {
 	CreateSource,
@@ -16,6 +17,7 @@ export default function SourcesView() {
 	const [error, setError] = useState("");
 	const [formOpen, setFormOpen] = useState(false);
 	const [editTarget, setEditTarget] = useState<Source | null>(null);
+	const [deleteTarget, setDeleteTarget] = useState<Source | null>(null);
 
 	const load = useCallback(async () => {
 		try {
@@ -35,12 +37,7 @@ export default function SourcesView() {
 		cfg: Record<string, string>,
 		id?: string,
 	) {
-		const src: Source = {
-			id: id ?? "",
-			name,
-			provider,
-			config: cfg,
-		};
+		const src: Source = { id: id ?? "", name, provider, config: cfg };
 		if (id) {
 			await (UpdateSource as (s: unknown) => Promise<void>)(src);
 		} else {
@@ -49,7 +46,8 @@ export default function SourcesView() {
 		await load();
 	}
 
-	async function handleDelete(s: Source) {
+	async function confirmDelete(s: Source) {
+		setDeleteTarget(null);
 		try {
 			await DeleteSource(s.id);
 			await load();
@@ -95,7 +93,7 @@ export default function SourcesView() {
 								setEditTarget(src);
 								setFormOpen(true);
 							}}
-							onDelete={handleDelete}
+							onDelete={(src) => setDeleteTarget(src)}
 						/>
 					))}
 				</div>
@@ -110,6 +108,18 @@ export default function SourcesView() {
 				}}
 				onSubmit={handleSubmit}
 			/>
+
+			{deleteTarget && (
+				<ConfirmDialog
+					open={true}
+					title={`Delete "${deleteTarget.name}"?`}
+					description="This source will be permanently removed."
+					confirmLabel="Delete"
+					destructive
+					onConfirm={() => confirmDelete(deleteTarget)}
+					onCancel={() => setDeleteTarget(null)}
+				/>
+			)}
 		</div>
 	);
 }

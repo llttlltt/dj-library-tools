@@ -1,5 +1,7 @@
 import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Separator } from "@/components/ui/separator";
 import type { StepDiff, StepResult, Workflow, WorkflowResult } from "@/types";
 import { StepCard } from "./StepCard";
@@ -12,7 +14,7 @@ interface DetailProps {
 	busy: boolean;
 	error: string;
 	onEdit: () => void;
-	onApply: () => void;
+	onRun: () => void;
 	onPreview: () => void;
 	onDelete: () => void;
 	onPreviewAgain: () => void;
@@ -27,12 +29,15 @@ export function WorkflowDetail({
 	busy,
 	error,
 	onEdit,
-	onApply,
+	onRun,
 	onPreview,
 	onDelete,
 	onPreviewAgain,
 	onBack,
 }: DetailProps) {
+	const [runConfirm, setRunConfirm] = useState(false);
+	const [deleteConfirm, setDeleteConfirm] = useState(false);
+
 	const diffById: Record<string, StepDiff> = Object.fromEntries(
 		diffs.map((d) => [d.step_id, d]),
 	);
@@ -44,6 +49,7 @@ export function WorkflowDetail({
 
 	return (
 		<div className="flex flex-col h-full">
+			{/* ── toolbar ── */}
 			<div className="flex items-center gap-2 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] sticky top-0 z-10">
 				<Button type="button" variant="ghost" size="sm" onClick={onBack}>
 					<ArrowLeft className="h-4 w-4 mr-1.5" /> Workflows
@@ -59,6 +65,7 @@ export function WorkflowDetail({
 				{busy && (
 					<span className="text-xs text-muted-foreground mr-2">Loading…</span>
 				)}
+				{/* Edit */}
 				<Button
 					type="button"
 					variant="outline"
@@ -68,6 +75,7 @@ export function WorkflowDetail({
 				>
 					Edit
 				</Button>
+				{/* Preview */}
 				<Button
 					type="button"
 					variant="outline"
@@ -77,6 +85,7 @@ export function WorkflowDetail({
 				>
 					Preview
 				</Button>
+				{/* Run / Preview Again */}
 				{mode === "applying" && result ? (
 					<Button
 						type="button"
@@ -91,17 +100,18 @@ export function WorkflowDetail({
 					<Button
 						type="button"
 						size="sm"
-						onClick={onApply}
+						onClick={() => setRunConfirm(true)}
 						disabled={!diffLoaded || busy}
 					>
 						▶ Run
 					</Button>
 				)}
+				{/* Delete */}
 				<Button
 					type="button"
 					variant="outline"
 					size="sm"
-					onClick={onDelete}
+					onClick={() => setDeleteConfirm(true)}
 					disabled={busy}
 					className="text-destructive border-destructive/40 hover:bg-destructive/10"
 				>
@@ -109,6 +119,7 @@ export function WorkflowDetail({
 				</Button>
 			</div>
 
+			{/* ── steps ── */}
 			<div className="flex-1 overflow-auto p-6">
 				<div className="flex flex-col gap-4 max-w-3xl">
 					{workflow.steps.length === 0 && (
@@ -128,6 +139,33 @@ export function WorkflowDetail({
 					))}
 				</div>
 			</div>
+
+			{/* ── Run confirmation ── */}
+			<ConfirmDialog
+				open={runConfirm}
+				title="Run this workflow?"
+				description="Changes will be applied to your library. This cannot be undone."
+				confirmLabel="Run"
+				onConfirm={() => {
+					setRunConfirm(false);
+					onRun();
+				}}
+				onCancel={() => setRunConfirm(false)}
+			/>
+
+			{/* ── Delete confirmation ── */}
+			<ConfirmDialog
+				open={deleteConfirm}
+				title={`Delete "${workflow.name}"?`}
+				description="This workflow will be permanently removed."
+				confirmLabel="Delete"
+				destructive
+				onConfirm={() => {
+					setDeleteConfirm(false);
+					onDelete();
+				}}
+				onCancel={() => setDeleteConfirm(false)}
+			/>
 		</div>
 	);
 }
