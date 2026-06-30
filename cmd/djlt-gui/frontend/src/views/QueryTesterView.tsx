@@ -54,8 +54,8 @@ export default function QueryTesterView() {
 			<div className="h-14 flex items-center px-6 border-b border-border bg-[hsl(240_10%_4%)] shrink-0">
 				<span className="text-sm font-semibold">Query Tester</span>
 			</div>
-			<div className="flex-1 overflow-auto p-6">
-				<div className="flex flex-col gap-6">
+			<div className="flex-1 overflow-hidden p-6 flex flex-col">
+				<div className="flex flex-col gap-6 h-full">
 					<QueryTesterControls
 						sources={sources}
 						sourceID={sourceID}

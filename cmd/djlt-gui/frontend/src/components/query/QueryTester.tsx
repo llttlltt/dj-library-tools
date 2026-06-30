@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useState } from "react";
+import { TableVirtuoso } from "react-virtuoso";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -264,75 +265,110 @@ export function QueryTesterResults({ result, error }: ResultsProps) {
 			? "No playlists or folders matched."
 			: "No tracks matched.";
 
+	if (result.count === 0) {
+		return (
+			<div className="flex flex-col gap-2 flex-1 min-h-0">
+				<Badge variant="secondary" className="w-fit">
+					{label}
+				</Badge>
+				<p className="text-sm text-muted-foreground italic">{empty}</p>
+			</div>
+		);
+	}
+
+	// biome-ignore lint/suspicious/noExplicitAny: data is union of two row types
+	const data: any[] = result.kind === "groups" ? result.groups : result.tracks;
+
 	return (
 		<div className="flex flex-col gap-2 flex-1 min-h-0">
-			<Badge variant="secondary">{label}</Badge>
-
-			{result.count === 0 ? (
-				<p className="text-sm text-muted-foreground italic">{empty}</p>
-			) : result.kind === "groups" ? (
-				<div className="flex-1 overflow-auto rounded-md border border-border/60">
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Name</TableHead>
-								<TableHead>Kind</TableHead>
-								<TableHead>Parent</TableHead>
-								<TableHead className="w-14 text-right">Items</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{(result.groups as GroupRow[]).map((row) => (
-								<TableRow key={row.id}>
+			<Badge variant="secondary" className="w-fit">
+				{label}
+			</Badge>
+			<div className="flex-1 rounded-md border border-border/60 overflow-hidden bg-background">
+				<TableVirtuoso
+					data={data}
+					totalCount={result.count}
+					style={{ height: "100%" }}
+					components={{
+						Table: ({ ...props }) => (
+							<Table {...props} className="border-collapse" />
+						),
+						TableHead: forwardRef((props, ref) => (
+							<TableHeader
+								{...props}
+								ref={ref}
+								className="sticky top-0 bg-background z-20"
+							/>
+						)),
+						TableBody: forwardRef((props, ref) => (
+							<TableBody {...props} ref={ref} />
+						)),
+						TableRow: (props) => <TableRow {...props} />,
+					}}
+					fixedHeaderContent={() => (
+						<TableRow className="bg-background hover:bg-background">
+							{result.kind === "groups" ? (
+								<>
+									<TableHead className="bg-background">Name</TableHead>
+									<TableHead className="bg-background">Kind</TableHead>
+									<TableHead className="bg-background">Parent</TableHead>
+									<TableHead className="w-14 text-right bg-background">
+										Items
+									</TableHead>
+								</>
+							) : (
+								<>
+									<TableHead className="bg-background">Title</TableHead>
+									<TableHead className="bg-background">Artist</TableHead>
+									<TableHead className="w-16 text-right bg-background">
+										BPM
+									</TableHead>
+								</>
+							)}
+						</TableRow>
+					)}
+					// biome-ignore lint/suspicious/noExplicitAny: row is union of TrackRow and GroupRow
+					itemContent={(_, row: any) => {
+						if (result.kind === "groups") {
+							const g = row as GroupRow;
+							return (
+								<>
 									<TableCell className="text-sm font-medium truncate max-w-[160px]">
-										{row.name || (
+										{g.name || (
 											<span className="text-muted-foreground italic">—</span>
 										)}
 									</TableCell>
 									<TableCell className="text-sm text-muted-foreground">
-										{row.kind}
+										{g.kind}
 									</TableCell>
 									<TableCell className="text-sm text-muted-foreground truncate max-w-[120px]">
-										{row.parent || "—"}
+										{g.parent || "—"}
 									</TableCell>
 									<TableCell className="text-sm text-right font-mono text-muted-foreground">
-										{row.items}
+										{g.items}
 									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</div>
-			) : (
-				<div className="flex-1 overflow-auto rounded-md border border-border/60">
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Title</TableHead>
-								<TableHead>Artist</TableHead>
-								<TableHead className="w-16 text-right">BPM</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{(result.tracks as TrackRow[]).map((row) => (
-								<TableRow key={row.id}>
-									<TableCell className="text-sm truncate max-w-[180px]">
-										{row.title || (
-											<span className="text-muted-foreground italic">—</span>
-										)}
-									</TableCell>
-									<TableCell className="text-sm text-muted-foreground truncate max-w-[120px]">
-										{row.artist || "—"}
-									</TableCell>
-									<TableCell className="text-sm text-right font-mono text-muted-foreground">
-										{row.bpm}
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</div>
-			)}
+								</>
+							);
+						}
+						const t = row as TrackRow;
+						return (
+							<>
+								<TableCell className="text-sm truncate max-w-[180px]">
+									{t.title || (
+										<span className="text-muted-foreground italic">—</span>
+									)}
+								</TableCell>
+								<TableCell className="text-sm text-muted-foreground truncate max-w-[120px]">
+									{t.artist || "—"}
+								</TableCell>
+								<TableCell className="text-sm text-right font-mono text-muted-foreground">
+									{t.bpm}
+								</TableCell>
+							</>
+						);
+					}}
+				/>
+			</div>
 		</div>
 	);
 }
