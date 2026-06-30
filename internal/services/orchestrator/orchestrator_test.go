@@ -6,6 +6,7 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
 	"github.com/llttlltt/dj-library-tools/internal/providers"
+	_ "github.com/llttlltt/dj-library-tools/internal/providers/mock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,17 +26,33 @@ func (f *MockFeedback) OnTable(headers []string, rows [][]string) {}
 func TestOrchestrator_List(t *testing.T) {
 	fb := &MockFeedback{}
 	o := New(fb, Options{})
-	assert.NotNil(t, o)
 	
 	ctx := context.Background()
-	res, _ := o.List(ctx, "", "", RunOptions{})
-	// ListResult should be returned but empty if selection is empty/nil
+	// Use the registered mock provider
+	res, err := o.List(ctx, "mock/tracks", "", RunOptions{})
+	assert.NoError(t, err)
 	assert.NotNil(t, res)
-	assert.Empty(t, res.Tracks)
+	assert.Len(t, res.Tracks, 1)
+	assert.Equal(t, "Mock Track", res.Tracks[0].Title)
+}
+
+func TestOrchestrator_Edit_Feedback(t *testing.T) {
+	fb := &MockFeedback{}
+	o := New(fb, Options{})
+	
+	ctx := context.Background()
+	changes := map[string]string{"comment": "test"}
+	
+	// Test Dry-run (Apply: false)
+	_, err := o.Edit(ctx, "mock/tracks", "", RunOptions{Apply: false}, changes)
+	assert.NoError(t, err)
+	
+	// GatedProvider (which Edit uses via resolver) should emit a preview
+	assert.Len(t, fb.Previews, 1)
+	assert.Contains(t, fb.Previews[0], "update tracks matching")
 }
 
 func TestOrchestrator_Models(t *testing.T) {
-	// Proving models import is used
 	_ = models.Track{}
 	_ = provider.Selection{}
 }

@@ -121,8 +121,10 @@ func (o *Orchestrator) Relocate(tracks []models.Track, searchDir string, matchFi
 
 		for _, candidate := range candidates {
 			relocated[t.ID] = candidate
-			if o.Verbose {
-				fmt.Printf("Relocated %s -> %s\n", t.Title, candidate)
+			if o.Verbose && o.Listener != nil {
+				if fb, ok := o.Listener.(interface{ OnPreview(string) }); ok {
+					fb.OnPreview(fmt.Sprintf("Relocated %s -> %s", t.Title, candidate))
+				}
 			}
 			break
 		}
@@ -284,8 +286,10 @@ func (o *Orchestrator) SyncToLibrary(ctx context.Context, tracks []models.Track,
 	}
 	close(errors)
 	for err := range errors {
-		if o.Verbose {
-			fmt.Printf("  Error: %v\n", err)
+		if o.Verbose && o.Listener != nil {
+			if fb, ok := o.Listener.(interface{ OnWarning(string) }); ok {
+				fb.OnWarning(fmt.Sprintf("  Error: %v", err))
+			}
 		}
 	}
 

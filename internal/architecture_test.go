@@ -35,3 +35,27 @@ func TestArchitectureBoundaries(t *testing.T) {
 		}
 	}
 }
+
+func TestNoDirectOutput(t *testing.T) {
+	dirs := []string{"core", "infra", "providers", "services"}
+	
+	for _, dir := range dirs {
+		// Use grep to find direct stdout/stderr usage
+		// Fails if fmt.Print, fmt.Printf, fmt.Println, or os.Stdout/os.Stderr are found.
+		cmd := exec.Command("grep", "-rE", "fmt\\.Print|os\\.Stdout|os\\.Stderr", dir)
+		out, _ := cmd.CombinedOutput()
+		
+		lines := strings.Split(string(out), "\n")
+		var violations []string
+		for _, line := range lines {
+			if line == "" { continue }
+			// Ignore test files
+			if strings.Contains(line, "_test.go") { continue }
+			violations = append(violations, line)
+		}
+		
+		if len(violations) > 0 {
+			t.Errorf("Direct output violation in %s:\n%s", dir, strings.Join(violations, "\n"))
+		}
+	}
+}

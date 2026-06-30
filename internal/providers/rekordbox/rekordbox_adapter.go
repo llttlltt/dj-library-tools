@@ -79,7 +79,7 @@ func (s *rekordboxTrackService) UpdateBatch(ctx context.Context, ectx provider.E
 	count := UpdateBatch(s.rbXML, matches, fields)
 
 	if ectx.Verbose {
-		fmt.Printf("\nSuccessfully updated %d tracks.\n", count)
+		ectx.Feedback.OnSuccess(fmt.Sprintf("Successfully updated %d tracks.", count))
 	}
 
 	s.rbXML.CollectionChanged = true
@@ -124,7 +124,7 @@ func (s *rekordboxTrackService) Move(ctx context.Context, ectx provider.Executio
 	}
 
 	if ectx.Verbose {
-		fmt.Printf("Moving %d tracks from %q to %q\n", len(tracks), from.Name, to.Name)
+		ectx.Feedback.OnPreview(fmt.Sprintf("Moving %d tracks from %q to %q", len(tracks), from.Name, to.Name))
 	}
 
 	added, err := s.engine.Library.(library.WritableLibrary).AddTracks(to.ID, ids)
@@ -155,7 +155,7 @@ func (s *rekordboxGroupService) Create(ctx context.Context, ectx provider.Execut
 		return models.ResourceGroup{}, fmt.Errorf("cannot create group inside playlist %q (containers must live in folders)", parent.Name)
 	}
 	if ectx.Verbose {
-		fmt.Printf("Creating %s %q in %q\n", groupKind, name, parent.Name)
+		ectx.Feedback.OnPreview(fmt.Sprintf("Creating %s %q in %q", groupKind, name, parent.Name))
 	}
 	return s.engine.Library.(library.WritableLibrary).CreateGroup(parent.ID, name, groupKind, position)
 }
@@ -177,7 +177,7 @@ func (s *rekordboxGroupService) Update(ctx context.Context, ectx provider.Execut
 
 func (s *rekordboxGroupService) Delete(ctx context.Context, ectx provider.ExecutionContext, group models.ResourceGroup) error {
 	if ectx.Verbose {
-		fmt.Printf("Deleting %s %q\n", group.GetKind(), group.Name)
+		ectx.Feedback.OnPreview(fmt.Sprintf("Deleting %s %q", group.GetKind(), group.Name))
 	}
 	return s.engine.Library.(library.WritableLibrary).DeleteGroup(group.ID, group.Kind)
 }
@@ -224,7 +224,7 @@ func (s *rekordboxSystemService) Save(ctx context.Context, ectx provider.Executi
 		path = s.path
 	}
 	if ectx.Verbose {
-		fmt.Printf("Saving Rekordbox XML to %s\n", path)
+		ectx.Feedback.OnPreview(fmt.Sprintf("Saving Rekordbox XML to %s", path))
 	}
 	return s.engine.Library.(library.WritableLibrary).Save(path)
 }
@@ -266,6 +266,17 @@ func (s *rekordboxSystemService) Fix(ctx context.Context, ectx provider.Executio
 
 func (s *rekordboxSystemService) reportFix(ectx provider.ExecutionContext, res FixData, fixType, target string) {
 	if res.TotalIdentified == 0 {
+		switch fixType {
+		case string(provider.FixMetadata):
+			ectx.Feedback.OnPreview("No metadata normalization required.")
+		case string(provider.FixDuplicates):
+			ectx.Feedback.OnPreview(fmt.Sprintf("No duplicate %s found in the master collection.", target))
+		case string(provider.FixPaths):
+			ectx.Feedback.OnPreview("No paths required repair.")
+		}
+		if !ectx.Apply {
+			ectx.Feedback.OnPreview("Run with --apply to persist changes.")
+		}
 		return
 	}
 	for _, d := range res.Details {
@@ -273,15 +284,15 @@ func (s *rekordboxSystemService) reportFix(ectx provider.ExecutionContext, res F
 			ectx.Feedback.OnTable(d.Table.Headers, d.Table.Rows)
 		}
 		if d.From != "" && ectx.Verbose {
-			fmt.Printf("Relocating %s\n  From: %s\n  To:   %s\n", d.TrackName, d.From, d.To)
+			ectx.Feedback.OnPreview(fmt.Sprintf("Relocating %s\n  From: %s\n  To:   %s", d.TrackName, d.From, d.To))
 		}
 	}
 
-	fmt.Printf("Identified %d %s/%s issues.\n", res.TotalIdentified, fixType, target)
+	ectx.Feedback.OnPreview(fmt.Sprintf("Identified %d %s/%s issues.", res.TotalIdentified, fixType, target))
 	if ectx.Apply {
-		fmt.Printf("Applied %d repairs.\n", res.TotalApplied)
+		ectx.Feedback.OnSuccess(fmt.Sprintf("Applied %d repairs.", res.TotalApplied))
 	} else {
-		fmt.Println("Run with --apply to commit these repairs.")
+		ectx.Feedback.OnPreview("Run with --apply to commit these repairs.")
 	}
 }
 
