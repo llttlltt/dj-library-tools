@@ -25,3 +25,9 @@ export function RunWorkflow(arg1:string):Promise<workflow.WorkflowResult>;
 export function SaveWorkflow(arg1:config.Workflow):Promise<config.Workflow>;
 
 export function UpdateSource(arg1:config.Source):Promise<void>;
+
+export function OpenFileDialog():Promise<string>;
+
+export function InitPlexAuth():Promise<gui.PlexAuthChallenge>;
+
+export function CheckPlexAuth(arg1:number):Promise<string>;

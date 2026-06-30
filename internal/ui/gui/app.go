@@ -7,11 +7,11 @@ import (
 	"fmt"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
+	"github.com/llttlltt/dj-library-tools/internal/core/models"
+	"github.com/llttlltt/dj-library-tools/internal/providers/plex"
 	"github.com/llttlltt/dj-library-tools/internal/services/orchestrator"
 	"github.com/llttlltt/dj-library-tools/internal/services/workflow"
-
-	// models needed for TrackRow population
-	"github.com/llttlltt/dj-library-tools/internal/core/models"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	// Provider registrations.
 	_ "github.com/llttlltt/dj-library-tools/internal/providers/m3u"
@@ -259,4 +259,53 @@ func toTrackRows(ids []string, lookup map[string]models.Track) []TrackRow {
 		})
 	}
 	return rows
+}
+
+// ── File picker ───────────────────────────────────────────────────────────────
+
+// OpenFileDialog opens a native file-picker and returns the selected path, or
+// an empty string if the user cancelled.
+func (a *App) OpenFileDialog() (string, error) {
+	return runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Select Library File",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "Rekordbox XML", Pattern: "*.xml"},
+			{DisplayName: "M3U Playlist", Pattern: "*.m3u;*.m3u8"},
+			{DisplayName: "All Files", Pattern: "*.*"},
+		},
+	})
+}
+
+// ── Plex PIN auth ─────────────────────────────────────────────────────────────
+
+// PlexAuthChallenge carries the auth URL and PIN ID returned by InitPlexAuth.
+type PlexAuthChallenge struct {
+	URL   string `json:"url"`
+	PinID int    `json:"pin_id"`
+}
+
+// InitPlexAuth requests a new Plex PIN and returns the browser auth URL and the
+// PIN ID the frontend should pass to CheckPlexAuth.
+func (a *App) InitPlexAuth() (PlexAuthChallenge, error) {
+	client := plex.NewClient("")
+	pin, err := client.RequestPin(a.ctx)
+	if err != nil {
+		return PlexAuthChallenge{}, fmt.Errorf("failed to request Plex PIN: %w", err)
+	}
+	url := fmt.Sprintf(
+		"https://app.plex.tv/auth/#!?code=%s&context%%5Bdevice%%5D%%5Bproduct%%5D=%s&clientID=%s",
+		pin.Code, plex.ClientName, plex.AppID,
+	)
+	return PlexAuthChallenge{URL: url, PinID: pin.ID}, nil
+}
+
+// CheckPlexAuth polls whether the PIN has been authorised. Returns the token
+// string when authenticated, or "" if not yet authorised (not an error).
+func (a *App) CheckPlexAuth(pinID int) (string, error) {
+	client := plex.NewClient("")
+	status, err := client.CheckPin(a.ctx, pinID)
+	if err != nil {
+		return "", fmt.Errorf("failed to check Plex PIN: %w", err)
+	}
+	return status.AuthToken, nil
 }

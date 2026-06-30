@@ -45,3 +45,15 @@ export function SaveWorkflow(arg1) {
 export function UpdateSource(arg1) {
   return window['go']['gui']['App']['UpdateSource'](arg1);
 }
+
+export function OpenFileDialog() {
+  return window['go']['gui']['App']['OpenFileDialog']();
+}
+
+export function InitPlexAuth() {
+  return window['go']['gui']['App']['InitPlexAuth']();
+}
+
+export function CheckPlexAuth(arg1) {
+  return window['go']['gui']['App']['CheckPlexAuth'](arg1);
+}
