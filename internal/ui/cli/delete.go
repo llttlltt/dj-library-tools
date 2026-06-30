@@ -33,15 +33,16 @@ Example:
 			orch := getOrchestrator()
 			runOpts := getRunOptions()
 
-			err := orch.Delete(cmd.Context(), args[0], queryOverride, runOpts, deleteFrom, recursive)
+			count, err := orch.Delete(cmd.Context(), args[0], queryOverride, runOpts, deleteFrom, recursive)
 			if err != nil {
 				return HandleError(err)
 			}
 
 			if apply {
-				fmt.Printf("Successfully performed deletion.\n")
+				fmt.Printf("✔ Removed %d item(s).\n", count)
 			} else {
-				fmt.Println("Run with --apply to persist changes.")
+				fmt.Printf("Scope: %d item(s) would be removed.\n", count)
+				fmt.Println("Run with --apply to commit.")
 			}
 
 			return nil

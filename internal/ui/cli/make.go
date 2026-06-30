@@ -8,7 +8,7 @@ import (
 )
 
 func newMakeCmd() *cobra.Command {
-	var createIn, createFrom string
+	var createIn, createPopulate string
 	var createAt int
 	var parents bool
 
@@ -19,7 +19,7 @@ func newMakeCmd() *cobra.Command {
 You can optionally populate it immediately using items from a source.
 
 Example:
-  djlt mk rb/playlists "New Arrivals" --from "rb/tracks added:>2024-01-01"
+  djlt mk rb/playlists "New Arrivals" --populate "rb/tracks added:>2024-01-01"
   djlt mk rb/playlists "2024/Jan/Inbox" --parents`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -31,7 +31,7 @@ Example:
 				groupKind = models.GroupKindFolder
 			}
 
-			_, err := orch.Make(cmd.Context(), createIn, args[1], runOpts, groupKind, createAt, createFrom)
+			_, err := orch.Make(cmd.Context(), createIn, args[1], runOpts, groupKind, createAt, createPopulate)
 			if err != nil {
 				return HandleError(err)
 			}
@@ -47,7 +47,7 @@ Example:
 	}
 	cmd.Flags().StringVar(&createIn, "in", "", "Parent folder for the new resource")
 	cmd.Flags().IntVar(&createAt, "at", -1, "Insert at this 0-indexed position (-1 for end)")
-	cmd.Flags().StringVar(&createFrom, "from", "", "Initial items to populate the resource with")
+	cmd.Flags().StringVar(&createPopulate, "populate", "", "Source selection to populate the new resource with")
 	cmd.Flags().BoolVarP(&parents, "parents", "p", false, "Create parent folders if they don't exist")
 	return cmd
 }

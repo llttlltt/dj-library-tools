@@ -340,36 +340,39 @@ func (o *Orchestrator) Make(ctx context.Context, locStr string, name string, opt
 	return newNode, nil
 }
 
-func (o *Orchestrator) Move(ctx context.Context, locStr string, queryOverride string, opts RunOptions, moveTo string, moveFrom string, moveName string) error {
+func (o *Orchestrator) Move(ctx context.Context, locStr string, queryOverride string, opts RunOptions, moveTo string, moveFrom string, moveName string) (int, error) {
 	src, prov, err := resolver.ResolveSelection(locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
-		return err
+		return 0, err
 	}
 
+	count := 0
 	if moveName != "" {
 		if err := prov.Groups().Update(ctx, o.buildExecContext(opts), src.Groups[0], moveName, nil); err != nil {
-			return err
+			return 0, err
 		}
+		count = 1
 	} else if src.Location.Resource == "tracks" {
 		org, _, err := resolver.ResolveSelection(moveFrom, "", o.buildResolveOptions(opts))
 		if err != nil {
-			return err
+			return 0, err
 		}
 		tgt, _, err := resolver.ResolveSelection(moveTo, "", o.buildResolveOptions(opts))
 		if err != nil {
-			return err
+			return 0, err
 		}
 		for _, origin := range org.Groups {
 			for _, target := range tgt.Groups {
 				if _, err := prov.Tracks().Groups().Move(ctx, o.buildExecContext(opts), src.Tracks, origin, target); err != nil {
-					return err
+					return 0, err
 				}
 			}
 		}
+		count = len(src.Tracks)
 	} else {
 		tgt, _, err := resolver.ResolveSelection(moveTo, "", o.buildResolveOptions(opts))
 		if err != nil {
-			return err
+			return 0, err
 		}
 		targetParent := tgt.Groups[0]
 		for _, t := range src.Groups {
@@ -377,19 +380,22 @@ func (o *Orchestrator) Move(ctx context.Context, locStr string, queryOverride st
 				continue
 			}
 		}
+		count = len(src.Groups)
 	}
 
 	if opts.Apply {
-		return prov.System().Save(ctx, o.buildExecContext(opts), opts.FilePath)
+		return count, prov.System().Save(ctx, o.buildExecContext(opts), opts.FilePath)
 	}
-	return nil
+	return count, nil
 }
 
-func (o *Orchestrator) Delete(ctx context.Context, locStr string, queryOverride string, opts RunOptions, fromLocs []string, recursive bool) error {
+func (o *Orchestrator) Delete(ctx context.Context, locStr string, queryOverride string, opts RunOptions, fromLocs []string, recursive bool) (int, error) {
 	sel, prov, err := resolver.ResolveSelection(locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
-		return err
+		return 0, err
 	}
+
+	count := len(sel.Items)
 
 	if len(fromLocs) == 0 {
 		for _, item := range sel.Items {
@@ -401,7 +407,7 @@ func (o *Orchestrator) Delete(ctx context.Context, locStr string, queryOverride 
 					}
 				}
 				if err := prov.Groups().Delete(ctx, o.buildExecContext(opts), node); err != nil {
-					return err
+					return 0, err
 				}
 			}
 		}
@@ -409,20 +415,20 @@ func (o *Orchestrator) Delete(ctx context.Context, locStr string, queryOverride 
 		for _, fromStr := range fromLocs {
 			org, _, err := resolver.ResolveSelection(fromStr, "", o.buildResolveOptions(opts))
 			if err != nil {
-				return err
+				return 0, err
 			}
 			for _, target := range org.Groups {
 				if _, err := prov.Tracks().Groups().Remove(ctx, o.buildExecContext(opts), sel.Tracks, target); err != nil {
-					return err
+					return 0, err
 				}
 			}
 		}
 	}
 
 	if opts.Apply {
-		return prov.System().Save(ctx, o.buildExecContext(opts), opts.FilePath)
+		return count, prov.System().Save(ctx, o.buildExecContext(opts), opts.FilePath)
 	}
-	return nil
+	return count, nil
 }
 
 func calculateSyncDiff(current, target []string) (added, removed []string) {

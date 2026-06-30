@@ -61,15 +61,16 @@ Examples:
 				return fmt.Errorf("no repair actions specified; use --duplicates, --metadata, --paths, or --orphans")
 			}
 
-			_, err := orch.Fix(cmd.Context(), args[0], queryOverride, runOpts, fixOpts)
+			count, err := orch.Fix(cmd.Context(), args[0], queryOverride, runOpts, fixOpts)
 			if err != nil {
 				return HandleError(err)
 			}
 
 			if apply {
-				fmt.Printf("Successfully performed repairs.\n")
+				fmt.Printf("✔ Repaired %d item(s).\n", count)
 			} else {
-				fmt.Printf("Run with --apply to persist changes.\n")
+				fmt.Printf("Scope: %d item(s) would be repaired.\n", count)
+				fmt.Println("Run with --apply to commit.")
 			}
 
 			return nil

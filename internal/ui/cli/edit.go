@@ -50,9 +50,10 @@ Examples:
 				}
 
 				if apply {
-					fmt.Printf("Successfully modified %d tracks.\n", count)
+					fmt.Printf("✔ Updated %d track(s).\n", count)
 				} else {
-					fmt.Println("Run with --apply to persist changes.")
+					fmt.Printf("Scope: %d track(s) would be updated.\n", count)
+					fmt.Println("Run with --apply to commit.")
 				}
 				return nil
 			}

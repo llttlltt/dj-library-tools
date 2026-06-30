@@ -36,15 +36,16 @@ Example:
 			orch := getOrchestrator()
 			runOpts := getRunOptions()
 
-			err := orch.Move(cmd.Context(), args[0], queryOverride, runOpts, moveTo, moveFrom, moveName)
+			count, err := orch.Move(cmd.Context(), args[0], queryOverride, runOpts, moveTo, moveFrom, moveName)
 			if err != nil {
 				return HandleError(err)
 			}
 
 			if apply {
-				fmt.Printf("Successfully performed move/rename.\n")
+				fmt.Printf("✔ Moved/renamed %d item(s).\n", count)
 			} else {
-				fmt.Println("Run with --apply to persist changes.")
+				fmt.Printf("Scope: %d item(s) would be moved/renamed.\n", count)
+				fmt.Println("Run with --apply to commit.")
 			}
 
 			return nil
