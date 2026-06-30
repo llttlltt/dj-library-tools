@@ -12,11 +12,7 @@ import (
 
 func init() {
 	factory.Register("plex", func(opts factory.ProviderOptions) (provider.Provider, error) {
-		token := opts.Token
-		if token == "" {
-			token = "PLEX_TOKEN"
-		}
-		return NewPlexProvider(token, opts.Host, opts.Port), nil
+		return NewPlexProvider(opts.Token, opts.Host, opts.Port), nil
 	})
 }
 

@@ -2,6 +2,7 @@ package plex
 
 import (
 	"context"
+
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
 )
 
@@ -40,8 +41,24 @@ func (l *Library) GetResources(kind string) []models.Resource {
 }
 
 func (l *Library) GetMembershipMap() map[string][]models.PlaylistMembership {
-	// Note: For now, fetching memberships in Plex is expensive (N API calls)
-	// We'll return an empty map and eventually optimize this if Plex becomes
-	// a primary source provider.
-	return make(map[string][]models.PlaylistMembership)
+	ctx := context.Background()
+	m := make(map[string][]models.PlaylistMembership)
+
+	playlists, err := l.client.GetPlaylists(ctx, l.baseURL)
+	if err != nil {
+		return m
+	}
+
+	for _, p := range playlists {
+		tracks, err := l.client.GetPlaylistTracks(ctx, l.baseURL, p.Key)
+		if err == nil {
+			for _, t := range tracks {
+				id := t.RatingKey
+				m[id] = append(m[id], models.PlaylistMembership{
+					Name: p.Title,
+				})
+			}
+		}
+	}
+	return m
 }
