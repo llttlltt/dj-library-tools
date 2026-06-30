@@ -9,9 +9,18 @@ import (
 )
 
 func getOrchestrator() *orchestrator.Orchestrator {
-	cfg, _ := config.LoadAppConfig()
+	// If -f is set on the CLI it takes priority over any configured Source.
+	primaryPath := filePath
+	if primaryPath == "" {
+		src, err := config.FindFirstSource("rb")
+		if err != nil {
+			fmt.Println("No rekordbox Source configured. Add one via the GUI or use -f to specify a library file.")
+		} else {
+			primaryPath = config.ResolveProviderOptions(*src).FilePath
+		}
+	}
 	opts := orchestrator.Options{
-		RekordboxPrimaryPath: cfg.Rekordbox.PrimaryFilePath,
+		RekordboxPrimaryPath: primaryPath,
 	}
 	return orchestrator.New(&TerminalFeedback{}, opts)
 }
