@@ -6,7 +6,6 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
 	"github.com/llttlltt/dj-library-tools/internal/providers"
-	"github.com/llttlltt/dj-library-tools/internal/services/resolver"
 	"github.com/spf13/cobra"
 )
 
@@ -51,33 +50,16 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 				queryOverride = strings.Join(args[1:], " ")
 			}
 
-			srcOpts := resolver.ResolveOptions{
-				FilePath: filePath,
-				Apply:    apply,
-				Verbose:  verbose,
-			}
-
-			src, err := resolver.ResolveSelection(args[0], queryOverride, srcOpts)
+			src, _, err := ResolveSelection(args[0], queryOverride)
 			if err != nil {
 				return HandleError(err)
 			}
 
 			for _, targetStr := range syncTo {
-				tgtOpts := resolver.ResolveOptions{
-					FilePath: toFilePath,
-					Apply:    apply,
-					Verbose:  verbose,
-				}
-				if tgtOpts.FilePath == "" {
-					tgtOpts.FilePath = filePath
-				}
-
-				tgt, err := resolver.ResolveSelection(targetStr, "", tgtOpts)
+				tgt, prov, err := ResolveSelection(targetStr, "")
 				if err != nil {
 					return HandleError(err)
 				}
-
-				prov := tgt.Provider
 				resolvedTargetID := tgt.Location.Query
 				if len(tgt.Groups) > 0 {
 					resolvedTargetID = tgt.Groups[0].ID

@@ -56,7 +56,7 @@ type ListResult struct {
 }
 
 func (o *Orchestrator) List(locStr string, queryOverride string, opts RunOptions) (*ListResult, error) {
-	sel, err := resolver.ResolveSelection(locStr, queryOverride, o.buildResolveOptions(opts))
+	sel, prov, err := resolver.ResolveSelection(locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +64,6 @@ func (o *Orchestrator) List(locStr string, queryOverride string, opts RunOptions
 	return &ListResult{
 		Tracks:   sel.Tracks,
 		Groups:   sel.Groups,
-		Provider: sel.Provider,
+		Provider: prov,
 	}, nil
 }

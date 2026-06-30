@@ -37,12 +37,11 @@ Examples:
 				Verbose:       verbose,
 			}
 
-			sel, err := resolver.ResolveSelection(args[0], queryOverride, opts)
+			sel, prov, err := resolver.ResolveSelection(args[0], queryOverride, opts)
 			if err != nil {
 				return err
 			}
 
-			prov := sel.Provider
 			ctx := getExecContext()
 
 			// Handle Metadata Updates

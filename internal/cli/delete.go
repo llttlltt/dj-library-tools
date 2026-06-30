@@ -27,12 +27,10 @@ Example:
   djlt rm rb/folders name:OldSets --recursive`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			sel, err := ResolveSelection(args[0], "")
+			sel, prov, err := ResolveSelection(args[0], "")
 			if err != nil {
 				return HandleError(err)
 			}
-
-			prov := sel.Provider
 
 			ctx := getExecContext()
 
@@ -88,7 +86,7 @@ func runRemoveMembership(prov provider.Provider, ctx provider.ExecutionContext, 
 	}
 
 	for _, fromStr := range from {
-		org, err := ResolveSelection(fromStr, "")
+		org, _, err := ResolveSelection(fromStr, "")
 		if err != nil {
 			return HandleError(err)
 		}

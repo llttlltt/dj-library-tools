@@ -27,13 +27,13 @@ type ResolveOptions struct {
 }
 
 // ResolveSelection resolves a location string into a Selection.
-func ResolveSelection(locStr string, queryOverride string, opts ResolveOptions) (*Selection, error) {
+func ResolveSelection(locStr string, queryOverride string, opts ResolveOptions) (*Selection, provider.Provider, error) {
 	if locStr == "" {
-		return &Selection{}, nil
+		return &Selection{}, nil, nil
 	}
 	loc := location.ParseLocation(locStr, queryOverride)
 	if loc.Resource == "" {
-		return nil, fmt.Errorf("resource must be specified in location %q", locStr)
+		return nil, nil, fmt.Errorf("resource must be specified in location %q", locStr)
 	}
 
 	filePath := opts.FilePath
@@ -47,10 +47,10 @@ func ResolveSelection(locStr string, queryOverride string, opts ResolveOptions) 
 
 	prov, err := factory.NewProvider(loc.Provider, factoryOpts)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	sel := &Selection{Location: loc, Provider: prov}
+	sel := &Selection{Location: loc}
 	ctx := provider.ExecutionContext{
 		Apply:    opts.Apply,
 		Verbose:  opts.Verbose,
@@ -63,14 +63,14 @@ func ResolveSelection(locStr string, queryOverride string, opts ResolveOptions) 
 	var items []models.Resource
 	if loc.Resource == "tracks" {
 		tracks, err := prov.Tracks().List(ctx, loc.Query)
-		if err != nil { return nil, err }
+		if err != nil { return nil, nil, err }
 		for _, t := range tracks { items = append(items, t) }
 	} else if loc.Resource == "playlists" || loc.Resource == "folders" {
 		groups, err := prov.Groups().List(ctx, loc.Query)
-		if err != nil { return nil, err }
+		if err != nil { return nil, nil, err }
 		for _, g := range groups { items = append(items, g) }
 	} else {
-		return nil, fmt.Errorf("unsupported resource type: %s", loc.Resource)
+		return nil, nil, fmt.Errorf("unsupported resource type: %s", loc.Resource)
 	}
 
 	// Apply physical health filtering if flags are set
@@ -99,18 +99,18 @@ func ResolveSelection(locStr string, queryOverride string, opts ResolveOptions) 
 
 	// Validate path-based query capabilities
 	if loc.Query != "" {
-		validatePathCapabilities(sel, opts.Feedback)
+		validatePathCapabilities(sel, prov, opts.Feedback)
 	}
 
-	return sel, nil
+	return sel, prov, nil
 }
 
-func validatePathCapabilities(sel *Selection, fb provider.Feedback) {
+func validatePathCapabilities(sel *Selection, prov provider.Provider, fb provider.Feedback) {
 	if fb == nil {
 		fb = provider.NoopFeedback{}
 	}
 	q := query.NewParser().Parse(sel.Location.Query)
-	caps := sel.Provider.System().Capabilities()
+	caps := prov.System().Capabilities()
 
 	var check func(expr query.Expression)
 	check = func(expr query.Expression) {
@@ -131,7 +131,7 @@ func validatePathCapabilities(sel *Selection, fb provider.Feedback) {
 					}
 					if !hasCap {
 						fb.OnWarning(fmt.Sprintf("The current provider (%s) does not support %q. Results for %q may be incomplete or empty.", 
-							sel.Provider.Name(), collection, v.Field))
+							prov.Name(), collection, v.Field))
 					}
 				}
 			}

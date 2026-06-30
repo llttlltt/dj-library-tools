@@ -38,7 +38,7 @@ func getExecContext() provider.ExecutionContext {
 	}
 }
 
-func ResolveSelection(locStr string, queryOverride string) (*resolver.Selection, error) {
+func ResolveSelection(locStr string, queryOverride string) (*resolver.Selection, provider.Provider, error) {
 	cfg, _ := config.LoadAppConfig()
 	// Standard resolution with global context
 	opts := resolver.ResolveOptions{

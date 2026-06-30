@@ -9,6 +9,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
 	"github.com/llttlltt/dj-library-tools/internal/core/query"
+	"github.com/llttlltt/dj-library-tools/internal/providers"
 	"github.com/llttlltt/dj-library-tools/internal/services/resolver"
 	"github.com/spf13/cobra"
 )
@@ -39,7 +40,7 @@ func newListCmd() *cobra.Command {
 				Verbose:       verbose,
 			}
 
-			sel, err := resolver.ResolveSelection(args[0], queryOverride, opts)
+			sel, prov, err := resolver.ResolveSelection(args[0], queryOverride, opts)
 			if err != nil {
 				return HandleError(err)
 			}
@@ -48,7 +49,7 @@ func newListCmd() *cobra.Command {
 				return listProviderStats(sel, jsonOutput)
 			}
 
-			return listProvider(sel, listSort, jsonOutput, columns)
+			return listProvider(sel, prov, listSort, jsonOutput, columns)
 		},
 	}
 	cmd.Flags().StringVar(&listSort, "sort", "", "Sort results by any available field (e.g. artist, title, bpm, etc.)")
@@ -128,14 +129,14 @@ func listProviderStats(sel *resolver.Selection, jsonOutput bool) error {
 	return nil
 }
 
-func listProvider(sel *resolver.Selection, listSort string, jsonOutput bool, columns []string) error {
+func listProvider(sel *resolver.Selection, prov provider.Provider, listSort string, jsonOutput bool, columns []string) error {
 	if sel.Location.Resource == "playlists" || sel.Location.Resource == "folders" {
 		// Group Logic...
 		if listSort != "" {
 			if _, ok := models.GroupFields[listSort]; !ok {
 				return fmt.Errorf("invalid sort field %q; valid fields are: %v", listSort, strings.Join(query.AllowedGroupFields, ", "))
 			}
-			sel.Provider.Groups().Sort(getExecContext(), sel.Groups, listSort)
+			prov.Groups().Sort(getExecContext(), sel.Groups, listSort)
 		}
 		renderGroupTable(sel.Groups, sel.Location.Resource[:len(sel.Location.Resource)-1])
 		return nil
@@ -151,9 +152,9 @@ func listProvider(sel *resolver.Selection, listSort string, jsonOutput bool, col
 		if _, ok := models.TrackFields[listSort]; !ok {
 			return fmt.Errorf("invalid sort field %q; valid fields are: %v", listSort, strings.Join(query.AllowedTrackFields, ", "))
 		}
-		sel.Provider.Tracks().Sort(getExecContext(), sel.Tracks, listSort)
+		prov.Tracks().Sort(getExecContext(), sel.Tracks, listSort)
 	}
-	renderTrackTable(sel.Provider, sel.Tracks, columns)
+	renderTrackTable(prov, sel.Tracks, columns)
 	return nil
 }
 

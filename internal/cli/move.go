@@ -34,12 +34,10 @@ Example:
 			if len(args) > 1 {
 				queryOverride = strings.Join(args[1:], " ")
 			}
-			src, err := ResolveSelection(args[0], queryOverride)
+			src, prov, err := ResolveSelection(args[0], queryOverride)
 			if err != nil {
 				return HandleError(err)
 			}
-
-			prov := src.Provider
 
 			if moveName != "" {
 				return runRenameGroups(prov, src, moveName)
@@ -67,12 +65,12 @@ func runMoveTracks(prov provider.Provider, src *resolver.Selection, moveFrom, mo
 		return nil
 	}
 
-	org, err := ResolveSelection(moveFrom, "")
+	org, _, err := ResolveSelection(moveFrom, "")
 	if err != nil || len(org.Groups) == 0 {
 		return fmt.Errorf("could not find origin playlist(s) matching %q", moveFrom)
 	}
 
-	tgt, err := ResolveSelection(moveTo, "")
+	tgt, _, err := ResolveSelection(moveTo, "")
 	if err != nil || len(tgt.Groups) == 0 {
 		return fmt.Errorf("could not find target playlist(s) matching %q", moveTo)
 	}
@@ -104,7 +102,7 @@ func runMoveGroups(prov provider.Provider, src *resolver.Selection, moveTo strin
 		return nil
 	}
 
-	tgt, err := ResolveSelection(moveTo, "")
+	tgt, _, err := ResolveSelection(moveTo, "")
 	if err != nil || len(tgt.Groups) == 0 {
 		return fmt.Errorf("could not find target folder matching %q", moveTo)
 	}

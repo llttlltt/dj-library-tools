@@ -35,12 +35,11 @@ Example:
 }
 
 func runCreateCmd(args []string, createIn, createFrom string, createAt int, parents bool) error {
-	sel, err := ResolveSelection(args[0], "")
+	sel, prov, err := ResolveSelection(args[0], "")
 	if err != nil {
 		return HandleError(err)
 	}
 	name := args[1]
-	prov := sel.Provider
 	ctx := getExecContext()
 
 	// Handle --parents by ensuring the folder path exists
@@ -65,7 +64,7 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int, pare
 
 	var tracks []models.Track
 	if createFrom != "" {
-		src, err := ResolveSelection(createFrom, "")
+		src, _, err := ResolveSelection(createFrom, "")
 		if err != nil {
 			return HandleError(err)
 		}

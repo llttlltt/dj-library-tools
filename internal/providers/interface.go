@@ -142,7 +142,6 @@ type Selection struct {
 	Tracks   []models.Track
 	Groups   []models.ResourceGroup
 	Location location.Location
-	Provider Provider
 }
 
 // SystemService handles provider-wide configuration, maintenance, and orchestration.

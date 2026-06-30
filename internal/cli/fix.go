@@ -44,7 +44,7 @@ Examples:
 				Verbose:  verbose,
 			}
 
-			sel, err := resolver.ResolveSelection(args[0], queryOverride, opts)
+			sel, prov, err := resolver.ResolveSelection(args[0], queryOverride, opts)
 			if err != nil {
 				return err
 			}
@@ -70,7 +70,6 @@ Examples:
 				return fmt.Errorf("no repair actions specified; use --duplicates, --metadata, --paths, or --orphans")
 			}
 
-			prov := sel.Provider
 			ctx := getExecContext()
 
 			if len(sel.Items) == 0 {
