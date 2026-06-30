@@ -302,6 +302,11 @@ func (s *rekordboxSystemService) fixPaths(ctx context.Context, ectx provider.Exe
 	}
 
 	for _, rt := range toProcess {
+		select {
+		case <-ctx.Done():
+			return totalRelocated, ctx.Err()
+		default:
+		}
 		originalLocation := rt.Location
 		if originalLocation == "" {
 			continue
@@ -398,6 +403,11 @@ func (s *rekordboxSystemService) fixMetadataNormalization(ctx context.Context, e
 	}
 
 	for _, rt := range toProcess {
+		select {
+		case <-ctx.Done():
+			return totalFixed, ctx.Err()
+		default:
+		}
 		fixed := false
 		
 		// 1. Trim Whitespace
@@ -480,6 +490,11 @@ func (s *rekordboxSystemService) fixDuplicateTracks(ctx context.Context, ectx pr
 	toRemove := make(map[string]bool)
 
 	for _, t := range tracks {
+		select {
+		case <-ctx.Done():
+			return 0, ctx.Err()
+		default:
+		}
 		id := identity{
 			artist: strings.ToLower(t.Artist),
 			title:  strings.ToLower(t.Title),
@@ -566,6 +581,11 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx context.Context, ectx p
 
 	// We only care about playlists for duplicate membership fixing
 	for _, res := range selection.Items {
+		select {
+		case <-ctx.Done():
+			return totalRemoved, ctx.Err()
+		default:
+		}
 		group, ok := res.(models.ResourceGroup)
 		if !ok || group.Kind != models.GroupKindPlaylist {
 			continue
@@ -650,7 +670,7 @@ func (s *rekordboxSystemService) Sync(ctx context.Context, ectx provider.Executi
 	}
 	rbLib := NewLibrary(s.rbXML)
 
-	err := sync.SyncToLibrary(rbLib, tracks, targetQuery, sync.SyncOptions{
+	err := sync.SyncToLibrary(ctx, rbLib, tracks, targetQuery, sync.SyncOptions{
 		ExportDest:     options.ExportDest,
 		ExportFormat:   options.ExportFormat,
 		PathMaps:       options.PathMaps,

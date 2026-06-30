@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -61,7 +62,7 @@ type SyncOptions struct {
 }
 
 // SyncToLibrary is a high-level helper that coordinates a full sync from source tracks to a target library.
-func SyncToLibrary(lib library.WritableLibrary, tracks []models.Track, targetQuery string, options SyncOptions, apply, verbose bool, appendOnly bool) error {
+func SyncToLibrary(ctx context.Context, lib library.WritableLibrary, tracks []models.Track, targetQuery string, options SyncOptions, apply, verbose bool, appendOnly bool) error {
 	orch := NewOrchestrator(lib, apply, verbose)
 
 	// Perform metadata reconciliation if requested
@@ -76,7 +77,7 @@ func SyncToLibrary(lib library.WritableLibrary, tracks []models.Track, targetQue
 		}
 	}
 
-	return orch.SyncToLibrary(tracks, targetQuery, options, appendOnly)
+	return orch.SyncToLibrary(ctx, tracks, targetQuery, options, appendOnly)
 }
 
 // Join matches source tracks against the target library using the specified keys.
@@ -129,7 +130,7 @@ func (o *Orchestrator) Relocate(tracks []models.Track, searchDir string, matchFi
 	return relocated
 }
 
-func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opts SyncOptions, appendOnly bool) error {
+func (o *Orchestrator) SyncToLibrary(ctx context.Context, tracks []models.Track, targetID string, opts SyncOptions, appendOnly bool) error {
 	var transcoder *media.Transcoder
 	if opts.ExportDest != "" {
 		cfgMedia := media.DefaultConfig()
@@ -157,6 +158,14 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opt
 	for w := 0; w < numWorkers; w++ {
 		go func() {
 			for job := range jobs {
+				select {
+				case <-ctx.Done():
+					errors <- ctx.Err()
+					results <- ""
+					return
+				default:
+				}
+
 				track := job.track
 				targetTrack := job.target
 
@@ -218,7 +227,7 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opt
 						}
 						continue
 					}
-					if err := transcoder.Transcode(sourceFile, destPath); err != nil {
+					if err := transcoder.TranscodeContext(ctx, sourceFile, destPath); err != nil {
 						errors <- fmt.Errorf("transcode error for %s: %v", track.Title, err)
 						results <- ""
 						if o.Listener != nil {
@@ -241,6 +250,12 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opt
 	}
 
 	for _, track := range tracks {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
 		match := o.Matcher.Match(track)
 		var targetTrack *models.Track
 		if match.TargetTrack != nil && match.Confidence >= 0.8 {
@@ -252,8 +267,13 @@ func (o *Orchestrator) SyncToLibrary(tracks []models.Track, targetID string, opt
 
 	var trackIDs []string
 	for i := 0; i < len(tracks); i++ {
-		if res := <-results; res != "" {
-			trackIDs = append(trackIDs, res)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case res := <-results:
+			if res != "" {
+				trackIDs = append(trackIDs, res)
+			}
 		}
 	}
 	close(errors)

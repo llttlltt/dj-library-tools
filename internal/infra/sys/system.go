@@ -1,6 +1,7 @@
 package sys
 
 import (
+	"context"
 	"os"
 	"os/exec"
 )
@@ -23,6 +24,7 @@ func (f OSFileSystem) Create(name string) (*os.File, error) { return os.Create(n
 type Runner interface {
 	LookPath(file string) (string, error)
 	Run(name string, arg ...string) ([]byte, error)
+	RunContext(ctx context.Context, name string, arg ...string) ([]byte, error)
 }
 
 // RealRunner is the real implementation of Runner using 'os/exec'.
@@ -31,4 +33,8 @@ type RealRunner struct{}
 func (r RealRunner) LookPath(file string) (string, error) { return exec.LookPath(file) }
 func (r RealRunner) Run(name string, arg ...string) ([]byte, error) {
 	return exec.Command(name, arg...).CombinedOutput()
+}
+
+func (r RealRunner) RunContext(ctx context.Context, name string, arg ...string) ([]byte, error) {
+	return exec.CommandContext(ctx, name, arg...).CombinedOutput()
 }

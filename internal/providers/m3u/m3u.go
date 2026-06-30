@@ -186,7 +186,7 @@ func (s *m3uSystemService) Fix(ctx context.Context, ectx provider.ExecutionConte
 }
 
 func (s *m3uSystemService) Sync(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, targetQuery string, opts provider.SyncOptions) error {
-	return sync.SyncToLibrary(NewLibrary(s.tracks), tracks, targetQuery, sync.SyncOptions{
+	return sync.SyncToLibrary(ctx, NewLibrary(s.tracks), tracks, targetQuery, sync.SyncOptions{
 		ExportDest:     opts.ExportDest,
 		ExportFormat:   opts.ExportFormat,
 		PathMaps:       opts.PathMaps,

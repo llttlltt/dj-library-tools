@@ -1,6 +1,7 @@
 package media
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -22,6 +23,10 @@ func NewTranscoder(cfg *Config) *Transcoder {
 }
 
 func (t *Transcoder) Transcode(source, dest string) error {
+	return t.TranscodeContext(context.Background(), source, dest)
+}
+
+func (t *Transcoder) TranscodeContext(ctx context.Context, source, dest string) error {
 	// 1. Check if FFmpeg exists
 	if _, err := t.Runner.LookPath("ffmpeg"); err != nil {
 		return fmt.Errorf("ffmpeg not found in PATH. Please install FFmpeg to use transcoding features")
@@ -49,7 +54,7 @@ func (t *Transcoder) Transcode(source, dest string) error {
 		return err
 	}
 
-	if output, err := t.Runner.Run(args[0], args[1:]...); err != nil {
+	if output, err := t.Runner.RunContext(ctx, args[0], args[1:]...); err != nil {
 		return fmt.Errorf("ffmpeg error: %v, output: %s", err, string(output))
 	}
 
