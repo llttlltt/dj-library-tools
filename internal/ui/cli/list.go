@@ -10,7 +10,6 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
 	"github.com/llttlltt/dj-library-tools/internal/core/query"
 	"github.com/llttlltt/dj-library-tools/internal/providers"
-	"github.com/llttlltt/dj-library-tools/internal/services/resolver"
 	"github.com/spf13/cobra"
 )
 
@@ -32,24 +31,18 @@ func newListCmd() *cobra.Command {
 				queryOverride = strings.Join(args[1:], " ")
 			}
 
-			opts := resolver.ResolveOptions{
-				FilePath:      filePath,
-				FilterMissing: filterMissing,
-				FilterExists:  filterExists,
-				Apply:         apply,
-				Verbose:       verbose,
-			}
-
-			sel, prov, err := resolver.ResolveSelection(args[0], queryOverride, opts)
+			orch := getOrchestrator()
+			runOpts := getRunOptions()
+			res, err := orch.List(args[0], queryOverride, runOpts)
 			if err != nil {
 				return HandleError(err)
 			}
 
 			if listStats {
-				return listProviderStats(sel, jsonOutput)
+				return listProviderStats(res.Tracks, res.Groups, jsonOutput)
 			}
 
-			return listProvider(sel, prov, listSort, jsonOutput, columns)
+			return listProvider(res.Tracks, res.Groups, res.Provider, listSort, jsonOutput, columns)
 		},
 	}
 	cmd.Flags().StringVar(&listSort, "sort", "", "Sort results by any available field (e.g. artist, title, bpm, etc.)")
@@ -71,27 +64,23 @@ type StatResult struct {
 	TotalTempo float64
 }
 
-func listProviderStats(sel *resolver.Selection, jsonOutput bool) error {
-	if sel.Location.Resource != "tracks" {
-		return fmt.Errorf("stats only available for track resources")
-	}
-
+func listProviderStats(tracks []models.Track, groups []models.ResourceGroup, jsonOutput bool) error {
 	// Calculate stats from the neutral tracks
 	res := StatResult{
-		Count:   len(sel.Tracks),
+		Count:   len(tracks),
 		Genres:  make(map[string]int),
 		Labels:  make(map[string]int),
 		Keys:    make(map[string]int),
 		Artists: make(map[string]int),
 	}
 
-	if len(sel.Tracks) == 0 {
+	if len(tracks) == 0 {
 		color.Yellow("No tracks matched the query.")
 		return nil
 	}
 
 	totalBPM := 0.0
-	for _, t := range sel.Tracks {
+	for _, t := range tracks {
 		if t.Genre != "" {
 			res.Genres[t.Genre]++
 		}
@@ -106,7 +95,7 @@ func listProviderStats(sel *resolver.Selection, jsonOutput bool) error {
 		}
 		totalBPM += t.BPM
 	}
-	res.AvgBPM = totalBPM / float64(len(sel.Tracks))
+	res.AvgBPM = totalBPM / float64(len(tracks))
 
 	if jsonOutput {
 		data, _ := json.MarshalIndent(res, "", "  ")
@@ -129,21 +118,21 @@ func listProviderStats(sel *resolver.Selection, jsonOutput bool) error {
 	return nil
 }
 
-func listProvider(sel *resolver.Selection, prov provider.Provider, listSort string, jsonOutput bool, columns []string) error {
-	if sel.Location.Resource == "playlists" || sel.Location.Resource == "folders" {
+func listProvider(tracks []models.Track, groups []models.ResourceGroup, prov provider.Provider, listSort string, jsonOutput bool, columns []string) error {
+	if len(groups) > 0 {
 		// Group Logic...
 		if listSort != "" {
 			if _, ok := models.GroupFields[listSort]; !ok {
 				return fmt.Errorf("invalid sort field %q; valid fields are: %v", listSort, strings.Join(query.AllowedGroupFields, ", "))
 			}
-			prov.Groups().Sort(getExecContext(), sel.Groups, listSort)
+			prov.Groups().Sort(getExecContext(), groups, listSort)
 		}
-		renderGroupTable(sel.Groups, sel.Location.Resource[:len(sel.Location.Resource)-1])
+		renderGroupTable(groups, "Group")
 		return nil
 	}
 
 	// Track Logic...
-	if len(sel.Tracks) == 0 {
+	if len(tracks) == 0 {
 		color.Yellow("No tracks matched the query.")
 		return nil
 	}
@@ -152,9 +141,9 @@ func listProvider(sel *resolver.Selection, prov provider.Provider, listSort stri
 		if _, ok := models.TrackFields[listSort]; !ok {
 			return fmt.Errorf("invalid sort field %q; valid fields are: %v", listSort, strings.Join(query.AllowedTrackFields, ", "))
 		}
-		prov.Tracks().Sort(getExecContext(), sel.Tracks, listSort)
+		prov.Tracks().Sort(getExecContext(), tracks, listSort)
 	}
-	renderTrackTable(prov, sel.Tracks, columns)
+	renderTrackTable(prov, tracks, columns)
 	return nil
 }
 

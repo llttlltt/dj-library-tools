@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/llttlltt/dj-library-tools/internal/cli"
+	"github.com/llttlltt/dj-library-tools/internal/ui/cli"
 
 	// Register Providers
 	_ "github.com/llttlltt/dj-library-tools/internal/providers/m3u"

@@ -8,8 +8,25 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	djerrors "github.com/llttlltt/dj-library-tools/internal/core/errors"
 	"github.com/llttlltt/dj-library-tools/internal/providers"
+	"github.com/llttlltt/dj-library-tools/internal/services/orchestrator"
 	"github.com/llttlltt/dj-library-tools/internal/services/resolver"
 )
+
+func getOrchestrator() *orchestrator.Orchestrator {
+	cfg, _ := config.LoadAppConfig()
+	opts := orchestrator.Options{
+		RekordboxPrimaryPath: cfg.Rekordbox.PrimaryFilePath,
+	}
+	return orchestrator.New(&TerminalFeedback{}, opts)
+}
+
+func getRunOptions() orchestrator.RunOptions {
+	return orchestrator.RunOptions{
+		FilePath: filePath,
+		Apply:    apply,
+		Verbose:  verbose,
+	}
+}
 
 // HandleError provides user-friendly messages for sentinel provider errors.
 func HandleError(err error) error {

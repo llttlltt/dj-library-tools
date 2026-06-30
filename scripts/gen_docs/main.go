@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/llttlltt/dj-library-tools/internal/cli"
+	"github.com/llttlltt/dj-library-tools/internal/ui/cli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 )
