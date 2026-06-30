@@ -138,11 +138,11 @@ export namespace gui {
 	    added: TrackRow[];
 	    removed: TrackRow[];
 	    unchanged: TrackRow[];
-
+	
 	    static createFrom(source: any = {}) {
 	        return new StepDiff(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.step_id = source["step_id"];
