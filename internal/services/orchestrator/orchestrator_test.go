@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/llttlltt/dj-library-tools/internal/core/models"
-	"github.com/llttlltt/dj-library-tools/internal/providers"
 	_ "github.com/llttlltt/dj-library-tools/internal/providers/mock"
 	"github.com/stretchr/testify/assert"
 )
@@ -53,7 +51,55 @@ func TestOrchestrator_Edit_Feedback(t *testing.T) {
 	assert.Contains(t, fb.Previews[0], "update tracks matching")
 }
 
-func TestOrchestrator_Models(t *testing.T) {
-	_ = models.Track{}
-	_ = provider.Selection{}
+func TestOrchestrator_Stats(t *testing.T) {
+	fb := &MockFeedback{}
+	o := New(fb, Options{})
+	
+	ctx := context.Background()
+	res, err := o.Stats(ctx, "mock/tracks", "", RunOptions{})
+	assert.NoError(t, err)
+	assert.NotNil(t, res)
+	assert.Equal(t, 1, res.Count)
+	assert.Equal(t, 0.0, res.AvgBPM) // Mock track has 0 BPM
 }
+
+func TestOrchestrator_List_Sorted(t *testing.T) {
+	fb := &MockFeedback{}
+	o := New(fb, Options{})
+	
+	ctx := context.Background()
+	res, err := o.List(ctx, "mock/tracks", "", RunOptions{}, "artist")
+	assert.NoError(t, err)
+	assert.NotNil(t, res)
+	assert.Equal(t, []string{"Artist", "Title"}, res.DefaultColumns)
+	
+	// Test invalid sort
+	res2, err := o.List(ctx, "mock/tracks", "", RunOptions{}, "invalid")
+	assert.Error(t, err)
+	assert.Nil(t, res2)
+	assert.Contains(t, err.Error(), "invalid sort field")
+}
+
+func TestOrchestrator_Sync_Feedback(t *testing.T) {
+	fb := &MockFeedback{}
+	o := New(fb, Options{})
+	
+	ctx := context.Background()
+	err := o.Sync(ctx, "mock/tracks", "mock/tracks", "", RunOptions{Apply: true}, SyncOptions{})
+	assert.NoError(t, err)
+	// Mock doesn't emit feedback currently, but we assert the type safety
+}
+
+func TestOrchestrator_Fix_Feedback(t *testing.T) {
+	fb := &MockFeedback{}
+	o := New(fb, Options{})
+	
+	ctx := context.Background()
+	_, err := o.Fix(ctx, "mock/tracks", "", RunOptions{Apply: true}, FixOptions{
+		Actions: map[FixKind][]string{
+			FixDuplicates: {"tracks"},
+		},
+	})
+	assert.NoError(t, err)
+}
+
