@@ -111,7 +111,14 @@ export function QueryTester({
 					onResource={setResource}
 					onQuery={setQuery}
 					onTest={handleTest}
-					onApply={onApply}
+					onApply={
+						onApply
+							? (q) => {
+									onApply(q);
+									onClose();
+								}
+							: undefined
+					}
 				/>
 				<QueryTesterResults result={result} error={error} />
 			</SheetContent>
