@@ -76,18 +76,18 @@ func (s *rekordboxTrackService) Update(ctx provider.ExecutionContext, query stri
 }
 
 func (s *rekordboxTrackService) UpdateBatch(ctx provider.ExecutionContext, matches []models.MetadataMatch, fields []string) error {
-	rbXML, err := rekordbox.ReadRekordboxLibrary(s.path)
-	if err != nil {
-		return err
+	if s.rbXML == nil {
+		return fmt.Errorf("rekordbox library not loaded")
 	}
 
-	count := rekordbox.UpdateBatch(rbXML, matches, fields)
+	count := rekordbox.UpdateBatch(s.rbXML, matches, fields)
 
 	if ctx.Verbose {
 		fmt.Printf("\nSuccessfully updated %d tracks.\n", count)
 	}
 
-	return rekordbox.WriteRekordboxLibrary(s.path, rbXML)
+	s.rbXML.CollectionChanged = true
+	return nil
 }
 
 func (s *rekordboxTrackService) Delete(ctx provider.ExecutionContext, query string) (int, error) {
@@ -645,16 +645,10 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 }
 
 func (s *rekordboxSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, targetQuery string, options provider.SyncOptions) error {
-	var rbLib *rekordbox.Library
-	if s.rbXML != nil {
-		rbLib = rekordbox.NewLibrary(s.rbXML)
-	} else {
-		rbXML, err := rekordbox.ReadRekordboxLibrary(s.path)
-		if err != nil {
-			return err
-		}
-		rbLib = rekordbox.NewLibrary(rbXML)
+	if s.rbXML == nil {
+		return fmt.Errorf("rekordbox library not loaded")
 	}
+	rbLib := rekordbox.NewLibrary(s.rbXML)
 
 	err := sync.SyncToLibrary(rbLib, tracks, targetQuery, sync.SyncOptions{
 		ExportDest:     options.ExportDest,
@@ -663,12 +657,12 @@ func (s *rekordboxSystemService) Sync(ctx provider.ExecutionContext, tracks []mo
 		MetadataFields: options.MetadataFields,
 		MatchFields:    options.MatchFields,
 	}, ctx.Apply, ctx.Verbose, options.AppendOnly)
-	
+
 	if err != nil {
 		return err
 	}
 
-	return rbLib.Save(s.path)
+	return nil
 }
 
 func (s *rekordboxSystemService) Identify(name string, groupType models.GroupKind) string {

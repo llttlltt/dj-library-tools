@@ -63,8 +63,11 @@ Examples:
 
 				if ctx.Apply {
 					fmt.Printf("Successfully modified %d tracks.\n", count)
+					return prov.System().Save(ctx, "")
+				} else {
+					fmt.Println("Run with --apply to persist changes.")
+					return nil
 				}
-				return prov.System().Save(ctx, "")
 			}
 
 			return cmd.Help()

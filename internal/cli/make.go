@@ -93,5 +93,10 @@ func runCreateCmd(args []string, createIn, createFrom string, createAt int, pare
 		}
 	}
 
-	return prov.System().Save(ctx, "")
+	if ctx.Apply {
+		return prov.System().Save(ctx, "")
+	} else {
+		fmt.Println("Run with --apply to persist changes.")
+		return nil
+	}
 }

@@ -91,8 +91,11 @@ func runMoveTracks(prov provider.Provider, src *resolver.Selection, moveFrom, mo
 
 	if ctx.Apply {
 		fmt.Printf("Successfully moved %d tracks.\n", totalMoved)
+		return prov.System().Save(ctx, "")
+	} else {
+		fmt.Println("Run with --apply to persist changes.")
+		return nil
 	}
-	return prov.System().Save(ctx, "")
 }
 
 func runMoveGroups(prov provider.Provider, src *resolver.Selection, moveTo string) error {
@@ -122,7 +125,12 @@ func runMoveGroups(prov provider.Provider, src *resolver.Selection, moveTo strin
 		}
 	}
 
-	return prov.System().Save(ctx, "")
+	if ctx.Apply {
+		return prov.System().Save(ctx, "")
+	} else {
+		fmt.Println("Run with --apply to persist changes.")
+		return nil
+	}
 }
 
 func runRenameGroups(prov provider.Provider, src *resolver.Selection, newName string) error {
@@ -146,7 +154,9 @@ func runRenameGroups(prov provider.Provider, src *resolver.Selection, newName st
 
 	if ctx.Apply {
 		fmt.Printf("Renamed %q -> %q\n", target.Name, newName)
+		return prov.System().Save(ctx, "")
+	} else {
+		fmt.Println("Run with --apply to persist changes.")
+		return nil
 	}
-
-	return prov.System().Save(ctx, "")
 }

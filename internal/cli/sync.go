@@ -162,6 +162,12 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 				if err != nil {
 					return HandleError(err)
 				}
+
+				if apply {
+					if err := prov.System().Save(getExecContext(), toFilePath); err != nil {
+						return HandleError(err)
+					}
+				}
 			}
 			return nil
 		},

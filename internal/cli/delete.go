@@ -73,7 +73,12 @@ func runDeleteResources(prov provider.Provider, ctx provider.ExecutionContext, s
 		}
 	}
 
-	return prov.System().Save(ctx, "")
+	if ctx.Apply {
+		return prov.System().Save(ctx, "")
+	} else {
+		fmt.Println("Run with --apply to persist changes.")
+		return nil
+	}
 }
 
 func runRemoveMembership(prov provider.Provider, ctx provider.ExecutionContext, sel *resolver.Selection, from []string) error {
@@ -96,5 +101,10 @@ func runRemoveMembership(prov provider.Provider, ctx provider.ExecutionContext, 
 		}
 	}
 
-	return prov.System().Save(ctx, "")
+	if ctx.Apply {
+		return prov.System().Save(ctx, "")
+	} else {
+		fmt.Println("Run with --apply to persist changes.")
+		return nil
+	}
 }
