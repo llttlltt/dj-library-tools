@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	djerrors "github.com/llttlltt/dj-library-tools/internal/core/errors"
@@ -46,9 +45,3 @@ func HandleError(err error) error {
 	return err
 }
 
-func stringsTitle(s string) string {
-	if s == "" {
-		return ""
-	}
-	return strings.ToUpper(s[:1]) + s[1:]
-}

@@ -123,15 +123,8 @@ func (e *Evaluator) matchGroupComparison(group models.ResourceGroup, c Compariso
 
 // Helpers
 
-func isCalculatedField(field string) bool {
-	return field == "hotcues" || field == "memorycues" || field == "beatgrids"
-}
 
 func isPath(field string) bool {
 	return strings.ContainsAny(field, "./-")
 }
 
-func isNumericIntent(c Comparison) bool {
-	if c.Quoted { return false }
-	return c.Operator == OpRange || c.Operator == OpGt || c.Operator == OpLt
-}

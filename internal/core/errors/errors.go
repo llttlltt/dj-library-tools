@@ -68,10 +68,4 @@ func NewReadOnly(provider string) error {
 	}
 }
 
-func NewConstraint(msg string) error {
-	return &Error{
-		Kind: KindConstraintViolation,
-		Msg:  msg,
-	}
-}
 

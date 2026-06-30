@@ -22,9 +22,6 @@ func NewTranscoder(cfg *Config) *Transcoder {
 	}
 }
 
-func (t *Transcoder) Transcode(source, dest string) error {
-	return t.TranscodeContext(context.Background(), source, dest)
-}
 
 func (t *Transcoder) TranscodeContext(ctx context.Context, source, dest string) error {
 	// 1. Check if FFmpeg exists

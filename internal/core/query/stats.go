@@ -22,13 +22,6 @@ func GetStat(name string) (StatFunction, bool) {
 }
 
 // GetStatNames returns a list of all registered statistical functions.
-func GetStatNames() []string {
-	var names []string
-	for name := range statsRegistry {
-		names = append(names, name)
-	}
-	return names
-}
 
 func init() {
 	RegisterStat("count", func(values []string) string {

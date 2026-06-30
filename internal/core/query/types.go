@@ -57,12 +57,6 @@ type Query struct {
 }
 
 // Validate checks if the query is valid and returns a helpful error if not.
-func (q Query) Validate() error {
-	if q.Root == nil {
-		return nil
-	}
-	return q.validateExpr(q.Root, nil)
-}
 
 // ValidateWithFields checks if the query fields are valid for the given resource.
 func (q Query) ValidateWithFields(allowedFields []string) error {

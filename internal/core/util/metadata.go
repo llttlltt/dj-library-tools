@@ -7,6 +7,3 @@ func NormalizeRating(val float64, max float64) int {
 }
 
 // ScaleRating scales our 0-255 rating back to a provider-specific range.
-func ScaleRating(val int, max float64) float64 {
-	return (float64(val) / 255.0) * max
-}

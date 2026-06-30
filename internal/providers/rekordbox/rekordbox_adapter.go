@@ -35,9 +35,6 @@ type RekordboxProvider struct {
 	rbXML  *RekordboxLibraryXML
 }
 
-func NewRekordboxProvider(eng *library.Engine, path string) *RekordboxProvider {
-	return &RekordboxProvider{engine: eng, path: path}
-}
 
 func NewRekordboxProviderWithXML(eng *library.Engine, rbXML *RekordboxLibraryXML, path string) *RekordboxProvider {
 	return &RekordboxProvider{engine: eng, rbXML: rbXML, path: path}

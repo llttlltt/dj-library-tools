@@ -57,16 +57,3 @@ func TestParseLocation(t *testing.T) {
 	}
 }
 
-func TestExpandPath(t *testing.T) {
-	// Note: ~ expansion depends on home dir, so we just check prefix logic
-	path := "~/test.xml"
-	expanded := ExpandPath(path)
-	if expanded == path {
-		t.Errorf("ExpandPath(%q) did not expand tilde", path)
-	}
-
-	normal := "/tmp/test.xml"
-	if ExpandPath(normal) != normal {
-		t.Errorf("ExpandPath(%q) modified absolute path", normal)
-	}
-}

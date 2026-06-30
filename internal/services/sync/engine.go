@@ -99,39 +99,6 @@ func (o *Orchestrator) Join(sourceTracks []models.Track, matchFields []string) [
 }
 
 // Relocate searches for physical files for the given tracks in the searchDir.
-func (o *Orchestrator) Relocate(tracks []models.Track, searchDir string, matchFields []string) map[string]string {
-	relocated := make(map[string]string)
-
-	fileMap := make(map[string][]string)
-	filepath.Walk(searchDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() {
-			return nil
-		}
-		name := strings.ToLower(info.Name())
-		fileMap[name] = append(fileMap[name], path)
-		return nil
-	})
-
-	for _, t := range tracks {
-		filename := strings.ToLower(filepath.Base(t.Location))
-		candidates, ok := fileMap[filename]
-		if !ok {
-			continue
-		}
-
-		for _, candidate := range candidates {
-			relocated[t.ID] = candidate
-			if o.Verbose && o.Listener != nil {
-				if fb, ok := o.Listener.(interface{ OnPreview(string) }); ok {
-					fb.OnPreview(fmt.Sprintf("Relocated %s -> %s", t.Title, candidate))
-				}
-			}
-			break
-		}
-	}
-
-	return relocated
-}
 
 func (o *Orchestrator) SyncToLibrary(ctx context.Context, tracks []models.Track, targetID string, opts SyncOptions, appendOnly bool) error {
 	var transcoder *media.Transcoder

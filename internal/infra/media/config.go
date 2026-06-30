@@ -1,9 +1,6 @@
 package media
 
 import (
-	"encoding/json"
-	"os"
-	"path/filepath"
 )
 
 type Config struct {
@@ -42,29 +39,4 @@ func DefaultConfig() *Config {
 	}
 }
 
-func LoadConfig(path string) (*Config, error) {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return DefaultConfig(), nil
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	var cfg Config
-	if err := json.Unmarshal(data, &cfg); err != nil {
-		return nil, err
-	}
-	return &cfg, nil
-}
 
-func (c *Config) Save(path string) error {
-	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
-	}
-	data, err := json.MarshalIndent(c, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, data, 0644)
-}
