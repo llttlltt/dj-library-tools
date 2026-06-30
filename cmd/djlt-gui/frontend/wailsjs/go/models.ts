@@ -134,18 +134,20 @@ export namespace gui {
 	export class StepDiff {
 	    step_id: string;
 	    target_name: string;
+	    current: TrackRow[];
 	    added: TrackRow[];
 	    removed: TrackRow[];
 	    unchanged: TrackRow[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new StepDiff(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.step_id = source["step_id"];
 	        this.target_name = source["target_name"];
+	        this.current = this.convertValues(source["current"], TrackRow);
 	        this.added = this.convertValues(source["added"], TrackRow);
 	        this.removed = this.convertValues(source["removed"], TrackRow);
 	        this.unchanged = this.convertValues(source["unchanged"], TrackRow);

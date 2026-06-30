@@ -159,6 +159,7 @@ type TrackRow struct {
 type StepDiff struct {
 	StepID     string     `json:"step_id"`
 	TargetName string     `json:"target_name"`
+	Current    []TrackRow `json:"current"`
 	Added      []TrackRow `json:"added"`
 	Removed    []TrackRow `json:"removed"`
 	Unchanged  []TrackRow `json:"unchanged"`
@@ -208,6 +209,7 @@ func (a *App) GetWorkflowDiff(id string) ([]StepDiff, error) {
 			sd := StepDiff{
 				StepID:     step.ID,
 				TargetName: diff.TargetName,
+				Current:    toTrackRows(diff.CurrentIDs, diff.TrackLookup),
 				Added:      toTrackRows(diff.AddedIDs, diff.TrackLookup),
 				Removed:    toTrackRows(diff.RemovedIDs, diff.TrackLookup),
 			}
