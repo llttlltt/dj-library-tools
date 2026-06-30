@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -24,10 +25,15 @@ Example:
   djlt rm rb/folders name:OldSets --recursive`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			queryOverride := ""
+			if len(args) > 1 {
+				queryOverride = strings.Join(args[1:], " ")
+			}
+
 			orch := getOrchestrator()
 			runOpts := getRunOptions()
 
-			err := orch.Delete(cmd.Context(), args[0], "", runOpts, deleteFrom, recursive)
+			err := orch.Delete(cmd.Context(), args[0], queryOverride, runOpts, deleteFrom, recursive)
 			if err != nil {
 				return HandleError(err)
 			}

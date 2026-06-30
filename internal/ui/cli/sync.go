@@ -55,13 +55,14 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 			runOpts := getRunOptions()
 
 			for _, targetStr := range syncTo {
-				// Perform Diffing for CLI Feedback
-				if verbose || !apply {
-					diff, err := orch.GetSyncDiff(cmd.Context(), args[0], targetStr, queryOverride, runOpts, syncAppend)
-					if err != nil {
-						return HandleError(err)
-					}
+				// Always compute diff so TargetName is available for the success message.
+				diff, err := orch.GetSyncDiff(cmd.Context(), args[0], targetStr, queryOverride, runOpts, syncAppend)
+				if err != nil {
+					return HandleError(err)
+				}
 
+				// Show preview only in dry-run or verbose mode.
+				if verbose || !apply {
 					if verbose {
 						if len(diff.AddedIDs) > 0 {
 							fmt.Printf("\nTracks to ADD:\n")
@@ -85,15 +86,13 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 					}
 					fmt.Println()
 
-					if apply {
-						fmt.Printf("Successfully synchronized %q.\n", diff.TargetName)
-					} else {
+					if !apply {
 						fmt.Printf("Run with --apply to persist changes.\n")
 					}
 				}
 
 				// Perform Membership and Metadata Sync
-				err := orch.Sync(cmd.Context(), args[0], targetStr, queryOverride, runOpts, orchestrator.SyncOptions{
+				err = orch.Sync(cmd.Context(), args[0], targetStr, queryOverride, runOpts, orchestrator.SyncOptions{
 					ExportDest:     exportDest,
 					ExportFormat:   exportFormat,
 					AppendOnly:     syncAppend,
@@ -102,6 +101,10 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 				})
 				if err != nil {
 					return HandleError(err)
+				}
+
+				if apply {
+					fmt.Printf("✔ Synchronized %q.\n", diff.TargetName)
 				}
 			}
 			return nil
