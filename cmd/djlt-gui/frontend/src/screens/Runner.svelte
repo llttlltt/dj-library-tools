@@ -46,7 +46,7 @@
     return { pending: '○', running: '◌', success: '✓', failed: '✗', blocked: '⊘' }[s] ?? '?';
   }
 
-  const activeResult = () => runResult ?? previewResult;
+  $: activeResult = runResult ?? previewResult;
 </script>
 
 <div class="screen">
@@ -73,8 +73,8 @@
     <p class="loading">{phase === 'previewing' ? 'Running preview…' : 'Applying changes…'}</p>
   {/if}
 
-  {#if activeResult()}
-    {@const result = activeResult()}
+  {#if activeResult}
+    {@const result = activeResult}
     <div class="mode-badge" class:preview={!runResult} class:run={!!runResult}>
       {runResult ? 'RUN RESULTS' : 'PREVIEW RESULTS'}
     </div>
