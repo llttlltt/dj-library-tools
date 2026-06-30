@@ -87,6 +87,20 @@ func DeleteSource(id string) error {
 	return nil
 }
 
+// FindSourceByID loads all Sources and returns the one with the matching ID.
+func FindSourceByID(id string) (*Source, error) {
+	sources, err := LoadSources()
+	if err != nil {
+		return nil, err
+	}
+	for i := range sources {
+		if sources[i].ID == id {
+			return &sources[i], nil
+		}
+	}
+	return nil, fmt.Errorf("no Source found with ID %q", id)
+}
+
 // FindFirstSource loads all Sources and returns the first whose Provider field
 // matches the requested provider string (lexicographic file order). Returns an
 // error if none is found.

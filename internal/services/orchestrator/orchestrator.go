@@ -31,6 +31,19 @@ func New(fb provider.Feedback, opts Options) *Orchestrator {
 	}
 }
 
+// NewWithFeedback returns a shallow copy of base with Feedback replaced by fb.
+// Used by the workflow engine to capture per-Step output without recreating
+// the full orchestrator configuration.
+func NewWithFeedback(fb provider.Feedback, base *Orchestrator) *Orchestrator {
+	if fb == nil {
+		fb = provider.NoopFeedback{}
+	}
+	return &Orchestrator{
+		Feedback:             fb,
+		RekordboxPrimaryPath: base.RekordboxPrimaryPath,
+	}
+}
+
 type RunOptions struct {
 	FilePath string
 	Apply    bool
