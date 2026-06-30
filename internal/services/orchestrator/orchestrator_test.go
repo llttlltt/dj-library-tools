@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	provider "github.com/llttlltt/dj-library-tools/internal/providers"
 	_ "github.com/llttlltt/dj-library-tools/internal/providers/mock"
 	"github.com/stretchr/testify/assert"
 )
@@ -98,8 +99,8 @@ func TestOrchestrator_Fix_Feedback(t *testing.T) {
 
 	ctx := context.Background()
 	_, err := o.Fix(ctx, "mock/tracks", "", RunOptions{Apply: true}, FixOptions{
-		Actions: map[FixKind][]string{
-			FixDuplicates: {"tracks"},
+		Actions: map[provider.FixType][]string{
+			provider.FixDuplicates: {"tracks"},
 		},
 	})
 	assert.NoError(t, err)

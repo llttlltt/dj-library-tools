@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	provider "github.com/llttlltt/dj-library-tools/internal/providers"
 	"github.com/llttlltt/dj-library-tools/internal/services/orchestrator"
 	"github.com/spf13/cobra"
 )
@@ -41,20 +42,20 @@ Examples:
 			runOpts := getRunOptions()
 
 			fixOpts := orchestrator.FixOptions{
-				Actions: make(map[orchestrator.FixKind][]string),
+				Actions: make(map[provider.FixType][]string),
 			}
 
 			if len(duplicates) > 0 {
-				fixOpts.Actions[orchestrator.FixDuplicates] = duplicates
+				fixOpts.Actions[provider.FixDuplicates] = duplicates
 			}
 			if len(metadata) > 0 {
-				fixOpts.Actions[orchestrator.FixMetadata] = metadata
+				fixOpts.Actions[provider.FixMetadata] = metadata
 			}
 			if len(paths) > 0 {
-				fixOpts.Actions[orchestrator.FixPaths] = paths
+				fixOpts.Actions[provider.FixPaths] = paths
 			}
 			if len(orphans) > 0 {
-				fixOpts.Actions[orchestrator.FixOrphans] = orphans
+				fixOpts.Actions[provider.FixOrphans] = orphans
 			}
 
 			if len(fixOpts.Actions) == 0 {

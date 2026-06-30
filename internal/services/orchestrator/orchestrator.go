@@ -152,17 +152,8 @@ type SyncOptions struct {
 	MatchFields    []string
 }
 
-type FixKind string
-
-const (
-	FixDuplicates FixKind = "duplicates"
-	FixMetadata   FixKind = "metadata"
-	FixPaths      FixKind = "paths"
-	FixOrphans    FixKind = "orphans"
-)
-
 type FixOptions struct {
-	Actions map[FixKind][]string
+	Actions map[provider.FixType][]string
 }
 
 func (o *Orchestrator) Sync(ctx context.Context, sourceLoc, targetLoc string, queryOverride string, opts RunOptions, syncOpts SyncOptions) error {
@@ -272,10 +263,7 @@ func (o *Orchestrator) Fix(ctx context.Context, locStr string, queryOverride str
 	}
 
 	pFixOpts := provider.FixOptions{
-		Actions: make(map[provider.FixType][]string),
-	}
-	for k, v := range fixOpts.Actions {
-		pFixOpts.Actions[provider.FixType(k)] = v
+		Actions: fixOpts.Actions,
 	}
 
 	count, err := prov.System().Fix(ctx, o.buildExecContext(opts), *sel, pFixOpts)
