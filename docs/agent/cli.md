@@ -1,0 +1,25 @@
+# CLI & Query Standards
+
+- **Explicit Queries**: Bare values are invalid. Users must always specify a field (e.g., `title:`, `name:`).
+- **The `none` Keyword**: Always use `none` for empty/null checks (colors, comments).
+- **Path-based Querying**: Use `Collection.Index/Property-Stat` syntax for deep metadata:
+  - `hotcues.1/color:red` (Target specific index)
+  - `beatgrids/bpm-drift:<0.1` (Target aggregate calculation)
+  - `beatgrids-density:>60` (Target collection metric)
+- **1-Based Indexing**: Always use 1-based indexing for collections in the query syntax to align with DJ software UI (e.g., Hotcue 1-8).
+- **Separator Hierarchy**:
+  - `.` (Dot) for **Index**
+  - `/` (Slash) for **Property**
+  - `-` (Hyphen) for **Stat/Formula**
+  - `_` (Underscore) for **Spaces** (within names)
+- **Stat Normalization**: Score and ratio-based stats (Stability, Redundancy) must be normalized to a **0-100** percentage scale.
+- **Capability-Gated Queries**: Advanced queries must be validated against the active provider's capabilities. If a collection (e.g., `beatgrids`) is missing, emit a warning via the `Feedback` interface (`OnWarning`); the CLI renders it to `stderr`. Core/services/providers must never write to `stderr` directly (see [Architecture](architecture.md): UI Decoupling).
+- **Action-Based Maintenance**: Use the `fix` command as a unified "God Command" for algorithmic, rule-based maintenance (deduplication, normalization, repair).
+- **Target Resolution**: CLI commands that perform mutations (e.g., `sync`, `fix`) must resolve the target resource's **unique ID** (not just its query or name) before calling provider mutation methods. This prevents ambiguous targeting in hierarchical libraries.
+- **Targeted Repairs**: Fix operations must support granular targeting via Action-Target maps (e.g., `--duplicates members` vs `--duplicates tracks`).
+- **One Way to Fix**: Maintenance flags in other commands (like `edit`) are removed in favor of the `fix` infrastructure.
+- **Intent Delegation**: CLI commands are thin wrappers. They parse flags and delegate to a single high-level `internal/services/orchestrator` method (`List`, `Sync`, `Make`, `Move`, `Delete`, `Edit`, `Fix`); the orchestrator owns workflow logic and calls high-level provider methods. Commands must not orchestrate multiple small provider calls directly (see [Architecture](architecture.md): Orchestrator Facade).
+- **Command-Specific Nuances**:
+  - **`mk`**: The resource must be a base type (e.g., `rb/playlists`). Use `--in` for parent folders.
+  - **`--from` / `--to` Queries**: When populating or targeting resources via flags, the query must be a fully qualified resource path (e.g., `rb/tracks beatgrids-count:>1`), not just the filter.
+  - **Quoting & Shells**: For complex names with spaces or symbols (e.g., `(`, `)`, `'`), use regex matching `name::"Regex Pattern"` or ID-based selection to avoid CSV/Shell parsing issues.

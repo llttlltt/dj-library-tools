@@ -90,6 +90,3 @@ nav:
       - rb:
         - index: commands/config/rb/index.md
         - file: commands/config/rb/file.md
-  - Development:
-    - Architecture: development/architecture.md
-    - XML Format: development/xml-format.md

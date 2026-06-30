@@ -19,7 +19,6 @@ If you need help or want to report a bug, please file an issue in the **[issue t
 ### Reference
 - **[CLI Overview](commands/index.md)**: A high-level look at the command structure.
 - **[djlt Command](commands/index.md)**: The full technical reference for every command and flag.
-- **[Architecture](development/architecture.md)**: Internal technical details for developers.
 
 ### Providers
 - **[Rekordbox](providers/rekordbox.md)**: Querying tracks, playlists, and folders.
