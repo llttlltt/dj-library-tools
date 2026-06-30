@@ -8,8 +8,6 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/llttlltt/dj-library-tools/internal/core/models"
-	"github.com/llttlltt/dj-library-tools/internal/core/query"
 	"github.com/llttlltt/dj-library-tools/internal/providers"
 	"github.com/llttlltt/dj-library-tools/internal/services/orchestrator"
 	"github.com/spf13/cobra"
@@ -35,16 +33,21 @@ func newListCmd() *cobra.Command {
 
 			orch := getOrchestrator()
 			runOpts := getRunOptions()
-			res, err := orch.List(cmd.Context(), args[0], queryOverride, runOpts)
+
+			if listStats {
+				res, err := orch.Stats(cmd.Context(), args[0], queryOverride, runOpts)
+				if err != nil {
+					return HandleError(err)
+				}
+				return renderStats(res, jsonOutput)
+			}
+
+			res, err := orch.List(cmd.Context(), args[0], queryOverride, runOpts, listSort)
 			if err != nil {
 				return HandleError(err)
 			}
 
-			if listStats {
-				return listProviderStats(res.Tracks, res.Groups, jsonOutput)
-			}
-
-			return listProvider(cmd.Context(), res, res.Provider, listSort, jsonOutput, columns)
+			return listProvider(cmd.Context(), res, res.Provider, jsonOutput, columns)
 		},
 	}
 	cmd.Flags().StringVar(&listSort, "sort", "", "Sort results by any available field (e.g. artist, title, bpm, etc.)")
@@ -56,52 +59,15 @@ func newListCmd() *cobra.Command {
 	return cmd
 }
 
-type StatResult struct {
-	Count      int
-	AvgBPM     float64
-	Genres     map[string]int
-	Labels     map[string]int
-	Keys       map[string]int
-	Artists    map[string]int
-	TotalTempo float64
-}
-
-func listProviderStats(tracks []models.Track, groups []models.ResourceGroup, jsonOutput bool) error {
-	// Calculate stats from the neutral tracks
-	res := StatResult{
-		Count:   len(tracks),
-		Genres:  make(map[string]int),
-		Labels:  make(map[string]int),
-		Keys:    make(map[string]int),
-		Artists: make(map[string]int),
-	}
-
-	if len(tracks) == 0 {
-		color.Yellow("No tracks matched the query.")
-		return nil
-	}
-
-	totalBPM := 0.0
-	for _, t := range tracks {
-		if t.Genre != "" {
-			res.Genres[t.Genre]++
-		}
-		if t.Label != "" {
-			res.Labels[t.Label]++
-		}
-		if t.Key != "" {
-			res.Keys[t.Key]++
-		}
-		if t.Artist != "" {
-			res.Artists[t.Artist]++
-		}
-		totalBPM += t.BPM
-	}
-	res.AvgBPM = totalBPM / float64(len(tracks))
-
+func renderStats(res *orchestrator.StatResult, jsonOutput bool) error {
 	if jsonOutput {
 		data, _ := json.MarshalIndent(res, "", "  ")
 		fmt.Println(string(data))
+		return nil
+	}
+
+	if res.Count == 0 {
+		color.Yellow("No tracks matched the query.")
 		return nil
 	}
 
@@ -120,15 +86,8 @@ func listProviderStats(tracks []models.Track, groups []models.ResourceGroup, jso
 	return nil
 }
 
-func listProvider(ctx context.Context, res *orchestrator.ListResult, prov provider.Provider, listSort string, jsonOutput bool, columns []string) error {
+func listProvider(ctx context.Context, res *orchestrator.ListResult, prov provider.Provider, jsonOutput bool, columns []string) error {
 	if len(res.Groups) > 0 {
-		// Group Logic...
-		if listSort != "" {
-			if _, ok := models.GroupFields[listSort]; !ok {
-				return fmt.Errorf("invalid sort field %q; valid fields are: %v", listSort, strings.Join(query.AllowedGroupFields, ", "))
-			}
-			prov.Groups().Sort(ctx, getExecContext(), res.Groups, listSort)
-		}
 		label := res.Resource
 		if len(label) > 0 && label[len(label)-1] == 's' {
 			label = label[:len(label)-1]
@@ -143,12 +102,6 @@ func listProvider(ctx context.Context, res *orchestrator.ListResult, prov provid
 		return nil
 	}
 
-	if listSort != "" {
-		if _, ok := models.TrackFields[listSort]; !ok {
-			return fmt.Errorf("invalid sort field %q; valid fields are: %v", listSort, strings.Join(query.AllowedTrackFields, ", "))
-		}
-		prov.Tracks().Sort(ctx, getExecContext(), res.Tracks, listSort)
-	}
 	renderTrackTable(prov, res.Tracks, columns)
 	return nil
 }

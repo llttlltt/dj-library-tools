@@ -2,8 +2,12 @@ package orchestrator
 
 import (
 	"context"
+	"fmt"
+
+	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
+	"github.com/llttlltt/dj-library-tools/internal/core/query"
 	"github.com/llttlltt/dj-library-tools/internal/providers"
 	"github.com/llttlltt/dj-library-tools/internal/services/resolver"
 )
@@ -51,6 +55,16 @@ func (o *Orchestrator) buildExecContext(opts RunOptions) provider.ExecutionConte
 	}
 }
 
+type StatResult struct {
+	Count      int             `json:"Count"`
+	AvgBPM     float64         `json:"AvgBPM"`
+	Genres     map[string]int  `json:"Genres"`
+	Labels     map[string]int  `json:"Labels"`
+	Keys       map[string]int  `json:"Keys"`
+	Artists    map[string]int  `json:"Artists"`
+	TotalTempo float64         `json:"TotalTempo"`
+}
+
 type ListResult struct {
 	Resource string
 	Tracks   []models.Track
@@ -58,10 +72,24 @@ type ListResult struct {
 	Provider provider.Provider
 }
 
-func (o *Orchestrator) List(ctx context.Context, locStr string, queryOverride string, opts RunOptions) (*ListResult, error) {
+func (o *Orchestrator) List(ctx context.Context, locStr string, queryOverride string, opts RunOptions, sortBy string) (*ListResult, error) {
 	sel, prov, err := resolver.ResolveSelection(locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return nil, err
+	}
+
+	if sortBy != "" {
+		if sel.Location.Resource == "tracks" {
+			if _, ok := models.TrackFields[sortBy]; !ok {
+				return nil, fmt.Errorf("invalid sort field %q; valid fields are: %v", sortBy, strings.Join(query.AllowedTrackFields, ", "))
+			}
+			prov.Tracks().Sort(ctx, o.buildExecContext(opts), sel.Tracks, sortBy)
+		} else {
+			if _, ok := models.GroupFields[sortBy]; !ok {
+				return nil, fmt.Errorf("invalid sort field %q; valid fields are: %v", sortBy, strings.Join(query.AllowedGroupFields, ", "))
+			}
+			prov.Groups().Sort(ctx, o.buildExecContext(opts), sel.Groups, sortBy)
+		}
 	}
 
 	return &ListResult{
@@ -71,6 +99,53 @@ func (o *Orchestrator) List(ctx context.Context, locStr string, queryOverride st
 		Provider: prov,
 	}, nil
 }
+
+
+func (o *Orchestrator) Stats(ctx context.Context, locStr, queryOverride string, opts RunOptions) (*StatResult, error) {
+	sel, _, err := resolver.ResolveSelection(locStr, queryOverride, o.buildResolveOptions(opts))
+	if err != nil {
+		return nil, err
+	}
+
+	if sel.Location.Resource != "tracks" {
+		return nil, fmt.Errorf("stats only available for track resources")
+	}
+
+	res := &StatResult{
+		Count:   len(sel.Tracks),
+		Genres:  make(map[string]int),
+		Labels:  make(map[string]int),
+		Keys:    make(map[string]int),
+		Artists: make(map[string]int),
+	}
+
+	if len(sel.Tracks) == 0 {
+		return res, nil
+	}
+
+	totalBPM := 0.0
+	for _, t := range sel.Tracks {
+		if t.Genre != "" {
+			res.Genres[t.Genre]++
+		}
+		if t.Label != "" {
+			res.Labels[t.Label]++
+		}
+		if t.Key != "" {
+			res.Keys[t.Key]++
+		}
+		if t.Artist != "" {
+			res.Artists[t.Artist]++
+		}
+		totalBPM += t.BPM
+	}
+	res.AvgBPM = totalBPM / float64(len(sel.Tracks))
+
+	return res, nil
+}
+
+
+
 
 func (o *Orchestrator) Sync(ctx context.Context, sourceLoc, targetLoc string, queryOverride string, opts RunOptions, syncOpts provider.SyncOptions) error {
 	src, _, err := resolver.ResolveSelection(sourceLoc, queryOverride, o.buildResolveOptions(opts))

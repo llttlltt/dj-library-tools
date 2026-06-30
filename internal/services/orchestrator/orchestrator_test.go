@@ -30,7 +30,7 @@ func TestOrchestrator_List(t *testing.T) {
 	
 	ctx := context.Background()
 	// Use the registered mock provider
-	res, err := o.List(ctx, "mock/tracks", "", RunOptions{})
+	res, err := o.List(ctx, "mock/tracks", "", RunOptions{}, "")
 	assert.NoError(t, err)
 	assert.NotNil(t, res)
 	assert.Len(t, res.Tracks, 1)
