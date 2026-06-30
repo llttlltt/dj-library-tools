@@ -28,8 +28,18 @@ export interface QueryTesterOpts {
 
 export default function App() {
 	const [tab, setTab] = useState<Tab>("sources");
+	const [resetKey, setResetKey] = useState(0);
 	const [queryTesterOpen, setQueryTesterOpen] = useState(false);
 	const [queryTesterOpts, setQueryTesterOpts] = useState<QueryTesterOpts>({});
+
+	function handleTabClick(id: Tab) {
+		if (tab === id) {
+			setResetKey((k) => k + 1);
+		} else {
+			setTab(id);
+			setResetKey(0);
+		}
+	}
 
 	function openQueryTester(opts?: QueryTesterOpts) {
 		setQueryTesterOpts(opts ?? {});
@@ -50,7 +60,7 @@ export default function App() {
 						<button
 							type="button"
 							key={id}
-							onClick={() => setTab(id)}
+							onClick={() => handleTabClick(id)}
 							className={cn(
 								"flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors text-left",
 								tab === id
@@ -69,7 +79,10 @@ export default function App() {
 			<main className="flex-1 overflow-auto">
 				{tab === "sources" && <SourcesView />}
 				{tab === "workflows" && (
-					<WorkflowsView onOpenQueryTester={openQueryTester} />
+					<WorkflowsView
+						key={`workflows-${resetKey}`}
+						onOpenQueryTester={openQueryTester}
+					/>
 				)}
 				{tab === "query" && <QueryTesterView />}
 			</main>

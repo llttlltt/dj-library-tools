@@ -1,8 +1,6 @@
-import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Separator } from "@/components/ui/separator";
 import type {
 	Source,
 	StepDiff,
@@ -41,7 +39,6 @@ export function WorkflowDetail({
 	onPreview,
 	onDelete,
 	onPreviewAgain,
-	onBack,
 }: DetailProps) {
 	const [runConfirm, setRunConfirm] = useState(false);
 	const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -56,10 +53,6 @@ export function WorkflowDetail({
 		<div className="flex flex-col h-full">
 			{/* ── toolbar ── */}
 			<div className="flex h-14 items-center gap-2 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] sticky top-0 z-10">
-				<Button type="button" variant="ghost" size="sm" onClick={onBack}>
-					<ArrowLeft className="h-4 w-4 mr-1.5" /> Workflows
-				</Button>
-				<Separator orientation="vertical" className="h-5 mx-1" />
 				<span className="text-sm font-semibold">{workflow.name}</span>
 				<div className="flex-1" />
 				{error && (
@@ -70,15 +63,16 @@ export function WorkflowDetail({
 				{busy && (
 					<span className="text-xs text-muted-foreground mr-2">Loading…</span>
 				)}
-				{/* Edit */}
+				{/* Delete */}
 				<Button
 					type="button"
 					variant="outline"
 					size="sm"
-					onClick={onEdit}
+					onClick={() => setDeleteConfirm(true)}
 					disabled={busy}
+					className="text-destructive border-destructive/40 hover:bg-destructive/10"
 				>
-					Edit
+					Delete
 				</Button>
 				{/* Preview */}
 				<Button
@@ -111,16 +105,15 @@ export function WorkflowDetail({
 						▶ Run
 					</Button>
 				)}
-				{/* Delete */}
+				{/* Edit */}
 				<Button
 					type="button"
 					variant="outline"
 					size="sm"
-					onClick={() => setDeleteConfirm(true)}
+					onClick={onEdit}
 					disabled={busy}
-					className="text-destructive border-destructive/40 hover:bg-destructive/10"
 				>
-					Delete
+					Edit
 				</Button>
 			</div>
 

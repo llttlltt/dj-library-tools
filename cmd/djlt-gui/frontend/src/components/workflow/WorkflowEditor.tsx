@@ -12,7 +12,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import type { Endpoint, Source, Step, Workflow } from "@/types";
 
 // ── EpEditRow ──────────────────────────────────────────────────────────────
@@ -169,16 +168,6 @@ export function WorkflowEditor({
 	return (
 		<div className="flex flex-col h-full">
 			<div className="h-14 flex items-center gap-2 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] sticky top-0 z-10">
-				<Button
-					type="button"
-					variant="ghost"
-					size="sm"
-					onClick={onCancel}
-					disabled={busy}
-				>
-					<X className="h-4 w-4 mr-1" /> Cancel
-				</Button>
-				<Separator orientation="vertical" className="h-5 mx-1" />
 				<input
 					className="bg-transparent border-none text-sm font-semibold focus:outline-none w-full"
 					value={wf.name}
@@ -198,6 +187,15 @@ export function WorkflowEditor({
 					disabled={busy}
 				>
 					{busy ? "Saving…" : "Save"}
+				</Button>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={onCancel}
+					disabled={busy}
+				>
+					Cancel
 				</Button>
 			</div>
 			<div className="flex-1 overflow-auto p-6">
