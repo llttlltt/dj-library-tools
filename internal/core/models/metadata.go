@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 )
 
@@ -48,6 +49,13 @@ var TrackFields = map[string]FieldDefinition[Track]{
 	"remixer":    {Kind: KindString, RequiredCap: CapMetadata, Accessor: func(t Track) string { return t.Remixer }},
 	"mix":        {Kind: KindString, RequiredCap: CapMetadata, Accessor: func(t Track) string { return t.Mix }},
 	"duration":   {Kind: KindNumeric, RequiredCap: CapNone, Accessor: func(t Track) string { return strconv.Itoa(t.Duration) }},
+	"missing": {Kind: KindString, RequiredCap: CapNone, Accessor: func(t Track) string {
+		_, err := os.Stat(t.Location)
+		if os.IsNotExist(err) {
+			return "true"
+		}
+		return "false"
+	}},
 }
 
 // CollectionFields defines the properties available within specific track collections.
