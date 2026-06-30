@@ -127,7 +127,7 @@ func (e *Engine) Execute(ctx context.Context, wf config.Workflow, apply bool) (W
 		// Build the orchestrator with a per-step Feedback so output is captured.
 		stepOrch := orchestrator.NewWithFeedback(fb, e.orch)
 
-		if err := executeStep(ctx, stepOrch, step, runOpts); err != nil {
+		if err := executeStep(ctx, stepOrch, step, runOpts, sr); err != nil {
 			sr.Status = StatusFailed
 			sr.Error = err.Error()
 			return
@@ -185,7 +185,9 @@ func (e *Engine) Execute(ctx context.Context, wf config.Workflow, apply bool) (W
 }
 
 // executeStep dispatches a single Step to the correct orchestrator method.
-func executeStep(ctx context.Context, orch *orchestrator.Orchestrator, step config.Step, runOpts orchestrator.RunOptions) error {
+// sr receives preview messages directly for step kinds (sync) that compute a
+// diff before applying; this mirrors the pattern used by internal/ui/cli/sync.go.
+func executeStep(ctx context.Context, orch *orchestrator.Orchestrator, step config.Step, runOpts orchestrator.RunOptions, sr *StepResult) error {
 	// Resolve source location string from the Endpoint's Source.
 	src, err := sourceLocation(step.Source)
 	if err != nil {
@@ -199,8 +201,6 @@ func executeStep(ctx context.Context, orch *orchestrator.Orchestrator, step conf
 			if err != nil {
 				return err
 			}
-			// Source query is passed as queryOverride; target query is embedded in
-			// the target location so the resolver can filter the target group.
 			syncOpts := orchestrator.SyncOptions{}
 			if m, ok := step.Options["metadata"]; ok {
 				if fields, ok := toStringSlice(m); ok {
@@ -212,12 +212,29 @@ func executeStep(ctx context.Context, orch *orchestrator.Orchestrator, step conf
 					syncOpts.MatchFields = fields
 				}
 			}
-			tgtQuery := tgt.Query
-			if tgtQuery != "" {
-				tgtLoc = tgtLoc + " " + tgtQuery
+			// Append target query into the location string for group resolution.
+			if tgt.Query != "" {
+				tgtLoc = tgtLoc + " " + tgt.Query
 			}
-			if err := orch.Sync(ctx, src, tgtLoc, step.Source.Query, runOpts, syncOpts); err != nil {
+
+			// Mirror the CLI sync pattern: always compute the diff first so that
+			// Preview mode produces meaningful output. Only call Sync when Apply=true.
+			diff, err := orch.GetSyncDiff(ctx, src, tgtLoc, step.Source.Query, runOpts, syncOpts.AppendOnly)
+			if err != nil {
 				return err
+			}
+			sr.Previews = append(sr.Previews, fmt.Sprintf(
+				"%s — add: %d, remove: %d, final: %d",
+				diff.TargetName,
+				len(diff.AddedIDs),
+				len(diff.RemovedIDs),
+				len(diff.SourceIDs),
+			))
+
+			if runOpts.Apply {
+				if err := orch.Sync(ctx, src, tgtLoc, step.Source.Query, runOpts, syncOpts); err != nil {
+					return err
+				}
 			}
 		}
 		return nil
