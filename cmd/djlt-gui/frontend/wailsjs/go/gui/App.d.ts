@@ -22,6 +22,8 @@ export function ListSources():Promise<Array<config.Source>>;
 
 export function ListWorkflows():Promise<Array<config.Workflow>>;
 
+export function PreviewQuery(arg1:string,arg2:string,arg3:string):Promise<Array<gui.TrackRow>>;
+
 export function OpenFileDialog(arg1:string):Promise<string>;
 
 export function PreviewWorkflow(arg1:string):Promise<workflow.WorkflowResult>;

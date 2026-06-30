@@ -1,5 +1,6 @@
-import { X } from "lucide-react";
+import { FlaskConical, X } from "lucide-react";
 import { useState } from "react";
+import type { QueryTesterOpts } from "@/App";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,9 +20,15 @@ interface EpEditRowProps {
 	ep: Endpoint;
 	sources: Source[];
 	onChange: (p: Partial<Endpoint>) => void;
+	onOpenQueryTester?: (opts?: QueryTesterOpts) => void;
 }
 
-export function EpEditRow({ ep, sources, onChange }: EpEditRowProps) {
+export function EpEditRow({
+	ep,
+	sources,
+	onChange,
+	onOpenQueryTester,
+}: EpEditRowProps) {
 	return (
 		<div className="flex gap-2 items-center">
 			<Select
@@ -51,6 +58,24 @@ export function EpEditRow({ ep, sources, onChange }: EpEditRowProps) {
 				onChange={(e) => onChange({ query: e.target.value })}
 				placeholder="query (optional)"
 			/>
+			{onOpenQueryTester && (
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon"
+					className="h-8 w-8 shrink-0"
+					title="Test query"
+					onClick={() =>
+						onOpenQueryTester({
+							sourceID: ep.source_id,
+							resource: ep.resource,
+							query: ep.query ?? "",
+						})
+					}
+				>
+					<FlaskConical className="h-3.5 w-3.5 text-muted-foreground" />
+				</Button>
+			)}
 		</div>
 	);
 }
@@ -64,6 +89,7 @@ interface EditorProps {
 	error: string;
 	onSave: (wf: Workflow) => void;
 	onCancel: () => void;
+	onOpenQueryTester?: (opts?: QueryTesterOpts) => void;
 }
 
 function blankStep(srcId: string): Step {
@@ -84,6 +110,7 @@ export function WorkflowEditor({
 	error,
 	onSave,
 	onCancel,
+	onOpenQueryTester,
 }: EditorProps) {
 	const [wf, setWf] = useState<Workflow>(() =>
 		JSON.parse(JSON.stringify(workflow)),
@@ -221,6 +248,7 @@ export function WorkflowEditor({
 										ep={step.source}
 										sources={sources}
 										onChange={(p) => updSource(si, p)}
+										onOpenQueryTester={onOpenQueryTester}
 									/>
 								</div>
 								<div>
@@ -237,6 +265,7 @@ export function WorkflowEditor({
 													ep={tgt}
 													sources={sources}
 													onChange={(p) => updTarget(si, ti, p)}
+													onOpenQueryTester={onOpenQueryTester}
 												/>
 												{step.targets.length > 1 && (
 													<Button

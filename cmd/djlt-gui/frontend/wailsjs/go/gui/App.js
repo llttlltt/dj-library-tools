@@ -38,6 +38,10 @@ export function ListWorkflows() {
   return window['go']['gui']['App']['ListWorkflows']();
 }
 
+export function PreviewQuery(arg1, arg2, arg3) {
+  return window['go']['gui']['App']['PreviewQuery'](arg1, arg2, arg3);
+}
+
 export function OpenFileDialog(arg1) {
   return window['go']['gui']['App']['OpenFileDialog'](arg1);
 }

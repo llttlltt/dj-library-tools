@@ -261,6 +261,33 @@ func toTrackRows(ids []string, lookup map[string]models.Track) []TrackRow {
 	return rows
 }
 
+// PreviewQuery is the GUI equivalent of: djlt ls <provider>/<resource> <query>
+// It runs a read-only List against the given Source and returns matching TrackRows.
+func (a *App) PreviewQuery(sourceID, resource, query string) ([]TrackRow, error) {
+	src, err := config.FindSourceByID(sourceID)
+	if err != nil {
+		return nil, fmt.Errorf("source not found: %w", err)
+	}
+	runOpts := orchestrator.RunOptions{}
+	if fp, ok := src.Config["file_path"]; ok {
+		runOpts.FilePath = fp
+	}
+	res, err := a.orch.List(a.ctx, src.Provider+"/"+resource, query, runOpts, "")
+	if err != nil {
+		return nil, err
+	}
+	rows := make([]TrackRow, 0, len(res.Tracks))
+	for _, t := range res.Tracks {
+		rows = append(rows, TrackRow{
+			ID:     t.ID,
+			Title:  t.Title,
+			Artist: t.Artist,
+			BPM:    fmt.Sprintf("%.2f", t.BPM),
+		})
+	}
+	return rows, nil
+}
+
 // ── File picker ───────────────────────────────────────────────────────────────
 
 // OpenFileDialog opens a native file-picker and returns the selected path, or

@@ -1,5 +1,6 @@
 import { ChevronRight, Eye, PlayCircle, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import type { QueryTesterOpts } from "@/App";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -24,7 +25,13 @@ const asWorkflow = (x: unknown) => x as Workflow;
 const asDiffs = (x: unknown) => (x ?? []) as StepDiff[];
 const asResult = (x: unknown) => x as WorkflowResult;
 
-export default function WorkflowsView() {
+interface WorkflowsViewProps {
+	onOpenQueryTester: (opts?: QueryTesterOpts) => void;
+}
+
+export default function WorkflowsView({
+	onOpenQueryTester,
+}: WorkflowsViewProps) {
 	const [mode, setMode] = useState<Mode>("list");
 	const [wfList, setWfList] = useState<Workflow[]>([]);
 	const [selected, setSelected] = useState<Workflow | null>(null);
@@ -295,6 +302,7 @@ export default function WorkflowsView() {
 				busy={busy}
 				error={error}
 				onSave={handleSave}
+				onOpenQueryTester={onOpenQueryTester}
 				onCancel={() => {
 					if (selected.id) {
 						setMode("view");

@@ -1,6 +1,8 @@
-import { Music2, Workflow } from "lucide-react";
+import { FlaskConical, Music2, Workflow } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
+import { QueryTester } from "@/components/query/QueryTester";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import SourcesView from "./views/SourcesView";
 import WorkflowsView from "./views/WorkflowsView";
@@ -16,8 +18,21 @@ const NAV: {
 	{ id: "workflows", label: "Workflows", Icon: Workflow },
 ];
 
+export interface QueryTesterOpts {
+	sourceID?: string;
+	resource?: string;
+	query?: string;
+}
+
 export default function App() {
 	const [tab, setTab] = useState<Tab>("sources");
+	const [queryTesterOpen, setQueryTesterOpen] = useState(false);
+	const [queryTesterOpts, setQueryTesterOpts] = useState<QueryTesterOpts>({});
+
+	function openQueryTester(opts?: QueryTesterOpts) {
+		setQueryTesterOpts(opts ?? {});
+		setQueryTesterOpen(true);
+	}
 
 	return (
 		<div className="flex h-screen bg-background text-foreground overflow-hidden">
@@ -28,7 +43,7 @@ export default function App() {
 						DJ Library Tools
 					</span>
 				</div>
-				<nav className="flex flex-col gap-0.5 p-2 mt-1">
+				<nav className="flex flex-col gap-0.5 p-2 mt-1 flex-1">
 					{NAV.map(({ id, label, Icon }) => (
 						<button
 							type="button"
@@ -45,14 +60,34 @@ export default function App() {
 							{label}
 						</button>
 					))}
+					<Separator className="my-1" />
+					<button
+						type="button"
+						onClick={() => openQueryTester()}
+						className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors text-left text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+					>
+						<FlaskConical className="h-4 w-4 shrink-0" />
+						Query Tester
+					</button>
 				</nav>
 			</aside>
 
 			{/* ── main ──────────────────────────────────────────────────── */}
 			<main className="flex-1 overflow-auto">
 				{tab === "sources" && <SourcesView />}
-				{tab === "workflows" && <WorkflowsView />}
+				{tab === "workflows" && (
+					<WorkflowsView onOpenQueryTester={openQueryTester} />
+				)}
 			</main>
+
+			{/* ── Query Tester sheet ────────────────────────────────────── */}
+			<QueryTester
+				open={queryTesterOpen}
+				onClose={() => setQueryTesterOpen(false)}
+				initialSourceID={queryTesterOpts.sourceID}
+				initialResource={queryTesterOpts.resource}
+				initialQuery={queryTesterOpts.query}
+			/>
 		</div>
 	);
 }
