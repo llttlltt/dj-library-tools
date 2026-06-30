@@ -66,10 +66,10 @@ type StatResult struct {
 }
 
 type ListResult struct {
-	Resource string
-	Tracks   []models.Track
-	Groups   []models.ResourceGroup
-	Provider provider.Provider
+	Resource       string
+	Tracks         []models.Track
+	Groups         []models.ResourceGroup
+	DefaultColumns []string
 }
 
 func (o *Orchestrator) List(ctx context.Context, locStr string, queryOverride string, opts RunOptions, sortBy string) (*ListResult, error) {
@@ -93,12 +93,13 @@ func (o *Orchestrator) List(ctx context.Context, locStr string, queryOverride st
 	}
 
 	return &ListResult{
-		Resource: sel.Location.Resource,
-		Tracks:   sel.Tracks,
-		Groups:   sel.Groups,
-		Provider: prov,
+		Resource:       sel.Location.Resource,
+		Tracks:         sel.Tracks,
+		Groups:         sel.Groups,
+		DefaultColumns: prov.System().TableHeaders(),
 	}, nil
 }
+
 
 
 func (o *Orchestrator) Stats(ctx context.Context, locStr, queryOverride string, opts RunOptions) (*StatResult, error) {

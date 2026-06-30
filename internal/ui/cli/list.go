@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/llttlltt/dj-library-tools/internal/providers"
 	"github.com/llttlltt/dj-library-tools/internal/services/orchestrator"
 	"github.com/spf13/cobra"
 )
@@ -47,7 +46,7 @@ func newListCmd() *cobra.Command {
 				return HandleError(err)
 			}
 
-			return listProvider(cmd.Context(), res, res.Provider, jsonOutput, columns)
+			return listProvider(cmd.Context(), res, jsonOutput, columns)
 		},
 	}
 	cmd.Flags().StringVar(&listSort, "sort", "", "Sort results by any available field (e.g. artist, title, bpm, etc.)")
@@ -86,7 +85,7 @@ func renderStats(res *orchestrator.StatResult, jsonOutput bool) error {
 	return nil
 }
 
-func listProvider(ctx context.Context, res *orchestrator.ListResult, prov provider.Provider, jsonOutput bool, columns []string) error {
+func listProvider(ctx context.Context, res *orchestrator.ListResult, jsonOutput bool, columns []string) error {
 	if len(res.Groups) > 0 {
 		label := res.Resource
 		if len(label) > 0 && label[len(label)-1] == 's' {
@@ -102,7 +101,7 @@ func listProvider(ctx context.Context, res *orchestrator.ListResult, prov provid
 		return nil
 	}
 
-	renderTrackTable(prov, res.Tracks, columns)
+	renderTrackTable(res.Tracks, columns, res.DefaultColumns)
 	return nil
 }
 

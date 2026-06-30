@@ -6,7 +6,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
-	"github.com/llttlltt/dj-library-tools/internal/providers"
 	"github.com/llttlltt/dj-library-tools/internal/core/query"
 	"github.com/llttlltt/dj-library-tools/internal/ui/cli/render"
 )
@@ -32,9 +31,9 @@ func (f *Table) Render() {
 	t.Render()
 }
 
-func renderTrackTable(prov provider.Provider, tracks []models.Track, columns []string) {
+func renderTrackTable(tracks []models.Track, columns []string, defaultColumns []string) {
 	if len(columns) == 0 {
-		columns = prov.System().TableHeaders()
+		columns = defaultColumns
 	}
 
 	t := &Table{Headers: columns}
