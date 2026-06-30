@@ -14,6 +14,8 @@ docs/adr/
 bin/
 dist/
 /djlt
+/djlt_*
+/djlt-*
 *.exe
 *.exe~
 *.dll
@@ -21,6 +23,8 @@ dist/
 *.dylib
 *.test
 *.out
+*.tmp
+*.prof
 
 # Node / React / TypeScript
 node_modules/
@@ -43,5 +47,5 @@ docs/agent/
 
 /site/
 /djlt_base
-/djlt-*
+tests/fixtures/
 tests/golden/cli/post/
