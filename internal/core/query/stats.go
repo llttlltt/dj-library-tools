@@ -21,8 +21,6 @@ func GetStat(name string) (StatFunction, bool) {
 	return fn, ok
 }
 
-// GetStatNames returns a list of all registered statistical functions.
-
 func init() {
 	RegisterStat("count", func(values []string) string {
 		return fmt.Sprintf("%d", len(values))

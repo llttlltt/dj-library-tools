@@ -49,3 +49,5 @@ docs/agent/
 /djlt_base
 tests/fixtures/
 tests/golden/cli/post/
+
+/deadcode*.txt

@@ -98,8 +98,6 @@ func (o *Orchestrator) Join(sourceTracks []models.Track, matchFields []string) [
 	return matches
 }
 
-// Relocate searches for physical files for the given tracks in the searchDir.
-
 func (o *Orchestrator) SyncToLibrary(ctx context.Context, tracks []models.Track, targetID string, opts SyncOptions, appendOnly bool) error {
 	var transcoder *media.Transcoder
 	if opts.ExportDest != "" {
