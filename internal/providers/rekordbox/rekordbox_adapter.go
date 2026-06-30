@@ -1,6 +1,7 @@
 package rekordbox
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"os"
@@ -66,22 +67,22 @@ type rekordboxSystemService struct{ *RekordboxProvider }
 
 type rekordboxTrackService struct{ *RekordboxProvider }
 
-func (s *rekordboxTrackService) List(ctx provider.ExecutionContext, query string) ([]models.Track, error) {
+func (s *rekordboxTrackService) List(ctx context.Context, ectx provider.ExecutionContext, query string) ([]models.Track, error) {
 	return s.engine.Ls(query, nil)
 }
 
-func (s *rekordboxTrackService) Update(ctx provider.ExecutionContext, query string, changes map[string]string) (int, error) {
+func (s *rekordboxTrackService) Update(ctx context.Context, ectx provider.ExecutionContext, query string, changes map[string]string) (int, error) {
 	return 0, fmt.Errorf("update tracks by query not yet implemented for rekordbox")
 }
 
-func (s *rekordboxTrackService) UpdateBatch(ctx provider.ExecutionContext, matches []models.MetadataMatch, fields []string) error {
+func (s *rekordboxTrackService) UpdateBatch(ctx context.Context, ectx provider.ExecutionContext, matches []models.MetadataMatch, fields []string) error {
 	if s.rbXML == nil {
 		return fmt.Errorf("rekordbox library not loaded")
 	}
 
 	count := UpdateBatch(s.rbXML, matches, fields)
 
-	if ctx.Verbose {
+	if ectx.Verbose {
 		fmt.Printf("\nSuccessfully updated %d tracks.\n", count)
 	}
 
@@ -89,7 +90,7 @@ func (s *rekordboxTrackService) UpdateBatch(ctx provider.ExecutionContext, match
 	return nil
 }
 
-func (s *rekordboxTrackService) Delete(ctx provider.ExecutionContext, query string) (int, error) {
+func (s *rekordboxTrackService) Delete(ctx context.Context, ectx provider.ExecutionContext, query string) (int, error) {
 	return 0, fmt.Errorf("track deletion not supported by rekordbox provider")
 }
 
@@ -97,7 +98,7 @@ func (s *rekordboxTrackService) Groups() provider.TrackGroupService {
 	return s
 }
 
-func (s *rekordboxTrackService) Add(ctx provider.ExecutionContext, tracks []models.Track, target models.ResourceGroup) (int, error) {
+func (s *rekordboxTrackService) Add(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, target models.ResourceGroup) (int, error) {
 	if target.Kind == models.GroupKindFolder {
 		return 0, fmt.Errorf("cannot add tracks to folder %q (rekordbox tracks must live in playlists)", target.Name)
 	}
@@ -108,7 +109,7 @@ func (s *rekordboxTrackService) Add(ctx provider.ExecutionContext, tracks []mode
 	return s.engine.Library.(library.WritableLibrary).AddTracks(target.ID, ids)
 }
 
-func (s *rekordboxTrackService) Remove(ctx provider.ExecutionContext, tracks []models.Track, group models.ResourceGroup) (int, error) {
+func (s *rekordboxTrackService) Remove(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, group models.ResourceGroup) (int, error) {
 	var ids []string
 	for _, t := range tracks {
 		ids = append(ids, t.ID)
@@ -116,7 +117,7 @@ func (s *rekordboxTrackService) Remove(ctx provider.ExecutionContext, tracks []m
 	return s.engine.Library.(library.WritableLibrary).RemoveTracks(group.ID, ids)
 }
 
-func (s *rekordboxTrackService) Move(ctx provider.ExecutionContext, tracks []models.Track, from models.ResourceGroup, to models.ResourceGroup) (int, error) {
+func (s *rekordboxTrackService) Move(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, from models.ResourceGroup, to models.ResourceGroup) (int, error) {
 	if to.Kind == models.GroupKindFolder {
 		return 0, fmt.Errorf("cannot move tracks into folder %q (rekordbox tracks must live in playlists)", to.Name)
 	}
@@ -126,7 +127,7 @@ func (s *rekordboxTrackService) Move(ctx provider.ExecutionContext, tracks []mod
 		ids[i] = t.ID
 	}
 
-	if ctx.Verbose {
+	if ectx.Verbose {
 		fmt.Printf("Moving %d tracks from %q to %q\n", len(tracks), from.Name, to.Name)
 	}
 
@@ -141,7 +142,7 @@ func (s *rekordboxTrackService) Move(ctx provider.ExecutionContext, tracks []mod
 	return removed, nil 
 }
 
-func (s *rekordboxTrackService) Sort(ctx provider.ExecutionContext, tracks []models.Track, field string) {
+func (s *rekordboxTrackService) Sort(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, field string) {
 	util.SortTracksAgnostic(tracks, field)
 }
 
@@ -149,21 +150,21 @@ func (s *rekordboxTrackService) Sort(ctx provider.ExecutionContext, tracks []mod
 
 type rekordboxGroupService struct{ *RekordboxProvider }
 
-func (s *rekordboxGroupService) List(ctx provider.ExecutionContext, query string) ([]models.ResourceGroup, error) {
+func (s *rekordboxGroupService) List(ctx context.Context, ectx provider.ExecutionContext, query string) ([]models.ResourceGroup, error) {
 	return s.engine.LsGroups(query)
 }
 
-func (s *rekordboxGroupService) Create(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, groupKind models.GroupKind, position int) (models.ResourceGroup, error) {
+func (s *rekordboxGroupService) Create(ctx context.Context, ectx provider.ExecutionContext, parent models.ResourceGroup, name string, groupKind models.GroupKind, position int) (models.ResourceGroup, error) {
 	if parent.Name != "" && parent.Kind == models.GroupKindPlaylist {
 		return models.ResourceGroup{}, fmt.Errorf("cannot create group inside playlist %q (containers must live in folders)", parent.Name)
 	}
-	if ctx.Verbose {
+	if ectx.Verbose {
 		fmt.Printf("Creating %s %q in %q\n", groupKind, name, parent.Name)
 	}
 	return s.engine.Library.(library.WritableLibrary).CreateGroup(parent.ID, name, groupKind, position)
 }
 
-func (s *rekordboxGroupService) Update(ctx provider.ExecutionContext, group models.ResourceGroup, newName string, newParent *models.ResourceGroup) error {
+func (s *rekordboxGroupService) Update(ctx context.Context, ectx provider.ExecutionContext, group models.ResourceGroup, newName string, newParent *models.ResourceGroup) error {
 	if newName != "" {
 		if err := s.engine.Library.(library.WritableLibrary).RenameGroup(group.ID, newName, group.Kind); err != nil {
 			return err
@@ -178,14 +179,14 @@ func (s *rekordboxGroupService) Update(ctx provider.ExecutionContext, group mode
 	return nil
 }
 
-func (s *rekordboxGroupService) Delete(ctx provider.ExecutionContext, group models.ResourceGroup) error {
-	if ctx.Verbose {
+func (s *rekordboxGroupService) Delete(ctx context.Context, ectx provider.ExecutionContext, group models.ResourceGroup) error {
+	if ectx.Verbose {
 		fmt.Printf("Deleting %s %q\n", group.GetKind(), group.Name)
 	}
 	return s.engine.Library.(library.WritableLibrary).DeleteGroup(group.ID, group.Kind)
 }
 
-func (s *rekordboxGroupService) Sort(ctx provider.ExecutionContext, groups []models.ResourceGroup, field string) {
+func (s *rekordboxGroupService) Sort(ctx context.Context, ectx provider.ExecutionContext, groups []models.ResourceGroup, field string) {
 	util.SortGroupsAgnostic(groups, field)
 }
 
@@ -222,17 +223,17 @@ func (s *rekordboxSystemService) TableHeaders() []string {
 	return []string{"bpm", "key", "artist", "title"}
 }
 
-func (s *rekordboxSystemService) Save(ctx provider.ExecutionContext, path string) error {
+func (s *rekordboxSystemService) Save(ctx context.Context, ectx provider.ExecutionContext, path string) error {
 	if path == "" {
 		path = s.path
 	}
-	if ctx.Verbose {
+	if ectx.Verbose {
 		fmt.Printf("Saving Rekordbox XML to %s\n", path)
 	}
 	return s.engine.Library.(library.WritableLibrary).Save(path)
 }
 
-func (s *rekordboxSystemService) Fix(ctx provider.ExecutionContext, selection provider.Selection, options provider.FixOptions) (int, error) {
+func (s *rekordboxSystemService) Fix(ctx context.Context, ectx provider.ExecutionContext, selection provider.Selection, options provider.FixOptions) (int, error) {
 	totalAffected := 0
 
 	for fixType, targets := range options.Actions {
@@ -240,14 +241,14 @@ func (s *rekordboxSystemService) Fix(ctx provider.ExecutionContext, selection pr
 		case provider.FixDuplicates:
 			for _, target := range targets {
 				if target == "members" {
-					affected, err := s.fixDuplicateMembers(ctx, selection)
+					affected, err := s.fixDuplicateMembers(ctx, ectx, selection)
 					if err != nil {
 						return totalAffected, err
 					}
 					totalAffected += affected
 				}
 				if target == "tracks" {
-					affected, err := s.fixDuplicateTracks(ctx, selection)
+					affected, err := s.fixDuplicateTracks(ctx, ectx, selection)
 					if err != nil {
 						return totalAffected, err
 					}
@@ -255,13 +256,13 @@ func (s *rekordboxSystemService) Fix(ctx provider.ExecutionContext, selection pr
 				}
 			}
 		case provider.FixMetadata:
-			affected, err := s.fixMetadataNormalization(ctx, selection, targets)
+			affected, err := s.fixMetadataNormalization(ctx, ectx, selection, targets)
 			if err != nil {
 				return totalAffected, err
 			}
 			totalAffected += affected
 		case provider.FixPaths:
-			affected, err := s.fixPaths(ctx, selection, targets)
+			affected, err := s.fixPaths(ctx, ectx, selection, targets)
 			if err != nil {
 				return totalAffected, err
 			}
@@ -272,7 +273,7 @@ func (s *rekordboxSystemService) Fix(ctx provider.ExecutionContext, selection pr
 	return totalAffected, nil
 }
 
-func (s *rekordboxSystemService) fixPaths(ctx provider.ExecutionContext, selection provider.Selection, targets []string) (int, error) {
+func (s *rekordboxSystemService) fixPaths(ctx context.Context, ectx provider.ExecutionContext, selection provider.Selection, targets []string) (int, error) {
 	totalRelocated := 0
 	
 	// Determine strategy
@@ -336,16 +337,16 @@ func (s *rekordboxSystemService) fixPaths(ctx provider.ExecutionContext, selecti
 
 		if newPath != "" {
 			totalRelocated++
-			if ctx.Verbose {
+			if ectx.Verbose {
 				fmt.Printf("Relocating %s\n  From: %s\n  To:   %s\n", rt.Name, currentPath, newPath)
 			}
-			if ctx.Apply {
+			if ectx.Apply {
 				u.Path = newPath
 				rt.Location = u.String()
 				s.rbXML.CollectionChanged = true
 			}
 		} else {
-			if ctx.Verbose {
+			if ectx.Verbose {
 				fmt.Printf("Missing file for %s: %s\n", rt.Name, currentPath)
 			}
 		}
@@ -353,7 +354,7 @@ func (s *rekordboxSystemService) fixPaths(ctx provider.ExecutionContext, selecti
 
 	if totalRelocated > 0 {
 		fmt.Printf("Identified %d missing tracks that can be relocated.\n", totalRelocated)
-		if ctx.Apply {
+		if ectx.Apply {
 			fmt.Printf("Relocated %d tracks in the library.\n", totalRelocated)
 		} else {
 			fmt.Println("Run with --apply to commit these relocations.")
@@ -365,7 +366,7 @@ func (s *rekordboxSystemService) fixPaths(ctx provider.ExecutionContext, selecti
 	return totalRelocated, nil
 }
 
-func (s *rekordboxSystemService) fixMetadataNormalization(ctx provider.ExecutionContext, selection provider.Selection, targets []string) (int, error) {
+func (s *rekordboxSystemService) fixMetadataNormalization(ctx context.Context, ectx provider.ExecutionContext, selection provider.Selection, targets []string) (int, error) {
 	totalFixed := 0
 
 	// Map of TrackID to Track pointer for selection lookup
@@ -436,7 +437,7 @@ func (s *rekordboxSystemService) fixMetadataNormalization(ctx provider.Execution
 
 		if fixed {
 			totalFixed++
-			if ctx.Verbose {
+			if ectx.Verbose {
 				fmt.Printf("Normalized metadata for: %s - %s\n", rt.Artist, rt.Name)
 			}
 		}
@@ -444,7 +445,7 @@ func (s *rekordboxSystemService) fixMetadataNormalization(ctx provider.Execution
 
 	if totalFixed > 0 {
 		fmt.Printf("Identified %d tracks with metadata requiring normalization.\n", totalFixed)
-		if ctx.Apply {
+		if ectx.Apply {
 			s.rbXML.CollectionChanged = true
 			fmt.Printf("Applied normalization to %d tracks.\n", totalFixed)
 		} else {
@@ -457,7 +458,7 @@ func (s *rekordboxSystemService) fixMetadataNormalization(ctx provider.Execution
 	return totalFixed, nil
 }
 
-func (s *rekordboxSystemService) fixDuplicateTracks(ctx provider.ExecutionContext, selection provider.Selection) (int, error) {
+func (s *rekordboxSystemService) fixDuplicateTracks(ctx context.Context, ectx provider.ExecutionContext, selection provider.Selection) (int, error) {
 	totalRemoved := 0
 
 	// Use the entire collection if no tracks are selected
@@ -487,7 +488,7 @@ func (s *rekordboxSystemService) fixDuplicateTracks(ctx provider.ExecutionContex
 
 		if firstID, dup := seen[id]; dup {
 			toRemove[t.ID] = true
-			if ctx.Verbose {
+			if ectx.Verbose {
 				fmt.Printf("Duplicate track found: %s - %s (ID: %s, Dupe of: %s)\n", t.Artist, t.Title, t.ID, firstID)
 			}
 		} else {
@@ -502,7 +503,7 @@ func (s *rekordboxSystemService) fixDuplicateTracks(ctx provider.ExecutionContex
 
 	fmt.Printf("Found %d duplicate tracks in the master collection.\n", len(toRemove))
 
-	if ctx.Apply {
+	if ectx.Apply {
 		// 2. Remove from COLLECTION
 		before := len(s.rbXML.Collection.TRACK)
 		newTracks := s.rbXML.Collection.TRACK[:0]
@@ -550,12 +551,12 @@ func (s *rekordboxSystemService) removeTrackIDsFromPlaylists(nodes *[]Node, ids 
 		}
 	}
 }
-func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionContext, selection provider.Selection) (int, error) {
+func (s *rekordboxSystemService) fixDuplicateMembers(ctx context.Context, ectx provider.ExecutionContext, selection provider.Selection) (int, error) {
 	totalRemoved := 0
 
 	// Build track lookup map if verbose to show track names
 	var trackLookup map[string]models.Track
-	if ctx.Verbose {
+	if ectx.Verbose {
 		trackLookup = make(map[string]models.Track)
 		for _, rt := range s.rbXML.Collection.TRACK {
 			t := ToNeutralTrack(rt)
@@ -592,7 +593,7 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 			pos := i + 1
 			if firstPos, dup := seenAt[t.Key]; dup {
 				removed++
-				if ctx.Verbose {
+				if ectx.Verbose {
 					info := removedInfo{pos: pos, firstPos: firstPos, id: t.Key}
 					if track, ok := trackLookup[t.Key]; ok {
 						info.artist = track.Artist
@@ -609,7 +610,7 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 			}
 		}
 
-		if ctx.Verbose && len(removedRows) > 0 {
+		if ectx.Verbose && len(removedRows) > 0 {
 			headers := []string{"pos", "id", "title", "artist"}
 			var rows [][]string
 			for _, r := range removedRows {
@@ -620,7 +621,7 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 					r.artist,
 				})
 			}
-			ctx.Feedback.OnTable(headers, rows)
+			ectx.Feedback.OnTable(headers, rows)
 			fmt.Println()
 		}
 
@@ -632,7 +633,7 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 		}
 		fmt.Println()
 
-		if removed > 0 && ctx.Apply {
+		if removed > 0 && ectx.Apply {
 			node.TRACK = kept
 			node.Entries = PtrInt32(int32(len(kept)))
 			s.rbXML.PlaylistsChanged = true
@@ -643,7 +644,7 @@ func (s *rekordboxSystemService) fixDuplicateMembers(ctx provider.ExecutionConte
 	return totalRemoved, nil
 }
 
-func (s *rekordboxSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, targetQuery string, options provider.SyncOptions) error {
+func (s *rekordboxSystemService) Sync(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, targetQuery string, options provider.SyncOptions) error {
 	if s.rbXML == nil {
 		return fmt.Errorf("rekordbox library not loaded")
 	}
@@ -655,7 +656,7 @@ func (s *rekordboxSystemService) Sync(ctx provider.ExecutionContext, tracks []mo
 		PathMaps:       options.PathMaps,
 		MetadataFields: options.MetadataFields,
 		MatchFields:    options.MatchFields,
-	}, ctx.Apply, ctx.Verbose, options.AppendOnly)
+	}, ectx.Apply, ectx.Verbose, options.AppendOnly)
 
 	if err != nil {
 		return err

@@ -45,7 +45,7 @@ func (p *PlexProvider) System() provider.SystemService { return &plexSystemServi
 
 type plexTrackService struct{ *PlexProvider }
 
-func (s *plexTrackService) List(ctx provider.ExecutionContext, queryString string) ([]models.Track, error) {
+func (s *plexTrackService) List(ctx context.Context, ectx provider.ExecutionContext, queryString string) ([]models.Track, error) {
 	baseURL, err := s.resolveBaseURL(context.Background())
 	if err != nil { return nil, err }
 
@@ -53,27 +53,27 @@ func (s *plexTrackService) List(ctx provider.ExecutionContext, queryString strin
 	return eng.Ls(queryString, nil)
 }
 
-func (s *plexTrackService) Update(ctx provider.ExecutionContext, query string, changes map[string]string) (int, error) {
+func (s *plexTrackService) Update(ctx context.Context, ectx provider.ExecutionContext, query string, changes map[string]string) (int, error) {
 	return 0, provider.ErrReadOnly
 }
 
-func (s *plexTrackService) UpdateBatch(ctx provider.ExecutionContext, matches []models.MetadataMatch, fields []string) error {
+func (s *plexTrackService) UpdateBatch(ctx context.Context, ectx provider.ExecutionContext, matches []models.MetadataMatch, fields []string) error {
 	return provider.ErrReadOnly
 }
 
-func (s *plexTrackService) Delete(ctx provider.ExecutionContext, query string) (int, error) {
+func (s *plexTrackService) Delete(ctx context.Context, ectx provider.ExecutionContext, query string) (int, error) {
 	return 0, provider.ErrReadOnly
 }
 
 func (s *plexTrackService) Groups() provider.TrackGroupService { return s }
-func (s *plexTrackService) Add(ctx provider.ExecutionContext, tracks []models.Track, target models.ResourceGroup) (int, error) { return 0, provider.ErrReadOnly }
-func (s *plexTrackService) Remove(ctx provider.ExecutionContext, tracks []models.Track, group models.ResourceGroup) (int, error) { return 0, provider.ErrReadOnly }
-func (s *plexTrackService) Move(ctx provider.ExecutionContext, tracks []models.Track, from models.ResourceGroup, to models.ResourceGroup) (int, error) { return 0, provider.ErrReadOnly }
-func (s *plexTrackService) Sort(ctx provider.ExecutionContext, tracks []models.Track, field string) {}
+func (s *plexTrackService) Add(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, target models.ResourceGroup) (int, error) { return 0, provider.ErrReadOnly }
+func (s *plexTrackService) Remove(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, group models.ResourceGroup) (int, error) { return 0, provider.ErrReadOnly }
+func (s *plexTrackService) Move(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, from models.ResourceGroup, to models.ResourceGroup) (int, error) { return 0, provider.ErrReadOnly }
+func (s *plexTrackService) Sort(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, field string) {}
 
 type plexGroupService struct{ *PlexProvider }
 
-func (s *plexGroupService) List(ctx provider.ExecutionContext, queryString string) ([]models.ResourceGroup, error) {
+func (s *plexGroupService) List(ctx context.Context, ectx provider.ExecutionContext, queryString string) ([]models.ResourceGroup, error) {
 	baseURL, err := s.resolveBaseURL(context.Background())
 	if err != nil { return nil, err }
 
@@ -81,19 +81,19 @@ func (s *plexGroupService) List(ctx provider.ExecutionContext, queryString strin
 	return eng.LsGroups(queryString)
 }
 
-func (s *plexGroupService) Create(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, gt models.GroupKind, pos int) (models.ResourceGroup, error) {
+func (s *plexGroupService) Create(ctx context.Context, ectx provider.ExecutionContext, parent models.ResourceGroup, name string, gt models.GroupKind, pos int) (models.ResourceGroup, error) {
 	return models.ResourceGroup{}, provider.ErrReadOnly
 }
 
-func (s *plexGroupService) Update(ctx provider.ExecutionContext, group models.ResourceGroup, newName string, newParent *models.ResourceGroup) error {
+func (s *plexGroupService) Update(ctx context.Context, ectx provider.ExecutionContext, group models.ResourceGroup, newName string, newParent *models.ResourceGroup) error {
 	return provider.ErrReadOnly
 }
 
-func (s *plexGroupService) Delete(ctx provider.ExecutionContext, group models.ResourceGroup) error {
+func (s *plexGroupService) Delete(ctx context.Context, ectx provider.ExecutionContext, group models.ResourceGroup) error {
 	return provider.ErrReadOnly
 }
 
-func (s *plexGroupService) Sort(ctx provider.ExecutionContext, groups []models.ResourceGroup, field string) {}
+func (s *plexGroupService) Sort(ctx context.Context, ectx provider.ExecutionContext, groups []models.ResourceGroup, field string) {}
 
 type plexSystemService struct{ *PlexProvider }
 
@@ -107,11 +107,11 @@ func (s *plexSystemService) SupportedResources() []string { return []string{"tra
 func (s *plexSystemService) TableHeaders() []string {
 	return []string{"bpm", "key", "artist", "title"}
 }
-func (s *plexSystemService) Save(ctx provider.ExecutionContext, path string) error { return nil }
-func (s *plexSystemService) Fix(ctx provider.ExecutionContext, selection provider.Selection, options provider.FixOptions) (int, error) {
+func (s *plexSystemService) Save(ctx context.Context, ectx provider.ExecutionContext, path string) error { return nil }
+func (s *plexSystemService) Fix(ctx context.Context, ectx provider.ExecutionContext, selection provider.Selection, options provider.FixOptions) (int, error) {
 	return 0, provider.ErrReadOnly
 }
-func (s *plexSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, targetQuery string, opts provider.SyncOptions) error { return provider.ErrReadOnly }
+func (s *plexSystemService) Sync(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, targetQuery string, opts provider.SyncOptions) error { return provider.ErrReadOnly }
 func (s *plexSystemService) Identify(name string, gt models.GroupKind) string { return "" }
 
 func (p *PlexProvider) resolveBaseURL(ctx context.Context) (string, error) {

@@ -3,9 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/llttlltt/dj-library-tools/internal/core/models"
-	"github.com/llttlltt/dj-library-tools/internal/services/resolver"
-	"github.com/llttlltt/dj-library-tools/internal/providers"
 	"github.com/spf13/cobra"
 )
 
@@ -27,82 +24,24 @@ Example:
   djlt rm rb/folders name:OldSets --recursive`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			sel, prov, err := ResolveSelection(args[0], "")
+			orch := getOrchestrator()
+			runOpts := getRunOptions()
+
+			err := orch.Delete(cmd.Context(), args[0], "", runOpts, deleteFrom, recursive)
 			if err != nil {
 				return HandleError(err)
 			}
 
-			ctx := getExecContext()
-
-			if len(deleteFrom) == 0 {
-				return runDeleteResources(prov, ctx, sel, recursive)
+			if apply {
+				fmt.Printf("Successfully performed deletion.\n")
+			} else {
+				fmt.Println("Run with --apply to persist changes.")
 			}
 
-			return runRemoveMembership(prov, ctx, sel, deleteFrom)
+			return nil
 		},
 	}
 	cmd.Flags().StringSliceVar(&deleteFrom, "from", []string{}, "Origin resource(s) to remove from")
 	cmd.Flags().BoolVarP(&recursive, "recursive", "r", false, "Delete folder and all its contents")
 	return cmd
-}
-
-func runDeleteResources(prov provider.Provider, ctx provider.ExecutionContext, sel *resolver.Selection, recursive bool) error {
-	if len(sel.Items) == 0 {
-		fmt.Println("No resources matched the query.")
-		return nil
-	}
-
-	for _, item := range sel.Items {
-		if node, ok := item.(models.ResourceGroup); ok {
-			if recursive && node.Kind == models.GroupKindFolder {
-				// Recursive delete orchestration
-				children, _ := prov.Groups().List(ctx, fmt.Sprintf("parent:%q", node.Name))
-				for _, c := range children {
-					prov.Groups().Delete(ctx, c)
-				}
-			}
-
-			if err := prov.Groups().Delete(ctx, node); err != nil {
-				return HandleError(err)
-			}
-			if ctx.Apply {
-				fmt.Printf("Deleted %s %q\n", node.GetKind(), node.Name)
-			}
-		}
-	}
-
-	if ctx.Apply {
-		return prov.System().Save(ctx, "")
-	} else {
-		fmt.Println("Run with --apply to persist changes.")
-		return nil
-	}
-}
-
-func runRemoveMembership(prov provider.Provider, ctx provider.ExecutionContext, sel *resolver.Selection, from []string) error {
-	if len(sel.Tracks) == 0 {
-		fmt.Println("No tracks matched the query.")
-		return nil
-	}
-
-	for _, fromStr := range from {
-		org, _, err := ResolveSelection(fromStr, "")
-		if err != nil {
-			return HandleError(err)
-		}
-
-		for _, target := range org.Groups {
-			removed, _ := prov.Tracks().Groups().Remove(ctx, sel.Tracks, target)
-			if ctx.Apply {
-				fmt.Printf("Removed %d tracks from %q\n", removed, target.Name)
-			}
-		}
-	}
-
-	if ctx.Apply {
-		return prov.System().Save(ctx, "")
-	} else {
-		fmt.Println("Run with --apply to persist changes.")
-		return nil
-	}
 }

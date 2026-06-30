@@ -1,6 +1,7 @@
 package m3u
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -48,27 +49,27 @@ func (p *M3UProvider) System() provider.SystemService { return &m3uSystemService
 
 type m3uTrackService struct{ *M3UProvider }
 
-func (s *m3uTrackService) List(ctx provider.ExecutionContext, query string) ([]models.Track, error) {
+func (s *m3uTrackService) List(ctx context.Context, ectx provider.ExecutionContext, query string) ([]models.Track, error) {
 	// Use Engine for agnostic querying
 	eng := library.NewEngine(NewLibrary(s.tracks))
 	return eng.Ls(query, nil)
 }
 
-func (s *m3uTrackService) Update(ctx provider.ExecutionContext, query string, changes map[string]string) (int, error) {
+func (s *m3uTrackService) Update(ctx context.Context, ectx provider.ExecutionContext, query string, changes map[string]string) (int, error) {
 	return 0, fmt.Errorf("m3u provider does not support metadata modification")
 }
 
-func (s *m3uTrackService) UpdateBatch(ctx provider.ExecutionContext, matches []models.MetadataMatch, fields []string) error {
+func (s *m3uTrackService) UpdateBatch(ctx context.Context, ectx provider.ExecutionContext, matches []models.MetadataMatch, fields []string) error {
 	return fmt.Errorf("m3u does not support batch metadata updates")
 }
 
-func (s *m3uTrackService) Delete(ctx provider.ExecutionContext, query string) (int, error) {
+func (s *m3uTrackService) Delete(ctx context.Context, ectx provider.ExecutionContext, query string) (int, error) {
 	return 0, fmt.Errorf("m3u provider does not support track deletion")
 }
 
 func (s *m3uTrackService) Groups() provider.TrackGroupService { return s }
 
-func (s *m3uTrackService) Add(ctx provider.ExecutionContext, tracks []models.Track, target models.ResourceGroup) (int, error) {
+func (s *m3uTrackService) Add(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, target models.ResourceGroup) (int, error) {
 	added := 0
 	existing := make(map[string]bool)
 	for _, t := range s.tracks { existing[t.Location] = true }
@@ -82,7 +83,7 @@ func (s *m3uTrackService) Add(ctx provider.ExecutionContext, tracks []models.Tra
 	return added, nil
 }
 
-func (s *m3uTrackService) Remove(ctx provider.ExecutionContext, tracks []models.Track, group models.ResourceGroup) (int, error) {
+func (s *m3uTrackService) Remove(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, group models.ResourceGroup) (int, error) {
 	toRemove := make(map[string]bool)
 	for _, t := range tracks { toRemove[t.Location] = true }
 	var kept []models.Track
@@ -94,26 +95,26 @@ func (s *m3uTrackService) Remove(ctx provider.ExecutionContext, tracks []models.
 	return removed, nil
 }
 
-func (s *m3uTrackService) Move(ctx provider.ExecutionContext, tracks []models.Track, from models.ResourceGroup, to models.ResourceGroup) (int, error) {
+func (s *m3uTrackService) Move(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, from models.ResourceGroup, to models.ResourceGroup) (int, error) {
 	return 0, fmt.Errorf("m3u provider does not support move")
 }
 
-func (s *m3uTrackService) Sort(ctx provider.ExecutionContext, tracks []models.Track, field string) {}
+func (s *m3uTrackService) Sort(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, field string) {}
 
 type m3uGroupService struct{ *M3UProvider }
 
-func (s *m3uGroupService) List(ctx provider.ExecutionContext, query string) ([]models.ResourceGroup, error) {
+func (s *m3uGroupService) List(ctx context.Context, ectx provider.ExecutionContext, query string) ([]models.ResourceGroup, error) {
 	// Use Engine for agnostic group querying
 	eng := library.NewEngine(NewLibrary(s.tracks))
 	return eng.LsGroups(query)
 }
 
-func (s *m3uGroupService) Create(ctx provider.ExecutionContext, parent models.ResourceGroup, name string, gt models.GroupKind, pos int) (models.ResourceGroup, error) {
+func (s *m3uGroupService) Create(ctx context.Context, ectx provider.ExecutionContext, parent models.ResourceGroup, name string, gt models.GroupKind, pos int) (models.ResourceGroup, error) {
 	if gt == models.GroupKindFolder { return models.ResourceGroup{}, fmt.Errorf("m3u does not support folders") }
 	return models.ResourceGroup{Name: name, Kind: models.GroupKindPlaylist}, nil
 }
 
-func (s *m3uGroupService) Update(ctx provider.ExecutionContext, group models.ResourceGroup, newName string, newParent *models.ResourceGroup) error {
+func (s *m3uGroupService) Update(ctx context.Context, ectx provider.ExecutionContext, group models.ResourceGroup, newName string, newParent *models.ResourceGroup) error {
 	if newName != "" {
 		newPath := filepath.Join(filepath.Dir(s.path), newName)
 		if err := os.Rename(s.path, newPath); err != nil { return err }
@@ -122,11 +123,11 @@ func (s *m3uGroupService) Update(ctx provider.ExecutionContext, group models.Res
 	return nil
 }
 
-func (s *m3uGroupService) Delete(ctx provider.ExecutionContext, group models.ResourceGroup) error {
+func (s *m3uGroupService) Delete(ctx context.Context, ectx provider.ExecutionContext, group models.ResourceGroup) error {
 	return os.Remove(s.path)
 }
 
-func (s *m3uGroupService) Sort(ctx provider.ExecutionContext, groups []models.ResourceGroup, field string) {}
+func (s *m3uGroupService) Sort(ctx context.Context, ectx provider.ExecutionContext, groups []models.ResourceGroup, field string) {}
 
 type m3uSystemService struct{ *M3UProvider }
 
@@ -143,7 +144,7 @@ func (s *m3uSystemService) TableHeaders() []string {
 	return []string{"duration", "display", "location"}
 }
 
-func (s *m3uSystemService) Save(ctx provider.ExecutionContext, path string) error {
+func (s *m3uSystemService) Save(ctx context.Context, ectx provider.ExecutionContext, path string) error {
 	if path == "" { path = s.path }
 	if path == "" { return fmt.Errorf("no path for M3U save") }
 	
@@ -160,7 +161,7 @@ func (s *m3uSystemService) Save(ctx provider.ExecutionContext, path string) erro
 	return nil
 }
 
-func (s *m3uSystemService) Fix(ctx provider.ExecutionContext, selection provider.Selection, options provider.FixOptions) (int, error) {
+func (s *m3uSystemService) Fix(ctx context.Context, ectx provider.ExecutionContext, selection provider.Selection, options provider.FixOptions) (int, error) {
 	totalAffected := 0
 
 	for fixType, targets := range options.Actions {
@@ -170,7 +171,7 @@ func (s *m3uSystemService) Fix(ctx provider.ExecutionContext, selection provider
 				if target == "normalize" {
 					res, err := FixPlaylist(s.path, FixOptions{
 						M3U8:    strings.HasSuffix(s.path, ".m3u8"),
-						Verbose: ctx.Verbose,
+						Verbose: ectx.Verbose,
 					})
 					if err != nil {
 						return totalAffected, err
@@ -184,14 +185,14 @@ func (s *m3uSystemService) Fix(ctx provider.ExecutionContext, selection provider
 	return totalAffected, nil
 }
 
-func (s *m3uSystemService) Sync(ctx provider.ExecutionContext, tracks []models.Track, targetQuery string, opts provider.SyncOptions) error {
+func (s *m3uSystemService) Sync(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, targetQuery string, opts provider.SyncOptions) error {
 	return sync.SyncToLibrary(NewLibrary(s.tracks), tracks, targetQuery, sync.SyncOptions{
 		ExportDest:     opts.ExportDest,
 		ExportFormat:   opts.ExportFormat,
 		PathMaps:       opts.PathMaps,
 		MetadataFields: opts.MetadataFields,
 		MatchFields:    opts.MatchFields,
-	}, ctx.Apply, ctx.Verbose, opts.AppendOnly)
+	}, ectx.Apply, ectx.Verbose, opts.AppendOnly)
 }
 
 func (s *m3uSystemService) Identify(name string, gt models.GroupKind) string { return s.path }

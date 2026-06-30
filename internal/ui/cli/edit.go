@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/llttlltt/dj-library-tools/internal/services/resolver"
 	"github.com/spf13/cobra"
 )
 
@@ -29,20 +28,8 @@ Examples:
 				queryOverride = strings.Join(args[1:], " ")
 			}
 
-			opts := resolver.ResolveOptions{
-				FilePath:      filePath,
-				FilterMissing: filterMissing,
-				FilterExists:  filterExists,
-				Apply:         apply,
-				Verbose:       verbose,
-			}
-
-			sel, prov, err := resolver.ResolveSelection(args[0], queryOverride, opts)
-			if err != nil {
-				return err
-			}
-
-			ctx := getExecContext()
+			orch := getOrchestrator()
+			runOpts := getRunOptions()
 
 			// Handle Metadata Updates
 			if len(setFields) > 0 {
@@ -55,18 +42,17 @@ Examples:
 					changes[parts[0]] = parts[1]
 				}
 
-				count, err := prov.Tracks().Update(ctx, sel.Location.Query, changes)
+				count, err := orch.Edit(cmd.Context(), args[0], queryOverride, runOpts, changes)
 				if err != nil {
-					return err
+					return HandleError(err)
 				}
 
-				if ctx.Apply {
+				if apply {
 					fmt.Printf("Successfully modified %d tracks.\n", count)
-					return prov.System().Save(ctx, "")
 				} else {
 					fmt.Println("Run with --apply to persist changes.")
-					return nil
 				}
+				return nil
 			}
 
 			return cmd.Help()

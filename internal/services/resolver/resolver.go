@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -62,11 +63,11 @@ func ResolveSelection(locStr string, queryOverride string, opts ResolveOptions) 
 	
 	var items []models.Resource
 	if loc.Resource == "tracks" {
-		tracks, err := prov.Tracks().List(ctx, loc.Query)
+		tracks, err := prov.Tracks().List(context.Background(), ctx, loc.Query)
 		if err != nil { return nil, nil, err }
 		for _, t := range tracks { items = append(items, t) }
 	} else if loc.Resource == "playlists" || loc.Resource == "folders" {
-		groups, err := prov.Groups().List(ctx, loc.Query)
+		groups, err := prov.Groups().List(context.Background(), ctx, loc.Query)
 		if err != nil { return nil, nil, err }
 		for _, g := range groups { items = append(items, g) }
 	} else {

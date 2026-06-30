@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -33,7 +34,7 @@ func newListCmd() *cobra.Command {
 
 			orch := getOrchestrator()
 			runOpts := getRunOptions()
-			res, err := orch.List(args[0], queryOverride, runOpts)
+			res, err := orch.List(cmd.Context(), args[0], queryOverride, runOpts)
 			if err != nil {
 				return HandleError(err)
 			}
@@ -42,7 +43,7 @@ func newListCmd() *cobra.Command {
 				return listProviderStats(res.Tracks, res.Groups, jsonOutput)
 			}
 
-			return listProvider(res.Tracks, res.Groups, res.Provider, listSort, jsonOutput, columns)
+			return listProvider(cmd.Context(), res.Tracks, res.Groups, res.Provider, listSort, jsonOutput, columns)
 		},
 	}
 	cmd.Flags().StringVar(&listSort, "sort", "", "Sort results by any available field (e.g. artist, title, bpm, etc.)")
@@ -118,14 +119,14 @@ func listProviderStats(tracks []models.Track, groups []models.ResourceGroup, jso
 	return nil
 }
 
-func listProvider(tracks []models.Track, groups []models.ResourceGroup, prov provider.Provider, listSort string, jsonOutput bool, columns []string) error {
+func listProvider(ctx context.Context, tracks []models.Track, groups []models.ResourceGroup, prov provider.Provider, listSort string, jsonOutput bool, columns []string) error {
 	if len(groups) > 0 {
 		// Group Logic...
 		if listSort != "" {
 			if _, ok := models.GroupFields[listSort]; !ok {
 				return fmt.Errorf("invalid sort field %q; valid fields are: %v", listSort, strings.Join(query.AllowedGroupFields, ", "))
 			}
-			prov.Groups().Sort(getExecContext(), groups, listSort)
+			prov.Groups().Sort(ctx, getExecContext(), groups, listSort)
 		}
 		renderGroupTable(groups, "Group")
 		return nil
@@ -141,7 +142,7 @@ func listProvider(tracks []models.Track, groups []models.ResourceGroup, prov pro
 		if _, ok := models.TrackFields[listSort]; !ok {
 			return fmt.Errorf("invalid sort field %q; valid fields are: %v", listSort, strings.Join(query.AllowedTrackFields, ", "))
 		}
-		prov.Tracks().Sort(getExecContext(), tracks, listSort)
+		prov.Tracks().Sort(ctx, getExecContext(), tracks, listSort)
 	}
 	renderTrackTable(prov, tracks, columns)
 	return nil

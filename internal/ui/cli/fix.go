@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/providers"
-	"github.com/llttlltt/dj-library-tools/internal/services/resolver"
 	"github.com/spf13/cobra"
 )
 
@@ -38,16 +37,8 @@ Examples:
 				queryOverride = strings.Join(args[1:], " ")
 			}
 
-			opts := resolver.ResolveOptions{
-				FilePath: filePath,
-				Apply:    apply,
-				Verbose:  verbose,
-			}
-
-			sel, prov, err := resolver.ResolveSelection(args[0], queryOverride, opts)
-			if err != nil {
-				return err
-			}
+			orch := getOrchestrator()
+			runOpts := getRunOptions()
 
 			fixOpts := provider.FixOptions{
 				Actions: make(map[provider.FixType][]string),
@@ -70,24 +61,13 @@ Examples:
 				return fmt.Errorf("no repair actions specified; use --duplicates, --metadata, --paths, or --orphans")
 			}
 
-			ctx := getExecContext()
-
-			if len(sel.Items) == 0 {
-				queryMsg := ""
-				if sel.Location.Query != "" {
-					queryMsg = fmt.Sprintf(" with query %q", sel.Location.Query)
-				}
-				fmt.Printf("No items found matching the selection: %q%s\n", sel.Location.Resource, queryMsg)
-				return nil
+			_, err := orch.Fix(cmd.Context(), args[0], queryOverride, runOpts, fixOpts)
+			if err != nil {
+				return HandleError(err)
 			}
 
-			if _, err := prov.System().Fix(ctx, *sel, fixOpts); err != nil {
-				return err
-			}
-
-			if ctx.Apply {
+			if apply {
 				fmt.Printf("Successfully performed repairs.\n")
-				return prov.System().Save(ctx, "")
 			} else {
 				fmt.Printf("Run with --apply to persist changes.\n")
 			}

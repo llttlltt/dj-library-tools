@@ -50,91 +50,49 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 				queryOverride = strings.Join(args[1:], " ")
 			}
 
-			src, _, err := ResolveSelection(args[0], queryOverride)
-			if err != nil {
-				return HandleError(err)
-			}
+			orch := getOrchestrator()
+			runOpts := getRunOptions()
 
 			for _, targetStr := range syncTo {
-				tgt, prov, err := ResolveSelection(targetStr, "")
-				if err != nil {
-					return HandleError(err)
-				}
-				resolvedTargetID := tgt.Location.Query
-				if len(tgt.Groups) > 0 {
-					resolvedTargetID = tgt.Groups[0].ID
-				}
-
 				// Perform Diffing for CLI Feedback
 				if verbose || !apply {
-					targetName := tgt.Location.Query
-					if targetName == "" {
-						targetName = tgt.Location.Resource
+					diff, err := orch.GetSyncDiff(cmd.Context(), args[0], targetStr, queryOverride, runOpts, syncAppend)
+					if err != nil {
+						return HandleError(err)
 					}
-					// If the target is a group (playlist/folder), we can get its current members
-					if len(tgt.Groups) > 0 {
-						group := tgt.Groups[0]
-						targetName = group.Name
-						
-						// Get current IDs by checking all tracks for membership in this SPECIFIC group
-						var currentIDs []string
-						allTracks, _ := prov.Tracks().List(getExecContext(), "")
-						for _, t := range allTracks {
-							for _, m := range t.Playlists {
-								// Match by name AND folder to ensure we have the right one
-								if m.Name == group.Name && m.Folder == group.ParentFolder {
-									currentIDs = append(currentIDs, t.ID)
-									break
-								}
-							}
-						}
 
-						// Calculate Source IDs
-						var sourceIDs []string
-						for _, t := range src.Tracks {
-							sourceIDs = append(sourceIDs, t.ID)
+					if verbose {
+						if len(diff.AddedIDs) > 0 {
+							fmt.Printf("\nTracks to ADD:\n")
+							printTrackTable(diff.AddedIDs, diff.TrackLookup, &TerminalFeedback{})
 						}
-
-						added, removed := calculateDiff(currentIDs, sourceIDs)
-						
-						if verbose {
-							trackLookup := make(map[string]models.Track)
-							allTracks, _ := prov.Tracks().List(getExecContext(), "")
-							for _, t := range allTracks {
-								trackLookup[t.ID] = t
-							}
-							if len(added) > 0 {
-								fmt.Printf("\nTracks to ADD:\n")
-								printTrackTable(added, trackLookup, getExecContext().Feedback)
-							}
-							if len(removed) > 0 && !syncAppend {
-								fmt.Printf("\nTracks to REMOVE:\n")
-								printTrackTable(removed, trackLookup, getExecContext().Feedback)
-							}
-							fmt.Println()
-						}
-
-						fmt.Printf("%s:\n", targetName)
-						if syncAppend {
-							fmt.Printf("- Total tracks to add: %d\n", len(added))
-						} else {
-							fmt.Printf("- Current tracks:      %d\n", len(currentIDs))
-							fmt.Printf("- Tracks to add:       %d\n", len(added))
-							fmt.Printf("- Tracks to remove:    %d\n", len(removed))
-							fmt.Printf("- Final count:         %d\n", len(sourceIDs))
+						if len(diff.RemovedIDs) > 0 && !syncAppend {
+							fmt.Printf("\nTracks to REMOVE:\n")
+							printTrackTable(diff.RemovedIDs, diff.TrackLookup, &TerminalFeedback{})
 						}
 						fmt.Println()
+					}
 
-						if apply {
-							fmt.Printf("Successfully synchronized %q.\n", targetName)
-						} else {
-							fmt.Printf("Run with --apply to persist changes.\n")
-						}
+					fmt.Printf("%s:\n", diff.TargetName)
+					if syncAppend {
+						fmt.Printf("- Total tracks to add: %d\n", len(diff.AddedIDs))
+					} else {
+						fmt.Printf("- Current tracks:      %d\n", len(diff.CurrentIDs))
+						fmt.Printf("- Tracks to add:       %d\n", len(diff.AddedIDs))
+						fmt.Printf("- Tracks to remove:    %d\n", len(diff.RemovedIDs))
+						fmt.Printf("- Final count:         %d\n", len(diff.SourceIDs))
+					}
+					fmt.Println()
+
+					if apply {
+						fmt.Printf("Successfully synchronized %q.\n", diff.TargetName)
+					} else {
+						fmt.Printf("Run with --apply to persist changes.\n")
 					}
 				}
 
 				// Perform Membership and Metadata Sync
-				err = prov.System().Sync(getExecContext(), src.Tracks, resolvedTargetID, provider.SyncOptions{
+				err := orch.Sync(cmd.Context(), args[0], targetStr, queryOverride, runOpts, provider.SyncOptions{
 					ExportDest:     exportDest,
 					ExportFormat:   exportFormat,
 					AppendOnly:     syncAppend,
@@ -143,12 +101,6 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 				})
 				if err != nil {
 					return HandleError(err)
-				}
-
-				if apply {
-					if err := prov.System().Save(getExecContext(), toFilePath); err != nil {
-						return HandleError(err)
-					}
 				}
 			}
 			return nil
@@ -162,29 +114,6 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 	cmd.Flags().StringSliceVar(&matchFields, "match", []string{"artist", "title"}, "Fields to use for matching tracks")
 	cmd.Flags().StringVar(&toFilePath, "to-file", "", "Path to the destination library file for sync/move operations")
 	return cmd
-}
-
-func calculateDiff(current, target []string) (added, removed []string) {
-	currentMap := make(map[string]bool)
-	for _, id := range current {
-		currentMap[id] = true
-	}
-	targetMap := make(map[string]bool)
-	for _, id := range target {
-		targetMap[id] = true
-	}
-
-	for _, id := range target {
-		if !currentMap[id] {
-			added = append(added, id)
-		}
-	}
-	for _, id := range current {
-		if !targetMap[id] {
-			removed = append(removed, id)
-		}
-	}
-	return
 }
 
 func printTrackTable(ids []string, lookup map[string]models.Track, feedback provider.Feedback) {

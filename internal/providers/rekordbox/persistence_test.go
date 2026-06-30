@@ -1,6 +1,7 @@
 package rekordbox
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -41,7 +42,7 @@ func TestStatefulPersistence(t *testing.T) {
 	eng := library.NewEngine(NewLibrary(rbXML))
 	p := NewRekordboxProviderWithXML(eng, rbXML, tmpFile.Name())
 
-	ctx := provider.ExecutionContext{
+	ectx := provider.ExecutionContext{
 		Apply:    false,
 		Verbose:  true,
 		Feedback: &mockFeedback{},
@@ -64,7 +65,7 @@ func TestStatefulPersistence(t *testing.T) {
 		},
 	}
 	
-	err = p.Tracks().UpdateBatch(ctx, matches, []string{"comment"})
+	err = p.Tracks().UpdateBatch(context.Background(), ectx, matches, []string{"comment"})
 	if err != nil {
 		t.Fatalf("UpdateBatch failed: %v", err)
 	}
@@ -84,8 +85,8 @@ func TestStatefulPersistence(t *testing.T) {
 	}
 
 	// 6. Perform a mutation WITH apply (explicit Save)
-	ctx.Apply = true
-	err = p.System().Save(ctx, "")
+	ectx.Apply = true
+	err = p.System().Save(context.Background(), ectx, "")
 	if err != nil {
 		t.Fatalf("Save failed: %v", err)
 	}
@@ -98,14 +99,12 @@ func TestStatefulPersistence(t *testing.T) {
 }
 
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (len(substr) == 0 || (func() bool {
-		for i := 0; i <= len(s)-len(substr); i++ {
-			if s[i:i+len(substr)] == substr {
-				return true
-			}
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
 		}
-		return false
-	})())
+	}
+	return false
 }
 
 type mockFeedback struct{}
