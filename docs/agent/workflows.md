@@ -32,6 +32,13 @@ go vet ./...            ; echo "vet:   $?"   # must be 0
 mise run test           ; echo "test:  $?"   # must be 0 (runs: go test ./...)
 ```
 
+When any file under `cmd/djlt-gui/frontend/src/` changes, also run the frontend checks:
+
+```bash
+cd cmd/djlt-gui/frontend && pnpm run check ; echo "biome: $?"   # must be 0; Biome lint + format
+cd cmd/djlt-gui/frontend && pnpm run build ; echo "frontend: $?" # must be 0
+```
+
 `mise run fmt` applies `gofmt -w .`; `mise run fmt-check` fails if any file is not gofmt-clean. Never hand-fight gofmt — run `mise run fmt` and commit the result.
 
 When CLI flags, descriptions, or command structure change, also:
