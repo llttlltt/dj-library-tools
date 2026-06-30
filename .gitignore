@@ -50,3 +50,4 @@ tests/fixtures/
 tests/golden/cli/post/
 
 /deadcode*.txt
+.pi/
