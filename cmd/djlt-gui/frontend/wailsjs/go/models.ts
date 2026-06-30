@@ -116,18 +116,17 @@ export namespace gui {
 	export class PlexAuthChallenge {
 	    url: string;
 	    pin_id: number;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new PlexAuthChallenge(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.url = source["url"];
 	        this.pin_id = source["pin_id"];
 	    }
 	}
-
 	export class TrackRow {
 	    id: string;
 	    title: string;

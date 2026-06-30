@@ -4,6 +4,8 @@ import {config} from '../models';
 import {gui} from '../models';
 import {workflow} from '../models';
 
+export function CheckPlexAuth(arg1:number):Promise<string>;
+
 export function CreateSource(arg1:string,arg2:string,arg3:Record<string, string>):Promise<config.Source>;
 
 export function DeleteSource(arg1:string):Promise<void>;
@@ -14,9 +16,13 @@ export function GetWorkflow(arg1:string):Promise<config.Workflow>;
 
 export function GetWorkflowDiff(arg1:string):Promise<Array<gui.StepDiff>>;
 
+export function InitPlexAuth():Promise<gui.PlexAuthChallenge>;
+
 export function ListSources():Promise<Array<config.Source>>;
 
 export function ListWorkflows():Promise<Array<config.Workflow>>;
+
+export function OpenFileDialog():Promise<string>;
 
 export function PreviewWorkflow(arg1:string):Promise<workflow.WorkflowResult>;
 
@@ -25,9 +31,3 @@ export function RunWorkflow(arg1:string):Promise<workflow.WorkflowResult>;
 export function SaveWorkflow(arg1:config.Workflow):Promise<config.Workflow>;
 
 export function UpdateSource(arg1:config.Source):Promise<void>;
-
-export function OpenFileDialog():Promise<string>;
-
-export function InitPlexAuth():Promise<gui.PlexAuthChallenge>;
-
-export function CheckPlexAuth(arg1:number):Promise<string>;
