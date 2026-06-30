@@ -204,64 +204,66 @@ export default function WorkflowsView({
 							</p>
 						) : (
 							<div className="flex flex-col gap-2">
-								{wfList.map((w) => (
-									<Card
-										key={w.id}
-										className="cursor-pointer hover:border-border/80 transition-colors"
-										onClick={() => openWorkflow(w)}
-									>
-										<CardHeader className="flex-row items-center justify-between py-3 px-4 gap-0">
-											<div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
-												<span className="text-sm font-medium truncate">
-													{w.name}
-												</span>
-												<span className="text-xs text-muted-foreground shrink-0">
-													{w.steps?.length ?? 0} step
-													{w.steps?.length !== 1 ? "s" : ""}
-												</span>
-											</div>
-											<div className="flex items-center gap-0.5">
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													title="Run"
-													onClick={(e) => {
-														e.stopPropagation();
-														setRunTarget(w);
-													}}
-												>
-													<PlayCircle className="h-4 w-4 text-emerald-500" />
-												</Button>
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													title="Preview"
-													onClick={(e) => {
-														e.stopPropagation();
-														openPreview(w);
-													}}
-												>
-													<Eye className="h-4 w-4 text-blue-400" />
-												</Button>
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon"
-													title="Delete"
-													onClick={(e) => {
-														e.stopPropagation();
-														setDeleteTarget(w);
-													}}
-												>
-													<Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-												</Button>
-												<ChevronRight className="h-4 w-4 text-muted-foreground ml-1" />
-											</div>
-										</CardHeader>
-									</Card>
-								))}
+								{[...wfList]
+									.sort((a, b) => a.name.localeCompare(b.name))
+									.map((w) => (
+										<Card
+											key={w.id}
+											className="cursor-pointer hover:border-border/80 transition-colors"
+											onClick={() => openWorkflow(w)}
+										>
+											<CardHeader className="flex-row items-center justify-between py-3 px-4 gap-0">
+												<div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
+													<span className="text-sm font-medium truncate">
+														{w.name}
+													</span>
+													<span className="text-xs text-muted-foreground shrink-0">
+														{w.steps?.length ?? 0} step
+														{w.steps?.length !== 1 ? "s" : ""}
+													</span>
+												</div>
+												<div className="flex items-center gap-0.5">
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														title="Run"
+														onClick={(e) => {
+															e.stopPropagation();
+															setRunTarget(w);
+														}}
+													>
+														<PlayCircle className="h-4 w-4 text-emerald-500" />
+													</Button>
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														title="Preview"
+														onClick={(e) => {
+															e.stopPropagation();
+															openPreview(w);
+														}}
+													>
+														<Eye className="h-4 w-4 text-blue-400" />
+													</Button>
+													<Button
+														type="button"
+														variant="ghost"
+														size="icon"
+														title="Delete"
+														onClick={(e) => {
+															e.stopPropagation();
+															setDeleteTarget(w);
+														}}
+													>
+														<Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+													</Button>
+													<ChevronRight className="h-4 w-4 text-muted-foreground ml-1" />
+												</div>
+											</CardHeader>
+										</Card>
+									))}
 							</div>
 						)}
 

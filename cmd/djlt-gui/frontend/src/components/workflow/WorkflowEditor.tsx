@@ -1,3 +1,5 @@
+import { FlaskConical, X } from "lucide-react";
+import { useState } from "react";
 import type { QueryTesterOpts } from "@/App";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -12,8 +14,6 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import type { Endpoint, Source, Step, Workflow } from "@/types";
-import { FlaskConical, X } from "lucide-react";
-import { useState } from "react";
 
 // ── EpEditRow ──────────────────────────────────────────────────────────────
 
