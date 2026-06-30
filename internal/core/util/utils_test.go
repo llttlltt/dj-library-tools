@@ -1,8 +1,8 @@
 package util
 
 import (
-	"testing"
 	"github.com/llttlltt/dj-library-tools/internal/core/location"
+	"testing"
 )
 
 func TestParseLocation(t *testing.T) {
@@ -56,4 +56,3 @@ func TestParseLocation(t *testing.T) {
 		}
 	}
 }
-

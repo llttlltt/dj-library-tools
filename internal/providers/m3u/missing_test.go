@@ -25,7 +25,7 @@ func TestMissingFileReporting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// We also need to create the .mp3 version because the existence check 
+	// We also need to create the .mp3 version because the existence check
 	// happens on the TRANSFORMED path
 	existingMP3 := filepath.Join(mediaDir, "exists.mp3")
 	if err := os.WriteFile(existingMP3, []byte("dummy content"), 0644); err != nil {

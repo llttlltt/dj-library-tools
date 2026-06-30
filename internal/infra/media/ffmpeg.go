@@ -22,7 +22,6 @@ func NewTranscoder(cfg *Config) *Transcoder {
 	}
 }
 
-
 func (t *Transcoder) TranscodeContext(ctx context.Context, source, dest string) error {
 	// 1. Check if FFmpeg exists
 	if _, err := t.Runner.LookPath("ffmpeg"); err != nil {

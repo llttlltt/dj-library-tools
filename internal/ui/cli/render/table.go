@@ -48,10 +48,12 @@ func (t *Table) Render() {
 			text = t.HeaderFormat(text)
 		}
 		fmt.Print(text)
-		
+
 		padding := colWidths[i] - len(h)
-		if padding < 0 { padding = 0 }
-		fmt.Print(strings.Repeat(" ", padding + 1))
+		if padding < 0 {
+			padding = 0
+		}
+		fmt.Print(strings.Repeat(" ", padding+1))
 	}
 	fmt.Println()
 

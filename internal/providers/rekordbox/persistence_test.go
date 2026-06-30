@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/llttlltt/dj-library-tools/internal/services/library"
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
 	"github.com/llttlltt/dj-library-tools/internal/providers"
+	"github.com/llttlltt/dj-library-tools/internal/services/library"
 )
 
 func TestStatefulPersistence(t *testing.T) {
@@ -25,7 +25,7 @@ func TestStatefulPersistence(t *testing.T) {
     </NODE>
   </PLAYLISTS>
 </DJ_PLAYLISTS>`
-	
+
 	tmpFile, err := os.CreateTemp("", "rekordbox_*.xml")
 	if err != nil {
 		t.Fatal(err)
@@ -64,12 +64,11 @@ func TestStatefulPersistence(t *testing.T) {
 			},
 		},
 	}
-	
+
 	err = p.Tracks().UpdateBatch(context.Background(), ectx, matches, []string{"comment"})
 	if err != nil {
 		t.Fatalf("UpdateBatch failed: %v", err)
 	}
-
 
 	// 4. Assert in-memory state changed
 	if rbXML.Collection.TRACK[0].Comments != "New Comment" {
@@ -109,9 +108,9 @@ func contains(s, substr string) bool {
 
 type mockFeedback struct{}
 
-func (f *mockFeedback) OnPreview(message string)           {}
-func (f *mockFeedback) OnSuccess(message string)           {}
-func (f *mockFeedback) OnWarning(message string)           {}
-func (f *mockFeedback) OnStatus(message string)            {}
-func (f *mockFeedback) OnProgress(done, total int)         {}
+func (f *mockFeedback) OnPreview(message string)                  {}
+func (f *mockFeedback) OnSuccess(message string)                  {}
+func (f *mockFeedback) OnWarning(message string)                  {}
+func (f *mockFeedback) OnStatus(message string)                   {}
+func (f *mockFeedback) OnProgress(done, total int)                {}
 func (f *mockFeedback) OnTable(headers []string, rows [][]string) {}

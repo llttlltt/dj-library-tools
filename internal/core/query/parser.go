@@ -54,10 +54,10 @@ func (p *Parser) parsePart(word string) []Token {
 	if strings.ContainsAny(field, "\"'") {
 		return []Token{{Kind: TokenValue, Value: word}}
 	}
-	
+
 	op := ":"
 	val := rest[1:]
-	
+
 	switch {
 	case strings.HasPrefix(rest, ":="):
 		op = ":="
@@ -275,7 +275,7 @@ func (p *Parser) parsePrimary() Expression {
 	if token.Kind == TokenEOF {
 		return nil
 	}
-	
+
 	switch token.Kind {
 	case TokenNot:
 		return Not{Expr: p.parsePrimary()}

@@ -105,7 +105,9 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 
 		if len(opts.Exts) == 0 {
 			absPath := line
-			if !filepath.IsAbs(line) { absPath = filepath.Join(fileDir, line) }
+			if !filepath.IsAbs(line) {
+				absPath = filepath.Join(fileDir, line)
+			}
 			if _, err := os.Stat(absPath); err == nil {
 				foundPath = absPath
 				resolvedPath = line
@@ -114,7 +116,9 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 			for _, ext := range opts.Exts {
 				testPath := FormatPath(line, ext)
 				absTestPath := testPath
-				if !filepath.IsAbs(testPath) { absTestPath = filepath.Join(fileDir, testPath) }
+				if !filepath.IsAbs(testPath) {
+					absTestPath = filepath.Join(fileDir, testPath)
+				}
 				if _, err := os.Stat(absTestPath); err == nil {
 					foundPath = absTestPath
 					resolvedPath = testPath
@@ -125,7 +129,9 @@ func FixPlaylist(inputPath string, opts FixOptions) (*FixResult, error) {
 
 		if foundPath == "" {
 			absPath := line
-			if !filepath.IsAbs(line) { absPath = filepath.Join(fileDir, line) }
+			if !filepath.IsAbs(line) {
+				absPath = filepath.Join(fileDir, line)
+			}
 			if _, err := os.Stat(absPath); err == nil {
 				foundPath = absPath
 				resolvedPath = line

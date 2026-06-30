@@ -9,9 +9,9 @@ import (
 
 // MatchResult holds the outcome of matching a source track against the destination collection.
 type MatchResult struct {
-	Track          models.Track
-	TargetTrack    *models.Track
-	Confidence     float64
+	Track       models.Track
+	TargetTrack *models.Track
+	Confidence  float64
 }
 
 type Matcher struct {
@@ -45,15 +45,25 @@ func (m *Matcher) matchTrack(s, t models.Track) bool {
 	for _, key := range m.keys {
 		switch strings.ToLower(key) {
 		case "artist":
-			if !strings.EqualFold(s.Artist, t.Artist) { return false }
+			if !strings.EqualFold(s.Artist, t.Artist) {
+				return false
+			}
 		case "title":
-			if !strings.EqualFold(s.Title, t.Title) { return false }
+			if !strings.EqualFold(s.Title, t.Title) {
+				return false
+			}
 		case "album":
-			if !strings.EqualFold(s.Album, t.Album) { return false }
+			if !strings.EqualFold(s.Album, t.Album) {
+				return false
+			}
 		case "filename":
-			if filepath.Base(s.Location) != filepath.Base(t.Location) { return false }
+			if filepath.Base(s.Location) != filepath.Base(t.Location) {
+				return false
+			}
 		case "path":
-			if s.Location != t.Location { return false }
+			if s.Location != t.Location {
+				return false
+			}
 		}
 	}
 	return true

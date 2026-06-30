@@ -40,7 +40,7 @@ func UpdateBatch(rbXML *RekordboxLibraryXML, matches []models.MetadataMatch, fie
 				if fieldMap["bpm"] {
 					target.AverageBpm = fmt.Sprintf("%.2f", match.Source.BPM)
 				}
-				
+
 				updateCount++
 				break
 			}

@@ -6,7 +6,7 @@ import (
 
 func TestQueryValidation(t *testing.T) {
 	allowedFields := []string{"title", "artist", "bpm"}
-	
+
 	tests := []struct {
 		name    string
 		query   string

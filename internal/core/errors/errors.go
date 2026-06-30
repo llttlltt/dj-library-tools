@@ -67,5 +67,3 @@ func NewReadOnly(provider string) error {
 		Msg:  fmt.Sprintf("provider %q is read-only", provider),
 	}
 }
-
-

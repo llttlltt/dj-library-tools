@@ -179,7 +179,9 @@ func formatLongDesc(lines []string) []string {
 	var result []string
 	for i := 0; i < len(lines); i++ {
 		line := lines[i]
-		if line == "" && (i == 0 || i == len(lines)-1) { continue }
+		if line == "" && (i == 0 || i == len(lines)-1) {
+			continue
+		}
 		result = append(result, line)
 
 		if strings.HasPrefix(line, "**") && i+1 < len(lines) {
@@ -190,7 +192,9 @@ func formatLongDesc(lines []string) []string {
 				for ; j < len(lines); j++ {
 					if lines[j] == "" || strings.HasPrefix(lines[j], "  ") {
 						result = append(result, strings.TrimPrefix(lines[j], "  "))
-					} else { break }
+					} else {
+						break
+					}
 				}
 				result = append(result, "```")
 				i = j - 1

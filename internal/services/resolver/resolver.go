@@ -8,9 +8,9 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/core/location"
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
+	"github.com/llttlltt/dj-library-tools/internal/core/query"
 	"github.com/llttlltt/dj-library-tools/internal/providers"
 	"github.com/llttlltt/dj-library-tools/internal/providers/factory"
-	"github.com/llttlltt/dj-library-tools/internal/core/query"
 )
 
 // Selection represents a resolved set of resources from a provider.
@@ -60,16 +60,24 @@ func ResolveSelection(locStr string, queryOverride string, opts ResolveOptions) 
 	if ctx.Feedback == nil {
 		ctx.Feedback = provider.NoopFeedback{}
 	}
-	
+
 	var items []models.Resource
 	if loc.Resource == "tracks" {
 		tracks, err := prov.Tracks().List(context.Background(), ctx, loc.Query)
-		if err != nil { return nil, nil, err }
-		for _, t := range tracks { items = append(items, t) }
+		if err != nil {
+			return nil, nil, err
+		}
+		for _, t := range tracks {
+			items = append(items, t)
+		}
 	} else if loc.Resource == "playlists" || loc.Resource == "folders" {
 		groups, err := prov.Groups().List(context.Background(), ctx, loc.Query)
-		if err != nil { return nil, nil, err }
-		for _, g := range groups { items = append(items, g) }
+		if err != nil {
+			return nil, nil, err
+		}
+		for _, g := range groups {
+			items = append(items, g)
+		}
 	} else {
 		return nil, nil, fmt.Errorf("unsupported resource type: %s", loc.Resource)
 	}
@@ -81,8 +89,12 @@ func ResolveSelection(locStr string, queryOverride string, opts ResolveOptions) 
 			if t, ok := item.(models.Track); ok {
 				_, statErr := os.Stat(t.Location)
 				missing := os.IsNotExist(statErr)
-				if opts.FilterMissing && !missing { continue }
-				if opts.FilterExists && missing { continue }
+				if opts.FilterMissing && !missing {
+					continue
+				}
+				if opts.FilterExists && missing {
+					continue
+				}
 			}
 			filtered = append(filtered, item)
 		}
@@ -131,7 +143,7 @@ func validatePathCapabilities(sel *Selection, prov provider.Provider, fb provide
 						hasCap = caps.SupportsBeatgrids
 					}
 					if !hasCap {
-						fb.OnWarning(fmt.Sprintf("The current provider (%s) does not support %q. Results for %q may be incomplete or empty.", 
+						fb.OnWarning(fmt.Sprintf("The current provider (%s) does not support %q. Results for %q may be incomplete or empty.",
 							prov.Name(), collection, v.Field))
 					}
 				}

@@ -15,9 +15,13 @@ func (m *MockLibrary) GetResources(kind string) []models.Resource {
 	var items []models.Resource
 	switch kind {
 	case "track":
-		for _, t := range m.Tracks { items = append(items, t) }
+		for _, t := range m.Tracks {
+			items = append(items, t)
+		}
 	case "group":
-		for _, p := range m.Playlists { items = append(items, p) }
+		for _, p := range m.Playlists {
+			items = append(items, p)
+		}
 	}
 	return items
 }

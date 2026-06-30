@@ -60,7 +60,7 @@ func ParseM3U8(r io.Reader, baseDir string) ([]models.Track, error) {
 			Duration: lastDuration,
 			Location: trackPath,
 		})
-		
+
 		lastDuration = 0
 		lastDisplay = ""
 	}

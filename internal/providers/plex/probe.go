@@ -23,7 +23,7 @@ func (c *Client) ProbeBestConnection(resource Resource) (*ConnectionResult, erro
 		wg.Add(1)
 		go func(uri string) {
 			defer wg.Done()
-			
+
 			// Try to get playlists as a health check
 			_, err := c.GetPlaylists(ctx, uri)
 			if err == nil {

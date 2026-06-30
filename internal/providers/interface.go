@@ -30,9 +30,15 @@ func ResolveAvailableFields(caps ProviderCapabilities) []string {
 	// Map flags to model capability set
 	enabled := make(map[models.Capability]bool)
 	enabled[models.CapNone] = true
-	if caps.CanUpdateMetadata { enabled[models.CapMetadata] = true }
-	if caps.SupportsCues { enabled[models.CapCues] = true }
-	if caps.SupportsBeatgrids { enabled[models.CapBeatgrids] = true }
+	if caps.CanUpdateMetadata {
+		enabled[models.CapMetadata] = true
+	}
+	if caps.SupportsCues {
+		enabled[models.CapCues] = true
+	}
+	if caps.SupportsBeatgrids {
+		enabled[models.CapBeatgrids] = true
+	}
 
 	for name, def := range models.TrackFields {
 		if enabled[def.RequiredCap] {
@@ -44,7 +50,7 @@ func ResolveAvailableFields(caps ProviderCapabilities) []string {
 
 // ContainmentPolicy defines the structural rules of the library.
 type ContainmentPolicy struct {
-	AllowTracksInFolders   bool
+	AllowTracksInFolders    bool
 	AllowFoldersInPlaylists bool
 	AllowNestedFolders      bool
 }
@@ -177,4 +183,3 @@ type SyncOptions struct {
 	MetadataFields []string // If set, sync these metadata fields
 	MatchFields    []string // Keys to use for matching tracks (e.g. artist, title, filename)
 }
-

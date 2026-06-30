@@ -100,4 +100,3 @@ func (c *Client) getTracks(ctx context.Context, url string) ([]Track, error) {
 
 	return container.MediaContainer.Metadata, nil
 }
-

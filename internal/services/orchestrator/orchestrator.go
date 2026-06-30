@@ -56,13 +56,13 @@ func (o *Orchestrator) buildExecContext(opts RunOptions) provider.ExecutionConte
 }
 
 type StatResult struct {
-	Count      int             `json:"Count"`
-	AvgBPM     float64         `json:"AvgBPM"`
-	Genres     map[string]int  `json:"Genres"`
-	Labels     map[string]int  `json:"Labels"`
-	Keys       map[string]int  `json:"Keys"`
-	Artists    map[string]int  `json:"Artists"`
-	TotalTempo float64         `json:"TotalTempo"`
+	Count      int            `json:"Count"`
+	AvgBPM     float64        `json:"AvgBPM"`
+	Genres     map[string]int `json:"Genres"`
+	Labels     map[string]int `json:"Labels"`
+	Keys       map[string]int `json:"Keys"`
+	Artists    map[string]int `json:"Artists"`
+	TotalTempo float64        `json:"TotalTempo"`
 }
 
 type ListResult struct {
@@ -99,8 +99,6 @@ func (o *Orchestrator) List(ctx context.Context, locStr string, queryOverride st
 		DefaultColumns: prov.System().TableHeaders(),
 	}, nil
 }
-
-
 
 func (o *Orchestrator) Stats(ctx context.Context, locStr, queryOverride string, opts RunOptions) (*StatResult, error) {
 	sel, _, err := resolver.ResolveSelection(locStr, queryOverride, o.buildResolveOptions(opts))
@@ -144,9 +142,6 @@ func (o *Orchestrator) Stats(ctx context.Context, locStr, queryOverride string, 
 
 	return res, nil
 }
-
-
-
 
 type SyncOptions struct {
 	ExportDest     string
@@ -206,14 +201,13 @@ func (o *Orchestrator) Sync(ctx context.Context, sourceLoc, targetLoc string, qu
 	return nil
 }
 
-
 type SyncDiff struct {
-	TargetName   string
-	CurrentIDs   []string
-	AddedIDs     []string
-	RemovedIDs   []string
-	SourceIDs    []string
-	TrackLookup  map[string]models.Track
+	TargetName  string
+	CurrentIDs  []string
+	AddedIDs    []string
+	RemovedIDs  []string
+	SourceIDs   []string
+	TrackLookup map[string]models.Track
 }
 
 func (o *Orchestrator) GetSyncDiff(ctx context.Context, sourceLoc, targetLoc string, queryOverride string, opts RunOptions, appendOnly bool) (*SyncDiff, error) {

@@ -49,17 +49,17 @@ type Playlist struct {
 }
 
 type Track struct {
-	RatingKey      string  `json:"ratingKey"`
-	Key            string  `json:"key"`
-	Type           string  `json:"type"`
-	Title          string  `json:"title"`
-	Summary        string  `json:"summary"`
-	Artist         string  `json:"grandparentTitle"`
-	Album          string  `json:"parentTitle"`
-	BPM            float64 `json:"bpm"`
-	KeyTag         string  `json:"keyTag,omitempty"`
-	UserRating     float64 `json:"userRating"` // Plex usually 0-10 or 0-5
-	Media          []Media `json:"Media"`
+	RatingKey  string  `json:"ratingKey"`
+	Key        string  `json:"key"`
+	Type       string  `json:"type"`
+	Title      string  `json:"title"`
+	Summary    string  `json:"summary"`
+	Artist     string  `json:"grandparentTitle"`
+	Album      string  `json:"parentTitle"`
+	BPM        float64 `json:"bpm"`
+	KeyTag     string  `json:"keyTag,omitempty"`
+	UserRating float64 `json:"userRating"` // Plex usually 0-10 or 0-5
+	Media      []Media `json:"Media"`
 }
 
 type Media struct {

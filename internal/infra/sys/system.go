@@ -16,9 +16,9 @@ type FileSystem interface {
 // OSFileSystem is the real implementation of FileSystem using the 'os' package.
 type OSFileSystem struct{}
 
-func (f OSFileSystem) Stat(name string) (os.FileInfo, error) { return os.Stat(name) }
+func (f OSFileSystem) Stat(name string) (os.FileInfo, error)        { return os.Stat(name) }
 func (f OSFileSystem) MkdirAll(path string, perm os.FileMode) error { return os.MkdirAll(path, 0755) }
-func (f OSFileSystem) Create(name string) (*os.File, error) { return os.Create(name) }
+func (f OSFileSystem) Create(name string) (*os.File, error)         { return os.Create(name) }
 
 // Runner defines the interface for running external commands.
 type Runner interface {

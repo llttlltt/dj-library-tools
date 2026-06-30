@@ -3,14 +3,14 @@ package m3u
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
-	"github.com/llttlltt/dj-library-tools/internal/services/library"
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
 	"github.com/llttlltt/dj-library-tools/internal/providers"
 	"github.com/llttlltt/dj-library-tools/internal/providers/factory"
+	"github.com/llttlltt/dj-library-tools/internal/services/library"
 	"github.com/llttlltt/dj-library-tools/internal/services/sync"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 func init() {
@@ -43,8 +43,8 @@ func NewM3UProvider(path string) (*M3UProvider, error) {
 
 func (p *M3UProvider) Name() string { return "m3u" }
 
-func (p *M3UProvider) Tracks() provider.TrackService   { return &m3uTrackService{p} }
-func (p *M3UProvider) Groups() provider.GroupService   { return &m3uGroupService{p} }
+func (p *M3UProvider) Tracks() provider.TrackService  { return &m3uTrackService{p} }
+func (p *M3UProvider) Groups() provider.GroupService  { return &m3uGroupService{p} }
 func (p *M3UProvider) System() provider.SystemService { return &m3uSystemService{p} }
 
 type m3uTrackService struct{ *M3UProvider }
@@ -72,7 +72,9 @@ func (s *m3uTrackService) Groups() provider.TrackGroupService { return s }
 func (s *m3uTrackService) Add(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, target models.ResourceGroup) (int, error) {
 	added := 0
 	existing := make(map[string]bool)
-	for _, t := range s.tracks { existing[t.Location] = true }
+	for _, t := range s.tracks {
+		existing[t.Location] = true
+	}
 	for _, t := range tracks {
 		if !existing[t.Location] {
 			s.tracks = append(s.tracks, t)
@@ -85,11 +87,17 @@ func (s *m3uTrackService) Add(ctx context.Context, ectx provider.ExecutionContex
 
 func (s *m3uTrackService) Remove(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, group models.ResourceGroup) (int, error) {
 	toRemove := make(map[string]bool)
-	for _, t := range tracks { toRemove[t.Location] = true }
+	for _, t := range tracks {
+		toRemove[t.Location] = true
+	}
 	var kept []models.Track
 	removed := 0
 	for _, t := range s.tracks {
-		if toRemove[t.Location] { removed++ } else { kept = append(kept, t) }
+		if toRemove[t.Location] {
+			removed++
+		} else {
+			kept = append(kept, t)
+		}
 	}
 	s.tracks = kept
 	return removed, nil
@@ -99,7 +107,8 @@ func (s *m3uTrackService) Move(ctx context.Context, ectx provider.ExecutionConte
 	return 0, fmt.Errorf("m3u provider does not support move")
 }
 
-func (s *m3uTrackService) Sort(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, field string) {}
+func (s *m3uTrackService) Sort(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, field string) {
+}
 
 type m3uGroupService struct{ *M3UProvider }
 
@@ -110,14 +119,18 @@ func (s *m3uGroupService) List(ctx context.Context, ectx provider.ExecutionConte
 }
 
 func (s *m3uGroupService) Create(ctx context.Context, ectx provider.ExecutionContext, parent models.ResourceGroup, name string, gt models.GroupKind, pos int) (models.ResourceGroup, error) {
-	if gt == models.GroupKindFolder { return models.ResourceGroup{}, fmt.Errorf("m3u does not support folders") }
+	if gt == models.GroupKindFolder {
+		return models.ResourceGroup{}, fmt.Errorf("m3u does not support folders")
+	}
 	return models.ResourceGroup{Name: name, Kind: models.GroupKindPlaylist}, nil
 }
 
 func (s *m3uGroupService) Update(ctx context.Context, ectx provider.ExecutionContext, group models.ResourceGroup, newName string, newParent *models.ResourceGroup) error {
 	if newName != "" {
 		newPath := filepath.Join(filepath.Dir(s.path), newName)
-		if err := os.Rename(s.path, newPath); err != nil { return err }
+		if err := os.Rename(s.path, newPath); err != nil {
+			return err
+		}
 		s.path = newPath
 	}
 	return nil
@@ -127,14 +140,17 @@ func (s *m3uGroupService) Delete(ctx context.Context, ectx provider.ExecutionCon
 	return os.Remove(s.path)
 }
 
-func (s *m3uGroupService) Sort(ctx context.Context, ectx provider.ExecutionContext, groups []models.ResourceGroup, field string) {}
+func (s *m3uGroupService) Sort(ctx context.Context, ectx provider.ExecutionContext, groups []models.ResourceGroup, field string) {
+}
 
 type m3uSystemService struct{ *M3UProvider }
 
 func (s *m3uSystemService) Capabilities() provider.ProviderCapabilities {
 	return provider.ProviderCapabilities{CanWrite: true, IsFileBased: true}
 }
-func (s *m3uSystemService) Containment() provider.ContainmentPolicy { return provider.ContainmentPolicy{} }
+func (s *m3uSystemService) Containment() provider.ContainmentPolicy {
+	return provider.ContainmentPolicy{}
+}
 func (s *m3uSystemService) MetadataCapabilities() []string {
 	return provider.ResolveAvailableFields(s.Capabilities())
 }
@@ -145,17 +161,25 @@ func (s *m3uSystemService) TableHeaders() []string {
 }
 
 func (s *m3uSystemService) Save(ctx context.Context, ectx provider.ExecutionContext, path string) error {
-	if path == "" { path = s.path }
-	if path == "" { return fmt.Errorf("no path for M3U save") }
-	
+	if path == "" {
+		path = s.path
+	}
+	if path == "" {
+		return fmt.Errorf("no path for M3U save")
+	}
+
 	f, err := os.Create(path)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	defer f.Close()
-	
+
 	WriteM3U8Header(f)
 	for _, t := range s.tracks {
 		disp := t.Display
-		if disp == "" { disp = filepath.Base(t.Location) }
+		if disp == "" {
+			disp = filepath.Base(t.Location)
+		}
 		WriteM3U8EntryRaw(f, disp, t.Location, float64(t.Duration))
 	}
 	return nil

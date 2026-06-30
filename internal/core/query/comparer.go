@@ -16,7 +16,7 @@ func getFieldKind(field string) models.FieldKind {
 	// Handle path-based fields
 	if strings.ContainsAny(field, "./-") {
 		collection, _, property, stat := ParsePath(field)
-		
+
 		// 1. Stats are numeric (except possibly custom ones, but currently all are)
 		if stat != "" {
 			return models.KindNumeric
@@ -57,7 +57,9 @@ func Compare(field string, fieldValue, targetValue string, op Operator) bool {
 
 func matchRange(fieldValue, rangeValue string) bool {
 	parts := strings.Split(rangeValue, "..")
-	if len(parts) != 2 { return false }
+	if len(parts) != 2 {
+		return false
+	}
 	return matchNumeric(fieldValue, parts[0], OpGte) && matchNumeric(fieldValue, parts[1], OpLte)
 }
 
@@ -65,11 +67,16 @@ func matchNumeric(fieldValue, targetValue string, op Operator) bool {
 	f := parseToFloat(fieldValue)
 	t := parseToFloat(targetValue)
 	switch op {
-	case OpGt:  return f > t
-	case OpGte: return f >= t
-	case OpLt:  return f < t
-	case OpLte: return f <= t
-	case OpExact, OpSubstring: return f == t
+	case OpGt:
+		return f > t
+	case OpGte:
+		return f >= t
+	case OpLt:
+		return f < t
+	case OpLte:
+		return f <= t
+	case OpExact, OpSubstring:
+		return f == t
 	}
 	return false
 }
@@ -82,7 +89,9 @@ func matchString(fieldValue, targetValue string, op Operator) bool {
 		return strings.Contains(strings.ToLower(fieldValue), strings.ToLower(targetValue))
 	case OpRegex:
 		re, err := regexp.Compile(targetValue)
-		if err != nil { return false }
+		if err != nil {
+			return false
+		}
 		return re.MatchString(fieldValue)
 	}
 	return false

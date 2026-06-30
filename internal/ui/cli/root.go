@@ -6,9 +6,9 @@ import (
 )
 
 var (
-	filePath   string
-	apply      bool
-	verbose    bool
+	filePath string
+	apply    bool
+	verbose  bool
 )
 
 // NewRootCmd builds and returns a fully wired root command.

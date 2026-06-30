@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/llttlltt/dj-library-tools/internal/services/library"
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
+	"github.com/llttlltt/dj-library-tools/internal/core/util"
 	"github.com/llttlltt/dj-library-tools/internal/providers"
 	"github.com/llttlltt/dj-library-tools/internal/providers/factory"
+	"github.com/llttlltt/dj-library-tools/internal/services/library"
 	"github.com/llttlltt/dj-library-tools/internal/services/sync"
-	"github.com/llttlltt/dj-library-tools/internal/core/util"
 )
 
 func init() {
@@ -34,7 +34,6 @@ type RekordboxProvider struct {
 	path   string
 	rbXML  *RekordboxLibraryXML
 }
-
 
 func NewRekordboxProviderWithXML(eng *library.Engine, rbXML *RekordboxLibraryXML, path string) *RekordboxProvider {
 	return &RekordboxProvider{engine: eng, rbXML: rbXML, path: path}
@@ -114,7 +113,7 @@ func (s *rekordboxTrackService) Move(ctx context.Context, ectx provider.Executio
 	if to.Kind == models.GroupKindFolder {
 		return 0, fmt.Errorf("cannot move tracks into folder %q (rekordbox tracks must live in playlists)", to.Name)
 	}
-	
+
 	ids := make([]string, len(tracks))
 	for i, t := range tracks {
 		ids[i] = t.ID
@@ -132,7 +131,7 @@ func (s *rekordboxTrackService) Move(ctx context.Context, ectx provider.Executio
 	if err != nil {
 		return added, err
 	}
-	return removed, nil 
+	return removed, nil
 }
 
 func (s *rekordboxTrackService) Sort(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, field string) {
@@ -241,18 +240,24 @@ func (s *rekordboxSystemService) Fix(ctx context.Context, ectx provider.Executio
 				if target == "tracks" {
 					res, err = FixDuplicateTracks(ctx, s.rbXML, selection, ectx.Apply)
 				}
-				if err != nil { return totalAffected, err }
+				if err != nil {
+					return totalAffected, err
+				}
 				s.reportFix(ectx, res, string(fixType), target)
 				totalAffected += res.TotalApplied
 			}
 		case provider.FixMetadata:
 			res, err = FixMetadataNormalization(ctx, s.rbXML, selection, targets, ectx.Apply)
-			if err != nil { return totalAffected, err }
+			if err != nil {
+				return totalAffected, err
+			}
 			s.reportFix(ectx, res, string(fixType), "metadata")
 			totalAffected += res.TotalApplied
 		case provider.FixPaths:
 			res, err = FixPaths(ctx, s.rbXML, selection, targets, ectx.Apply)
-			if err != nil { return totalAffected, err }
+			if err != nil {
+				return totalAffected, err
+			}
 			s.reportFix(ectx, res, string(fixType), "paths")
 			totalAffected += res.TotalApplied
 		}

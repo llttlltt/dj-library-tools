@@ -49,12 +49,16 @@ func (e *Evaluator) Matches(track models.Track) bool {
 }
 
 func (e *Evaluator) MatchesWithPlaylists(track models.Track, playlists []string) bool {
-	if e.Query.Root == nil { return true }
+	if e.Query.Root == nil {
+		return true
+	}
 	return e.eval(e.Query.Root, track, playlists)
 }
 
 func (e *Evaluator) MatchesGroup(group models.ResourceGroup) bool {
-	if e.Query.Root == nil { return true }
+	if e.Query.Root == nil {
+		return true
+	}
 	return e.evalGroup(e.Query.Root, group)
 }
 
@@ -123,8 +127,6 @@ func (e *Evaluator) matchGroupComparison(group models.ResourceGroup, c Compariso
 
 // Helpers
 
-
 func isPath(field string) bool {
 	return strings.ContainsAny(field, "./-")
 }
-

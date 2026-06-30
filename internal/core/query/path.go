@@ -93,7 +93,7 @@ func ParsePath(path string) (collection string, index int, property string, stat
 			indexStr = cleanPath[idx+1:]
 			collectionPart = cleanPath[:idx]
 		}
-		
+
 		val, err := strconv.Atoi(indexStr)
 		if err == nil {
 			index = val - 1 // 1-based to 0-based
@@ -139,7 +139,7 @@ func ValidatePath(path string) error {
 
 	// 4. Validate Indexing
 	if index != -1 && (stat != "" || property == "") {
-		// Indexing is allowed with property (hotcues.1/color) 
+		// Indexing is allowed with property (hotcues.1/color)
 		// but not with stats (beatgrids.1-count is nonsensical)
 		// and we need a property if indexed (hotcues.1 is ambiguous but we allow it as "name")
 	}

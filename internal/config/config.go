@@ -7,8 +7,8 @@ import (
 )
 
 type AppConfig struct {
-	Plex      PlexConfig      `json:"plex"`
-	Rekordbox RekordboxConfig `json:"rekordbox"`
+	Plex      PlexConfig        `json:"plex"`
+	Rekordbox RekordboxConfig   `json:"rekordbox"`
 	PathMaps  map[string]string `json:"path_maps"`
 }
 
@@ -38,7 +38,9 @@ func GetConfigDir() (string, error) {
 func LoadAppConfig() (*AppConfig, error) {
 	// ... (implementation same but ensures maps are initialized)
 	dir, err := GetConfigDir()
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	path := filepath.Join(dir, "config.json")
 
 	cfg := &AppConfig{
@@ -50,7 +52,9 @@ func LoadAppConfig() (*AppConfig, error) {
 	}
 
 	data, err := os.ReadFile(path)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	if err := json.Unmarshal(data, cfg); err != nil {
 		return nil, err

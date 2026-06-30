@@ -42,7 +42,7 @@ func renderTrackTable(tracks []models.Track, columns []string, defaultColumns []
 		for i, col := range columns {
 			field := strings.ToLower(col)
 			val := tr.Value(field)
-			
+
 			// If not a standard field, try path resolution
 			if val == "" && (strings.ContainsAny(field, "./-")) {
 				if pVal, ok := query.ResolvePath(tr, field); ok {

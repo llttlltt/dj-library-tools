@@ -126,16 +126,22 @@ func init() {
 				first = false
 				continue
 			}
-			if f < min { min = f }
-			if f > max { max = f }
+			if f < min {
+				min = f
+			}
+			if f > max {
+				max = f
+			}
 			diffSum += math.Abs(f - prev)
 			prev = f
 		}
 		drift := max - min
 		jitter := diffSum / float64(len(values)-1)
-		
+
 		score := 100.0 - (drift * 10.0) - (jitter * 50.0)
-		if score < 0 { score = 0 }
+		if score < 0 {
+			score = 0
+		}
 		return fmt.Sprintf("%.0f", score)
 	})
 }

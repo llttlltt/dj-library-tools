@@ -10,25 +10,25 @@ import (
 
 func ToNeutralTrack(t Track) models.Track {
 	mt := models.Track{
-		ID:           strconv.Itoa(t.TrackID),
-		Title:        strings.TrimSpace(html.UnescapeString(t.Name)),
-		Artist:       strings.TrimSpace(html.UnescapeString(t.Artist)),
-		Album:        strings.TrimSpace(html.UnescapeString(t.Album)),
-		Key:          t.Tonality,
-		Genre:        strings.TrimSpace(html.UnescapeString(t.Genre)),
-		Comment:      strings.TrimSpace(html.UnescapeString(t.Comments)),
-		Label:        strings.TrimSpace(html.UnescapeString(t.Label)),
-		Year:         int(t.Year),
-		Location:     t.Location,
-		Rating:       int(t.Rating), // Rekordbox already uses 0-255 in XML
-		Plays:        int(t.PlayCount),
-		DateAdded:    t.DateAdded,
-		DateModified: t.DateModified,
-		Bitrate:      int(t.BitRate),
-		SampleRate:   int(t.SampleRate),
-		Size:         t.Size,
-		Remixer:      t.Remixer,
-		Mix:          t.Mix,
+		ID:                  strconv.Itoa(t.TrackID),
+		Title:               strings.TrimSpace(html.UnescapeString(t.Name)),
+		Artist:              strings.TrimSpace(html.UnescapeString(t.Artist)),
+		Album:               strings.TrimSpace(html.UnescapeString(t.Album)),
+		Key:                 t.Tonality,
+		Genre:               strings.TrimSpace(html.UnescapeString(t.Genre)),
+		Comment:             strings.TrimSpace(html.UnescapeString(t.Comments)),
+		Label:               strings.TrimSpace(html.UnescapeString(t.Label)),
+		Year:                int(t.Year),
+		Location:            t.Location,
+		Rating:              int(t.Rating), // Rekordbox already uses 0-255 in XML
+		Plays:               int(t.PlayCount),
+		DateAdded:           t.DateAdded,
+		DateModified:        t.DateModified,
+		Bitrate:             int(t.BitRate),
+		SampleRate:          int(t.SampleRate),
+		Size:                t.Size,
+		Remixer:             t.Remixer,
+		Mix:                 t.Mix,
 		ImplementationState: t,
 	}
 
@@ -57,7 +57,7 @@ func ToNeutralTrack(t Track) models.Track {
 			BPM:      bpm,
 		})
 	}
-	
+
 	if t.Colour != "" {
 		mt.Color = GetTrackColorName(t.Colour)
 	} else {

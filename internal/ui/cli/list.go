@@ -21,9 +21,9 @@ func newListCmd() *cobra.Command {
 	var columns []string
 
 	cmd := &cobra.Command{
-		Use:     "ls [resource] [query]",
-		Short:   "List items from a location (e.g. rb/tracks title:Oceans)",
-		Args:    cobra.MinimumNArgs(1),
+		Use:   "ls [resource] [query]",
+		Short: "List items from a location (e.g. rb/tracks title:Oceans)",
+		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			queryOverride := ""
 			if len(args) > 1 {

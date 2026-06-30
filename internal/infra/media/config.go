@@ -1,21 +1,20 @@
 package media
 
-import (
-)
+import ()
 
 type Config struct {
-	Dest                  string            `json:"dest"`
-	Format                string            `json:"format"`
-	ID3v23                bool              `json:"id3v23"`
-	WriteMetadata         bool              `json:"write_metadata"`
-	Formats               map[string]string `json:"formats"`
-	MaxBitrate            int               `json:"max_bitrate"`
-	Embed                 bool              `json:"embed"`
-	Paths                 map[string]string `json:"paths"`
-	NeverConvertLossy     bool              `json:"never_convert_lossy"`
-	CopyAlbumArt          bool              `json:"copy_album_art"`
-	AlbumArtMaxWidth      int               `json:"album_art_maxwidth"`
-	PathMaps              map[string]string `json:"path_maps"`
+	Dest              string            `json:"dest"`
+	Format            string            `json:"format"`
+	ID3v23            bool              `json:"id3v23"`
+	WriteMetadata     bool              `json:"write_metadata"`
+	Formats           map[string]string `json:"formats"`
+	MaxBitrate        int               `json:"max_bitrate"`
+	Embed             bool              `json:"embed"`
+	Paths             map[string]string `json:"paths"`
+	NeverConvertLossy bool              `json:"never_convert_lossy"`
+	CopyAlbumArt      bool              `json:"copy_album_art"`
+	AlbumArtMaxWidth  int               `json:"album_art_maxwidth"`
+	PathMaps          map[string]string `json:"path_maps"`
 }
 
 func DefaultConfig() *Config {
@@ -38,5 +37,3 @@ func DefaultConfig() *Config {
 		},
 	}
 }
-
-

@@ -1,6 +1,5 @@
 package models
 
-
 // ResourceGroup represents a container like a playlist or folder.
 type ResourceGroup struct {
 	ID           string

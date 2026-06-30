@@ -125,10 +125,10 @@ type Node struct {
 	// KeyType+Entries. Using *int32 with omitempty ensures zero-valued absent
 	// attributes are never written (a nil pointer is omitted; &0 is written as
 	// "0", which is correct for KeyType=0).
-	Count   *int32   `xml:"Count,attr,omitempty"`
-	Entries *int32   `xml:"Entries,attr,omitempty"`
-	KeyType *int32   `xml:"KeyType,attr,omitempty"`
-	Node    []Node   `xml:"NODE"`
+	Count   *int32 `xml:"Count,attr,omitempty"`
+	Entries *int32 `xml:"Entries,attr,omitempty"`
+	KeyType *int32 `xml:"KeyType,attr,omitempty"`
+	Node    []Node `xml:"NODE"`
 	TRACK   []struct {
 		Key string `xml:"Key,attr"`
 	} `xml:"TRACK"`

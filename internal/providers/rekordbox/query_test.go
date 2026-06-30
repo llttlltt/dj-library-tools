@@ -1,8 +1,8 @@
 package rekordbox
 
 import (
-	"testing"
 	"github.com/llttlltt/dj-library-tools/internal/core/query"
+	"testing"
 )
 
 func TestQuery(t *testing.T) {

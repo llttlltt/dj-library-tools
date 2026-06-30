@@ -77,7 +77,7 @@ func FixPaths(ctx context.Context, rbXML *RekordboxLibraryXML, selection provide
 			continue
 		}
 		currentPath := u.Path
-		
+
 		if _, err := os.Stat(currentPath); err == nil {
 			continue
 		}
@@ -289,7 +289,9 @@ func FixDuplicateMembers(ctx context.Context, rbXML *RekordboxLibraryXML, select
 		}
 
 		seenAt := make(map[string]int)
-		var kept []struct { Key string `xml:"Key,attr"` }
+		var kept []struct {
+			Key string `xml:"Key,attr"`
+		}
 		removed := 0
 		var tableRows [][]string
 

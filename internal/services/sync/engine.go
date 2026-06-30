@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/llttlltt/dj-library-tools/internal/services/library"
-	"github.com/llttlltt/dj-library-tools/internal/infra/media"
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
+	"github.com/llttlltt/dj-library-tools/internal/infra/media"
+	"github.com/llttlltt/dj-library-tools/internal/services/library"
 )
 
 type ProgressListener interface {
@@ -269,13 +269,13 @@ func (o *Orchestrator) SyncToLibrary(ctx context.Context, tracks []models.Track,
 				if strings.Contains(targetID, ":") {
 					return fmt.Errorf("could not find target playlist %q for synchronization", targetID)
 				}
-				
+
 				// Use only the base name if targetID is a path
 				newName := targetID
 				if idx := strings.LastIndex(targetID, "/"); idx != -1 {
 					newName = targetID[idx+1:]
 				}
-				
+
 				o.Library.CreateGroup("", newName, models.GroupKindPlaylist, -1)
 				o.Library.UpdateGroup(targetID, trackIDs)
 			}
