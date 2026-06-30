@@ -37,6 +37,21 @@ export interface TrackRow {
 	bpm: string;
 }
 
+export interface GroupRow {
+	id: string;
+	name: string;
+	kind: string;
+	parent: string;
+	items: number;
+}
+
+export interface QueryResult {
+	kind: "tracks" | "groups";
+	tracks: TrackRow[];
+	groups: GroupRow[];
+	count: number;
+}
+
 export interface StepDiff {
 	step_id: string;
 	target_name: string;

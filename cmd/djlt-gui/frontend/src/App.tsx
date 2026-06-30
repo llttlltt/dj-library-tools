@@ -2,12 +2,12 @@ import { FlaskConical, Music2, Workflow } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { QueryTester } from "@/components/query/QueryTester";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import QueryTesterView from "./views/QueryTesterView";
 import SourcesView from "./views/SourcesView";
 import WorkflowsView from "./views/WorkflowsView";
 
-type Tab = "sources" | "workflows";
+type Tab = "sources" | "workflows" | "query";
 
 const NAV: {
 	id: Tab;
@@ -16,6 +16,7 @@ const NAV: {
 }[] = [
 	{ id: "sources", label: "Sources", Icon: Music2 },
 	{ id: "workflows", label: "Workflows", Icon: Workflow },
+	{ id: "query", label: "Query Tester", Icon: FlaskConical },
 ];
 
 export interface QueryTesterOpts {
@@ -43,7 +44,7 @@ export default function App() {
 						DJ Library Tools
 					</span>
 				</div>
-				<nav className="flex flex-col gap-0.5 p-2 mt-1 flex-1">
+				<nav className="flex flex-col gap-0.5 p-2 mt-1">
 					{NAV.map(({ id, label, Icon }) => (
 						<button
 							type="button"
@@ -60,15 +61,6 @@ export default function App() {
 							{label}
 						</button>
 					))}
-					<Separator className="my-1" />
-					<button
-						type="button"
-						onClick={() => openQueryTester()}
-						className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors text-left text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-					>
-						<FlaskConical className="h-4 w-4 shrink-0" />
-						Query Tester
-					</button>
 				</nav>
 			</aside>
 
@@ -78,9 +70,10 @@ export default function App() {
 				{tab === "workflows" && (
 					<WorkflowsView onOpenQueryTester={openQueryTester} />
 				)}
+				{tab === "query" && <QueryTesterView />}
 			</main>
 
-			{/* ── Query Tester sheet ────────────────────────────────────── */}
+			{/* ── Query Tester sheet (inline from Step editor) ─────────── */}
 			<QueryTester
 				open={queryTesterOpen}
 				onClose={() => setQueryTesterOpen(false)}

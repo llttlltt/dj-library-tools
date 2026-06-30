@@ -145,6 +145,54 @@ export namespace gui {
 	        this.bpm = source["bpm"];
 	    }
 	}
+	export class GroupRow {
+	    id: string;
+	    name: string;
+	    kind: string;
+	    parent: string;
+	    items: number;
+
+	    static createFrom(source: any = {}) {
+	        return new GroupRow(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.kind = source["kind"];
+	        this.parent = source["parent"];
+	        this.items = source["items"];
+	    }
+	}
+	export class QueryResult {
+	    kind: string;
+	    tracks: TrackRow[];
+	    groups: GroupRow[];
+	    count: number;
+
+	    static createFrom(source: any = {}) {
+	        return new QueryResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.tracks = this.convertValues(source["tracks"], TrackRow);
+	        this.groups = this.convertValues(source["groups"], GroupRow);
+	        this.count = source["count"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) { return a; }
+		    if (a.slice && a.map) { return (a as any[]).map(elem => this.convertValues(elem, classs, asMap)); }
+		    if (asMap) {
+		        for (const key of Object.keys(a)) { a[key] = new classs(a[key]); }
+		        return a;
+		    }
+		    return new classs(a);
+		}
+	}
 	export class StepDiff {
 	    step_id: string;
 	    target_name: string;

@@ -261,12 +261,30 @@ func toTrackRows(ids []string, lookup map[string]models.Track) []TrackRow {
 	return rows
 }
 
+// GroupRow is a lightweight group (playlist/folder) summary used in QueryResult.
+type GroupRow struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Kind   string `json:"kind"`
+	Parent string `json:"parent"`
+	Items  int    `json:"items"`
+}
+
+// QueryResult wraps the output of PreviewQuery, covering both track and group resources.
+type QueryResult struct {
+	Kind   string     `json:"kind"` // "tracks" or "groups"
+	Tracks []TrackRow `json:"tracks"`
+	Groups []GroupRow `json:"groups"`
+	Count  int        `json:"count"`
+}
+
 // PreviewQuery is the GUI equivalent of: djlt ls <provider>/<resource> <query>
-// It runs a read-only List against the given Source and returns matching TrackRows.
-func (a *App) PreviewQuery(sourceID, resource, query string) ([]TrackRow, error) {
+// It runs a read-only List against the given Source and returns a QueryResult
+// that covers both track resources and group resources (playlists/folders).
+func (a *App) PreviewQuery(sourceID, resource, query string) (QueryResult, error) {
 	src, err := config.FindSourceByID(sourceID)
 	if err != nil {
-		return nil, fmt.Errorf("source not found: %w", err)
+		return QueryResult{}, fmt.Errorf("source not found: %w", err)
 	}
 	runOpts := orchestrator.RunOptions{}
 	if fp, ok := src.Config["file_path"]; ok {
@@ -274,18 +292,26 @@ func (a *App) PreviewQuery(sourceID, resource, query string) ([]TrackRow, error)
 	}
 	res, err := a.orch.List(a.ctx, src.Provider+"/"+resource, query, runOpts, "")
 	if err != nil {
-		return nil, err
+		return QueryResult{}, err
+	}
+	if len(res.Groups) > 0 || resource == "playlists" || resource == "folders" {
+		rows := make([]GroupRow, 0, len(res.Groups))
+		for _, g := range res.Groups {
+			rows = append(rows, GroupRow{
+				ID:     g.ID,
+				Name:   g.Name,
+				Kind:   string(g.Kind),
+				Parent: g.ParentFolder,
+				Items:  g.Items,
+			})
+		}
+		return QueryResult{Kind: "groups", Groups: rows, Count: len(rows)}, nil
 	}
 	rows := make([]TrackRow, 0, len(res.Tracks))
 	for _, t := range res.Tracks {
-		rows = append(rows, TrackRow{
-			ID:     t.ID,
-			Title:  t.Title,
-			Artist: t.Artist,
-			BPM:    fmt.Sprintf("%.2f", t.BPM),
-		})
+		rows = append(rows, TrackRow{ID: t.ID, Title: t.Title, Artist: t.Artist, BPM: fmt.Sprintf("%.2f", t.BPM)})
 	}
-	return rows, nil
+	return QueryResult{Kind: "tracks", Tracks: rows, Count: len(rows)}, nil
 }
 
 // ── File picker ───────────────────────────────────────────────────────────────

@@ -244,12 +244,14 @@ export function WorkflowEditor({
 									<p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">
 										Source
 									</p>
-									<EpEditRow
-										ep={step.source}
-										sources={sources}
-										onChange={(p) => updSource(si, p)}
-										onOpenQueryTester={onOpenQueryTester}
-									/>
+									<div className="flex-1 min-w-0">
+										<EpEditRow
+											ep={step.source}
+											sources={sources}
+											onChange={(p) => updSource(si, p)}
+											onOpenQueryTester={onOpenQueryTester}
+										/>
+									</div>
 								</div>
 								<div>
 									<p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">
@@ -261,12 +263,14 @@ export function WorkflowEditor({
 												key={`${tgt.source_id}-${tgt.resource}`}
 												className="flex items-center gap-2"
 											>
-												<EpEditRow
-													ep={tgt}
-													sources={sources}
-													onChange={(p) => updTarget(si, ti, p)}
-													onOpenQueryTester={onOpenQueryTester}
-												/>
+												<div className="flex-1 min-w-0">
+													<EpEditRow
+														ep={tgt}
+														sources={sources}
+														onChange={(p) => updTarget(si, ti, p)}
+														onOpenQueryTester={onOpenQueryTester}
+													/>
+												</div>
 												{step.targets.length > 1 && (
 													<Button
 														type="button"
