@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // FieldKind defines if a field is treated as a string or a number in queries.
@@ -48,6 +49,13 @@ var TrackFields = map[string]FieldDefinition[Track]{
 	"remixer":    {Kind: KindString, RequiredCap: CapMetadata, Accessor: func(t Track) string { return t.Remixer }},
 	"mix":        {Kind: KindString, RequiredCap: CapMetadata, Accessor: func(t Track) string { return t.Mix }},
 	"duration":   {Kind: KindNumeric, RequiredCap: CapNone, Accessor: func(t Track) string { return strconv.Itoa(t.Duration) }},
+	"playlists": {Kind: KindString, RequiredCap: CapNone, Accessor: func(t Track) string {
+		names := make([]string, len(t.Playlists))
+		for i, p := range t.Playlists {
+			names[i] = p.Name
+		}
+		return strings.Join(names, ",")
+	}},
 	"missing": {Kind: KindString, RequiredCap: CapNone, Accessor: func(t Track) string {
 		if t.FileExists == nil {
 			return ""

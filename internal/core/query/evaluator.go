@@ -45,14 +45,10 @@ func NewEvaluatorWithMatcher(q Query, m CustomMatcher) *Evaluator {
 }
 
 func (e *Evaluator) Matches(track models.Track) bool {
-	return e.MatchesWithPlaylists(track, nil)
-}
-
-func (e *Evaluator) MatchesWithPlaylists(track models.Track, playlists []string) bool {
 	if e.Query.Root == nil {
 		return true
 	}
-	return e.eval(e.Query.Root, track, playlists)
+	return e.eval(e.Query.Root, track)
 }
 
 func (e *Evaluator) MatchesGroup(group models.ResourceGroup) bool {
@@ -62,17 +58,17 @@ func (e *Evaluator) MatchesGroup(group models.ResourceGroup) bool {
 	return e.evalGroup(e.Query.Root, group)
 }
 
-func (e *Evaluator) eval(expr Expression, track models.Track, playlists []string) bool {
+func (e *Evaluator) eval(expr Expression, track models.Track) bool {
 	switch v := expr.(type) {
 	case Comparison:
-		return e.matchComparison(track, playlists, v)
+		return e.matchComparison(track, v)
 	case Logical:
 		if v.Op == "AND" {
-			return e.eval(v.Left, track, playlists) && e.eval(v.Right, track, playlists)
+			return e.eval(v.Left, track) && e.eval(v.Right, track)
 		}
-		return e.eval(v.Left, track, playlists) || e.eval(v.Right, track, playlists)
+		return e.eval(v.Left, track) || e.eval(v.Right, track)
 	case Not:
-		return !e.eval(v.Expr, track, playlists)
+		return !e.eval(v.Expr, track)
 	}
 	return false
 }
@@ -92,7 +88,7 @@ func (e *Evaluator) evalGroup(expr Expression, group models.ResourceGroup) bool 
 	return false
 }
 
-func (e *Evaluator) matchComparison(track models.Track, playlists []string, c Comparison) bool {
+func (e *Evaluator) matchComparison(track models.Track, c Comparison) bool {
 	field := strings.ToLower(c.Field)
 	targetValue := ResolveValue(c.Field, c.Value)
 
@@ -110,11 +106,6 @@ func (e *Evaluator) matchComparison(track models.Track, playlists []string, c Co
 			}
 		}
 		return Compare(c.Field, val, targetValue, c.Operator)
-	}
-
-	// Membership domain
-	if field == "playlists" {
-		return Compare(field, strings.Join(playlists, ","), targetValue, c.Operator)
 	}
 
 	return Compare(field, track.Value(field), targetValue, c.Operator)
