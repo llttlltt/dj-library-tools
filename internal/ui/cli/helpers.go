@@ -6,7 +6,6 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	djerrors "github.com/llttlltt/dj-library-tools/internal/core/errors"
-	"github.com/llttlltt/dj-library-tools/internal/providers"
 	"github.com/llttlltt/dj-library-tools/internal/services/orchestrator"
 )
 
@@ -45,14 +44,6 @@ func HandleError(err error) error {
 	}
 
 	return err
-}
-
-func getExecContext() provider.ExecutionContext {
-	return provider.ExecutionContext{
-		Apply:    apply,
-		Verbose:  verbose,
-		Feedback: &TerminalFeedback{},
-	}
 }
 
 func stringsTitle(s string) string {
