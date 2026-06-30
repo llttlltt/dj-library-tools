@@ -1,6 +1,6 @@
 # High-Fidelity Rekordbox XML Formatting
 
-The `internal/rekordbox` package provides a `TokenStreamFormatter` designed to emit XML that is bit-for-bit compatible with the idiosyncratic formatting used by Rekordbox.
+The `internal/providers/rekordbox` package provides a `TokenStreamFormatter` designed to emit XML that is bit-for-bit compatible with the idiosyncratic formatting used by Rekordbox.
 
 ## Key Formatting Rules
 
@@ -37,7 +37,7 @@ err := formatter.Format(xmlReader, &output)
 ```
 
 ## Testing
-Formatting rules are pinned by comprehensive tests in `internal/rekordbox/format_test.go`. Any changes to the wrapping or ordering logic must pass the high-fidelity fixture tests:
+Formatting rules are pinned by comprehensive tests in `internal/providers/rekordbox/format_test.go`. Any changes to the wrapping or ordering logic must pass the high-fidelity fixture tests:
 
 - `20260524 Terracotta - Shortlist (8-space context)`
 - `Drum & Bass (Correct Indent Wrap)`
