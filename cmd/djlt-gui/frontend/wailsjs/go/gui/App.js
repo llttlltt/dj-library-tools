@@ -38,8 +38,8 @@ export function ListWorkflows() {
   return window['go']['gui']['App']['ListWorkflows']();
 }
 
-export function OpenFileDialog() {
-  return window['go']['gui']['App']['OpenFileDialog']();
+export function OpenFileDialog(arg1) {
+  return window['go']['gui']['App']['OpenFileDialog'](arg1);
 }
 
 export function PreviewWorkflow(arg1) {

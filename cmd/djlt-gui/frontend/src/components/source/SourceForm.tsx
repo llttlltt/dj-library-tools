@@ -1,6 +1,6 @@
 import { FolderOpen } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PlexAuthModal } from "@/components/source/PlexAuthModal";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,6 +55,19 @@ export function SourceForm({
 	const [saving, setSaving] = useState(false);
 	const [plexAuth, setPlexAuth] = useState(false);
 
+	// Reset all controlled fields whenever the dialog opens or the target source changes.
+	useEffect(() => {
+		if (open) {
+			setName(initial?.name ?? "");
+			setProvider((initial?.provider as Provider) ?? "rb");
+			setFilePath(initial?.config?.file_path ?? "");
+			setHost(initial?.config?.host ?? "");
+			setPort(initial?.config?.port ?? "");
+			setToken(initial?.config?.token ?? "");
+			setError("");
+		}
+	}, [open, initial]);
+
 	const resetToInitial = () => {
 		setName(initial?.name ?? "");
 		setProvider((initial?.provider as Provider) ?? "rb");
@@ -67,7 +80,8 @@ export function SourceForm({
 
 	async function pickFile() {
 		try {
-			const path = await OpenFileDialog();
+			const dir = filePath.substring(0, filePath.lastIndexOf("/")) || "";
+			const path = await OpenFileDialog(dir);
 			if (path) setFilePath(path);
 		} catch (e) {
 			setError(String(e));

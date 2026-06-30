@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	PlexTvBaseURL = "https://tv/api/v2"
+	PlexTvBaseURL = "https://plex.tv/api/v2"
 	ClientName    = "djlt"
 	AppID         = "dj-library-tools"
 )

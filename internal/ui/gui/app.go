@@ -264,10 +264,12 @@ func toTrackRows(ids []string, lookup map[string]models.Track) []TrackRow {
 // ── File picker ───────────────────────────────────────────────────────────────
 
 // OpenFileDialog opens a native file-picker and returns the selected path, or
-// an empty string if the user cancelled.
-func (a *App) OpenFileDialog() (string, error) {
+// an empty string if the user cancelled. defaultDir sets the initial directory;
+// pass "" to let Wails use the system default.
+func (a *App) OpenFileDialog(defaultDir string) (string, error) {
 	return runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Select Library File",
+		Title:            "Select Library File",
+		DefaultDirectory: defaultDir,
 		Filters: []runtime.FileFilter{
 			{DisplayName: "Rekordbox XML", Pattern: "*.xml"},
 			{DisplayName: "M3U Playlist", Pattern: "*.m3u;*.m3u8"},
