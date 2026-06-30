@@ -18,7 +18,8 @@
 - **Target Resolution**: CLI commands that perform mutations (e.g., `sync`, `fix`) must resolve the target resource's **unique ID** (not just its query or name) before calling provider mutation methods. This prevents ambiguous targeting in hierarchical libraries.
 - **Targeted Repairs**: Fix operations must support granular targeting via Action-Target maps (e.g., `--duplicates members` vs `--duplicates tracks`).
 - **One Way to Fix**: Maintenance flags in other commands (like `edit`) are removed in favor of the `fix` infrastructure.
-- **Intent Delegation**: CLI commands are thin wrappers. They parse flags and delegate to a single high-level `internal/services/orchestrator` method (`List`, `Sync`, `Make`, `Move`, `Delete`, `Edit`, `Fix`); the orchestrator owns workflow logic and calls high-level provider methods. Commands must not orchestrate multiple small provider calls directly (see [Architecture](architecture.md): Orchestrator Facade).
+- **Intent Delegation**: CLI commands are thin wrappers. They parse flags and delegate to a single high-level `internal/services/orchestrator` method (`List`, `Sync`, `Make`, `Move`, `Delete`, `Edit`, `Fix`); the orchestrator owns workflow logic and calls high-level provider methods. Commands resolve Sources by convention (e.g. `rb/` matches the first configured Rekordbox source).
+- **GUI Management**: Sources, Workflows, and Path Maps are managed exclusively through the GUI. The CLI consumes these configurations but does not modify them. The Query Tester view in the GUI provides a real-time equivalent of the `ls` command for query validation.
 - **Command-Specific Nuances**:
   - **`mk`**: The resource must be a base type (e.g., `rb/playlists`). Use `--in` for parent folders.
   - **`--from` / `--to` Queries**: When populating or targeting resources via flags, the query must be a fully qualified resource path (e.g., `rb/tracks beatgrids-count:>1`), not just the filter.

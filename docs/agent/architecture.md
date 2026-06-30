@@ -42,6 +42,8 @@ The system follows a nested, resource-oriented service structure:
 - **Safe-by-Default**: All mutating operations must be non-destructive by default. The `--apply` flag (CLI) or "Apply" button (GUI) is the universal gatekeeper for the `Save()` operation.
 - **UI Decoupling**: Core, infra, providers, and services must not import UI libraries or write directly to Stdout/Stderr. All user feedback must be channeled through the `Feedback` interface.
 - **Orchestrator Facade**: All UI interactions flow through the `internal/services/orchestrator`. It is the single seam between presentation and logic, owning statistics computation, sorting, and default table columns. It returns inert data only.
+- **Workflow Engine**: Multi-step operations are orchestrated by `internal/services/workflow`. It is a higher-level consumer of the orchestrator, capable of parallel execution and dependency management.
 - **Inert Results**: `Orchestrator.List` returns a `ListResult` containing pure data and metadata (like `DefaultColumns`). It never returns a mutable `Provider` handle to the UI.
 - **Option Ownership**: The orchestrator defines its own option DTOs (e.g., `SyncOptions`, `FixOptions`). UIs construct these types, and the orchestrator maps them to internal provider types.
+- **Source-based Configuration**: Configuration is decentralized into individual JSON files for Sources, Workflows, and Path Maps. The app resolves these artifacts from the filesystem by UUID.
 - **Context Threading**: `context.Context` must flow from every UI call through the orchestrator into `resolver.ResolveSelection` and from there into all provider calls. Provider list operations must never use `context.Background()` internally; doing so silently drops cancellation signals from the caller.
