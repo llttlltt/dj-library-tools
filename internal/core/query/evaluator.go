@@ -113,7 +113,18 @@ func (e *Evaluator) matchComparison(track models.Track, c Comparison) bool {
 
 func (e *Evaluator) matchGroupComparison(group models.ResourceGroup, c Comparison) bool {
 	field := strings.ToLower(c.Field)
-	return Compare(field, group.Value(field), c.Value, c.Operator)
+	targetValue := ResolveValue(c.Field, c.Value)
+
+	// Path-based resolution for groups (e.g. tracks/title:Oceans)
+	if isPath(c.Field) {
+		val, found := ResolveGroupPath(group, c.Field)
+		if !found {
+			return false
+		}
+		return Compare(c.Field, val, targetValue, c.Operator)
+	}
+
+	return Compare(field, group.Value(field), targetValue, c.Operator)
 }
 
 // Helpers

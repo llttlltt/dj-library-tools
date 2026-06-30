@@ -16,7 +16,7 @@ func ResolvePath(track models.Track, path string) (string, bool) {
 		return "", false
 	}
 
-	// 4. Resolve Collection
+	// Resolve Collection
 	var values []string
 	collectionName := strings.ToLower(collectionPart)
 
@@ -45,33 +45,61 @@ func ResolvePath(track models.Track, path string) (string, bool) {
 		return "", false
 	}
 
-	// 5. Handle Density Special Case
-	if stat == "density" {
-		return DensityStat(len(values), track.Duration), true
+	return finalizePathResolution(values, index, stat, track.Duration), true
+}
+
+// ResolveGroupPath takes a group and a path-based field (e.g. tracks/bpm-avg)
+// and returns the calculated value.
+func ResolveGroupPath(group models.ResourceGroup, path string) (string, bool) {
+	collectionPart, index, property, stat := ParsePath(path)
+	if collectionPart == "" {
+		return "", false
 	}
 
-	// 6. Apply Indexing
+	// Resolve Collection
+	var values []string
+	collectionName := strings.ToLower(collectionPart)
+
+	switch collectionName {
+	case "tracks":
+		for _, t := range group.Tracks {
+			values = append(values, t.Value(property))
+		}
+	default:
+		return "", false
+	}
+
+	return finalizePathResolution(values, index, stat, 0), true
+}
+
+// finalizePathResolution applies indexing and statistics to a collection of values.
+func finalizePathResolution(values []string, index int, stat string, duration int) string {
+	// 1. Handle Density Special Case
+	if stat == "density" {
+		return DensityStat(len(values), duration)
+	}
+
+	// 2. Apply Indexing
 	if index != -1 {
 		if index >= 0 && index < len(values) {
-			return values[index], true
+			return values[index]
 		}
-		return "", true // Index out of bounds, but valid path
+		return "" // Index out of bounds
 	}
 
-	// 7. Apply Stat
+	// 3. Apply Stat
 	if stat != "" {
 		if fn, ok := GetStat(stat); ok {
-			return fn(values), true
+			return fn(values)
 		}
 	}
 
-	// 8. Default: Return first item or concatenated string?
-	// For "any" matching, we usually return a comma-separated list for OpSubstring
+	// 4. Default: Return concatenated string for substring matching
 	if len(values) > 0 {
-		return strings.Join(values, ","), true
+		return strings.Join(values, ",")
 	}
 
-	return "", true
+	return ""
 }
 
 // ParsePath decomposes a path into its constituent parts.
