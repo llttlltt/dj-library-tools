@@ -1,0 +1,2 @@
+No metadata normalization required.
+Run with --apply to persist changes.
