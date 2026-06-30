@@ -19,11 +19,9 @@ import {
 	SheetTitle,
 } from "@/components/ui/sheet";
 import {
-	Table,
 	TableBody,
 	TableCell,
 	TableHead,
-	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
 import type { GroupRow, QueryResult, Source, TrackRow } from "@/types";
@@ -291,14 +289,10 @@ export function QueryTesterResults({ result, error }: ResultsProps) {
 					style={{ height: "100%" }}
 					components={{
 						Table: ({ ...props }) => (
-							<Table {...props} className="border-collapse" />
+							<table {...props} className="w-full border-collapse text-sm" />
 						),
 						TableHead: forwardRef((props, ref) => (
-							<TableHeader
-								{...props}
-								ref={ref}
-								className="sticky top-0 bg-background z-20"
-							/>
+							<thead {...props} ref={ref} className="z-20" />
 						)),
 						TableBody: forwardRef((props, ref) => (
 							<TableBody {...props} ref={ref} />
@@ -306,21 +300,31 @@ export function QueryTesterResults({ result, error }: ResultsProps) {
 						TableRow: (props) => <TableRow {...props} />,
 					}}
 					fixedHeaderContent={() => (
-						<TableRow className="bg-background hover:bg-background">
+						<TableRow className="bg-background">
 							{result.kind === "groups" ? (
 								<>
-									<TableHead className="bg-background">Name</TableHead>
-									<TableHead className="bg-background">Kind</TableHead>
-									<TableHead className="bg-background">Parent</TableHead>
-									<TableHead className="w-14 text-right bg-background">
+									<TableHead className="sticky top-0 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
+										Name
+									</TableHead>
+									<TableHead className="sticky top-0 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
+										Kind
+									</TableHead>
+									<TableHead className="sticky top-0 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
+										Parent
+									</TableHead>
+									<TableHead className="w-14 text-right sticky top-0 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
 										Items
 									</TableHead>
 								</>
 							) : (
 								<>
-									<TableHead className="bg-background">Title</TableHead>
-									<TableHead className="bg-background">Artist</TableHead>
-									<TableHead className="w-16 text-right bg-background">
+									<TableHead className="sticky top-0 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
+										Title
+									</TableHead>
+									<TableHead className="sticky top-0 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
+										Artist
+									</TableHead>
+									<TableHead className="w-16 text-right sticky top-0 bg-background shadow-[0_1px_0_0_hsl(var(--border))]">
 										BPM
 									</TableHead>
 								</>
