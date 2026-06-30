@@ -1,0 +1,13 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "djlt-gui",
+  "outputfilename": "djlt-gui",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Elliott-Liu",
+    "email": "16389800+Elliott-Liu@users.noreply.github.com"
+  }
+}

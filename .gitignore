@@ -51,3 +51,8 @@ tests/golden/cli/post/
 
 /deadcode*.txt
 .pi/
+
+# Wails frontend build artifacts
+cmd/djlt-gui/frontend/node_modules/
+cmd/djlt-gui/frontend/dist/
+cmd/djlt-gui/build/
