@@ -41,3 +41,7 @@ export function RunWorkflow(arg1) {
 export function SaveWorkflow(arg1) {
   return window['go']['gui']['App']['SaveWorkflow'](arg1);
 }
+
+export function UpdateSource(arg1) {
+  return window['go']['gui']['App']['UpdateSource'](arg1);
+}

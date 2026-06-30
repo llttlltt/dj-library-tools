@@ -23,3 +23,5 @@ export function PreviewWorkflow(arg1:string):Promise<workflow.WorkflowResult>;
 export function RunWorkflow(arg1:string):Promise<workflow.WorkflowResult>;
 
 export function SaveWorkflow(arg1:config.Workflow):Promise<config.Workflow>;
+
+export function UpdateSource(arg1:config.Source):Promise<void>;

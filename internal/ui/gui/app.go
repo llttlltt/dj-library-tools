@@ -81,6 +81,11 @@ func (a *App) DeleteSource(id string) error {
 	return config.DeleteSource(id)
 }
 
+// UpdateSource overwrites an existing Source file (identified by s.ID).
+func (a *App) UpdateSource(s config.Source) error {
+	return config.SaveSource(s)
+}
+
 // ── Workflows ─────────────────────────────────────────────────────────────────
 
 // ListWorkflows returns all configured Workflows.
