@@ -40,3 +40,8 @@ tsbuildinfo
 *.swp
 *.swo
 docs/agent/
+
+/site/
+/djlt_base
+/djlt-*
+tests/golden/cli/post/
