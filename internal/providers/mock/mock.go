@@ -23,7 +23,8 @@ func (f *MockProvider) System() provider.SystemService { return &mockSystemServi
 type mockTrackService struct{}
 
 func (s *mockTrackService) List(_ context.Context, _ provider.ExecutionContext, _ string) ([]models.Track, error) {
-	return []models.Track{{ID: "1", Title: "Mock Track"}}, nil
+	exists := true
+	return []models.Track{{ID: "1", Title: "Mock Track", FileExists: &exists}}, nil
 }
 func (s *mockTrackService) Update(_ context.Context, _ provider.ExecutionContext, _ string, _ map[string]string) (int, error) {
 	return 0, nil

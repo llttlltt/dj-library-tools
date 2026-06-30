@@ -3,7 +3,6 @@ package resolver
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/core/location"
@@ -20,8 +19,6 @@ type Selection = provider.Selection
 type ResolveOptions struct {
 	FilePath             string
 	RekordboxPrimaryPath string
-	FilterMissing        bool
-	FilterExists         bool
 	Apply                bool
 	Verbose              bool
 	Feedback             provider.Feedback
@@ -80,25 +77,6 @@ func ResolveSelection(locStr string, queryOverride string, opts ResolveOptions) 
 		}
 	} else {
 		return nil, nil, fmt.Errorf("unsupported resource type: %s", loc.Resource)
-	}
-
-	// Apply physical health filtering if flags are set
-	if opts.FilterMissing || opts.FilterExists {
-		var filtered []models.Resource
-		for _, item := range items {
-			if t, ok := item.(models.Track); ok {
-				_, statErr := os.Stat(t.Location)
-				missing := os.IsNotExist(statErr)
-				if opts.FilterMissing && !missing {
-					continue
-				}
-				if opts.FilterExists && missing {
-					continue
-				}
-			}
-			filtered = append(filtered, item)
-		}
-		items = filtered
 	}
 
 	sel.Items = items

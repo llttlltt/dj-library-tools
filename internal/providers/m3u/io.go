@@ -54,11 +54,16 @@ func ParseM3U8(r io.Reader, baseDir string) ([]models.Track, error) {
 			trackPath = filepath.Join(baseDir, trackPath)
 		}
 
+		fileExists := true
+		if _, err := os.Stat(trackPath); os.IsNotExist(err) {
+			fileExists = false
+		}
 		tracks = append(tracks, models.Track{
-			ID:       trackPath,
-			Display:  lastDisplay,
-			Duration: lastDuration,
-			Location: trackPath,
+			ID:         trackPath,
+			Display:    lastDisplay,
+			Duration:   lastDuration,
+			Location:   trackPath,
+			FileExists: &fileExists,
 		})
 
 		lastDuration = 0

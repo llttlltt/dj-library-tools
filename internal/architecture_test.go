@@ -36,6 +36,39 @@ func TestArchitectureBoundaries(t *testing.T) {
 	}
 }
 
+func TestCorePackagesPurity(t *testing.T) {
+	forbidden := map[string]bool{
+		"os":       true,
+		"net":      true,
+		"net/http": true,
+		"syscall":  true,
+		"io/fs":    true,
+		"os/exec":  true,
+	}
+
+	out, err := exec.Command("go", "list", "-f", "{{.ImportPath}}\t{{join .Imports ` `}}",
+		"github.com/llttlltt/dj-library-tools/internal/core/...").CombinedOutput()
+	if err != nil {
+		t.Fatalf("failed to list core packages: %v\nOutput: %s", err, string(out))
+	}
+
+	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		if line == "" {
+			continue
+		}
+		parts := strings.SplitN(line, "\t", 2)
+		pkg := parts[0]
+		if len(parts) < 2 {
+			continue
+		}
+		for _, imp := range strings.Fields(parts[1]) {
+			if forbidden[imp] {
+				t.Errorf("Core purity violation: %s imports forbidden package %q", pkg, imp)
+			}
+		}
+	}
+}
+
 func TestNoDirectOutput(t *testing.T) {
 	dirs := []string{"core", "infra", "providers", "services"}
 

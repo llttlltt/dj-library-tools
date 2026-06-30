@@ -30,8 +30,19 @@ Examples:
 
 			orch := getOrchestrator()
 			runOpts := getRunOptions()
-			runOpts.FilterMissing = filterMissing
-			runOpts.FilterExists = filterExists
+
+			if filterMissing {
+				if queryOverride != "" {
+					queryOverride += " "
+				}
+				queryOverride += "missing:true"
+			}
+			if filterExists {
+				if queryOverride != "" {
+					queryOverride += " "
+				}
+				queryOverride += "exists:true"
+			}
 
 			// Handle Metadata Updates
 			if len(setFields) > 0 {

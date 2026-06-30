@@ -32,19 +32,15 @@ func New(fb provider.Feedback, opts Options) *Orchestrator {
 }
 
 type RunOptions struct {
-	FilePath      string
-	Apply         bool
-	Verbose       bool
-	FilterMissing bool
-	FilterExists  bool
+	FilePath string
+	Apply    bool
+	Verbose  bool
 }
 
 func (o *Orchestrator) buildResolveOptions(opts RunOptions) resolver.ResolveOptions {
 	return resolver.ResolveOptions{
 		FilePath:             opts.FilePath,
 		RekordboxPrimaryPath: o.RekordboxPrimaryPath,
-		FilterMissing:        opts.FilterMissing,
-		FilterExists:         opts.FilterExists,
 		Apply:                opts.Apply,
 		Verbose:              opts.Verbose,
 		Feedback:             o.Feedback,

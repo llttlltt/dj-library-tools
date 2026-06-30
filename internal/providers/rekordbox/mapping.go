@@ -2,6 +2,7 @@ package rekordbox
 
 import (
 	"html"
+	"os"
 	"strconv"
 	"strings"
 
@@ -31,6 +32,12 @@ func ToNeutralTrack(t Track) models.Track {
 		Mix:                 t.Mix,
 		ImplementationState: t,
 	}
+
+	exists := true
+	if _, err := os.Stat(mt.Location); os.IsNotExist(err) {
+		exists = false
+	}
+	mt.FileExists = &exists
 
 	if t.AverageBpm != "" {
 		mt.BPM, _ = strconv.ParseFloat(t.AverageBpm, 64)

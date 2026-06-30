@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 )
 
@@ -50,8 +49,19 @@ var TrackFields = map[string]FieldDefinition[Track]{
 	"mix":        {Kind: KindString, RequiredCap: CapMetadata, Accessor: func(t Track) string { return t.Mix }},
 	"duration":   {Kind: KindNumeric, RequiredCap: CapNone, Accessor: func(t Track) string { return strconv.Itoa(t.Duration) }},
 	"missing": {Kind: KindString, RequiredCap: CapNone, Accessor: func(t Track) string {
-		_, err := os.Stat(t.Location)
-		if os.IsNotExist(err) {
+		if t.FileExists == nil {
+			return ""
+		}
+		if !*t.FileExists {
+			return "true"
+		}
+		return "false"
+	}},
+	"exists": {Kind: KindString, RequiredCap: CapNone, Accessor: func(t Track) string {
+		if t.FileExists == nil {
+			return ""
+		}
+		if *t.FileExists {
 			return "true"
 		}
 		return "false"

@@ -32,8 +32,9 @@ type Track struct {
 	DateModified string
 
 	// Stats
-	Plays  int
-	Rating int // 0-255
+	Plays      int
+	Rating     int   // 0-255
+	FileExists *bool // nil = unknown; &true = exists; &false = missing
 
 	// DJ-Specific Metadata
 	Remixer      string
