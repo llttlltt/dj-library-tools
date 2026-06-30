@@ -15,7 +15,6 @@ func newSyncCmd() *cobra.Command {
 	var exportDest, exportFormat string
 	var syncAppend bool
 	var metadataFields, matchFields []string
-	var toFilePath string
 
 	cmd := &cobra.Command{
 		Use:   "sync [source-resource] [source-query] --to [target-resource] [target-query]",
@@ -116,7 +115,6 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 	cmd.Flags().BoolVar(&syncAppend, "append", false, "Append new tracks without removing existing ones")
 	cmd.Flags().StringSliceVar(&metadataFields, "metadata", []string{}, "Metadata fields to synchronize (e.g. beatgrids, rating)")
 	cmd.Flags().StringSliceVar(&matchFields, "match", []string{"artist", "title"}, "Fields to use for matching tracks")
-	cmd.Flags().StringVar(&toFilePath, "to-file", "", "Path to the destination library file for sync/move operations")
 	return cmd
 }
 

@@ -15,7 +15,6 @@ djlt sync [source-resource] [source-query] --to [target-resource] [target-query]
       --match strings      Fields to use for matching tracks (default [artist,title])
       --metadata strings   Metadata fields to synchronize (e.g. beatgrids, rating)
       --to strings         Target resource(s) to sync to (repeatable)
-      --to-file string     Path to the destination library file for sync/move operations
 ```
 
 ### Inherited Options

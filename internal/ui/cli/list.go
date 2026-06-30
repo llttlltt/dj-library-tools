@@ -32,6 +32,8 @@ func newListCmd() *cobra.Command {
 
 			orch := getOrchestrator()
 			runOpts := getRunOptions()
+			runOpts.FilterMissing = filterMissing
+			runOpts.FilterExists = filterExists
 
 			if listStats {
 				res, err := orch.Stats(cmd.Context(), args[0], queryOverride, runOpts)

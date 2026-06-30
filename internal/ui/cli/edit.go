@@ -30,6 +30,8 @@ Examples:
 
 			orch := getOrchestrator()
 			runOpts := getRunOptions()
+			runOpts.FilterMissing = filterMissing
+			runOpts.FilterExists = filterExists
 
 			// Handle Metadata Updates
 			if len(setFields) > 0 {
