@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/llttlltt/dj-library-tools/internal/config"
-	"github.com/llttlltt/dj-library-tools/internal/providers"
+	provider "github.com/llttlltt/dj-library-tools/internal/providers"
 )
 
 var (
@@ -15,9 +14,15 @@ var (
 
 type ProviderFactory func(opts ProviderOptions) (provider.Provider, error)
 
+// ProviderOptions carries resolved Source connection fields. Each provider
+// factory reads from the fields relevant to its type:
+//   - rekordbox / m3u: FilePath
+//   - plex:            Host, Port, Token
 type ProviderOptions struct {
 	FilePath string
-	Config   *config.AppConfig
+	Host     string
+	Port     int
+	Token    string
 }
 
 // Register makes a provider factory available by the provided name.

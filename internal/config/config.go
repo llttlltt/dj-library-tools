@@ -22,6 +22,33 @@ type RekordboxConfig struct {
 	PrimaryFilePath string `json:"primary_file_path"`
 }
 
+func GetSourcesDir() (string, error) {
+	dir, err := GetConfigDir()
+	if err != nil {
+		return "", err
+	}
+	p := filepath.Join(dir, "sources")
+	return p, os.MkdirAll(p, 0755)
+}
+
+func GetWorkflowsDir() (string, error) {
+	dir, err := GetConfigDir()
+	if err != nil {
+		return "", err
+	}
+	p := filepath.Join(dir, "workflows")
+	return p, os.MkdirAll(p, 0755)
+}
+
+func GetPathMapsDir() (string, error) {
+	dir, err := GetConfigDir()
+	if err != nil {
+		return "", err
+	}
+	p := filepath.Join(dir, "path-maps")
+	return p, os.MkdirAll(p, 0755)
+}
+
 func GetConfigDir() (string, error) {
 	// Respect XDG_CONFIG_HOME if set, otherwise fallback to ~/.config
 	dir := os.Getenv("XDG_CONFIG_HOME")
