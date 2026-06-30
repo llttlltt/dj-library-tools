@@ -148,7 +148,29 @@ func (o *Orchestrator) Stats(ctx context.Context, locStr, queryOverride string, 
 
 
 
-func (o *Orchestrator) Sync(ctx context.Context, sourceLoc, targetLoc string, queryOverride string, opts RunOptions, syncOpts provider.SyncOptions) error {
+type SyncOptions struct {
+	ExportDest     string
+	ExportFormat   string
+	PathMaps       map[string]string
+	AppendOnly     bool
+	MetadataFields []string
+	MatchFields    []string
+}
+
+type FixKind string
+
+const (
+	FixDuplicates FixKind = "duplicates"
+	FixMetadata   FixKind = "metadata"
+	FixPaths      FixKind = "paths"
+	FixOrphans    FixKind = "orphans"
+)
+
+type FixOptions struct {
+	Actions map[FixKind][]string
+}
+
+func (o *Orchestrator) Sync(ctx context.Context, sourceLoc, targetLoc string, queryOverride string, opts RunOptions, syncOpts SyncOptions) error {
 	src, _, err := resolver.ResolveSelection(sourceLoc, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return err
@@ -164,7 +186,16 @@ func (o *Orchestrator) Sync(ctx context.Context, sourceLoc, targetLoc string, qu
 		resolvedTargetID = tgt.Groups[0].ID
 	}
 
-	err = prov.System().Sync(ctx, o.buildExecContext(opts), src.Tracks, resolvedTargetID, syncOpts)
+	pSyncOpts := provider.SyncOptions{
+		ExportDest:     syncOpts.ExportDest,
+		ExportFormat:   syncOpts.ExportFormat,
+		PathMaps:       syncOpts.PathMaps,
+		AppendOnly:     syncOpts.AppendOnly,
+		MetadataFields: syncOpts.MetadataFields,
+		MatchFields:    syncOpts.MatchFields,
+	}
+
+	err = prov.System().Sync(ctx, o.buildExecContext(opts), src.Tracks, resolvedTargetID, pSyncOpts)
 	if err != nil {
 		return err
 	}
@@ -174,6 +205,7 @@ func (o *Orchestrator) Sync(ctx context.Context, sourceLoc, targetLoc string, qu
 	}
 	return nil
 }
+
 
 type SyncDiff struct {
 	TargetName   string
@@ -235,7 +267,7 @@ func (o *Orchestrator) GetSyncDiff(ctx context.Context, sourceLoc, targetLoc str
 	return diff, nil
 }
 
-func (o *Orchestrator) Fix(ctx context.Context, locStr string, queryOverride string, opts RunOptions, fixOpts provider.FixOptions) (int, error) {
+func (o *Orchestrator) Fix(ctx context.Context, locStr string, queryOverride string, opts RunOptions, fixOpts FixOptions) (int, error) {
 	sel, prov, err := resolver.ResolveSelection(locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return 0, err
@@ -245,7 +277,14 @@ func (o *Orchestrator) Fix(ctx context.Context, locStr string, queryOverride str
 		return 0, nil
 	}
 
-	count, err := prov.System().Fix(ctx, o.buildExecContext(opts), *sel, fixOpts)
+	pFixOpts := provider.FixOptions{
+		Actions: make(map[provider.FixType][]string),
+	}
+	for k, v := range fixOpts.Actions {
+		pFixOpts.Actions[provider.FixType(k)] = v
+	}
+
+	count, err := prov.System().Fix(ctx, o.buildExecContext(opts), *sel, pFixOpts)
 	if err != nil {
 		return count, err
 	}

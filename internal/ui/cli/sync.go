@@ -6,6 +6,7 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
 	"github.com/llttlltt/dj-library-tools/internal/providers"
+	"github.com/llttlltt/dj-library-tools/internal/services/orchestrator"
 	"github.com/spf13/cobra"
 )
 
@@ -92,7 +93,7 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 				}
 
 				// Perform Membership and Metadata Sync
-				err := orch.Sync(cmd.Context(), args[0], targetStr, queryOverride, runOpts, provider.SyncOptions{
+				err := orch.Sync(cmd.Context(), args[0], targetStr, queryOverride, runOpts, orchestrator.SyncOptions{
 					ExportDest:     exportDest,
 					ExportFormat:   exportFormat,
 					AppendOnly:     syncAppend,
