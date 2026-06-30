@@ -20,6 +20,7 @@ type MockFeedback struct {
 func (f *MockFeedback) OnPreview(msg string)           { f.Previews = append(f.Previews, msg) }
 func (f *MockFeedback) OnSuccess(msg string)           { f.Successes = append(f.Successes, msg) }
 func (f *MockFeedback) OnWarning(msg string)           { f.Warnings = append(f.Warnings, msg) }
+func (f *MockFeedback) OnStatus(msg string)            {}
 func (f *MockFeedback) OnProgress(done, total int)     { f.Progress = append(f.Progress, struct{ Done, Total int }{done, total}) }
 func (f *MockFeedback) OnTable(headers []string, rows [][]string) {}
 

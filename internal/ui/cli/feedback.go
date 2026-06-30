@@ -22,6 +22,10 @@ func (f *TerminalFeedback) OnWarning(msg string) {
 	fmt.Fprintf(os.Stderr, "⚠️  %s\n", color.YellowString(msg))
 }
 
+func (f *TerminalFeedback) OnStatus(msg string) {
+	fmt.Println(msg)
+}
+
 func (f *TerminalFeedback) OnStart(total int64)         {}
 func (f *TerminalFeedback) OnTrackStart(trackTitle string) {}
 func (f *TerminalFeedback) OnTrackEnd()                    {}

@@ -15,10 +15,10 @@ func init() {
 
 type MockProvider struct{}
 
-func (m *MockProvider) Name() string { return "mock" }
-func (m *MockProvider) Tracks() provider.TrackService { return &mockTrackService{} }
-func (m *MockProvider) Groups() provider.GroupService { return &mockGroupService{} }
-func (m *MockProvider) System() provider.SystemService { return &mockSystemService{} }
+func (f *MockProvider) Name() string { return "mock" }
+func (f *MockProvider) Tracks() provider.TrackService { return &mockTrackService{} }
+func (f *MockProvider) Groups() provider.GroupService { return &mockGroupService{} }
+func (f *MockProvider) System() provider.SystemService { return &mockSystemService{} }
 
 type mockTrackService struct{}
 func (s *mockTrackService) List(_ context.Context, _ provider.ExecutionContext, _ string) ([]models.Track, error) {

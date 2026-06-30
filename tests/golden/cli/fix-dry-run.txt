@@ -1,3 +1,2 @@
-[Preview] No metadata normalization required.
-[Preview] Run with --apply to persist changes.
+No metadata normalization required.
 Run with --apply to persist changes.

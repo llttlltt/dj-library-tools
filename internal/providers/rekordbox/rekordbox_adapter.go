@@ -268,14 +268,11 @@ func (s *rekordboxSystemService) reportFix(ectx provider.ExecutionContext, res F
 	if res.TotalIdentified == 0 {
 		switch fixType {
 		case string(provider.FixMetadata):
-			ectx.Feedback.OnPreview("No metadata normalization required.")
+			ectx.Feedback.OnStatus("No metadata normalization required.")
 		case string(provider.FixDuplicates):
-			ectx.Feedback.OnPreview(fmt.Sprintf("No duplicate %s found in the master collection.", target))
+			ectx.Feedback.OnStatus(fmt.Sprintf("No duplicate %s found in the master collection.", target))
 		case string(provider.FixPaths):
-			ectx.Feedback.OnPreview("No paths required repair.")
-		}
-		if !ectx.Apply {
-			ectx.Feedback.OnPreview("Run with --apply to persist changes.")
+			ectx.Feedback.OnStatus("No paths required repair.")
 		}
 		return
 	}
@@ -284,15 +281,13 @@ func (s *rekordboxSystemService) reportFix(ectx provider.ExecutionContext, res F
 			ectx.Feedback.OnTable(d.Table.Headers, d.Table.Rows)
 		}
 		if d.From != "" && ectx.Verbose {
-			ectx.Feedback.OnPreview(fmt.Sprintf("Relocating %s\n  From: %s\n  To:   %s", d.TrackName, d.From, d.To))
+			ectx.Feedback.OnStatus(fmt.Sprintf("Relocating %s\n  From: %s\n  To:   %s", d.TrackName, d.From, d.To))
 		}
 	}
 
-	ectx.Feedback.OnPreview(fmt.Sprintf("Identified %d %s/%s issues.", res.TotalIdentified, fixType, target))
+	ectx.Feedback.OnStatus(fmt.Sprintf("Identified %d %s/%s issues.", res.TotalIdentified, fixType, target))
 	if ectx.Apply {
 		ectx.Feedback.OnSuccess(fmt.Sprintf("Applied %d repairs.", res.TotalApplied))
-	} else {
-		ectx.Feedback.OnPreview("Run with --apply to commit these repairs.")
 	}
 }
 
