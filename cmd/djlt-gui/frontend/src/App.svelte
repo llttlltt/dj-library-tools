@@ -1,26 +1,16 @@
 <script>
-  import Sources from './screens/Sources.svelte';
-  import Workflows from './screens/Workflows.svelte';
-  import Runner from './screens/Runner.svelte';
+  import Sources  from './screens/Sources.svelte';
+  import Workflow from './screens/Workflow.svelte';
 
-  let activeTab = 'sources';
-  let runWorkflowId = null;
-
-  function openRunner(id) {
-    runWorkflowId = id;
-    activeTab = 'runner';
-  }
+  let activeTab = 'sources'; // sources | workflows
 </script>
 
 <main>
   <header>
     <h1>DJ Library Tools</h1>
     <nav>
-      <button class:active={activeTab === 'sources'} on:click={() => activeTab = 'sources'}>Sources</button>
+      <button class:active={activeTab === 'sources'}   on:click={() => activeTab = 'sources'}>Sources</button>
       <button class:active={activeTab === 'workflows'} on:click={() => activeTab = 'workflows'}>Workflows</button>
-      {#if activeTab === 'runner'}
-        <button class:active={true}>Runner</button>
-      {/if}
     </nav>
   </header>
 
@@ -28,9 +18,7 @@
     {#if activeTab === 'sources'}
       <Sources />
     {:else if activeTab === 'workflows'}
-      <Workflows onRun={openRunner} />
-    {:else if activeTab === 'runner'}
-      <Runner workflowId={runWorkflowId} onBack={() => activeTab = 'workflows'} />
+      <Workflow />
     {/if}
   </section>
 </main>

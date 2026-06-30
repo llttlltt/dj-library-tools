@@ -18,6 +18,10 @@ export function GetWorkflow(arg1) {
   return window['go']['gui']['App']['GetWorkflow'](arg1);
 }
 
+export function GetWorkflowDiff(arg1) {
+  return window['go']['gui']['App']['GetWorkflowDiff'](arg1);
+}
+
 export function ListSources() {
   return window['go']['gui']['App']['ListSources']();
 }

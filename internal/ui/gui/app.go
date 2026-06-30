@@ -10,6 +10,9 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/services/orchestrator"
 	"github.com/llttlltt/dj-library-tools/internal/services/workflow"
 
+	// models needed for TrackRow population
+	"github.com/llttlltt/dj-library-tools/internal/core/models"
+
 	// Provider registrations.
 	_ "github.com/llttlltt/dj-library-tools/internal/providers/m3u"
 	_ "github.com/llttlltt/dj-library-tools/internal/providers/plex"
@@ -140,4 +143,113 @@ func (a *App) RunWorkflow(id string) (workflow.WorkflowResult, error) {
 		return workflow.WorkflowResult{}, err
 	}
 	return a.engine.Execute(a.ctx, wf, true)
+}
+
+// ── Diff ──────────────────────────────────────────────────────────────────────
+
+// TrackRow is a lightweight track summary used in StepDiff lists.
+type TrackRow struct {
+	ID     string `json:"id"`
+	Title  string `json:"title"`
+	Artist string `json:"artist"`
+	BPM    string `json:"bpm"`
+}
+
+// StepDiff holds per-target diff data for one Step.
+type StepDiff struct {
+	StepID     string     `json:"step_id"`
+	TargetName string     `json:"target_name"`
+	Added      []TrackRow `json:"added"`
+	Removed    []TrackRow `json:"removed"`
+	Unchanged  []TrackRow `json:"unchanged"`
+}
+
+// GetWorkflowDiff returns per-target, track-level diff data for every sync
+// Step in the Workflow without applying any changes.
+func (a *App) GetWorkflowDiff(id string) ([]StepDiff, error) {
+	wf, err := a.GetWorkflow(id)
+	if err != nil {
+		return nil, err
+	}
+
+	runOpts := orchestrator.RunOptions{Apply: false}
+	var out []StepDiff
+
+	for _, step := range wf.Steps {
+		if step.Kind != "sync" {
+			continue
+		}
+
+		src, err := sourceProviderLoc(step.Source)
+		if err != nil {
+			return nil, fmt.Errorf("step %s source: %w", step.ID, err)
+		}
+
+		for _, tgt := range step.Targets {
+			tgtLoc, err := sourceProviderLoc(tgt)
+			if err != nil {
+				return nil, fmt.Errorf("step %s target: %w", step.ID, err)
+			}
+			if tgt.Query != "" {
+				tgtLoc = tgtLoc + " " + tgt.Query
+			}
+
+			diff, err := a.orch.GetSyncDiff(a.ctx, src, tgtLoc, step.Source.Query, runOpts, false)
+			if err != nil {
+				return nil, fmt.Errorf("step %s diff: %w", step.ID, err)
+			}
+
+			// Build the removed set for fast lookup.
+			removedSet := make(map[string]bool, len(diff.RemovedIDs))
+			for _, rid := range diff.RemovedIDs {
+				removedSet[rid] = true
+			}
+
+			sd := StepDiff{
+				StepID:     step.ID,
+				TargetName: diff.TargetName,
+				Added:      toTrackRows(diff.AddedIDs, diff.TrackLookup),
+				Removed:    toTrackRows(diff.RemovedIDs, diff.TrackLookup),
+			}
+			// Unchanged = current members that are NOT being removed.
+			var unchangedIDs []string
+			for _, cid := range diff.CurrentIDs {
+				if !removedSet[cid] {
+					unchangedIDs = append(unchangedIDs, cid)
+				}
+			}
+			sd.Unchanged = toTrackRows(unchangedIDs, diff.TrackLookup)
+			out = append(out, sd)
+		}
+	}
+	return out, nil
+}
+
+// sourceProviderLoc resolves an Endpoint to "<provider>/<resource>".
+func sourceProviderLoc(ep config.Endpoint) (string, error) {
+	src, err := config.FindSourceByID(ep.SourceID)
+	if err != nil {
+		return "", err
+	}
+	return src.Provider + "/" + ep.Resource, nil
+}
+
+// toTrackRows converts a slice of track IDs to TrackRow summaries using the
+// lookup map populated by GetSyncDiff.
+func toTrackRows(ids []string, lookup map[string]models.Track) []TrackRow {
+	rows := make([]TrackRow, 0, len(ids))
+	for _, id := range ids {
+		t := lookup[id]
+		bpm := ""
+		if t.BPM > 0 {
+			bpm = fmt.Sprintf("%.0f", t.BPM)
+		}
+		rows = append(rows, TrackRow{
+			ID:     id,
+			Title:  t.Title,
+			Artist: t.Artist,
+			BPM:    bpm,
+		})
+	}
+	return rows
 }

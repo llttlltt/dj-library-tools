@@ -111,6 +111,67 @@ export namespace config {
 
 }
 
+export namespace gui {
+	
+	export class TrackRow {
+	    id: string;
+	    title: string;
+	    artist: string;
+	    bpm: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TrackRow(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.title = source["title"];
+	        this.artist = source["artist"];
+	        this.bpm = source["bpm"];
+	    }
+	}
+	export class StepDiff {
+	    step_id: string;
+	    target_name: string;
+	    added: TrackRow[];
+	    removed: TrackRow[];
+	    unchanged: TrackRow[];
+	
+	    static createFrom(source: any = {}) {
+	        return new StepDiff(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.step_id = source["step_id"];
+	        this.target_name = source["target_name"];
+	        this.added = this.convertValues(source["added"], TrackRow);
+	        this.removed = this.convertValues(source["removed"], TrackRow);
+	        this.unchanged = this.convertValues(source["unchanged"], TrackRow);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+
 export namespace workflow {
 	
 	export class StepResult {
