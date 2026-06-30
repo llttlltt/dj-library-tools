@@ -96,6 +96,15 @@ var CollectionFields = map[string]map[string]FieldKind{
 		"name":   KindString,
 		"folder": KindString,
 	},
+	"tracks": {
+		"title":    KindString,
+		"artist":   KindString,
+		"album":    KindString,
+		"genre":    KindString,
+		"bpm":      KindNumeric,
+		"rating":   KindNumeric,
+		"location": KindString,
+	},
 }
 
 // CollectionCapabilities maps collections to the required capability to use them.

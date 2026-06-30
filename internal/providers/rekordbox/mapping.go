@@ -79,7 +79,7 @@ func parsePosition(s string) float64 {
 	return v
 }
 
-func ToNeutralGroup(n Node, parentFolder string) models.ResourceGroup {
+func ToNeutralGroup(n Node, parentFolder string, trackLookup map[string]models.Track) models.ResourceGroup {
 	name := strings.TrimSpace(html.UnescapeString(n.Name))
 	// Construction of the ID: use full path to ensure uniqueness
 	id := name
@@ -98,7 +98,8 @@ func ToNeutralGroup(n Node, parentFolder string) models.ResourceGroup {
 	if n.Type == 0 {
 		items = DerefInt32(n.Count)
 	}
-	return models.ResourceGroup{
+
+	rg := models.ResourceGroup{
 		ID:                  id,
 		Name:                name,
 		Items:               int(items),
@@ -106,4 +107,15 @@ func ToNeutralGroup(n Node, parentFolder string) models.ResourceGroup {
 		Kind:                groupKind,
 		ImplementationState: n,
 	}
+
+	// Hydrate member tracks for playlists
+	if n.Type == 1 && trackLookup != nil {
+		for _, rt := range n.TRACK {
+			if t, ok := trackLookup[rt.Key]; ok {
+				rg.Tracks = append(rg.Tracks, t)
+			}
+		}
+	}
+
+	return rg
 }

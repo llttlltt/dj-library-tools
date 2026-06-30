@@ -18,12 +18,22 @@ func (r *Library) GetResources(kind string) []models.Resource {
 			results = append(results, ToNeutralTrack(rt))
 		}
 	case "group":
-		groups := r.GetPlaylists()
+		trackMap := r.getTrackLookup()
+		groups := r.GetPlaylists(trackMap)
 		for _, g := range groups {
 			results = append(results, g)
 		}
 	}
 	return results
+}
+
+func (r *Library) getTrackLookup() map[string]models.Track {
+	lookup := make(map[string]models.Track)
+	for _, rt := range r.XML.Collection.TRACK {
+		t := ToNeutralTrack(rt)
+		lookup[t.ID] = t
+	}
+	return lookup
 }
 
 func (r *Library) GetTracks() []models.Track {
@@ -35,17 +45,17 @@ func (r *Library) GetTracks() []models.Track {
 	return tracks
 }
 
-func (r *Library) GetPlaylists() []models.ResourceGroup {
+func (r *Library) GetPlaylists(trackLookup map[string]models.Track) []models.ResourceGroup {
 	var results []models.ResourceGroup
-	r.collectAllGroups(r.XML.Playlists.Node.Node, "", &results)
+	r.collectAllGroups(r.XML.Playlists.Node.Node, "", trackLookup, &results)
 	return results
 }
 
-func (r *Library) collectAllGroups(nodes []Node, parent string, out *[]models.ResourceGroup) {
+func (r *Library) collectAllGroups(nodes []Node, parent string, trackLookup map[string]models.Track, out *[]models.ResourceGroup) {
 	for _, n := range nodes {
-		*out = append(*out, ToNeutralGroup(n, parent))
+		*out = append(*out, ToNeutralGroup(n, parent, trackLookup))
 		if len(n.Node) > 0 {
-			r.collectAllGroups(n.Node, n.Name, out)
+			r.collectAllGroups(n.Node, n.Name, trackLookup, out)
 		}
 	}
 }
@@ -122,7 +132,7 @@ func (r *Library) CreateGroup(parentID, name string, groupKind models.GroupKind,
 	} else {
 		r.XML.Playlists.Node.Count = int32(len(r.XML.Playlists.Node.Node))
 	}
-	return ToNeutralGroup(node, parentID), nil
+	return ToNeutralGroup(node, parentID, nil), nil
 }
 
 func (r *Library) DeleteGroup(groupID string, groupKind models.GroupKind) error {

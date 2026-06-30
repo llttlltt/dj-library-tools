@@ -8,6 +8,10 @@ type ResourceGroup struct {
 	ParentFolder string
 	Kind         GroupKind
 
+	// Tracks holds the member tracks of this group. Populated on demand by providers
+	// when content-based queries (e.g. tracks/title:Oceans) are executed.
+	Tracks []Track
+
 	ImplementationState interface{}
 }
 

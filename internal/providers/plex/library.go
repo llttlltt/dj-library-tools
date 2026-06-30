@@ -34,7 +34,14 @@ func (l *Library) GetResources(kind string) []models.Resource {
 			return nil
 		}
 		for _, p := range playlists {
-			results = append(results, ToNeutralGroup(p))
+			rg := ToNeutralGroup(p)
+			tracks, err := l.client.GetPlaylistTracks(ctx, l.baseURL, p.Key)
+			if err == nil {
+				for _, t := range tracks {
+					rg.Tracks = append(rg.Tracks, ToNeutralTrack(t))
+				}
+			}
+			results = append(results, rg)
 		}
 	}
 	return results
