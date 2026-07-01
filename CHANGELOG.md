@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/llttlltt/dj-library-tools/compare/v1.1.0...v1.2.0) (2026-07-01)
+
+
+### Features
+
+* finalize robust Effect-TS boundary and refine update UI ([84fd1db](https://github.com/llttlltt/dj-library-tools/commit/84fd1db53cb67f87f09594fcb80b31ca23e1b83f))
+* **gui:** show full file path for M3U resources in query tester ([f567ad5](https://github.com/llttlltt/dj-library-tools/commit/f567ad5ebcd4a785257ecbf7ca6678b3ea7c807f))
+* implement centralized reactive state management with Effect Atoms ([c7b8262](https://github.com/llttlltt/dj-library-tools/commit/c7b82628f9accdfb0b7ac35d2cdfeca2b52347e4))
+* implement granular multi-group sync and consolidate UI features ([0e60a4c](https://github.com/llttlltt/dj-library-tools/commit/0e60a4c714c8fc640aef1f7d0d8dc8cee75b6a2b))
+* implement granular resource capabilities and hardened GUI discovery ([cac9b6e](https://github.com/llttlltt/dj-library-tools/commit/cac9b6e504695132f882593a4f2a1739212815d2))
+* implement robust Effect-TS boundary for Wails IPC and domain schemas ([e5e7b94](https://github.com/llttlltt/dj-library-tools/commit/e5e7b94fa33691e740de7c2cd361495a371b1a55))
+* implement static provider capabilities and capability-aware GUI/CLI ([4f784c8](https://github.com/llttlltt/dj-library-tools/commit/4f784c80528e7e271e388c5f8a23cf55c61a6985))
+
 ## [1.1.0](https://github.com/llttlltt/dj-library-tools/compare/v1.0.0...v1.1.0) (2026-07-01)
 
 
