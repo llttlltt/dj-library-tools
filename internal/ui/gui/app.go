@@ -241,10 +241,11 @@ func (a *App) RunWorkflow(id string) (workflow.WorkflowResult, error) {
 
 // TrackRow is a lightweight track summary used in StepDiff lists.
 type TrackRow struct {
-	ID     string `json:"id"`
-	Title  string `json:"title"`
-	Artist string `json:"artist"`
-	BPM    string `json:"bpm"`
+	ID       string `json:"id"`
+	Title    string `json:"title"`
+	Artist   string `json:"artist"`
+	BPM      string `json:"bpm"`
+	Location string `json:"location"`
 }
 
 // StepDiff holds per-target diff data for one Step.
@@ -341,10 +342,11 @@ func toTrackRows(ids []string, lookup map[string]models.Track) []TrackRow {
 			bpm = fmt.Sprintf("%.0f", t.BPM)
 		}
 		rows = append(rows, TrackRow{
-			ID:     id,
-			Title:  t.Title,
-			Artist: t.Artist,
-			BPM:    bpm,
+			ID:       id,
+			Title:    t.Title,
+			Artist:   t.Artist,
+			BPM:      bpm,
+			Location: t.Location,
 		})
 	}
 	return rows
@@ -391,7 +393,13 @@ func (a *App) PreviewQuery(connectionID, resource, query string) (QueryResult, e
 	}
 	rows := make([]TrackRow, 0, len(res.Tracks))
 	for _, t := range res.Tracks {
-		rows = append(rows, TrackRow{ID: t.ID, Title: t.Title, Artist: t.Artist, BPM: fmt.Sprintf("%.2f", t.BPM)})
+		rows = append(rows, TrackRow{
+			ID:       t.ID,
+			Title:    t.Title,
+			Artist:   t.Artist,
+			BPM:      fmt.Sprintf("%.2f", t.BPM),
+			Location: t.Location,
+		})
 	}
 	return QueryResult{Kind: "tracks", Tracks: rows, Count: len(rows)}, nil
 }

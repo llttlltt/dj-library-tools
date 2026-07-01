@@ -221,6 +221,7 @@ export namespace gui {
 	    title: string;
 	    artist: string;
 	    bpm: string;
+	    location: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new TrackRow(source);
@@ -232,6 +233,7 @@ export namespace gui {
 	        this.title = source["title"];
 	        this.artist = source["artist"];
 	        this.bpm = source["bpm"];
+	        this.location = source["location"];
 	    }
 	}
 	export class QueryResult {

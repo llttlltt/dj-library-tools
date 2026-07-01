@@ -51,11 +51,35 @@ func (p *M3UProvider) Tracks() provider.TrackService  { return &m3uTrackService{
 func (p *M3UProvider) Groups() provider.GroupService  { return &m3uGroupService{p} }
 func (p *M3UProvider) System() provider.SystemService { return &m3uSystemService{p} }
 
+func ToNeutralTrack(t models.Track) models.Track {
+	// If Title is missing, derive it from the location/filename
+	if t.Title == "" && t.Location != "" {
+		t.Title = filepath.Base(t.Location)
+	}
+	// If Display was set (from M3U EXTINF), use it for Title/Artist if they are blank
+	if t.Display != "" {
+		if t.Title == "" || t.Title == filepath.Base(t.Location) {
+			// Basic heuristic: Artist - Title
+			if parts := strings.SplitN(t.Display, " - ", 2); len(parts) == 2 {
+				t.Artist = strings.TrimSpace(parts[0])
+				t.Title = strings.TrimSpace(parts[1])
+			} else {
+				t.Title = t.Display
+			}
+		}
+	}
+	return t
+}
+
 type m3uTrackService struct{ *M3UProvider }
 
 func (s *m3uTrackService) List(ctx context.Context, ectx provider.ExecutionContext, query string) ([]models.Track, error) {
+	var tracks []models.Track
+	for _, t := range s.tracks {
+		tracks = append(tracks, ToNeutralTrack(t))
+	}
 	// Use Engine for agnostic querying
-	eng := library.NewEngine(NewLibrary(s.tracks))
+	eng := library.NewEngine(NewLibrary(tracks))
 	return eng.Ls(query, nil)
 }
 

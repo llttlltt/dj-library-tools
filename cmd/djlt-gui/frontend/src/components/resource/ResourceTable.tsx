@@ -1,3 +1,4 @@
+import { useAtom } from "@effect-atom/atom-react";
 import { forwardRef } from "react";
 import { TableVirtuoso } from "react-virtuoso";
 import { Badge } from "@/components/ui/badge";
@@ -7,13 +8,20 @@ import {
 	TableHead,
 	TableRow,
 } from "@/components/ui/table";
+import { connectionsAtom } from "@/store/connections";
 import type { GroupRow, QueryResult, TrackRow } from "@/types";
 
 interface ResourceTableProps {
 	result: QueryResult;
+	connectionID?: string;
 }
 
-export function ResourceTable({ result }: ResourceTableProps) {
+export function ResourceTable({ result, connectionID }: ResourceTableProps) {
+	const [connections] = useAtom(connectionsAtom);
+
+	const connection = connections.find((c) => c.id === connectionID);
+	const isM3U = connection?.provider === "m3u";
+
 	// biome-ignore lint/suspicious/noExplicitAny: data is union of two row types
 	const data: any[] = result.kind === "groups" ? result.groups : result.tracks;
 
@@ -27,7 +35,7 @@ export function ResourceTable({ result }: ResourceTableProps) {
 					Table: ({ ...props }) => (
 						<table
 							{...props}
-							className="w-full border-collapse text-left text-sm"
+							className="min-w-full w-max border-collapse text-left text-sm"
 						/>
 					),
 					TableHead: forwardRef((props, ref) => (
@@ -48,28 +56,34 @@ export function ResourceTable({ result }: ResourceTableProps) {
 						{result.kind === "groups" ? (
 							<>
 								<TableHead className="sticky top-0 bg-secondary/40 shadow-[0_1px_0_0_hsl(var(--border))] font-semibold text-xs py-2.5">
-									Name
+									name
 								</TableHead>
 								<TableHead className="sticky top-0 bg-secondary/40 shadow-[0_1px_0_0_hsl(var(--border))] font-semibold text-xs py-2.5">
-									Kind
+									kind
 								</TableHead>
 								<TableHead className="sticky top-0 bg-secondary/40 shadow-[0_1px_0_0_hsl(var(--border))] font-semibold text-xs py-2.5">
-									Parent
+									parent
 								</TableHead>
 								<TableHead className="w-20 text-right sticky top-0 bg-secondary/40 shadow-[0_1px_0_0_hsl(var(--border))] font-semibold text-xs py-2.5">
-									Items
+									items
+								</TableHead>
+							</>
+						) : isM3U ? (
+							<>
+								<TableHead className="sticky top-0 bg-secondary/40 shadow-[0_1px_0_0_hsl(var(--border))] font-semibold text-xs py-2.5">
+									location
 								</TableHead>
 							</>
 						) : (
 							<>
 								<TableHead className="sticky top-0 bg-secondary/40 shadow-[0_1px_0_0_hsl(var(--border))] font-semibold text-xs py-2.5">
-									Title
+									title
 								</TableHead>
 								<TableHead className="sticky top-0 bg-secondary/40 shadow-[0_1px_0_0_hsl(var(--border))] font-semibold text-xs py-2.5">
-									Artist
+									artist
 								</TableHead>
 								<TableHead className="w-20 text-right sticky top-0 bg-secondary/40 shadow-[0_1px_0_0_hsl(var(--border))] font-semibold text-xs py-2.5">
-									BPM
+									bpm
 								</TableHead>
 							</>
 						)}
@@ -104,6 +118,17 @@ export function ResourceTable({ result }: ResourceTableProps) {
 						);
 					}
 					const t = row as TrackRow;
+					if (isM3U) {
+						return (
+							<>
+								<TableCell className="text-sm font-mono py-2 whitespace-nowrap pr-8">
+									{t.location || (
+										<span className="text-muted-foreground italic">—</span>
+									)}
+								</TableCell>
+							</>
+						);
+					}
 					const parsedBpm =
 						typeof t.bpm === "string" ? Number.parseFloat(t.bpm) : t.bpm;
 					return (

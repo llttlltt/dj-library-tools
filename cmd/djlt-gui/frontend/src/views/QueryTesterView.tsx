@@ -105,7 +105,11 @@ export default function QueryTesterView() {
 					{/* Results / Error Panel - Only mounts if result exists or there is an active error */}
 					{(result !== null || error !== null) && (
 						<div className="flex-1 min-h-0 flex flex-col">
-							<QueryTesterResults result={result} error={error} />
+							<QueryTesterResults
+								result={result}
+								error={error}
+								connectionID={connectionID}
+							/>
 						</div>
 					)}
 				</div>

@@ -179,7 +179,11 @@ export function QueryTester({
 					</div>
 
 					<div className="flex-1 min-h-0 flex flex-col">
-						<QueryTesterResults result={result} error={error} />
+						<QueryTesterResults
+							result={result}
+							error={error}
+							connectionID={connectionID}
+						/>
 					</div>
 				</div>
 			</SheetContent>
@@ -192,9 +196,14 @@ export function QueryTester({
 interface ResultsProps {
 	result: QueryResult | null;
 	error: unknown | null;
+	connectionID?: string;
 }
 
-export function QueryTesterResults({ result, error }: ResultsProps) {
+export function QueryTesterResults({
+	result,
+	error,
+	connectionID,
+}: ResultsProps) {
 	if (error) {
 		let message = error instanceof Error ? error.message : String(error);
 
@@ -232,7 +241,7 @@ export function QueryTesterResults({ result, error }: ResultsProps) {
 				</Badge>
 			</div>
 
-			<ResourceTable result={result} />
+			<ResourceTable result={result} connectionID={connectionID} />
 		</div>
 	);
 }

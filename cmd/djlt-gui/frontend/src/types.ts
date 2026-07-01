@@ -56,6 +56,7 @@ export interface TrackRow {
 	title: string;
 	artist: string;
 	bpm: string;
+	location: string;
 }
 
 export interface GroupRow {

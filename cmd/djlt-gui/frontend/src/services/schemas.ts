@@ -50,6 +50,7 @@ export const TrackRowSchema = Schema.Struct({
 	title: Schema.String,
 	artist: Schema.String,
 	bpm: Schema.String,
+	location: Schema.String,
 });
 
 /**
