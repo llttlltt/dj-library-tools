@@ -32,7 +32,7 @@ go vet ./...            ; echo "vet:   $?"   # must be 0
 mise run test           ; echo "test:  $?"   # must be 0 (runs: go test ./...)
 ```
 
-When any file under `cmd/djlt-gui/frontend/src/` changes, also run the frontend checks:
+When any file under `cmd/djlt-gui/frontend/src/` changes, also run the frontend checks (requires Node 22+):
 
 ```bash
 cd cmd/djlt-gui/frontend && pnpm run check ; echo "biome: $?"   # must be 0; Biome lint + format
