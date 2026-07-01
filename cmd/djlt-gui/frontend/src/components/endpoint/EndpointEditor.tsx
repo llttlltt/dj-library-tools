@@ -11,12 +11,15 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { filterWritableResources, findSourceProvider } from "@/store/selection";
-import type { Endpoint, ProviderInfo, Source } from "@/types";
+import {
+	filterWritableResources,
+	findConnectionProvider,
+} from "@/store/selection";
+import type { Connection, Endpoint, ProviderInfo } from "@/types";
 
 interface EndpointEditorProps {
 	endpoint: Endpoint;
-	sources: Source[];
+	connections: Connection[];
 	providers: ProviderInfo[];
 	isTarget?: boolean;
 	onChange: (patch: Partial<Endpoint>) => void;
@@ -26,20 +29,23 @@ interface EndpointEditorProps {
 
 export function EndpointEditor({
 	endpoint,
-	sources,
+	connections,
 	providers,
 	isTarget = false,
 	onChange,
 	onOpenQueryTester,
 	layout = "row",
 }: EndpointEditorProps) {
-	const _selectedSource = sources.find((s) => s.id === endpoint.source_id);
-	const provider = findSourceProvider(endpoint.source_id, sources, providers);
+	const provider = findConnectionProvider(
+		endpoint.connection_id,
+		connections,
+		providers,
+	);
 
-	// If this is a target, only show sources whose provider has at least one writable resource.
-	const filteredSources = sources.filter((s) => {
+	// If this is a target, only show connections whose provider has at least one writable resource.
+	const filteredConnections = connections.filter((c) => {
 		if (!isTarget) return true;
-		const p = providers.find((prov) => prov.name === s.provider);
+		const p = providers.find((prov) => prov.name === c.provider);
 		return p?.resources.some((r) => r.can_write) ?? true;
 	});
 
@@ -64,7 +70,7 @@ export function EndpointEditor({
 	const supportsQuery = currentRes?.supports_query ?? true;
 	const isInvalidTarget = isTarget && currentRes && !currentRes.can_write;
 
-	const sourceSelect = (
+	const connectionSelect = (
 		<div
 			className={cn(
 				"flex flex-col gap-1.5 min-w-0",
@@ -73,17 +79,19 @@ export function EndpointEditor({
 		>
 			{layout === "grid" && (
 				<span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-					Source
+					Connection
 				</span>
 			)}
 			<Select
-				value={endpoint.source_id}
+				value={endpoint.connection_id}
 				onValueChange={(v) => {
-					const newSrc = sources.find((s) => s.id === v);
-					const newProv = providers.find((p) => p.name === newSrc?.provider);
+					const newConnection = connections.find((c) => c.id === v);
+					const newProv = providers.find(
+						(p) => p.name === newConnection?.provider,
+					);
 					const newResList = filterWritableResources(newProv, isTarget);
 					const nextRes = newResList[0]?.name ?? endpoint.resource;
-					onChange({ source_id: v, resource: nextRes });
+					onChange({ connection_id: v, resource: nextRes });
 				}}
 			>
 				<SelectTrigger
@@ -92,14 +100,14 @@ export function EndpointEditor({
 						layout === "row" ? "w-40 h-9 shrink-0" : "h-8.5",
 					)}
 				>
-					<SelectValue placeholder="Select a source…" />
+					<SelectValue placeholder="Select a connection…" />
 				</SelectTrigger>
 				<SelectContent>
-					{[...filteredSources]
+					{[...filteredConnections]
 						.sort((a, b) => a.name.localeCompare(b.name))
-						.map((s) => (
-							<SelectItem key={s.id} value={s.id}>
-								{s.name}
+						.map((c) => (
+							<SelectItem key={c.id} value={c.id}>
+								{c.name}
 							</SelectItem>
 						))}
 				</SelectContent>
@@ -177,7 +185,7 @@ export function EndpointEditor({
 		return (
 			<div className="space-y-4">
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-					{sourceSelect}
+					{connectionSelect}
 					{resourceSelect}
 				</div>
 				{queryInput}
@@ -187,7 +195,7 @@ export function EndpointEditor({
 
 	return (
 		<div className="flex flex-nowrap gap-2.5 items-center w-full min-w-0">
-			{sourceSelect}
+			{connectionSelect}
 			{resourceSelect}
 			{queryInput}
 
@@ -200,7 +208,7 @@ export function EndpointEditor({
 					title="Test query"
 					onClick={() =>
 						onOpenQueryTester({
-							sourceID: endpoint.source_id,
+							connectionID: endpoint.connection_id,
 							resource: endpoint.resource,
 							query: endpoint.query ?? "",
 							isTarget,

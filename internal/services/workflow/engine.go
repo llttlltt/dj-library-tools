@@ -62,11 +62,11 @@ func (e *Engine) Execute(ctx context.Context, wf config.Workflow, apply bool) (W
 		stepResults[wf.Steps[i].ID] = sr
 	}
 
-	// Per-source mutex for Run mode (apply=true). In Preview mode this map is
+	// Per-connection mutex for Run mode (apply=true). In Preview mode this map is
 	// populated but the mutexes are never contended (all Steps are read-only).
-	var sourceMu sync.Map // map[sourceID → *sync.Mutex]
-	getSourceMu := func(sourceID string) *sync.Mutex {
-		v, _ := sourceMu.LoadOrStore(sourceID, &sync.Mutex{})
+	var connectionMu sync.Map // map[connectionID → *sync.Mutex]
+	getConnectionMu := func(connectionID string) *sync.Mutex {
+		v, _ := connectionMu.LoadOrStore(connectionID, &sync.Mutex{})
 		return v.(*sync.Mutex)
 	}
 
@@ -114,10 +114,10 @@ func (e *Engine) Execute(ctx context.Context, wf config.Workflow, apply bool) (W
 		sr.Status = StatusRunning
 		fb := NewGUIFeedback(sr)
 
-		// In Run mode serialise Steps that share the same source to prevent
+		// In Run mode serialise Steps that share the same connection to prevent
 		// concurrent in-memory writes to the same provider instance.
 		if apply {
-			mu := getSourceMu(step.Source.SourceID)
+			mu := getConnectionMu(step.Source.ConnectionID)
 			mu.Lock()
 			defer mu.Unlock()
 		}
@@ -295,10 +295,10 @@ func toStringSlice(v interface{}) ([]string, bool) {
 }
 
 // sourceLocation resolves an Endpoint to a provider location string of the
-// form "<source-id>/<resource>". The resolver handles UUID lookup and config hydration.
+// form "<connection-id>/<resource>". The resolver handles UUID lookup and config hydration.
 func sourceLocation(ep config.Endpoint) (string, error) {
-	if ep.SourceID == "" {
-		return "", fmt.Errorf("source id missing in endpoint")
+	if ep.ConnectionID == "" {
+		return "", fmt.Errorf("connection id missing in endpoint")
 	}
-	return ep.SourceID + "/" + ep.Resource, nil
+	return ep.ConnectionID + "/" + ep.Resource, nil
 }

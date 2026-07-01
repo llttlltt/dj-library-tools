@@ -2,7 +2,7 @@ import { ChevronRight, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Source } from "@/types";
+import type { Connection } from "@/types";
 
 const PROVIDER_LABELS: Record<string, string> = {
 	rb: "Rekordbox",
@@ -10,39 +10,43 @@ const PROVIDER_LABELS: Record<string, string> = {
 	plex: "Plex",
 };
 
-interface SourceCardProps {
-	source: Source;
-	onEdit: (s: Source) => void;
-	onDelete: (s: Source) => void;
+interface ConnectionCardProps {
+	connection: Connection;
+	onEdit: (c: Connection) => void;
+	onDelete: (c: Connection) => void;
 }
 
-export function SourceCard({ source: s, onEdit, onDelete }: SourceCardProps) {
+export function ConnectionCard({
+	connection: c,
+	onEdit,
+	onDelete,
+}: ConnectionCardProps) {
 	const subtitle =
-		s.config?.file_path || s.config?.host
-			? (s.config.file_path ?? s.config.host)
+		c.config?.file_path || c.config?.host
+			? (c.config.file_path ?? c.config.host)
 			: null;
 
 	return (
 		<Card
 			className="cursor-pointer hover:border-border/80 transition-colors"
-			onClick={() => onEdit(s)}
+			onClick={() => onEdit(c)}
 		>
 			<CardHeader className="flex-row items-center justify-between py-3 px-4 gap-0 space-y-0">
 				<div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
 					<CardTitle className="text-sm font-medium truncate">
-						{s.name}
+						{c.name}
 					</CardTitle>
 					<Badge
 						variant={
-							s.provider === "rb"
+							c.provider === "rb"
 								? "sync"
-								: s.provider === "plex"
+								: c.provider === "plex"
 									? "fix"
 									: "edit"
 						}
 						className="shrink-0"
 					>
-						{PROVIDER_LABELS[s.provider] ?? s.provider}
+						{PROVIDER_LABELS[c.provider] ?? c.provider}
 					</Badge>
 				</div>
 				<div className="flex items-center gap-1">
@@ -53,7 +57,7 @@ export function SourceCard({ source: s, onEdit, onDelete }: SourceCardProps) {
 						className="h-8 w-8 shrink-0 hover:bg-secondary"
 						onClick={(e) => {
 							e.stopPropagation();
-							onDelete(s);
+							onDelete(c);
 						}}
 					>
 						<Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />

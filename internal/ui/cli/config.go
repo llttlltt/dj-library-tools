@@ -12,34 +12,34 @@ func newConfigCmd() *cobra.Command {
 		Use:   "config",
 		Short: "Manage application configuration",
 	}
-	cmd.AddCommand(newSourceListCmd())
+	cmd.AddCommand(newConnectionListCmd())
 	return cmd
 }
 
-// newSourceListCmd prints all configured Sources — useful for debugging and
-// confirming that ~/.config/djlt/sources/ is populated correctly.
-func newSourceListCmd() *cobra.Command {
-	sourceCmd := &cobra.Command{
-		Use:   "source",
-		Short: "Manage Sources",
+// newConnectionListCmd prints all configured Connections — useful for debugging and
+// confirming that ~/.config/djlt/connections/ is populated correctly.
+func newConnectionListCmd() *cobra.Command {
+	connectionCmd := &cobra.Command{
+		Use:   "connection",
+		Short: "Manage Connection",
 	}
-	sourceCmd.AddCommand(&cobra.Command{
+	connectionCmd.AddCommand(&cobra.Command{
 		Use:   "list",
-		Short: "List all configured Sources",
+		Short: "List all configured Connections",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			sources, err := config.LoadSources()
+			connections, err := config.LoadConnections()
 			if err != nil {
 				return err
 			}
-			if len(sources) == 0 {
-				fmt.Println("No Sources configured. Add one via the GUI.")
+			if len(connections) == 0 {
+				fmt.Println("No Connections configured. Add one via the GUI.")
 				return nil
 			}
-			for _, s := range sources {
-				fmt.Printf("%-38s  %-8s  %s\n", s.ID, s.Provider, s.Name)
+			for _, c := range connections {
+				fmt.Printf("%-38s  %-8s  %s\n", c.ID, c.Provider, c.Name)
 			}
 			return nil
 		},
 	})
-	return sourceCmd
+	return connectionCmd
 }

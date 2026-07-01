@@ -10,12 +10,12 @@ export function CheckPlexAuth(arg1) {
   return window['go']['gui']['App']['CheckPlexAuth'](arg1);
 }
 
-export function CreateSource(arg1, arg2, arg3) {
-  return window['go']['gui']['App']['CreateSource'](arg1, arg2, arg3);
+export function CreateConnection(arg1, arg2, arg3) {
+  return window['go']['gui']['App']['CreateConnection'](arg1, arg2, arg3);
 }
 
-export function DeleteSource(arg1) {
-  return window['go']['gui']['App']['DeleteSource'](arg1);
+export function DeleteConnection(arg1) {
+  return window['go']['gui']['App']['DeleteConnection'](arg1);
 }
 
 export function DeleteWorkflow(arg1) {
@@ -54,12 +54,12 @@ export function InstallUpdate() {
   return window['go']['gui']['App']['InstallUpdate']();
 }
 
-export function ListProviders() {
-  return window['go']['gui']['App']['ListProviders']();
+export function ListConnections() {
+  return window['go']['gui']['App']['ListConnections']();
 }
 
-export function ListSources() {
-  return window['go']['gui']['App']['ListSources']();
+export function ListProviders() {
+  return window['go']['gui']['App']['ListProviders']();
 }
 
 export function ListWorkflows() {
@@ -90,6 +90,6 @@ export function SetUpdateInterval(arg1) {
   return window['go']['gui']['App']['SetUpdateInterval'](arg1);
 }
 
-export function UpdateSource(arg1) {
-  return window['go']['gui']['App']['UpdateSource'](arg1);
+export function UpdateConnection(arg1) {
+  return window['go']['gui']['App']['UpdateConnection'](arg1);
 }

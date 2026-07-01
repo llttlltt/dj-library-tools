@@ -80,6 +80,6 @@ nav:
     - rm: commands/rm.md
     - config:
       - index: commands/config/index.md
-      - source:
-        - index: commands/config/source/index.md
-        - list: commands/config/source/list.md
+      - connection:
+        - index: commands/config/connection/index.md
+        - list: commands/config/connection/list.md

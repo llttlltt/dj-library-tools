@@ -7,9 +7,9 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { WorkflowDetail } from "@/components/workflow/WorkflowDetail";
 import { WorkflowEditor } from "@/components/workflow/WorkflowEditor";
-import { runtime } from "@/lib/runtime";
+import { runPromise, runtime } from "@/lib/runtime";
+import { connectionsAtom, loadConnections } from "@/store/connections";
 import { loadProviders, providersAtom } from "@/store/providers";
-import { loadSources, sourcesAtom } from "@/store/sources";
 import {
 	loadWorkflows,
 	removeWorkflow,
@@ -41,7 +41,7 @@ export default function WorkflowsView({
 	const [wfList] = useAtom(workflowsAtom);
 	const [errorValue, setError] = useAtom(workflowsErrorAtom);
 	const error = errorValue ?? "";
-	const [sources] = useAtom(sourcesAtom);
+	const [connections] = useAtom(connectionsAtom);
 	const [providers] = useAtom(providersAtom);
 
 	const [selected, setSelected] = useState<Workflow | null>(null);
@@ -52,9 +52,9 @@ export default function WorkflowsView({
 	const [deleteTarget, setDeleteTarget] = useState<Workflow | null>(null);
 
 	useEffect(() => {
-		runtime.runPromise(loadWorkflows);
-		runtime.runPromise(loadSources);
-		runtime.runPromise(loadProviders);
+		runPromise(loadWorkflows);
+		runPromise(loadConnections);
+		runPromise(loadProviders);
 	}, []);
 
 	async function openWorkflow(w: Workflow) {
@@ -292,7 +292,7 @@ export default function WorkflowsView({
 		return (
 			<WorkflowEditor
 				workflow={selected}
-				sources={sources}
+				connections={connections}
 				providers={providers}
 				busy={busy}
 				error={error}
@@ -313,7 +313,7 @@ export default function WorkflowsView({
 		return (
 			<WorkflowDetail
 				workflow={selected}
-				sources={sources}
+				connections={connections}
 				diffs={diffs}
 				result={result}
 				mode={mode}

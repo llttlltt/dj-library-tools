@@ -9,12 +9,12 @@ import (
 	"github.com/google/uuid"
 )
 
-// Endpoint is the {source_id, resource, query} triple that identifies one side
+// Endpoint is the {connection_id, resource, query} triple that identifies one side
 // of a Step. Source is the source Endpoint; Targets are the target Endpoints.
 type Endpoint struct {
-	SourceID string `json:"source_id"`
-	Resource string `json:"resource"`
-	Query    string `json:"query,omitempty"`
+	ConnectionID string `json:"connection_id"`
+	Resource     string `json:"resource"`
+	Query        string `json:"query,omitempty"`
 }
 
 // Step is an atomic operation within a Workflow — one orchestrator call. Steps

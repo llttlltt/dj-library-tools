@@ -9,14 +9,14 @@ import (
 )
 
 func getOrchestrator() *orchestrator.Orchestrator {
-	// If -f is set on the CLI it takes priority over any configured Source.
+	// If -f is set on the CLI it takes priority over any configured Connection.
 	primaryPath := filePath
 	if primaryPath == "" {
-		src, err := config.FindFirstSource("rb")
+		conn, err := config.FindFirstConnection("rb")
 		if err != nil {
-			fmt.Println("No rekordbox Source configured. Add one via the GUI or use -f to specify a library file.")
+			fmt.Println("No rekordbox Connection configured. Add one via the GUI or use -f to specify a library file.")
 		} else {
-			primaryPath = config.ResolveProviderOptions(*src).FilePath
+			primaryPath = config.ResolveProviderOptions(*conn).FilePath
 		}
 	}
 	opts := orchestrator.Options{

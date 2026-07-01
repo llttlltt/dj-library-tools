@@ -17,20 +17,20 @@ import (
 	_ "github.com/llttlltt/dj-library-tools/internal/providers/mock"
 )
 
-// setupSources writes a mock Source file to a temp config dir and returns its ID.
-func setupSources(t *testing.T) (sourceID string) {
+// setupConnections writes a mock Connection file to a temp config dir and returns its ID.
+func setupConnections(t *testing.T) (connectionID string) {
 	t.Helper()
 	tmp := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", tmp)
 
-	src := config.Source{
-		ID:       config.NewSourceID(),
+	conn := config.Connection{
+		ID:       config.NewConnectionID(),
 		Name:     "Test Mock",
 		Provider: "mock",
 		Config:   map[string]string{},
 	}
-	require.NoError(t, config.SaveSource(src))
-	return src.ID
+	require.NoError(t, config.SaveConnection(conn))
+	return conn.ID
 }
 
 func newTestEngine() *Engine {
@@ -41,7 +41,7 @@ func newTestEngine() *Engine {
 // ── single-step Workflow ───────────────────────────────────────────────────
 
 func TestEngine_SingleStep_Success(t *testing.T) {
-	srcID := setupSources(t)
+	connID := setupConnections(t)
 	engine := newTestEngine()
 
 	wf := config.Workflow{
@@ -52,10 +52,10 @@ func TestEngine_SingleStep_Success(t *testing.T) {
 				ID:   config.NewStepID(),
 				Kind: "sync",
 				Source: config.Endpoint{
-					SourceID: srcID, Resource: "tracks",
+					ConnectionID: connID, Resource: "tracks",
 				},
 				Targets: []config.Endpoint{
-					{SourceID: srcID, Resource: "tracks"},
+					{ConnectionID: connID, Resource: "tracks"},
 				},
 			},
 		},
@@ -70,7 +70,7 @@ func TestEngine_SingleStep_Success(t *testing.T) {
 // ── two independent Steps run in parallel ─────────────────────────────────
 
 func TestEngine_IndependentSteps_BothSucceed(t *testing.T) {
-	srcID := setupSources(t)
+	connID := setupConnections(t)
 	engine := newTestEngine()
 
 	mkStep := func() config.Step {
@@ -78,10 +78,10 @@ func TestEngine_IndependentSteps_BothSucceed(t *testing.T) {
 			ID:   config.NewStepID(),
 			Kind: "sync",
 			Source: config.Endpoint{
-				SourceID: srcID, Resource: "tracks",
+				ConnectionID: connID, Resource: "tracks",
 			},
 			Targets: []config.Endpoint{
-				{SourceID: srcID, Resource: "tracks"},
+				{ConnectionID: connID, Resource: "tracks"},
 			},
 		}
 	}
@@ -106,7 +106,7 @@ func TestEngine_IndependentSteps_BothSucceed(t *testing.T) {
 // ── Step with after waits for its dependency ──────────────────────────────
 
 func TestEngine_AfterDependency_Respected(t *testing.T) {
-	srcID := setupSources(t)
+	connID := setupConnections(t)
 	engine := newTestEngine()
 
 	firstID := config.NewStepID()
@@ -120,10 +120,10 @@ func TestEngine_AfterDependency_Respected(t *testing.T) {
 				ID:   firstID,
 				Kind: "sync",
 				Source: config.Endpoint{
-					SourceID: srcID, Resource: "tracks",
+					ConnectionID: connID, Resource: "tracks",
 				},
 				Targets: []config.Endpoint{
-					{SourceID: srcID, Resource: "tracks"},
+					{ConnectionID: connID, Resource: "tracks"},
 				},
 			},
 			{
@@ -131,10 +131,10 @@ func TestEngine_AfterDependency_Respected(t *testing.T) {
 				Kind:  "sync",
 				After: []string{firstID},
 				Source: config.Endpoint{
-					SourceID: srcID, Resource: "tracks",
+					ConnectionID: connID, Resource: "tracks",
 				},
 				Targets: []config.Endpoint{
-					{SourceID: srcID, Resource: "tracks"},
+					{ConnectionID: connID, Resource: "tracks"},
 				},
 			},
 		},
@@ -150,7 +150,7 @@ func TestEngine_AfterDependency_Respected(t *testing.T) {
 // ── failed Step blocks dependent, unrelated Step completes ────────────────
 
 func TestEngine_FailedStep_BlocksDependent_NotUnrelated(t *testing.T) {
-	srcID := setupSources(t)
+	connID := setupConnections(t)
 	engine := newTestEngine()
 
 	failID := config.NewStepID()
@@ -166,7 +166,7 @@ func TestEngine_FailedStep_BlocksDependent_NotUnrelated(t *testing.T) {
 				ID:   failID,
 				Kind: "unknown-kind-that-fails",
 				Source: config.Endpoint{
-					SourceID: srcID, Resource: "tracks",
+					ConnectionID: connID, Resource: "tracks",
 				},
 			},
 			// Depends on failID — should be blocked.
@@ -175,10 +175,10 @@ func TestEngine_FailedStep_BlocksDependent_NotUnrelated(t *testing.T) {
 				Kind:  "sync",
 				After: []string{failID},
 				Source: config.Endpoint{
-					SourceID: srcID, Resource: "tracks",
+					ConnectionID: connID, Resource: "tracks",
 				},
 				Targets: []config.Endpoint{
-					{SourceID: srcID, Resource: "tracks"},
+					{ConnectionID: connID, Resource: "tracks"},
 				},
 			},
 			// No dependency — should succeed regardless.
@@ -186,10 +186,10 @@ func TestEngine_FailedStep_BlocksDependent_NotUnrelated(t *testing.T) {
 				ID:   unrelatedID,
 				Kind: "sync",
 				Source: config.Endpoint{
-					SourceID: srcID, Resource: "tracks",
+					ConnectionID: connID, Resource: "tracks",
 				},
 				Targets: []config.Endpoint{
-					{SourceID: srcID, Resource: "tracks"},
+					{ConnectionID: connID, Resource: "tracks"},
 				},
 			},
 		},
@@ -211,7 +211,7 @@ func TestEngine_FailedStep_BlocksDependent_NotUnrelated(t *testing.T) {
 // ── cycle detection ────────────────────────────────────────────────────────
 
 func TestEngine_Cycle_ReturnsError(t *testing.T) {
-	srcID := setupSources(t)
+	connID := setupConnections(t)
 	engine := newTestEngine()
 
 	aID := config.NewStepID()
@@ -226,7 +226,7 @@ func TestEngine_Cycle_ReturnsError(t *testing.T) {
 				Kind:  "sync",
 				After: []string{bID}, // A waits for B
 				Source: config.Endpoint{
-					SourceID: srcID, Resource: "tracks",
+					ConnectionID: connID, Resource: "tracks",
 				},
 			},
 			{
@@ -234,7 +234,7 @@ func TestEngine_Cycle_ReturnsError(t *testing.T) {
 				Kind:  "sync",
 				After: []string{aID}, // B waits for A — cycle!
 				Source: config.Endpoint{
-					SourceID: srcID, Resource: "tracks",
+					ConnectionID: connID, Resource: "tracks",
 				},
 			},
 		},
@@ -259,7 +259,7 @@ func TestBuildGraph_UnknownAfterRef_ReturnsError(t *testing.T) {
 // ── empty workflow ─────────────────────────────────────────────────────────
 
 func TestEngine_EmptyWorkflow(t *testing.T) {
-	_ = setupSources(t)
+	_ = setupConnections(t)
 	engine := newTestEngine()
 
 	wf := config.Workflow{ID: config.NewWorkflowID(), Name: "Empty"}
@@ -268,11 +268,11 @@ func TestEngine_EmptyWorkflow(t *testing.T) {
 	assert.Empty(t, res.Steps)
 }
 
-// Ensure the test helper actually creates the sources directory.
-func TestSetupSources_CreatesFile(t *testing.T) {
-	srcID := setupSources(t)
-	dir, err := config.GetSourcesDir()
+// Ensure the test helper actually creates the connections directory.
+func TestSetupConnections_CreatesFile(t *testing.T) {
+	connID := setupConnections(t)
+	dir, err := config.GetConnectionsDir()
 	require.NoError(t, err)
-	_, err = os.Stat(filepath.Join(dir, srcID+".json"))
+	_, err = os.Stat(filepath.Join(dir, connID+".json"))
 	require.NoError(t, err)
 }

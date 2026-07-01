@@ -4,15 +4,15 @@ import { Schema } from "effect";
  * Schema for Endpoint model.
  */
 export const EndpointSchema = Schema.Struct({
-	source_id: Schema.String,
+	connection_id: Schema.String,
 	resource: Schema.String,
 	query: Schema.optional(Schema.String),
 });
 
 /**
- * Schema for Source model.
+ * Schema for Connection model.
  */
-export const SourceSchema = Schema.Struct({
+export const ConnectionSchema = Schema.Struct({
 	id: Schema.String,
 	name: Schema.String,
 	provider: Schema.String,

@@ -16,15 +16,18 @@ import {
 import { runPromise } from "@/lib/runtime";
 import { AppService } from "@/services";
 import { WailsDecodeError } from "@/services/errors";
+import { connectionsAtom, loadConnections } from "@/store/connections";
 import { loadProviders, providersAtom } from "@/store/providers";
-import { filterWritableResources, findSourceProvider } from "@/store/selection";
-import { loadSources, sourcesAtom } from "@/store/sources";
+import {
+	filterWritableResources,
+	findConnectionProvider,
+} from "@/store/selection";
 import type { QueryResult } from "@/types";
 
 interface QueryTesterProps {
 	open: boolean;
 	onClose: () => void;
-	initialSourceID?: string;
+	initialConnectionID?: string;
 	initialResource?: string;
 	initialQuery?: string;
 	isTarget?: boolean;
@@ -36,16 +39,16 @@ const asQueryResult = (x: unknown) => x as QueryResult;
 export function QueryTester({
 	open,
 	onClose,
-	initialSourceID,
+	initialConnectionID,
 	initialResource,
 	initialQuery,
 	isTarget,
 	onApply,
 }: QueryTesterProps) {
-	const [sources] = useAtom(sourcesAtom);
+	const [connections] = useAtom(connectionsAtom);
 	const [providers] = useAtom(providersAtom);
 
-	const [sourceID, setSourceID] = useState(initialSourceID ?? "");
+	const [connectionID, setConnectionID] = useState(initialConnectionID ?? "");
 	const [resource, setResource] = useState(initialResource ?? "tracks");
 	const [query, setQuery] = useState(initialQuery ?? "");
 	const [result, setResult] = useState<QueryResult | null>(null);
@@ -53,14 +56,18 @@ export function QueryTester({
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
-		runPromise(loadSources);
+		runPromise(loadConnections);
 		runPromise(loadProviders);
 	}, []);
 
-	// Automatically fix blank or invalid resource selections when source or providers change
+	// Automatically fix blank or invalid resource selections when connection or providers change
 	useEffect(() => {
-		if (sourceID && providers.length > 0) {
-			const provider = findSourceProvider(sourceID, sources, providers);
+		if (connectionID && providers.length > 0) {
+			const provider = findConnectionProvider(
+				connectionID,
+				connections,
+				providers,
+			);
 			const availableResources = filterWritableResources(provider, !!isTarget);
 
 			if (availableResources.length > 0) {
@@ -70,11 +77,11 @@ export function QueryTester({
 				}
 			}
 		}
-	}, [sourceID, providers, resource, isTarget, sources]);
+	}, [connectionID, providers, resource, isTarget, connections]);
 
 	useEffect(() => {
-		setSourceID(initialSourceID ?? "");
-	}, [initialSourceID]);
+		setConnectionID(initialConnectionID ?? "");
+	}, [initialConnectionID]);
 
 	useEffect(() => {
 		setResource(initialResource ?? "tracks");
@@ -88,7 +95,7 @@ export function QueryTester({
 	useEffect(() => {
 		setResult(null);
 		setError("");
-	}, [sourceID, resource, query]);
+	}, [connectionID, resource, query]);
 
 	async function handleTest() {
 		setLoading(true);
@@ -97,7 +104,7 @@ export function QueryTester({
 		try {
 			const app = await runPromise(AppService);
 			const data = await runPromise(
-				app.previewQuery(sourceID, resource, query),
+				app.previewQuery(connectionID, resource, query),
 			);
 			setResult(asQueryResult(data));
 		} catch (e) {
@@ -106,7 +113,7 @@ export function QueryTester({
 		setLoading(false);
 	}
 
-	const provider = findSourceProvider(sourceID, sources, providers);
+	const provider = findConnectionProvider(connectionID, connections, providers);
 	const currentRes = provider?.resources.find((r) => r.name === resource);
 	const isInvalidTarget = isTarget && currentRes && !currentRes.can_write;
 
@@ -123,12 +130,12 @@ export function QueryTester({
 				<div className="flex flex-col gap-6 flex-1 min-h-0">
 					<div className="space-y-4 bg-secondary/20 p-4 rounded-xl border border-border/40 shrink-0">
 						<EndpointEditor
-							endpoint={{ source_id: sourceID, resource, query }}
-							sources={sources}
+							endpoint={{ connection_id: connectionID, resource, query }}
+							connections={connections}
 							providers={providers}
 							isTarget={isTarget}
 							onChange={(p) => {
-								if (p.source_id) setSourceID(p.source_id);
+								if (p.connection_id) setConnectionID(p.connection_id);
 								if (p.resource) setResource(p.resource);
 								if (p.query !== undefined) setQuery(p.query);
 							}}
@@ -141,7 +148,7 @@ export function QueryTester({
 								type="button"
 								size="sm"
 								onClick={handleTest}
-								disabled={loading || !sourceID}
+								disabled={loading || !connectionID}
 								className="min-w-[80px]"
 							>
 								{loading ? (

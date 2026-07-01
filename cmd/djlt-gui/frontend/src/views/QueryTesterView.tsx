@@ -6,17 +6,17 @@ import { QueryTesterResults } from "@/components/query/QueryTester";
 import { Button } from "@/components/ui/button";
 import { runPromise } from "@/lib/runtime";
 import { AppService } from "@/services";
+import { connectionsAtom, loadConnections } from "@/store/connections";
 import { loadProviders, providersAtom } from "@/store/providers";
-import { loadSources, sourcesAtom } from "@/store/sources";
 import type { QueryResult } from "@/types";
 
 const asQueryResult = (x: unknown) => x as QueryResult;
 
 export default function QueryTesterView() {
-	const [sources] = useAtom(sourcesAtom);
+	const [connections] = useAtom(connectionsAtom);
 	const [providers] = useAtom(providersAtom);
 
-	const [sourceID, setSourceID] = useState("");
+	const [connectionID, setConnectionID] = useState("");
 	const [resource, setResource] = useState("tracks");
 	const [query, setQuery] = useState("");
 	const [result, setResult] = useState<QueryResult | null>(null);
@@ -24,21 +24,21 @@ export default function QueryTesterView() {
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
-		runPromise(loadSources);
+		runPromise(loadConnections);
 		runPromise(loadProviders);
 	}, []);
 
 	useEffect(() => {
-		if (sources.length > 0 && !sourceID) {
-			setSourceID(sources[0].id);
+		if (connections.length > 0 && !connectionID) {
+			setConnectionID(connections[0].id);
 		}
-	}, [sources, sourceID]);
+	}, [connections, connectionID]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally watching value changes to clear stale results
 	useEffect(() => {
 		setResult(null);
 		setError("");
-	}, [sourceID, resource, query]);
+	}, [connectionID, resource, query]);
 
 	async function handleTest() {
 		setLoading(true);
@@ -47,7 +47,7 @@ export default function QueryTesterView() {
 		try {
 			const app = await runPromise(AppService);
 			const data = await runPromise(
-				app.previewQuery(sourceID, resource, query),
+				app.previewQuery(connectionID, resource, query),
 			);
 			setResult(asQueryResult(data));
 		} catch (e) {
@@ -70,11 +70,11 @@ export default function QueryTesterView() {
 					{/* Controls Box - Pins to Top */}
 					<div className="shrink-0 space-y-4 bg-secondary/20 p-4 rounded-xl border border-border/40">
 						<EndpointEditor
-							endpoint={{ source_id: sourceID, resource, query }}
-							sources={sources}
+							endpoint={{ connection_id: connectionID, resource, query }}
+							connections={connections}
 							providers={providers}
 							onChange={(p) => {
-								if (p.source_id) setSourceID(p.source_id);
+								if (p.connection_id) setConnectionID(p.connection_id);
 								if (p.resource) setResource(p.resource);
 								if (p.query !== undefined) setQuery(p.query);
 							}}
@@ -87,7 +87,7 @@ export default function QueryTesterView() {
 								type="button"
 								size="sm"
 								onClick={handleTest}
-								disabled={loading || !sourceID}
+								disabled={loading || !connectionID}
 								className="min-w-[80px]"
 							>
 								{loading ? (

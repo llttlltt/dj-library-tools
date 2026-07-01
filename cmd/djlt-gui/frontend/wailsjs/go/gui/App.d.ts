@@ -10,9 +10,9 @@ export function CheckForUpdate(arg1:boolean):Promise<update.UpdateInfo>;
 
 export function CheckPlexAuth(arg1:number):Promise<string>;
 
-export function CreateSource(arg1:string,arg2:string,arg3:Record<string, string>):Promise<config.Source>;
+export function CreateConnection(arg1:string,arg2:string,arg3:Record<string, string>):Promise<config.Connection>;
 
-export function DeleteSource(arg1:string):Promise<void>;
+export function DeleteConnection(arg1:string):Promise<void>;
 
 export function DeleteWorkflow(arg1:string):Promise<void>;
 
@@ -32,9 +32,9 @@ export function InitPlexAuth():Promise<gui.PlexAuthChallenge>;
 
 export function InstallUpdate():Promise<void>;
 
-export function ListProviders():Promise<Array<factory.ProviderInfo>>;
+export function ListConnections():Promise<Array<config.Connection>>;
 
-export function ListSources():Promise<Array<config.Source>>;
+export function ListProviders():Promise<Array<factory.ProviderInfo>>;
 
 export function ListWorkflows():Promise<Array<config.Workflow>>;
 
@@ -50,4 +50,4 @@ export function SaveWorkflow(arg1:config.Workflow):Promise<config.Workflow>;
 
 export function SetUpdateInterval(arg1:number):Promise<void>;
 
-export function UpdateSource(arg1:config.Source):Promise<void>;
+export function UpdateConnection(arg1:config.Connection):Promise<void>;

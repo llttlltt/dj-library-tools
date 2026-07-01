@@ -24,9 +24,9 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import type {
+	Connection,
 	Endpoint,
 	ProviderInfo,
-	Source,
 	Step,
 	StepDiff,
 	StepResult,
@@ -63,7 +63,7 @@ export function statusIcon(status: string) {
 
 interface EpEditRowProps {
 	ep: Endpoint;
-	sources: Source[];
+	connections: Connection[];
 	providers: ProviderInfo[];
 	isTarget?: boolean;
 	onChange: (p: Partial<Endpoint>) => void;
@@ -72,21 +72,23 @@ interface EpEditRowProps {
 
 export function EpEditRow({
 	ep,
-	sources,
+	connections,
 	providers,
 	isTarget,
 	onChange,
 	onOpenQueryTester,
 }: EpEditRowProps) {
-	// If this is a target, only show sources whose provider has at least one writable resource.
-	const filteredSources = sources.filter((s) => {
+	// If this is a target, only show connections whose provider has at least one writable resource.
+	const filteredConnections = connections.filter((c) => {
 		if (!isTarget) return true;
-		const p = providers.find((prov) => prov.name === s.provider);
+		const p = providers.find((prov) => prov.name === c.provider);
 		return p?.resources.some((r) => r.can_write) ?? true;
 	});
 
-	const selectedSource = sources.find((s) => s.id === ep.source_id);
-	const provider = providers.find((p) => p.name === selectedSource?.provider);
+	const selectedConnection = connections.find((c) => c.id === ep.connection_id);
+	const provider = providers.find(
+		(p) => p.name === selectedConnection?.provider,
+	);
 
 	// For targets, only show resources that can be written to.
 	const availableResources = (provider?.resources ?? []).filter((r) => {
@@ -110,28 +112,30 @@ export function EpEditRow({
 	return (
 		<div className="flex flex-nowrap gap-2.5 items-center w-full min-w-0">
 			<Select
-				value={ep.source_id}
+				value={ep.connection_id}
 				onValueChange={(v) => {
-					// When source changes, find the first valid resource for that new source
-					const newSrc = sources.find((s) => s.id === v);
-					const newProv = providers.find((p) => p.name === newSrc?.provider);
+					// When connection changes, find the first valid resource for that new connection
+					const newConnection = connections.find((c) => c.id === v);
+					const newProv = providers.find(
+						(p) => p.name === newConnection?.provider,
+					);
 					const newResList = (newProv?.resources ?? []).filter((r) => {
 						if (!isTarget) return true;
 						return r.can_write;
 					});
 					const nextRes = newResList[0]?.name ?? ep.resource;
-					onChange({ source_id: v, resource: nextRes });
+					onChange({ connection_id: v, resource: nextRes });
 				}}
 			>
 				<SelectTrigger className="w-40 h-9 text-sm shrink-0 bg-background/50">
-					<SelectValue placeholder="Source" />
+					<SelectValue placeholder="Connection" />
 				</SelectTrigger>
 				<SelectContent>
-					{[...filteredSources]
+					{[...filteredConnections]
 						.sort((a, b) => a.name.localeCompare(b.name))
-						.map((s) => (
-							<SelectItem key={s.id} value={s.id}>
-								{s.name}
+						.map((c) => (
+							<SelectItem key={c.id} value={c.id}>
+								{c.name}
 							</SelectItem>
 						))}
 				</SelectContent>
@@ -174,7 +178,7 @@ export function EpEditRow({
 					title="Test query"
 					onClick={() =>
 						onOpenQueryTester({
-							sourceID: ep.source_id,
+							connectionID: ep.connection_id,
 							resource: ep.resource,
 							query: ep.query ?? "",
 							isTarget,
@@ -194,15 +198,21 @@ export function EpEditRow({
 
 // ── EndpointReadRow ────────────────────────────────────────────────────────
 
-function EndpointReadRow({ ep, sources }: { ep: Endpoint; sources: Source[] }) {
-	const sourceName =
-		sources.find((s) => s.id === ep.source_id)?.name ??
-		ep.source_id.slice(0, 8);
+function EndpointReadRow({
+	ep,
+	connections,
+}: {
+	ep: Endpoint;
+	connections: Connection[];
+}) {
+	const connectionName =
+		connections.find((c) => c.id === ep.connection_id)?.name ??
+		ep.connection_id.slice(0, 8);
 
 	return (
 		<div className="flex flex-nowrap gap-2.5 items-center w-full min-w-0">
 			<div className="h-9 w-40 shrink-0 flex items-center px-3 rounded-lg border border-border/60 bg-muted/30 text-sm font-medium text-foreground truncate">
-				{sourceName}
+				{connectionName}
 			</div>
 			<div className="h-9 w-24 shrink-0 flex items-center justify-center px-2 rounded-lg border border-border/60 bg-muted/30 text-xs font-mono font-medium text-muted-foreground">
 				{ep.resource}
@@ -224,7 +234,7 @@ interface StepCardProps {
 	mode: "edit" | "view" | "applying";
 	step: Step;
 	index: number;
-	sources: Source[];
+	connections: Connection[];
 	providers?: ProviderInfo[];
 	// Edit mode props
 	onChange?: (patch: Partial<Step>) => void;
@@ -239,7 +249,7 @@ export function StepCard({
 	mode,
 	step,
 	index,
-	sources,
+	connections,
 	providers = [],
 	onChange,
 	onDelete,
@@ -255,7 +265,7 @@ export function StepCard({
 	const hasDiffs = diffs.length > 0 && step.kind === "sync";
 
 	// Edit Handlers
-	const updSource = (patch: Partial<Endpoint>) =>
+	const updateConnection = (patch: Partial<Endpoint>) =>
 		onChange?.({ source: { ...step.source, ...patch } });
 
 	const updTarget = (ti: number, patch: Partial<Endpoint>) => {
@@ -265,21 +275,25 @@ export function StepCard({
 	};
 
 	const addTarget = () => {
-		const sortedSources = [...sources].sort((a, b) =>
+		const sortedConnections = [...connections].sort((a, b) =>
 			a.name.localeCompare(b.name),
 		);
-		const firstTargetSrcId =
-			sortedSources.find((s) => {
-				const p = providers.find((prov) => prov.name === s.provider);
+		const firstTargetConnectionId =
+			sortedConnections.find((c) => {
+				const p = providers.find((prov) => prov.name === c.provider);
 				return p?.capabilities.CanWrite ?? true;
 			})?.id ??
-			sortedSources[0]?.id ??
+			sortedConnections[0]?.id ??
 			"";
 
 		onChange?.({
 			targets: [
 				...step.targets,
-				{ source_id: firstTargetSrcId, resource: "playlists", query: "" },
+				{
+					connection_id: firstTargetConnectionId,
+					resource: "playlists",
+					query: "",
+				},
 			],
 		});
 	};
@@ -359,22 +373,22 @@ export function StepCard({
 
 			{/* ── Body ── */}
 			<CardContent className="pt-4 pb-5 flex flex-col gap-4">
-				{/* Source Section */}
+				{/* Connection Section */}
 				<div className="space-y-1.5">
 					<p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground pl-0.5">
-						Source
+						Connection
 					</p>
 					{isEdit ? (
 						<EndpointEditor
 							endpoint={step.source}
-							sources={sources}
+							connections={connections}
 							providers={providers}
-							onChange={updSource}
+							onChange={updateConnection}
 							onOpenQueryTester={onOpenQueryTester}
 							layout="row"
 						/>
 					) : (
-						<EndpointReadRow ep={step.source} sources={sources} />
+						<EndpointReadRow ep={step.source} connections={connections} />
 					)}
 				</div>
 
@@ -386,14 +400,14 @@ export function StepCard({
 					<div className="flex flex-col gap-2.5">
 						{step.targets.map((tgt, ti) => (
 							<div
-								key={tgt.source_id}
+								key={tgt.connection_id}
 								className="flex flex-nowrap items-center gap-2.5 w-full min-w-0"
 							>
 								<div className="flex-1 min-w-0">
 									{isEdit ? (
 										<EndpointEditor
 											endpoint={tgt}
-											sources={sources}
+											connections={connections}
 											providers={providers}
 											isTarget
 											onChange={(p) => updTarget(ti, p)}
@@ -401,7 +415,7 @@ export function StepCard({
 											layout="row"
 										/>
 									) : (
-										<EndpointReadRow ep={tgt} sources={sources} />
+										<EndpointReadRow ep={tgt} connections={connections} />
 									)}
 								</div>
 								{isEdit && step.targets.length > 1 && (
@@ -443,7 +457,7 @@ export function StepCard({
 								onChange?.({
 									after: e.target.value
 										.split(",")
-										.map((s) => s.trim())
+										.map((c) => c.trim())
 										.filter(Boolean),
 								})
 							}

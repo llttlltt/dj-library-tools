@@ -1,30 +1,33 @@
 import { useAtom } from "@effect-atom/atom-react";
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
-import { SourceCard } from "@/components/source/SourceCard";
-import { type Provider, SourceForm } from "@/components/source/SourceForm";
+import { ConnectionCard } from "@/components/connection/ConnectionCard";
+import {
+	ConnectionForm,
+	type Provider,
+} from "@/components/connection/ConnectionForm";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { runPromise } from "@/lib/runtime";
 import {
-	addSource,
-	loadSources,
-	removeSource,
-	sourcesAtom,
-	sourcesErrorAtom,
-	updateSource,
-} from "@/store/sources";
-import type { Source } from "@/types";
+	addConnection,
+	connectionsAtom,
+	connectionsErrorAtom,
+	loadConnections,
+	removeConnection,
+	updateConnection,
+} from "@/store/connections";
+import type { Connection } from "@/types";
 
-export default function SourcesView() {
-	const [sources] = useAtom(sourcesAtom);
-	const [error] = useAtom(sourcesErrorAtom);
+export default function ConnectionsView() {
+	const [connections] = useAtom(connectionsAtom);
+	const [error] = useAtom(connectionsErrorAtom);
 	const [formOpen, setFormOpen] = useState(false);
-	const [editTarget, setEditTarget] = useState<Source | null>(null);
-	const [deleteTarget, setDeleteTarget] = useState<Source | null>(null);
+	const [editTarget, setEditTarget] = useState<Connection | null>(null);
+	const [deleteTarget, setDeleteTarget] = useState<Connection | null>(null);
 
 	useEffect(() => {
-		runPromise(loadSources);
+		runPromise(loadConnections);
 	}, []);
 
 	async function handleSubmit(
@@ -33,24 +36,24 @@ export default function SourcesView() {
 		cfg: Record<string, string>,
 		id?: string,
 	) {
-		const src: Source = { id: id ?? "", name, provider, config: cfg };
+		const conn: Connection = { id: id ?? "", name, provider, config: cfg };
 		if (id) {
-			await runPromise(updateSource(src));
+			await runPromise(updateConnection(conn));
 		} else {
-			await runPromise(addSource(name, provider, cfg));
+			await runPromise(addConnection(name, provider, cfg));
 		}
 	}
 
-	async function confirmDelete(s: Source) {
+	async function confirmDelete(c: Connection) {
 		setDeleteTarget(null);
-		await runPromise(removeSource(s.id));
+		await runPromise(removeConnection(c.id));
 	}
 
 	return (
 		<div className="flex flex-col h-full">
 			{/* Sticky Top Header Nav */}
 			<div className="h-14 flex items-center gap-2 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] sticky top-0 z-10">
-				<span className="text-sm font-semibold">Sources</span>
+				<span className="text-sm font-semibold">Connections</span>
 				<div className="flex-1" />
 				<Button
 					type="button"
@@ -60,7 +63,7 @@ export default function SourcesView() {
 						setFormOpen(true);
 					}}
 				>
-					<Plus className="h-4 w-4 mr-1.5" /> Add Source
+					<Plus className="h-4 w-4 mr-1.5" /> Add Connection
 				</Button>
 			</div>
 
@@ -68,29 +71,29 @@ export default function SourcesView() {
 			<div className="flex-1 overflow-auto p-6">
 				{error && <p className="text-sm text-destructive mb-4">{error}</p>}
 
-				{sources.length === 0 ? (
+				{connections.length === 0 ? (
 					<p className="text-sm text-muted-foreground italic">
-						No sources configured. Click "Add Source" to get started.
+						No connections configured. Click "Add Connection" to get started.
 					</p>
 				) : (
 					<div className="flex flex-col gap-3">
-						{[...sources]
+						{[...connections]
 							.sort((a, b) => a.name.localeCompare(b.name))
-							.map((s) => (
-								<SourceCard
-									key={s.id}
-									source={s}
-									onEdit={(src) => {
-										setEditTarget(src);
+							.map((c) => (
+								<ConnectionCard
+									key={c.id}
+									connection={c}
+									onEdit={(conn) => {
+										setEditTarget(conn);
 										setFormOpen(true);
 									}}
-									onDelete={(src) => setDeleteTarget(src)}
+									onDelete={(conn) => setDeleteTarget(conn)}
 								/>
 							))}
 					</div>
 				)}
 
-				<SourceForm
+				<ConnectionForm
 					open={formOpen}
 					initial={editTarget}
 					onClose={() => {
@@ -104,7 +107,7 @@ export default function SourcesView() {
 					<ConfirmDialog
 						open={true}
 						title={`Delete "${deleteTarget.name}"?`}
-						description="This source will be permanently removed."
+						description="This connection will be permanently removed."
 						confirmLabel="Delete"
 						destructive
 						onConfirm={() => confirmDelete(deleteTarget)}

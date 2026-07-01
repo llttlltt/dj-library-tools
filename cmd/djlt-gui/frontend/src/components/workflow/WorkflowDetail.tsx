@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type {
-	Source,
+	Connection,
 	StepDiff,
 	StepResult,
 	Workflow,
@@ -13,7 +13,7 @@ import { StepCard } from "./StepCard";
 
 interface DetailProps {
 	workflow: Workflow;
-	sources: Source[];
+	connections: Connection[];
 	diffs: StepDiff[];
 	result: WorkflowResult | null;
 	mode: "view" | "applying";
@@ -29,7 +29,7 @@ interface DetailProps {
 
 export function WorkflowDetail({
 	workflow,
-	sources,
+	connections,
 	diffs,
 	result,
 	mode,
@@ -143,7 +143,7 @@ export function WorkflowDetail({
 							mode={mode} // Propagates "view" or "applying"
 							step={step}
 							index={i}
-							sources={sources}
+							connections={connections}
 							diffs={diffsByStepId[step.id] || []}
 							result={resultById[step.id]}
 						/>

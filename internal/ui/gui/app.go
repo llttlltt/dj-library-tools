@@ -33,13 +33,13 @@ type App struct {
 	engine *workflow.Engine
 }
 
-// NewApp constructs the App, resolving the primary rekordbox Source at startup.
-// If no Source is found the orchestrator is still created; commands that
+// NewApp constructs the App, resolving the primary rekordbox Connection at startup.
+// If no Connection is found the orchestrator is still created; commands that
 // require a file will fail with a clear error at call time.
 func NewApp() *App {
 	var primaryPath string
-	if src, err := config.FindFirstSource("rb"); err == nil {
-		primaryPath = config.ResolveProviderOptions(*src).FilePath
+	if conn, err := config.FindFirstConnection("rb"); err == nil {
+		primaryPath = config.ResolveProviderOptions(*conn).FilePath
 	}
 
 	orch := orchestrator.New(nil, orchestrator.Options{
@@ -136,41 +136,41 @@ func (a *App) ListProviders() []factory.ProviderInfo {
 	return factory.ListProviders()
 }
 
-// ── Sources ───────────────────────────────────────────────────────────────────
+// ── Connections ──────────────────────────────────────────────────────────────
 
-// ListSources returns all configured Sources.
-func (a *App) ListSources() ([]config.Source, error) {
-	return config.LoadSources()
+// ListConnections returns all configured Connections.
+func (a *App) ListConnections() ([]config.Connection, error) {
+	return config.LoadConnections()
 }
 
-// CreateSource generates a new UUID, saves the Source file, and returns it.
-func (a *App) CreateSource(name, prov string, cfg map[string]string) (config.Source, error) {
+// CreateConnection generates a new UUID, saves the Connection file, and returns it.
+func (a *App) CreateConnection(name, prov string, cfg map[string]string) (config.Connection, error) {
 	if name == "" {
-		return config.Source{}, fmt.Errorf("source name is required")
+		return config.Connection{}, fmt.Errorf("connection name is required")
 	}
 	if prov == "" {
-		return config.Source{}, fmt.Errorf("source provider is required")
+		return config.Connection{}, fmt.Errorf("connection provider is required")
 	}
-	s := config.Source{
-		ID:       config.NewSourceID(),
+	s := config.Connection{
+		ID:       config.NewConnectionID(),
 		Name:     name,
 		Provider: prov,
 		Config:   cfg,
 	}
-	if err := config.SaveSource(s); err != nil {
-		return config.Source{}, err
+	if err := config.SaveConnection(s); err != nil {
+		return config.Connection{}, err
 	}
 	return s, nil
 }
 
-// DeleteSource removes the Source with the given ID.
-func (a *App) DeleteSource(id string) error {
-	return config.DeleteSource(id)
+// DeleteConnection removes the Connection with the given ID.
+func (a *App) DeleteConnection(id string) error {
+	return config.DeleteConnection(id)
 }
 
-// UpdateSource overwrites an existing Source file (identified by s.ID).
-func (a *App) UpdateSource(s config.Source) error {
-	return config.SaveSource(s)
+// UpdateConnection overwrites an existing Connection file (identified by s.ID).
+func (a *App) UpdateConnection(s config.Connection) error {
+	return config.SaveConnection(s)
 }
 
 // ── Workflows ─────────────────────────────────────────────────────────────────
@@ -273,13 +273,13 @@ func (a *App) GetWorkflowDiff(id string) ([]StepDiff, error) {
 			continue
 		}
 
-		src, err := sourceProviderLoc(step.Source)
+		srcLoc, err := connectionProviderLoc(step.Source)
 		if err != nil {
 			return nil, fmt.Errorf("step %s source: %w", step.ID, err)
 		}
 
 		for _, tgt := range step.Targets {
-			tgtLoc, err := sourceProviderLoc(tgt)
+			tgtLoc, err := connectionProviderLoc(tgt)
 			if err != nil {
 				return nil, fmt.Errorf("step %s target: %w", step.ID, err)
 			}
@@ -287,7 +287,7 @@ func (a *App) GetWorkflowDiff(id string) ([]StepDiff, error) {
 				tgtLoc = tgtLoc + " " + tgt.Query
 			}
 
-			diffs, err := a.orch.GetSyncDiff(a.ctx, src, tgtLoc, step.Source.Query, runOpts, false)
+			diffs, err := a.orch.GetSyncDiff(a.ctx, srcLoc, tgtLoc, step.Source.Query, runOpts, false)
 			if err != nil {
 				return nil, fmt.Errorf("step %s diff: %w", step.ID, err)
 			}
@@ -321,13 +321,13 @@ func (a *App) GetWorkflowDiff(id string) ([]StepDiff, error) {
 	return out, nil
 }
 
-// sourceProviderLoc resolves an Endpoint to "<provider>/<resource>".
-func sourceProviderLoc(ep config.Endpoint) (string, error) {
-	src, err := config.FindSourceByID(ep.SourceID)
+// connectionProviderLoc resolves an Endpoint to "<provider>/<resource>".
+func connectionProviderLoc(ep config.Endpoint) (string, error) {
+	conn, err := config.FindConnectionByID(ep.ConnectionID)
 	if err != nil {
 		return "", err
 	}
-	return src.Provider + "/" + ep.Resource, nil
+	return conn.Provider + "/" + ep.Resource, nil
 }
 
 // toTrackRows converts a slice of track IDs to TrackRow summaries using the
@@ -368,11 +368,11 @@ type QueryResult struct {
 }
 
 // PreviewQuery is the GUI equivalent of: djlt ls <provider>/<resource> <query>
-// It runs a read-only List against the given Source and returns a QueryResult
+// It runs a read-only List against the given Connection and returns a QueryResult
 // that covers both track resources and group resources (playlists/folders).
-func (a *App) PreviewQuery(sourceID, resource, query string) (QueryResult, error) {
+func (a *App) PreviewQuery(connectionID, resource, query string) (QueryResult, error) {
 	runOpts := orchestrator.RunOptions{}
-	res, err := a.orch.List(a.ctx, sourceID+"/"+resource, query, runOpts, "")
+	res, err := a.orch.List(a.ctx, connectionID+"/"+resource, query, runOpts, "")
 	if err != nil {
 		return QueryResult{}, err
 	}

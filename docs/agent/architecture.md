@@ -46,25 +46,34 @@ The system follows a nested, resource-oriented service structure:
 - **Workflow Engine**: Multi-step operations are orchestrated by `internal/services/workflow`. It is a higher-level consumer of the orchestrator, capable of parallel execution and dependency management.
 - **Inert Results**: `Orchestrator.List` returns a `ListResult` containing pure data and metadata (like `DefaultColumns`). It never returns a mutable `Provider` handle to the UI.
 - **Option Ownership**: The orchestrator defines its own option DTOs (e.g., `SyncOptions`, `FixOptions`). UIs construct these types, and the orchestrator maps them to internal provider types.
-- **Source-based Configuration**: Configuration is decentralized into individual JSON files for Sources, Workflows, and Path Maps. The app resolves these artifacts from the filesystem by UUID.
+- **Connection-based Configuration**: Configuration is decentralized into individual JSON files for Connections, Workflows, and Path Maps. The app resolves these artifacts from the filesystem by UUID.
 - **Context Threading**: `context.Context` must flow from every UI call through the orchestrator into `resolver.ResolveSelection` and from there into all provider calls. Provider list operations must never use `context.Background()` internally; doing so silently drops cancellation signals from the caller.
 
 ## GUI State Management
 
 The GUI follows a **Reactive Store** pattern using **Effect Atoms** (`@effect-atom/atom`). 
 
-- **Single Source of Truth**: Global domain state (Sources, Workflows, Provider Metadata) is stored in centralized Atoms in `src/store/`.
+- **Single Source of Truth**: Global domain state (Connections, Workflows, Provider Metadata) is stored in centralized Atoms in `src/store/`.
 - **Reactive Subscriptions**: Components must consume state via the `useAtom` hook. Redundant localized `useState` for global artifacts is an anti-pattern.
 - **Side Effect Encapsulation**: Data fetching and mutations (Wails binding calls) are encapsulated in Effect generators within the store.
 - **Managed Runtime**: The frontend uses a global `ManagedRuntime` and `AtomRegistry` (setup in `src/lib/runtime.ts`) to provide a high-integrity execution context for all side effects.
 - **Stateless Views**: Views and components should be "stateless observers" that trigger Store effects and render Atom values. 
+
+### IPC Boundary & Resilience
+
+The interface between the Go backend (Wails) and the Frontend is established as a formal **Effect Service Boundary** (`AppService`).
+
+- **Granular Resilience**: IPC calls are categorized into **READ** and **WRITE** operations. Reads are idempotent and support automatic exponential retries (2 recurs). Writes are non-idempotent and enforce a strict timeout with no retries.
+- **Schema Validation**: Every Go payload crossing the IPC boundary is decoded and validated using `effect/Schema`. This prevents malformed data from propagating into the reactive store.
+- **Runtime Guarding**: All IPC calls are guarded by an `ensureRuntime` effect to prevent failures during early startup or SSR.
+- **Recursive Structural Relaxation**: The boundary uses recursive type relaxation to allow plain JavaScript objects (POJOs) to be passed to Go bindings that nominally expect strict model classes.
 
 ## UI Feature Composition
 
 The GUI emphasizes **Feature Consolidation** to ensure consistency across different views.
 
 - **Deep Components**: Complex, cross-view UI patterns (like endpoint selection and resource listing) are extracted into reusable "Deep Components" in `src/components/`. These components carry their own validation and defaulting logic.
-- **Selection Engine**: Source and resource selection logic is centralized in `src/store/selection.ts`. This ensures that filtering (e.g., writable targets) and defaulting (e.g., first available resource) are identical in the Step Editor and Query Tester.
+- **Selection Engine**: Connection and resource selection logic is centralized in `src/store/selection.ts`. This ensures that filtering (e.g., writable targets) and defaulting (e.g., first available resource) are identical in the Step Editor and Query Tester.
 - **Standardized Results**: Data listing (tracks and groups) is unified in the `ResourceTable` component, providing a consistent virtualization and rendering experience throughout the app.
 
 ## Fan-out Synchronization
@@ -74,3 +83,12 @@ The system supports synchronizing a single source selection to multiple target g
 - **Facade Orchestration**: The Orchestrator facade (`internal/services/orchestrator`) is responsible for resolving multi-group target queries and executing individual sync operations for each matched group.
 - **Granular Results**: To avoid business logic leakage into the UI, the Orchestrator returns a slice of results (e.g., `[]SyncDiff`), one for each matched target. The UI is responsible for rendering these individual results granularly.
 - **Surgical Core**: The low-level sync engine remains focused on 1:1 synchronization (one source list to one target group), ensuring structural integrity and precision.
+
+## Software Updates
+
+The application manages its own lifecycle via a background Update Engine.
+
+- **Authority**: The Software Version and Update Results are managed in the global `SystemStore` (`src/store/system.ts`).
+- **Resilience**: IPC update calls are handled via `AppService` with a strict WRITE policy (no retries).
+- **Feedback**: The UI provides a "Latest" success state with a transient checkmark feedback loop (3s cooldown) after a successful check.
+- **Dev-Mode**: The system handles development builds (`v0.0.0-dev`) by falling back to fetching the latest remote release version directly from the GitHub API via HTTP.

@@ -18,21 +18,21 @@ func overrideConfigDir(t *testing.T) string {
 	return filepath.Join(tmp, "djlt")
 }
 
-// ── Source ────────────────────────────────────────────────────────────────────
+// ── Connection ────────────────────────────────────────────────────────────────
 
-func TestSource_Roundtrip(t *testing.T) {
+func TestConnection_Roundtrip(t *testing.T) {
 	overrideConfigDir(t)
 
-	s := Source{
-		ID:       NewSourceID(),
+	s := Connection{
+		ID:       NewConnectionID(),
 		Name:     "Main Library",
 		Provider: "rb",
 		Config:   map[string]string{"file_path": "/Music/rekordbox.xml"},
 	}
 
-	require.NoError(t, SaveSource(s))
+	require.NoError(t, SaveConnection(s))
 
-	loaded, err := LoadSources()
+	loaded, err := LoadConnections()
 	require.NoError(t, err)
 	require.Len(t, loaded, 1)
 	assert.Equal(t, s.ID, loaded[0].ID)
@@ -41,32 +41,32 @@ func TestSource_Roundtrip(t *testing.T) {
 	assert.Equal(t, s.Config["file_path"], loaded[0].Config["file_path"])
 }
 
-func TestSource_Delete(t *testing.T) {
+func TestConnection_Delete(t *testing.T) {
 	overrideConfigDir(t)
 
-	s := Source{ID: NewSourceID(), Name: "Tmp", Provider: "rb", Config: map[string]string{}}
-	require.NoError(t, SaveSource(s))
+	s := Connection{ID: NewConnectionID(), Name: "Tmp", Provider: "rb", Config: map[string]string{}}
+	require.NoError(t, SaveConnection(s))
 
-	require.NoError(t, DeleteSource(s.ID))
+	require.NoError(t, DeleteConnection(s.ID))
 
-	loaded, err := LoadSources()
+	loaded, err := LoadConnections()
 	require.NoError(t, err)
 	assert.Empty(t, loaded)
 }
 
-func TestFindFirstSource(t *testing.T) {
+func TestFindFirstConnection(t *testing.T) {
 	overrideConfigDir(t)
 
-	rb := Source{ID: NewSourceID(), Name: "RB", Provider: "rb", Config: map[string]string{"file_path": "/a.xml"}}
-	px := Source{ID: NewSourceID(), Name: "Plex", Provider: "plex", Config: map[string]string{"host": "localhost"}}
-	require.NoError(t, SaveSource(rb))
-	require.NoError(t, SaveSource(px))
+	rb := Connection{ID: NewConnectionID(), Name: "RB", Provider: "rb", Config: map[string]string{"file_path": "/a.xml"}}
+	px := Connection{ID: NewConnectionID(), Name: "Plex", Provider: "plex", Config: map[string]string{"host": "localhost"}}
+	require.NoError(t, SaveConnection(rb))
+	require.NoError(t, SaveConnection(px))
 
-	found, err := FindFirstSource("rb")
+	found, err := FindFirstConnection("rb")
 	require.NoError(t, err)
 	assert.Equal(t, rb.ID, found.ID)
 
-	_, err = FindFirstSource("m3u")
+	_, err = FindFirstConnection("m3u")
 	assert.Error(t, err)
 }
 
@@ -83,12 +83,12 @@ func TestWorkflow_Roundtrip(t *testing.T) {
 				ID:   NewStepID(),
 				Kind: "sync",
 				Source: Endpoint{
-					SourceID: NewSourceID(),
-					Resource: "tracks",
-					Query:    "playlists:Inbox",
+					ConnectionID: NewConnectionID(),
+					Resource:     "tracks",
+					Query:        "playlists:Inbox",
 				},
 				Targets: []Endpoint{
-					{SourceID: NewSourceID(), Resource: "playlists", Query: "name:Target"},
+					{ConnectionID: NewConnectionID(), Resource: "playlists", Query: "name:Target"},
 				},
 			},
 		},
@@ -125,9 +125,9 @@ func TestPathMap_Roundtrip(t *testing.T) {
 	overrideConfigDir(t)
 
 	pm := PathMap{
-		ID:        NewPathMapID(),
-		SourceAID: NewSourceID(),
-		SourceBID: NewSourceID(),
+		ID:            NewPathMapID(),
+		ConnectionAID: NewConnectionID(),
+		ConnectionBID: NewConnectionID(),
 		Rules: []PathRule{
 			{From: "/Volumes/Music/", To: "/media/music/"},
 		},
@@ -139,8 +139,8 @@ func TestPathMap_Roundtrip(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, loaded, 1)
 	assert.Equal(t, pm.ID, loaded[0].ID)
-	assert.Equal(t, pm.SourceAID, loaded[0].SourceAID)
-	assert.Equal(t, pm.SourceBID, loaded[0].SourceBID)
+	assert.Equal(t, pm.ConnectionAID, loaded[0].ConnectionAID)
+	assert.Equal(t, pm.ConnectionBID, loaded[0].ConnectionBID)
 	require.Len(t, loaded[0].Rules, 1)
 	assert.Equal(t, pm.Rules[0].From, loaded[0].Rules[0].From)
 	assert.Equal(t, pm.Rules[0].To, loaded[0].Rules[0].To)
@@ -149,7 +149,7 @@ func TestPathMap_Roundtrip(t *testing.T) {
 func TestPathMap_Delete(t *testing.T) {
 	overrideConfigDir(t)
 
-	pm := PathMap{ID: NewPathMapID(), SourceAID: NewSourceID(), SourceBID: NewSourceID(), Rules: []PathRule{}}
+	pm := PathMap{ID: NewPathMapID(), ConnectionAID: NewConnectionID(), ConnectionBID: NewConnectionID(), Rules: []PathRule{}}
 	require.NoError(t, SavePathMap(pm))
 	require.NoError(t, DeletePathMap(pm.ID))
 
@@ -158,16 +158,16 @@ func TestPathMap_Delete(t *testing.T) {
 	assert.Empty(t, loaded)
 }
 
-func TestLoadSources_EmptyDir(t *testing.T) {
+func TestLoadConnections_EmptyDir(t *testing.T) {
 	overrideConfigDir(t)
-	// Ensure the sources dir exists but is empty
-	dir, err := GetSourcesDir()
+	// Ensure the connections dir exists but is empty
+	dir, err := GetConnectionsDir()
 	require.NoError(t, err)
 	entries, err := os.ReadDir(dir)
 	require.NoError(t, err)
 	assert.Empty(t, entries)
 
-	sources, err := LoadSources()
+	connections, err := LoadConnections()
 	require.NoError(t, err)
-	assert.Nil(t, sources)
+	assert.Nil(t, connections)
 }

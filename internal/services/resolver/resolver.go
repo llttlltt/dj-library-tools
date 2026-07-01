@@ -9,7 +9,7 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/core/location"
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
 	"github.com/llttlltt/dj-library-tools/internal/core/query"
-	"github.com/llttlltt/dj-library-tools/internal/providers"
+	provider "github.com/llttlltt/dj-library-tools/internal/providers"
 	"github.com/llttlltt/dj-library-tools/internal/providers/factory"
 )
 
@@ -43,23 +43,23 @@ func ResolveSelection(ctx context.Context, locStr string, queryOverride string, 
 	port := opts.Port
 	token := opts.Token
 
-	// If provider is a UUID, load the Source and use its config
+	// If provider is a UUID, load the Connection and use its config
 	if len(loc.Provider) == 36 && strings.Contains(loc.Provider, "-") {
-		src, err := config.FindSourceByID(loc.Provider)
+		conn, err := config.FindConnectionByID(loc.Provider)
 		if err == nil {
-			loc.Provider = src.Provider // replace UUID with "rb", "plex" etc.
+			loc.Provider = conn.Provider // replace UUID with "rb", "plex" etc.
 
-			// Override options with Source config
-			if fp, ok := src.Config["file_path"]; ok {
+			// Override options with Connection config
+			if fp, ok := conn.Config["file_path"]; ok {
 				filePath = fp
 			}
-			if h, ok := src.Config["host"]; ok {
+			if h, ok := conn.Config["host"]; ok {
 				host = h
 			}
-			if p, ok := src.Config["port"]; ok {
+			if p, ok := conn.Config["port"]; ok {
 				fmt.Sscanf(p, "%d", &port)
 			}
-			if t, ok := src.Config["token"]; ok {
+			if t, ok := conn.Config["token"]; ok {
 				token = t
 			}
 		}

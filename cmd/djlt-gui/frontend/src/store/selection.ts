@@ -1,8 +1,8 @@
-import type { ProviderInfo, ResourceInfo, Source } from "@/types";
+import type { Connection, ProviderInfo, ResourceInfo } from "@/types";
 
 /**
  * selection.ts
- * Pure logic and helper functions for source/resource selection.
+ * Pure logic and helper functions for connection/resource selection.
  * These will be consumed by both Atoms and Components.
  */
 
@@ -17,31 +17,31 @@ export const filterWritableResources = (
 	});
 };
 
-export const findSourceProvider = (
-	sourceID: string,
-	sources: Source[],
+export const findConnectionProvider = (
+	connectionID: string,
+	connections: Connection[],
 	providers: ProviderInfo[],
 ): ProviderInfo | undefined => {
-	const source = sources.find((s) => s.id === sourceID);
-	return providers.find((p) => p.name === source?.provider);
+	const connection = connections.find((c) => c.id === connectionID);
+	return providers.find((p) => p.name === connection?.provider);
 };
 
 export const getFirstValidResource = (
-	sourceID: string,
-	sources: Source[],
+	connectionID: string,
+	connections: Connection[],
 	providers: ProviderInfo[],
 	isTarget: boolean,
 ): string => {
-	const provider = findSourceProvider(sourceID, sources, providers);
+	const provider = findConnectionProvider(connectionID, connections, providers);
 	const valid = filterWritableResources(provider, isTarget);
 	return valid[0]?.name ?? "tracks";
 };
 
-export const canSourceSupportTarget = (
-	sourceID: string,
-	sources: Source[],
+export const canConnectionSupportTarget = (
+	connectionID: string,
+	connections: Connection[],
 	providers: ProviderInfo[],
 ): boolean => {
-	const provider = findSourceProvider(sourceID, sources, providers);
+	const provider = findConnectionProvider(connectionID, connections, providers);
 	return provider?.resources.some((r) => r.can_write) ?? true;
 };

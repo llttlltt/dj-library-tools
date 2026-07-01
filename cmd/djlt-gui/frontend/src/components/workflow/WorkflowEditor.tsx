@@ -4,11 +4,11 @@ import type { QueryTesterOpts } from "@/App";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { StepCard } from "@/components/workflow/StepCard";
-import type { ProviderInfo, Source, Step, Workflow } from "@/types";
+import type { Connection, ProviderInfo, Step, Workflow } from "@/types";
 
 interface EditorProps {
 	workflow: Workflow;
-	sources: Source[];
+	connections: Connection[];
 	providers: ProviderInfo[];
 	busy: boolean;
 	error: string;
@@ -17,12 +17,12 @@ interface EditorProps {
 	onOpenQueryTester?: (opts?: QueryTesterOpts) => void;
 }
 
-function blankStep(srcId: string, targetId: string): Step {
+function blankStep(connectionId: string, targetId: string): Step {
 	return {
 		id: "",
 		kind: "sync",
-		source: { source_id: srcId, resource: "tracks", query: "" },
-		targets: [{ source_id: targetId, resource: "playlists", query: "" }],
+		source: { connection_id: connectionId, resource: "tracks", query: "" },
+		targets: [{ connection_id: targetId, resource: "playlists", query: "" }],
 		after: [],
 		options: {},
 	};
@@ -30,7 +30,7 @@ function blankStep(srcId: string, targetId: string): Step {
 
 export function WorkflowEditor({
 	workflow,
-	sources,
+	connections,
 	providers,
 	busy,
 	error,
@@ -43,17 +43,17 @@ export function WorkflowEditor({
 	);
 	const [deleteStepIdx, setDeleteStepIdx] = useState<number | null>(null);
 
-	const sortedSources = [...sources].sort((a, b) =>
+	const sortedConnections = [...connections].sort((a, b) =>
 		a.name.localeCompare(b.name),
 	);
-	const firstSrcId = sortedSources[0]?.id ?? "";
+	const firstConnectionId = sortedConnections[0]?.id ?? "";
 
-	// For targets, pick the first source that has a provider with CanWrite capability.
-	const firstTargetSrcId =
-		sortedSources.find((s) => {
-			const p = providers.find((prov) => prov.name === s.provider);
+	// For targets, pick the first connection that has a provider with CanWrite capability.
+	const firstTargetConnectionId =
+		sortedConnections.find((c) => {
+			const p = providers.find((prov) => prov.name === c.provider);
 			return p?.capabilities.CanWrite ?? true;
-		})?.id ?? firstSrcId;
+		})?.id ?? firstConnectionId;
 
 	const mutSteps = (fn: (steps: Step[]) => Step[]) =>
 		setWf((w) => ({ ...w, steps: fn([...w.steps]) }));
@@ -116,7 +116,7 @@ export function WorkflowEditor({
 									mode="edit"
 									step={step}
 									index={si}
-									sources={sources}
+									connections={connections}
 									providers={providers}
 									onChange={(patch) => updStep(si, patch)}
 									onDelete={() => setDeleteStepIdx(si)}
@@ -128,9 +128,12 @@ export function WorkflowEditor({
 					<button
 						type="button"
 						onClick={() =>
-							mutSteps((ss) => [...ss, blankStep(firstSrcId, firstTargetSrcId)])
+							mutSteps((ss) => [
+								...ss,
+								blankStep(firstConnectionId, firstTargetConnectionId),
+							])
 						}
-						className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-3.5 text-sm font-medium text-muted-foreground hover:border-blue-700/60 hover:text-blue-400 bg-secondary/5 hover:bg-blue-500/[0.02] transition-all duration-200"
+						className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-border py-3.5 text-sm font-medium text-muted-foreground hover:border-blue-700/60 hover:text-blue-400 bg-secondary/5 hover:bg-blue-500/[0.02] transition-all duration-200"
 					>
 						<Plus className="h-4 w-4" /> Add Step
 					</button>

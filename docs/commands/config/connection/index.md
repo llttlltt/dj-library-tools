@@ -1,15 +1,11 @@
-# config source list
+# config connection
 
-List all configured Sources
-
-```
-djlt config source list [flags]
-```
+Manage Connection
 
 ### Options
 
 ```
-  -h, --help   help for list
+  -h, --help   help for connection
 ```
 
 ### Inherited Options
@@ -22,4 +18,5 @@ djlt config source list [flags]
 
 ## See also
 
-* [djlt config source](index.md)	 - Manage Sources
+* [djlt config](../index.md)	 - Manage application configuration
+* [djlt config connection list](list.md)	 - List all configured Connections

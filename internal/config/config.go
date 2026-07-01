@@ -28,12 +28,12 @@ type RekordboxConfig struct {
 	PrimaryFilePath string `json:"primary_file_path"`
 }
 
-func GetSourcesDir() (string, error) {
+func GetConnectionsDir() (string, error) {
 	dir, err := GetConfigDir()
 	if err != nil {
 		return "", err
 	}
-	p := filepath.Join(dir, "sources")
+	p := filepath.Join(dir, "connections")
 	return p, os.MkdirAll(p, 0755)
 }
 

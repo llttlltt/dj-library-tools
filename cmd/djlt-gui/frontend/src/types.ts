@@ -3,7 +3,7 @@
 // shapes at runtime even though TypeScript sees them as the class types.
 
 export interface Endpoint {
-	source_id: string;
+	connection_id: string;
 	resource: string;
 	query?: string;
 }
@@ -23,7 +23,7 @@ export interface Workflow {
 	steps: Step[];
 }
 
-export interface Source {
+export interface Connection {
 	id: string;
 	name: string;
 	provider: string;

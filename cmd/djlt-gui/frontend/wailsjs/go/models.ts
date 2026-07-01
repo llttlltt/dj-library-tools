@@ -1,7 +1,25 @@
 export namespace config {
 	
+	export class Connection {
+	    id: string;
+	    name: string;
+	    provider: string;
+	    config: Record<string, string>;
+	
+	    static createFrom(source: any = {}) {
+	        return new Connection(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.provider = source["provider"];
+	        this.config = source["config"];
+	    }
+	}
 	export class Endpoint {
-	    source_id: string;
+	    connection_id: string;
 	    resource: string;
 	    query?: string;
 	
@@ -11,27 +29,9 @@ export namespace config {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.source_id = source["source_id"];
+	        this.connection_id = source["connection_id"];
 	        this.resource = source["resource"];
 	        this.query = source["query"];
-	    }
-	}
-	export class Source {
-	    id: string;
-	    name: string;
-	    provider: string;
-	    config: Record<string, string>;
-	
-	    static createFrom(source: any = {}) {
-	        return new Source(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.name = source["name"];
-	        this.provider = source["provider"];
-	        this.config = source["config"];
 	    }
 	}
 	export class Step {

@@ -15,14 +15,14 @@ type PathRule struct {
 	To   string `json:"to"`
 }
 
-// PathMap declares a path-translation relationship between two Sources.
+// PathMap declares a path-translation relationship between two Connections.
 // It enables the sync engine to reconcile file paths across providers.
 // Stored as ~/.config/djlt/path-maps/<uuid>.json.
 type PathMap struct {
-	ID        string     `json:"id"`
-	SourceAID string     `json:"source_a_id"`
-	SourceBID string     `json:"source_b_id"`
-	Rules     []PathRule `json:"rules"`
+	ID            string     `json:"id"`
+	ConnectionAID string     `json:"connection_a_id"`
+	ConnectionBID string     `json:"connection_b_id"`
+	Rules         []PathRule `json:"rules"`
 }
 
 // NewPathMapID returns a new UUID v4 string for a PathMap.

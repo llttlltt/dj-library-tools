@@ -5,25 +5,24 @@ import { QueryTester } from "@/components/query/QueryTester";
 import { runPromise } from "@/lib/runtime";
 import { cn } from "@/lib/utils";
 import { loadSystemInfo } from "@/store/system";
+import ConnectionsView from "./views/ConnectionsView";
 import QueryTesterView from "./views/QueryTesterView";
 import SettingsView from "./views/SettingsView";
-import SourcesView from "./views/SourcesView";
 import WorkflowsView from "./views/WorkflowsView";
 
-type Tab = "sources" | "workflows" | "query" | "settings";
+type Tab = "workflows" | "query" | "connections" | "settings";
 
 const NAV: {
 	id: Tab;
 	label: string;
 	Icon: React.FC<{ className?: string }>;
 }[] = [
-	{ id: "sources", label: "Sources", Icon: Music2 },
 	{ id: "workflows", label: "Workflows", Icon: Workflow },
 	{ id: "query", label: "Query Tester", Icon: FlaskConical },
 ];
 
 export interface QueryTesterOpts {
-	sourceID?: string;
+	connectionID?: string;
 	resource?: string;
 	query?: string;
 	isTarget?: boolean;
@@ -31,7 +30,7 @@ export interface QueryTesterOpts {
 }
 
 export default function App() {
-	const [tab, setTab] = useState<Tab>("sources");
+	const [tab, setTab] = useState<Tab>("workflows");
 	const [resetKey, setResetKey] = useState(0);
 	const [queryTesterOpen, setQueryTesterOpen] = useState(false);
 	const [queryTesterOpts, setQueryTesterOpts] = useState<QueryTesterOpts>({});
@@ -80,6 +79,20 @@ export default function App() {
 							{label}
 						</button>
 					))}
+					<div className="h-4" />
+					<button
+						type="button"
+						onClick={() => handleTabClick("connections")}
+						className={cn(
+							"flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors text-left",
+							tab === "connections"
+								? "bg-accent text-accent-foreground font-medium"
+								: "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+						)}
+					>
+						<Music2 className="h-4 w-4 shrink-0" />
+						Connections
+					</button>
 				</nav>
 				<div className="p-2 border-t border-border">
 					<button
@@ -100,7 +113,6 @@ export default function App() {
 
 			{/* ── main ──────────────────────────────────────────────────── */}
 			<main className="flex-1 overflow-auto">
-				{tab === "sources" && <SourcesView />}
 				{tab === "workflows" && (
 					<WorkflowsView
 						key={`workflows-${resetKey}`}
@@ -108,6 +120,7 @@ export default function App() {
 					/>
 				)}
 				{tab === "query" && <QueryTesterView />}
+				{tab === "connections" && <ConnectionsView />}
 				{tab === "settings" && <SettingsView />}
 			</main>
 
@@ -115,7 +128,7 @@ export default function App() {
 			<QueryTester
 				open={queryTesterOpen}
 				onClose={() => setQueryTesterOpen(false)}
-				initialSourceID={queryTesterOpts.sourceID}
+				initialConnectionID={queryTesterOpts.connectionID}
 				initialResource={queryTesterOpts.resource}
 				initialQuery={queryTesterOpts.query}
 				isTarget={queryTesterOpts.isTarget}

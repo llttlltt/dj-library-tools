@@ -6,9 +6,9 @@ import {
 	WailsRuntimeNotReadyError,
 } from "./errors";
 import {
+	ConnectionSchema,
 	ProviderInfoSchema,
 	QueryResultSchema,
-	SourceSchema,
 	StepDiffSchema,
 	UpdateConfigSchema,
 	UpdateInfoSchema,
@@ -130,15 +130,20 @@ export class AppService extends Effect.Service<AppService>()("AppService", {
 			installUpdate: write(WailsApp.InstallUpdate),
 			getPermissionStatus: read(WailsApp.GetPermissionStatus),
 			fixPermissions: write(WailsApp.FixPermissions),
+			openFileDialog: read(WailsApp.OpenFileDialog),
 
-			// Sources
-			listSources: readDecoded(
-				WailsApp.ListSources,
-				Schema.Array(SourceSchema),
+			// Plex Auth
+			initPlexAuth: read(WailsApp.InitPlexAuth),
+			checkPlexAuth: read(WailsApp.CheckPlexAuth),
+
+			// Connections
+			listConnections: readDecoded(
+				WailsApp.ListConnections,
+				Schema.Array(ConnectionSchema),
 			),
-			createSource: write(WailsApp.CreateSource),
-			deleteSource: write(WailsApp.DeleteSource),
-			updateSource: writeStructural(WailsApp.UpdateSource),
+			createConnection: write(WailsApp.CreateConnection),
+			deleteConnection: write(WailsApp.DeleteConnection),
+			updateConnection: writeStructural(WailsApp.UpdateConnection),
 
 			// Workflows
 			listWorkflows: readDecoded(
