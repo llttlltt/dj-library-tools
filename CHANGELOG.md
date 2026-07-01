@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/llttlltt/dj-library-tools/compare/v1.0.0...v1.1.0) (2026-07-01)
+
+
+### Features
+
+* **gui:** overhaul UI architecture and implement auto-update engine ([448eb40](https://github.com/llttlltt/dj-library-tools/commit/448eb404448fd010095741e668f7e0b9fd861a2a))
+
 ## 1.0.0 (2026-07-01)
 
 
