@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/llttlltt/dj-library-tools/compare/v1.2.0...v1.2.1) (2026-07-01)
+
+
+### Bug Fixes
+
+* **gui:** fix pnpm workspace config and allow build scripts ([3c6d840](https://github.com/llttlltt/dj-library-tools/commit/3c6d84060937792755c97618dd5da27607c774cf))
+
 ## [1.2.0](https://github.com/llttlltt/dj-library-tools/compare/v1.1.0...v1.2.0) (2026-07-01)
 
 
