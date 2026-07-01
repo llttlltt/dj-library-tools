@@ -195,9 +195,12 @@ func (o *Orchestrator) Sync(ctx context.Context, sourceLoc, targetLoc string, qu
 		return err
 	}
 
-	resolvedTargetID := tgt.Location.Query
+	resolvedTargetIDs := []string{tgt.Location.Query}
 	if len(tgt.Groups) > 0 {
-		resolvedTargetID = tgt.Groups[0].ID
+		resolvedTargetIDs = []string{}
+		for _, g := range tgt.Groups {
+			resolvedTargetIDs = append(resolvedTargetIDs, g.ID)
+		}
 	}
 
 	pSyncOpts := provider.SyncOptions{
@@ -209,9 +212,11 @@ func (o *Orchestrator) Sync(ctx context.Context, sourceLoc, targetLoc string, qu
 		MatchFields:    syncOpts.MatchFields,
 	}
 
-	err = prov.System().Sync(ctx, o.buildExecContext(opts), src.Tracks, resolvedTargetID, pSyncOpts)
-	if err != nil {
-		return err
+	for _, targetID := range resolvedTargetIDs {
+		err = prov.System().Sync(ctx, o.buildExecContext(opts), src.Tracks, targetID, pSyncOpts)
+		if err != nil {
+			return err
+		}
 	}
 
 	if opts.Apply {
@@ -232,7 +237,7 @@ type SyncDiff struct {
 	TrackLookup map[string]models.Track
 }
 
-func (o *Orchestrator) GetSyncDiff(ctx context.Context, sourceLoc, targetLoc string, queryOverride string, opts RunOptions, appendOnly bool) (*SyncDiff, error) {
+func (o *Orchestrator) GetSyncDiff(ctx context.Context, sourceLoc, targetLoc string, queryOverride string, opts RunOptions, appendOnly bool) ([]*SyncDiff, error) {
 	if err := o.validateLocation(sourceLoc); err != nil {
 		return nil, err
 	}
@@ -249,22 +254,35 @@ func (o *Orchestrator) GetSyncDiff(ctx context.Context, sourceLoc, targetLoc str
 		return nil, err
 	}
 
-	diff := &SyncDiff{
-		TargetName:  tgt.Location.Query,
-		TrackLookup: make(map[string]models.Track),
-	}
-	if diff.TargetName == "" {
-		diff.TargetName = tgt.Location.Resource
+	var diffs []*SyncDiff
+
+	// If no groups matched but we have a target location,
+	// we still want one diff for the potential new group.
+	targetGroups := tgt.Groups
+	if len(targetGroups) == 0 {
+		name := tgt.Location.Query
+		if name == "" {
+			name = tgt.Location.Resource
+		}
+		diffs = append(diffs, &SyncDiff{
+			TargetName:  name,
+			TrackLookup: make(map[string]models.Track),
+		})
 	}
 
-	if len(tgt.Groups) > 0 {
-		group := tgt.Groups[0]
-		diff.TargetName = group.Name
+	for _, group := range targetGroups {
+		diff := &SyncDiff{
+			TargetName:  group.Name,
+			TrackLookup: make(map[string]models.Track),
+		}
 
-		var currentIDs []string
 		allTracks, _ := prov.Tracks().List(ctx, o.buildExecContext(opts), "")
 		for _, t := range allTracks {
 			diff.TrackLookup[t.ID] = t
+		}
+
+		var currentIDs []string
+		for _, t := range allTracks {
 			for _, m := range t.Playlists {
 				if m.Name == group.Name && m.Folder == group.ParentFolder {
 					currentIDs = append(currentIDs, t.ID)
@@ -284,9 +302,10 @@ func (o *Orchestrator) GetSyncDiff(ctx context.Context, sourceLoc, targetLoc str
 		diff.AddedIDs = added
 		diff.RemovedIDs = removed
 		diff.SourceIDs = sourceIDs
+		diffs = append(diffs, diff)
 	}
 
-	return diff, nil
+	return diffs, nil
 }
 
 func (o *Orchestrator) Fix(ctx context.Context, locStr string, queryOverride string, opts RunOptions, fixOpts FixOptions) (int, error) {

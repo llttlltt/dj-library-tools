@@ -140,7 +140,12 @@ export default function WorkflowsView({
 		setBusy(true);
 		try {
 			await runtime.runPromise(saveWorkflow(wf));
+			// Update the selected workflow to reflect the saved state
+			setSelected(JSON.parse(JSON.stringify(wf)));
 			setMode("view");
+			// Clear stale diffs/results
+			setDiffs([]);
+			setResult(null);
 		} catch (e) {
 			console.error(e);
 		}

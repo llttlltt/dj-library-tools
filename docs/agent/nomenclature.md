@@ -16,6 +16,7 @@
 - **Path Map**: A declared path-translation relationship between two Sources (e.g., translating Rekordbox local paths to Plex server paths).
 - **Query**: Criteria used to filter resources.
 - **Selection**: A resolved, inert set of resources (tracks/groups) ready for an operation. It carries data only; it cannot trigger mutations.
+- **SyncDiff**: A granular summary of changes (adds/removes) for a single target group. The Orchestrator returns a slice of these for multi-group syncs.
 - **Orchestrator**: The UI-agnostic facade (`internal/services/orchestrator`) that every UI calls to perform an operation — the single seam between presentation and logic. It owns resolution, sort-field validation, statistics, sorting, and persistence gating (on `Apply`), invokes provider methods, and returns inert results.
 - **ListResult**: The inert result struct from `Orchestrator.List` — resource data plus presentation metadata (e.g. `DefaultColumns`). It never carries a mutable `Provider` handle.
 - **Feedback**: The interface through which all user-facing output flows (`OnStatus`, `OnPreview`, `OnSuccess`, `OnWarning`, `OnTable`, `OnProgress`). The CLI implements it for the terminal; the GUI implements it for its widgets. Core/services/providers never print directly.
@@ -29,6 +30,11 @@
 - **Registry**: The container that holds and manages all active Atoms.
 - **Runtime**: The Effect-TS execution context used to run side effects (fetching, saving) in the frontend.
 - **Store**: A logical collection of Atoms and Effects related to a specific domain entity (e.g., Sources Store).
+
+## GUI Feature Terminology
+
+- **EndpointEditor**: The shared UI feature for selecting a Source, Resource, and Query.
+- **ResourceTable**: The standardized, virtualized table for displaying track and group results.
 
 ## Domain Standards
 

@@ -90,7 +90,16 @@ func TestOrchestrator_Sync_Feedback(t *testing.T) {
 	ctx := context.Background()
 	err := o.Sync(ctx, "mock/tracks", "mock/tracks", "", RunOptions{Apply: true}, SyncOptions{})
 	assert.NoError(t, err)
-	// Mock doesn't emit feedback currently, but we assert the type safety
+}
+
+func TestOrchestrator_Sync_MultiGroup(t *testing.T) {
+	fb := &MockFeedback{}
+	o := New(fb, Options{})
+
+	ctx := context.Background()
+	// Target query "Multi" matches two playlists in our updated mock provider
+	err := o.Sync(ctx, "mock/tracks", "mock/playlists name:Multi", "", RunOptions{Apply: true}, SyncOptions{})
+	assert.NoError(t, err)
 }
 
 func TestOrchestrator_Fix_Feedback(t *testing.T) {

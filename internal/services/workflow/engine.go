@@ -219,17 +219,19 @@ func executeStep(ctx context.Context, orch *orchestrator.Orchestrator, step conf
 
 			// Mirror the CLI sync pattern: always compute the diff first so that
 			// Preview mode produces meaningful output. Only call Sync when Apply=true.
-			diff, err := orch.GetSyncDiff(ctx, src, tgtLoc, step.Source.Query, runOpts, syncOpts.AppendOnly)
+			diffs, err := orch.GetSyncDiff(ctx, src, tgtLoc, step.Source.Query, runOpts, syncOpts.AppendOnly)
 			if err != nil {
 				return err
 			}
-			sr.Previews = append(sr.Previews, fmt.Sprintf(
-				"%s — add: %d, remove: %d, final: %d",
-				diff.TargetName,
-				len(diff.AddedIDs),
-				len(diff.RemovedIDs),
-				len(diff.SourceIDs),
-			))
+			for _, diff := range diffs {
+				sr.Previews = append(sr.Previews, fmt.Sprintf(
+					"%s — add: %d, remove: %d, final: %d",
+					diff.TargetName,
+					len(diff.AddedIDs),
+					len(diff.RemovedIDs),
+					len(diff.SourceIDs),
+				))
+			}
 
 			if runOpts.Apply {
 				if err := orch.Sync(ctx, src, tgtLoc, step.Source.Query, runOpts, syncOpts); err != nil {

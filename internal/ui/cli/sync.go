@@ -55,38 +55,40 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 
 			for _, targetStr := range syncTo {
 				// Always compute diff so TargetName is available for the success message.
-				diff, err := orch.GetSyncDiff(cmd.Context(), args[0], targetStr, queryOverride, runOpts, syncAppend)
+				diffs, err := orch.GetSyncDiff(cmd.Context(), args[0], targetStr, queryOverride, runOpts, syncAppend)
 				if err != nil {
 					return HandleError(err)
 				}
 
-				// Show preview only in dry-run or verbose mode.
-				if verbose || !apply {
-					if verbose {
-						if len(diff.AddedIDs) > 0 {
-							fmt.Printf("\nTracks to ADD:\n")
-							printTrackTable(diff.AddedIDs, diff.TrackLookup, &TerminalFeedback{})
+				for _, diff := range diffs {
+					// Show preview only in dry-run or verbose mode.
+					if verbose || !apply {
+						if verbose {
+							if len(diff.AddedIDs) > 0 {
+								fmt.Printf("\nTracks to ADD to %q:\n", diff.TargetName)
+								printTrackTable(diff.AddedIDs, diff.TrackLookup, &TerminalFeedback{})
+							}
+							if len(diff.RemovedIDs) > 0 && !syncAppend {
+								fmt.Printf("\nTracks to REMOVE from %q:\n", diff.TargetName)
+								printTrackTable(diff.RemovedIDs, diff.TrackLookup, &TerminalFeedback{})
+							}
+							fmt.Println()
 						}
-						if len(diff.RemovedIDs) > 0 && !syncAppend {
-							fmt.Printf("\nTracks to REMOVE:\n")
-							printTrackTable(diff.RemovedIDs, diff.TrackLookup, &TerminalFeedback{})
+
+						fmt.Printf("%s:\n", diff.TargetName)
+						if syncAppend {
+							fmt.Printf("- Total tracks to add: %d\n", len(diff.AddedIDs))
+						} else {
+							fmt.Printf("- Current tracks:      %d\n", len(diff.CurrentIDs))
+							fmt.Printf("- Tracks to add:       %d\n", len(diff.AddedIDs))
+							fmt.Printf("- Tracks to remove:    %d\n", len(diff.RemovedIDs))
+							fmt.Printf("- Final count:         %d\n", len(diff.SourceIDs))
 						}
 						fmt.Println()
-					}
 
-					fmt.Printf("%s:\n", diff.TargetName)
-					if syncAppend {
-						fmt.Printf("- Total tracks to add: %d\n", len(diff.AddedIDs))
-					} else {
-						fmt.Printf("- Current tracks:      %d\n", len(diff.CurrentIDs))
-						fmt.Printf("- Tracks to add:       %d\n", len(diff.AddedIDs))
-						fmt.Printf("- Tracks to remove:    %d\n", len(diff.RemovedIDs))
-						fmt.Printf("- Final count:         %d\n", len(diff.SourceIDs))
-					}
-					fmt.Println()
-
-					if !apply {
-						fmt.Printf("Run with --apply to persist changes.\n")
+						if !apply {
+							fmt.Printf("Run with --apply to persist changes.\n")
+						}
 					}
 				}
 
@@ -103,7 +105,9 @@ and synchronize specific metadata fields (e.g. beatgrids, rating).
 				}
 
 				if apply {
-					fmt.Printf("✔ Synchronized %q.\n", diff.TargetName)
+					for _, diff := range diffs {
+						fmt.Printf("✔ Synchronized %q.\n", diff.TargetName)
+					}
 				}
 			}
 			return nil

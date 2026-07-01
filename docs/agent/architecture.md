@@ -58,3 +58,19 @@ The GUI follows a **Reactive Store** pattern using **Effect Atoms** (`@effect-at
 - **Side Effect Encapsulation**: Data fetching and mutations (Wails binding calls) are encapsulated in Effect generators within the store.
 - **Managed Runtime**: The frontend uses a global `ManagedRuntime` and `AtomRegistry` (setup in `src/lib/runtime.ts`) to provide a high-integrity execution context for all side effects.
 - **Stateless Views**: Views and components should be "stateless observers" that trigger Store effects and render Atom values. 
+
+## UI Feature Composition
+
+The GUI emphasizes **Feature Consolidation** to ensure consistency across different views.
+
+- **Deep Components**: Complex, cross-view UI patterns (like endpoint selection and resource listing) are extracted into reusable "Deep Components" in `src/components/`. These components carry their own validation and defaulting logic.
+- **Selection Engine**: Source and resource selection logic is centralized in `src/store/selection.ts`. This ensures that filtering (e.g., writable targets) and defaulting (e.g., first available resource) are identical in the Step Editor and Query Tester.
+- **Standardized Results**: Data listing (tracks and groups) is unified in the `ResourceTable` component, providing a consistent virtualization and rendering experience throughout the app.
+
+## Fan-out Synchronization
+
+The system supports synchronizing a single source selection to multiple target groups (e.g., matching a name pattern).
+
+- **Facade Orchestration**: The Orchestrator facade (`internal/services/orchestrator`) is responsible for resolving multi-group target queries and executing individual sync operations for each matched group.
+- **Granular Results**: To avoid business logic leakage into the UI, the Orchestrator returns a slice of results (e.g., `[]SyncDiff`), one for each matched target. The UI is responsible for rendering these individual results granularly.
+- **Surgical Core**: The low-level sync engine remains focused on 1:1 synchronization (one source list to one target group), ensuring structural integrity and precision.

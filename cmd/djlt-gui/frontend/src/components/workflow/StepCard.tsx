@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { QueryTesterOpts } from "@/App";
+import { EndpointEditor } from "@/components/endpoint/EndpointEditor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -230,7 +231,7 @@ interface StepCardProps {
 	onDelete?: () => void;
 	onOpenQueryTester?: (opts?: QueryTesterOpts) => void;
 	// View/Applying mode props
-	diff?: StepDiff;
+	diffs?: StepDiff[];
 	result?: StepResult;
 }
 
@@ -243,7 +244,7 @@ export function StepCard({
 	onChange,
 	onDelete,
 	onOpenQueryTester,
-	diff,
+	diffs = [],
 	result,
 }: StepCardProps) {
 	const [showUnchanged, setShowUnchanged] = useState(true);
@@ -251,9 +252,7 @@ export function StepCard({
 	const showResult = mode === "applying";
 
 	// Logic for Diffs
-	const removedSet = new Set(diff?.removed.map((t) => t.id) ?? []);
-	const unchanged = (diff?.current ?? []).filter((t) => !removedSet.has(t.id));
-	const hasDiff = diff && step.kind === "sync";
+	const hasDiffs = diffs.length > 0 && step.kind === "sync";
 
 	// Edit Handlers
 	const updSource = (patch: Partial<Endpoint>) =>
@@ -366,12 +365,13 @@ export function StepCard({
 						Source
 					</p>
 					{isEdit ? (
-						<EpEditRow
-							ep={step.source}
+						<EndpointEditor
+							endpoint={step.source}
 							sources={sources}
 							providers={providers}
 							onChange={updSource}
 							onOpenQueryTester={onOpenQueryTester}
+							layout="row"
 						/>
 					) : (
 						<EndpointReadRow ep={step.source} sources={sources} />
@@ -391,13 +391,14 @@ export function StepCard({
 							>
 								<div className="flex-1 min-w-0">
 									{isEdit ? (
-										<EpEditRow
-											ep={tgt}
+										<EndpointEditor
+											endpoint={tgt}
 											sources={sources}
 											providers={providers}
 											isTarget
 											onChange={(p) => updTarget(ti, p)}
 											onOpenQueryTester={onOpenQueryTester}
+											layout="row"
 										/>
 									) : (
 										<EndpointReadRow ep={tgt} sources={sources} />
@@ -451,25 +452,39 @@ export function StepCard({
 				)}
 
 				{/* Diff & Results Section (View/Applying Mode) */}
-				{!isEdit && hasDiff && (
-					<>
+				{!isEdit && hasDiffs && (
+					<div className="space-y-4">
 						<Separator className="opacity-40 my-1" />
-						{diff.added.length === 0 && diff.removed.length === 0 ? (
-							<div className="flex items-center gap-2 text-xs font-medium text-emerald-400 bg-emerald-950/20 border border-emerald-500/20 rounded-xl px-3.5 py-2.5">
-								<CheckCircle className="h-4 w-4 shrink-0 text-emerald-500" />{" "}
-								Already up to date
-							</div>
-						) : (
-							<TrackDiffTable
-								target={diff.target_name}
-								added={diff.added}
-								removed={diff.removed}
-								unchanged={unchanged}
-								showUnchanged={showUnchanged}
-								onToggleUnchanged={() => setShowUnchanged((v) => !v)}
-							/>
-						)}
-					</>
+						{diffs.map((diff) => {
+							const removedSet = new Set(diff.removed.map((t) => t.id));
+							const unchanged = diff.current.filter(
+								(t) => !removedSet.has(t.id),
+							);
+
+							return (
+								<div
+									key={`${diff.step_id}-${diff.target_name}`}
+									className="space-y-3"
+								>
+									{diff.added.length === 0 && diff.removed.length === 0 ? (
+										<div className="flex items-center gap-2 text-xs font-medium text-emerald-400 bg-emerald-950/20 border border-emerald-500/20 rounded-xl px-3.5 py-2.5">
+											<CheckCircle className="h-4 w-4 shrink-0 text-emerald-500" />{" "}
+											{diff.target_name}: Already up to date
+										</div>
+									) : (
+										<TrackDiffTable
+											target={diff.target_name}
+											added={diff.added}
+											removed={diff.removed}
+											unchanged={unchanged}
+											showUnchanged={showUnchanged}
+											onToggleUnchanged={() => setShowUnchanged((v) => !v)}
+										/>
+									)}
+								</div>
+							);
+						})}
+					</div>
 				)}
 
 				{result?.error && (

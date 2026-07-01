@@ -1,9 +1,9 @@
 import { useAtom } from "@effect-atom/atom-react";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import {
-	QueryTesterControls,
-	QueryTesterResults,
-} from "@/components/query/QueryTester";
+import { EndpointEditor } from "@/components/endpoint/EndpointEditor";
+import { QueryTesterResults } from "@/components/query/QueryTester";
+import { Button } from "@/components/ui/button";
 import { runtime } from "@/lib/runtime";
 import { loadProviders, providersAtom } from "@/store/providers";
 import { loadSources, sourcesAtom } from "@/store/sources";
@@ -64,19 +64,38 @@ export default function QueryTesterView() {
 			<div className="flex-1 p-6 flex flex-col min-h-0 bg-background">
 				<div className="flex flex-col gap-6 h-full min-h-0">
 					{/* Controls Box - Pins to Top */}
-					<div className="shrink-0">
-						<QueryTesterControls
+					<div className="shrink-0 space-y-4 bg-secondary/20 p-4 rounded-xl border border-border/40">
+						<EndpointEditor
+							endpoint={{ source_id: sourceID, resource, query }}
 							sources={sources}
 							providers={providers}
-							sourceID={sourceID}
-							resource={resource}
-							query={query}
-							loading={loading}
-							onSourceID={setSourceID}
-							onResource={setResource}
-							onQuery={setQuery}
-							onTest={handleTest}
+							onChange={(p) => {
+								if (p.source_id) setSourceID(p.source_id);
+								if (p.resource) setResource(p.resource);
+								if (p.query !== undefined) setQuery(p.query);
+							}}
+							layout="grid"
 						/>
+
+						{/* Actions Row */}
+						<div className="flex gap-2 pt-1 border-t border-border/20">
+							<Button
+								type="button"
+								size="sm"
+								onClick={handleTest}
+								disabled={loading || !sourceID}
+								className="min-w-[80px]"
+							>
+								{loading ? (
+									<>
+										<Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+										Testing…
+									</>
+								) : (
+									"Test Query"
+								)}
+							</Button>
+						</div>
 					</div>
 
 					{/* Results / Error Panel - Only mounts if result exists or there is an active error */}

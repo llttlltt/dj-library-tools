@@ -10,6 +10,7 @@ import (
 func init() {
 	resources := []factory.ResourceInfo{
 		{Name: "tracks", CanWrite: true, SupportsQuery: true},
+		{Name: "playlists", CanWrite: true, SupportsQuery: true},
 	}
 	factory.Register("mock", resources, provider.ProviderCapabilities{CanUpdateMetadata: true, CanWrite: true}, func(opts factory.ProviderOptions) (provider.Provider, error) {
 		return &MockProvider{}, nil
@@ -53,7 +54,13 @@ func (s *mockTrackService) Sort(_ context.Context, _ provider.ExecutionContext, 
 
 type mockGroupService struct{}
 
-func (s *mockGroupService) List(_ context.Context, _ provider.ExecutionContext, _ string) ([]models.ResourceGroup, error) {
+func (s *mockGroupService) List(_ context.Context, _ provider.ExecutionContext, query string) ([]models.ResourceGroup, error) {
+	if query == "kind:=playlist name:Multi" {
+		return []models.ResourceGroup{
+			{ID: "p1", Name: "Multi 1", Kind: models.GroupKindPlaylist},
+			{ID: "p2", Name: "Multi 2", Kind: models.GroupKindPlaylist},
+		}, nil
+	}
 	return nil, nil
 }
 func (s *mockGroupService) Create(_ context.Context, _ provider.ExecutionContext, _ models.ResourceGroup, name string, _ models.GroupKind, _ int) (models.ResourceGroup, error) {

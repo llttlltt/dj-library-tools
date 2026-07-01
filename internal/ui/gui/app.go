@@ -287,33 +287,35 @@ func (a *App) GetWorkflowDiff(id string) ([]StepDiff, error) {
 				tgtLoc = tgtLoc + " " + tgt.Query
 			}
 
-			diff, err := a.orch.GetSyncDiff(a.ctx, src, tgtLoc, step.Source.Query, runOpts, false)
+			diffs, err := a.orch.GetSyncDiff(a.ctx, src, tgtLoc, step.Source.Query, runOpts, false)
 			if err != nil {
 				return nil, fmt.Errorf("step %s diff: %w", step.ID, err)
 			}
 
-			// Build the removed set for fast lookup.
-			removedSet := make(map[string]bool, len(diff.RemovedIDs))
-			for _, rid := range diff.RemovedIDs {
-				removedSet[rid] = true
-			}
-
-			sd := StepDiff{
-				StepID:     step.ID,
-				TargetName: diff.TargetName,
-				Current:    toTrackRows(diff.CurrentIDs, diff.TrackLookup),
-				Added:      toTrackRows(diff.AddedIDs, diff.TrackLookup),
-				Removed:    toTrackRows(diff.RemovedIDs, diff.TrackLookup),
-			}
-			// Unchanged = current members that are NOT being removed.
-			var unchangedIDs []string
-			for _, cid := range diff.CurrentIDs {
-				if !removedSet[cid] {
-					unchangedIDs = append(unchangedIDs, cid)
+			for _, diff := range diffs {
+				// Build the removed set for fast lookup.
+				removedSet := make(map[string]bool, len(diff.RemovedIDs))
+				for _, rid := range diff.RemovedIDs {
+					removedSet[rid] = true
 				}
+
+				sd := StepDiff{
+					StepID:     step.ID,
+					TargetName: diff.TargetName,
+					Current:    toTrackRows(diff.CurrentIDs, diff.TrackLookup),
+					Added:      toTrackRows(diff.AddedIDs, diff.TrackLookup),
+					Removed:    toTrackRows(diff.RemovedIDs, diff.TrackLookup),
+				}
+				// Unchanged = current members that are NOT being removed.
+				var unchangedIDs []string
+				for _, cid := range diff.CurrentIDs {
+					if !removedSet[cid] {
+						unchangedIDs = append(unchangedIDs, cid)
+					}
+				}
+				sd.Unchanged = toTrackRows(unchangedIDs, diff.TrackLookup)
+				out = append(out, sd)
 			}
-			sd.Unchanged = toTrackRows(unchangedIDs, diff.TrackLookup)
-			out = append(out, sd)
 		}
 	}
 	return out, nil

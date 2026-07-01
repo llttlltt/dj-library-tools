@@ -44,9 +44,11 @@ export function WorkflowDetail({
 	const [runConfirm, setRunConfirm] = useState(false);
 	const [deleteConfirm, setDeleteConfirm] = useState(false);
 
-	const diffById: Record<string, StepDiff> = Object.fromEntries(
-		diffs.map((d) => [d.step_id, d]),
-	);
+	const diffsByStepId: Record<string, StepDiff[]> = {};
+	for (const d of diffs) {
+		if (!diffsByStepId[d.step_id]) diffsByStepId[d.step_id] = [];
+		diffsByStepId[d.step_id].push(d);
+	}
 	const resultById: Record<string, StepResult> = Object.fromEntries(
 		(result?.steps ?? []).map((r) => [r.step_id, r]),
 	);
@@ -142,7 +144,7 @@ export function WorkflowDetail({
 							step={step}
 							index={i}
 							sources={sources}
-							diff={diffById[step.id]}
+							diffs={diffsByStepId[step.id] || []}
 							result={resultById[step.id]}
 						/>
 					))}
