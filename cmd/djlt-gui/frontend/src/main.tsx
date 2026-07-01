@@ -1,13 +1,17 @@
+import { RegistryContext } from "@effect-atom/atom-react";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "./index.css";
 import App from "./App";
+import "./index.css";
+import { registry } from "./lib/runtime";
 
 const root = document.getElementById("app");
 if (root) {
 	ReactDOM.createRoot(root).render(
 		<React.StrictMode>
-			<App />
+			<RegistryContext.Provider value={registry}>
+				<App />
+			</RegistryContext.Provider>
 		</React.StrictMode>,
 	);
 }

@@ -23,6 +23,13 @@
 - **Join**: Agnostic identity matching between tracks from different providers.
 - **Path Querying**: Hierarchical traversal and statistical analysis of deep metadata (Cues, Markers, Playlists) using the `Collection.Index/Property-Stat` convention. Supports both track-level collections and group-content traversal (`tracks/title`).
 
+## GUI State Terminology
+
+- **Atom**: A reactive unit of state.
+- **Registry**: The container that holds and manages all active Atoms.
+- **Runtime**: The Effect-TS execution context used to run side effects (fetching, saving) in the frontend.
+- **Store**: A logical collection of Atoms and Effects related to a specific domain entity (e.g., Sources Store).
+
 ## Domain Standards
 
 - **Unified Rating Scale**: Use 0-255 globally to normalize between rating systems.

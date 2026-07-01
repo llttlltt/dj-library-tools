@@ -1,6 +1,10 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.5.1/schema.json",
-	"vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
+	"vcs": {
+		"enabled": false,
+		"clientKind": "git",
+		"useIgnoreFile": false
+	},
 	"files": {
 		"ignoreUnknown": false,
 		"includes": [
@@ -18,12 +22,6 @@
 		"enabled": true,
 		"indentStyle": "tab"
 	},
-	"linter": {
-		"enabled": true,
-		"rules": {
-			"preset": "recommended"
-		}
-	},
 	"assist": {
 		"actions": {
 			"source": {
@@ -36,6 +34,34 @@
 			"quoteStyle": "double",
 			"trailingCommas": "all",
 			"semicolons": "always"
+		}
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"complexity": {
+				"noExcessiveCognitiveComplexity": {
+					"level": "warn",
+					"options": { "maxAllowedComplexity": 25 }
+				},
+				"noForEach": "off",
+				"useLiteralKeys": "off"
+			},
+			"correctness": {
+				"noUnusedVariables": "error",
+				"noUnusedImports": "error",
+				"useExhaustiveDependencies": "warn"
+			},
+			"style": {
+				"noNonNullAssertion": "warn",
+				"useConst": "error",
+				"noParameterAssign": "error"
+			},
+			"suspicious": {
+				"noExplicitAny": "warn",
+				"noConfusingVoidType": "off"
+			}
 		}
 	}
 }

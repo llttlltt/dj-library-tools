@@ -1,22 +1,21 @@
+import { useAtom } from "@effect-atom/atom-react";
 import { useEffect, useState } from "react";
 import {
 	QueryTesterControls,
 	QueryTesterResults,
 } from "@/components/query/QueryTester";
-import type { ProviderInfo, QueryResult, Source } from "@/types";
-import {
-	ListProviders,
-	ListSources,
-	PreviewQuery,
-} from "../../wailsjs/go/gui/App";
+import { runtime } from "@/lib/runtime";
+import { loadProviders, providersAtom } from "@/store/providers";
+import { loadSources, sourcesAtom } from "@/store/sources";
+import type { QueryResult } from "@/types";
+import { PreviewQuery } from "../../wailsjs/go/gui/App";
 
-const asSources = (x: unknown) => (x ?? []) as Source[];
-const asProviders = (x: unknown) => (x ?? []) as ProviderInfo[];
 const asQueryResult = (x: unknown) => x as QueryResult;
 
 export default function QueryTesterView() {
-	const [sources, setSources] = useState<Source[]>([]);
-	const [providers, setProviders] = useState<ProviderInfo[]>([]);
+	const [sources] = useAtom(sourcesAtom);
+	const [providers] = useAtom(providersAtom);
+
 	const [sourceID, setSourceID] = useState("");
 	const [resource, setResource] = useState("tracks");
 	const [query, setQuery] = useState("");
@@ -24,20 +23,16 @@ export default function QueryTesterView() {
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: only default on mount
 	useEffect(() => {
-		Promise.all([ListSources(), ListProviders()])
-			.then(([s, p]) => {
-				const loadedSrcs = asSources(s);
-				const loadedProvs = asProviders(p);
-				setSources(loadedSrcs);
-				setProviders(loadedProvs);
-				if (loadedSrcs.length > 0 && !sourceID) {
-					setSourceID(loadedSrcs[0].id);
-				}
-			})
-			.catch(() => {});
+		runtime.runPromise(loadSources);
+		runtime.runPromise(loadProviders);
 	}, []);
+
+	useEffect(() => {
+		if (sources.length > 0 && !sourceID) {
+			setSourceID(sources[0].id);
+		}
+	}, [sources, sourceID]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally watching value changes to clear stale results
 	useEffect(() => {

@@ -1,3 +1,4 @@
+import { useAtom } from "@effect-atom/atom-react";
 import { Loader2 } from "lucide-react";
 import { forwardRef, useEffect, useState } from "react";
 import { TableVirtuoso } from "react-virtuoso";
@@ -24,7 +25,10 @@ import {
 	TableHead,
 	TableRow,
 } from "@/components/ui/table";
+import { runtime } from "@/lib/runtime";
 import { cn } from "@/lib/utils";
+import { loadProviders, providersAtom } from "@/store/providers";
+import { loadSources, sourcesAtom } from "@/store/sources";
 import type {
 	GroupRow,
 	ProviderInfo,
@@ -32,11 +36,7 @@ import type {
 	Source,
 	TrackRow,
 } from "@/types";
-import {
-	ListProviders,
-	ListSources,
-	PreviewQuery,
-} from "../../../wailsjs/go/gui/App";
+import { PreviewQuery } from "../../../wailsjs/go/gui/App";
 
 interface QueryTesterProps {
 	open: boolean;
@@ -48,8 +48,6 @@ interface QueryTesterProps {
 	onApply?: (query: string) => void;
 }
 
-const asSources = (x: unknown) => (x ?? []) as Source[];
-const asProviders = (x: unknown) => (x ?? []) as ProviderInfo[];
 const asQueryResult = (x: unknown) => x as QueryResult;
 
 export function QueryTester({
@@ -61,8 +59,9 @@ export function QueryTester({
 	isTarget,
 	onApply,
 }: QueryTesterProps) {
-	const [sources, setSources] = useState<Source[]>([]);
-	const [providers, setProviders] = useState<ProviderInfo[]>([]);
+	const [sources] = useAtom(sourcesAtom);
+	const [providers] = useAtom(providersAtom);
+
 	const [sourceID, setSourceID] = useState(initialSourceID ?? "");
 	const [resource, setResource] = useState(initialResource ?? "tracks");
 	const [query, setQuery] = useState(initialQuery ?? "");
@@ -71,12 +70,8 @@ export function QueryTester({
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
-		Promise.all([ListSources(), ListProviders()])
-			.then(([s, p]) => {
-				setSources(asSources(s));
-				setProviders(asProviders(p));
-			})
-			.catch(() => {});
+		runtime.runPromise(loadSources);
+		runtime.runPromise(loadProviders);
 	}, []);
 
 	// Automatically fix blank or invalid resource selections when source or providers change

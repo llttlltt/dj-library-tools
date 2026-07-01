@@ -1,35 +1,31 @@
+import { useAtom } from "@effect-atom/atom-react";
 import { Plus } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { SourceCard } from "@/components/source/SourceCard";
 import { type Provider, SourceForm } from "@/components/source/SourceForm";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import type { Source } from "@/types";
+import { runPromise } from "@/lib/runtime";
 import {
-	CreateSource,
-	DeleteSource,
-	ListSources,
-	UpdateSource,
-} from "../../wailsjs/go/gui/App";
+	addSource,
+	loadSources,
+	removeSource,
+	sourcesAtom,
+	sourcesErrorAtom,
+	updateSource,
+} from "@/store/sources";
+import type { Source } from "@/types";
 
 export default function SourcesView() {
-	const [sources, setSources] = useState<Source[]>([]);
-	const [error, setError] = useState("");
+	const [sources] = useAtom(sourcesAtom);
+	const [error] = useAtom(sourcesErrorAtom);
 	const [formOpen, setFormOpen] = useState(false);
 	const [editTarget, setEditTarget] = useState<Source | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<Source | null>(null);
 
-	const load = useCallback(async () => {
-		try {
-			setSources(((await ListSources()) as unknown as Source[]) ?? []);
-		} catch (e) {
-			setError(String(e));
-		}
-	}, []);
-
 	useEffect(() => {
-		load();
-	}, [load]);
+		runPromise(loadSources);
+	}, []);
 
 	async function handleSubmit(
 		name: string,
@@ -39,21 +35,15 @@ export default function SourcesView() {
 	) {
 		const src: Source = { id: id ?? "", name, provider, config: cfg };
 		if (id) {
-			await (UpdateSource as (s: unknown) => Promise<void>)(src);
+			await runPromise(updateSource(src));
 		} else {
-			await CreateSource(name, provider, cfg);
+			await runPromise(addSource(name, provider, cfg));
 		}
-		await load();
 	}
 
 	async function confirmDelete(s: Source) {
 		setDeleteTarget(null);
-		try {
-			await DeleteSource(s.id);
-			await load();
-		} catch (e) {
-			setError(String(e));
-		}
+		await runPromise(removeSource(s.id));
 	}
 
 	return (

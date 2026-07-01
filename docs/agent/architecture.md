@@ -48,3 +48,13 @@ The system follows a nested, resource-oriented service structure:
 - **Option Ownership**: The orchestrator defines its own option DTOs (e.g., `SyncOptions`, `FixOptions`). UIs construct these types, and the orchestrator maps them to internal provider types.
 - **Source-based Configuration**: Configuration is decentralized into individual JSON files for Sources, Workflows, and Path Maps. The app resolves these artifacts from the filesystem by UUID.
 - **Context Threading**: `context.Context` must flow from every UI call through the orchestrator into `resolver.ResolveSelection` and from there into all provider calls. Provider list operations must never use `context.Background()` internally; doing so silently drops cancellation signals from the caller.
+
+## GUI State Management
+
+The GUI follows a **Reactive Store** pattern using **Effect Atoms** (`@effect-atom/atom`). 
+
+- **Single Source of Truth**: Global domain state (Sources, Workflows, Provider Metadata) is stored in centralized Atoms in `src/store/`.
+- **Reactive Subscriptions**: Components must consume state via the `useAtom` hook. Redundant localized `useState` for global artifacts is an anti-pattern.
+- **Side Effect Encapsulation**: Data fetching and mutations (Wails binding calls) are encapsulated in Effect generators within the store.
+- **Managed Runtime**: The frontend uses a global `ManagedRuntime` and `AtomRegistry` (setup in `src/lib/runtime.ts`) to provide a high-integrity execution context for all side effects.
+- **Stateless Views**: Views and components should be "stateless observers" that trigger Store effects and render Atom values. 
