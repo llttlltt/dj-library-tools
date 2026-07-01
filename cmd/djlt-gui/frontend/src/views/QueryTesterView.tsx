@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { EndpointEditor } from "@/components/endpoint/EndpointEditor";
 import { QueryTesterResults } from "@/components/query/QueryTester";
 import { Button } from "@/components/ui/button";
-import { runtime } from "@/lib/runtime";
+import { runPromise } from "@/lib/runtime";
+import { AppService } from "@/services";
 import { loadProviders, providersAtom } from "@/store/providers";
 import { loadSources, sourcesAtom } from "@/store/sources";
 import type { QueryResult } from "@/types";
-import { PreviewQuery } from "../../wailsjs/go/gui/App";
 
 const asQueryResult = (x: unknown) => x as QueryResult;
 
@@ -20,12 +20,12 @@ export default function QueryTesterView() {
 	const [resource, setResource] = useState("tracks");
 	const [query, setQuery] = useState("");
 	const [result, setResult] = useState<QueryResult | null>(null);
-	const [error, setError] = useState("");
+	const [error, setError] = useState<unknown | null>(null);
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
-		runtime.runPromise(loadSources);
-		runtime.runPromise(loadProviders);
+		runPromise(loadSources);
+		runPromise(loadProviders);
 	}, []);
 
 	useEffect(() => {
@@ -42,12 +42,16 @@ export default function QueryTesterView() {
 
 	async function handleTest() {
 		setLoading(true);
-		setError("");
+		setError(null);
 		setResult(null);
 		try {
-			setResult(asQueryResult(await PreviewQuery(sourceID, resource, query)));
+			const app = await runPromise(AppService);
+			const data = await runPromise(
+				app.previewQuery(sourceID, resource, query),
+			);
+			setResult(asQueryResult(data));
 		} catch (e) {
-			setError(String(e));
+			setError(e);
 		}
 		setLoading(false);
 	}
@@ -99,7 +103,7 @@ export default function QueryTesterView() {
 					</div>
 
 					{/* Results / Error Panel - Only mounts if result exists or there is an active error */}
-					{(result !== null || error) && (
+					{(result !== null || error !== null) && (
 						<div className="flex-1 min-h-0 flex flex-col">
 							<QueryTesterResults result={result} error={error} />
 						</div>

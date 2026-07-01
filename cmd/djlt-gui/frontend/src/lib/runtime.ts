@@ -1,15 +1,19 @@
 import { Registry } from "@effect-atom/atom";
-import { ManagedRuntime } from "effect";
+import { Layer, ManagedRuntime } from "effect";
+import { WailsLive } from "@/services/app-service";
 
-// Create a runtime that includes the AtomRegistry service.
-export const runtime = ManagedRuntime.make(Registry.layer);
+/**
+ * AppRuntime provides the Effect execution context for the application,
+ * including Wails IPC and the Atom registry.
+ */
+export const AppRuntime = ManagedRuntime.make(
+	Layer.merge(Registry.layer, WailsLive),
+);
 
-// Extract the singleton Registry instance from the runtime
-// so it can be passed to the React Context.
+// Compatibility exports for existing store logic
+export const runtime = AppRuntime;
 export const registry: Registry.Registry = runtime.runSync(
 	Registry.AtomRegistry,
 );
-
-// Export helper to run effects that require the AtomRegistry.
 export const runPromise = runtime.runPromise;
 export const runSync = runtime.runSync;

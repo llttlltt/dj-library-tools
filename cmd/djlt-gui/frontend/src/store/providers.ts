@@ -1,7 +1,7 @@
 import { Atom } from "@effect-atom/atom";
 import { Effect } from "effect";
+import { AppService } from "@/services";
 import type { ProviderInfo } from "@/types";
-import { ListProviders } from "../../wailsjs/go/gui/App";
 
 const asProviders = (x: unknown) => (x ?? []) as ProviderInfo[];
 
@@ -14,12 +14,10 @@ export const providersLoadingAtom = Atom.make(false);
 
 export const loadProviders = Effect.gen(function* () {
 	yield* Atom.set(providersLoadingAtom, true);
-	try {
-		const data = yield* Effect.promise(() => ListProviders());
-		yield* Atom.set(providersAtom, asProviders(data));
-	} catch (e) {
-		console.error("Failed to load providers:", e);
-	} finally {
-		yield* Atom.set(providersLoadingAtom, false);
-	}
+	const app = yield* AppService;
+	return yield* app.listProviders().pipe(
+		Effect.flatMap((data) => Atom.set(providersAtom, asProviders(data))),
+		Effect.catchAll((e) => Effect.logError("Failed to load providers", e)),
+		Effect.andThen(() => Atom.set(providersLoadingAtom, false)),
+	);
 });

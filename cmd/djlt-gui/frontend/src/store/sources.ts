@@ -1,12 +1,7 @@
 import { Atom } from "@effect-atom/atom";
 import { Effect } from "effect";
+import { AppService } from "@/services";
 import type { Source } from "@/types";
-import {
-	CreateSource,
-	DeleteSource,
-	ListSources,
-	UpdateSource,
-} from "../../wailsjs/go/gui/App";
 
 const asSources = (x: unknown) => (x ?? []) as Source[];
 
@@ -18,18 +13,22 @@ export const sourcesErrorAtom = Atom.make<string | null>(null);
 
 // --- Operations ---
 
+/**
+ * Normalizes any error into a string for the error atom.
+ */
+const handleError = (e: unknown) =>
+	Atom.set(sourcesErrorAtom, e instanceof Error ? e.message : String(e));
+
 export const loadSources = Effect.gen(function* () {
 	yield* Atom.set(sourcesLoadingAtom, true);
 	yield* Atom.set(sourcesErrorAtom, null);
 
-	try {
-		const data = yield* Effect.promise(() => ListSources());
-		yield* Atom.set(sourcesAtom, asSources(data));
-	} catch (e) {
-		yield* Atom.set(sourcesErrorAtom, String(e));
-	} finally {
-		yield* Atom.set(sourcesLoadingAtom, false);
-	}
+	const app = yield* AppService;
+	return yield* app.listSources().pipe(
+		Effect.flatMap((data) => Atom.set(sourcesAtom, asSources(data))),
+		Effect.catchAll((e) => handleError(e)),
+		Effect.andThen(() => Atom.set(sourcesLoadingAtom, false)),
+	);
 });
 
 export const addSource = (
@@ -39,38 +38,32 @@ export const addSource = (
 ) =>
 	Effect.gen(function* () {
 		yield* Atom.set(sourcesLoadingAtom, true);
-		try {
-			yield* Effect.promise(() => CreateSource(name, provider, config));
-			yield* loadSources;
-		} catch (e) {
-			yield* Atom.set(sourcesErrorAtom, String(e));
-		} finally {
-			yield* Atom.set(sourcesLoadingAtom, false);
-		}
+		const app = yield* AppService;
+		return yield* app.createSource(name, provider, config).pipe(
+			Effect.flatMap(() => loadSources),
+			Effect.catchAll((e) => handleError(e)),
+			Effect.andThen(() => Atom.set(sourcesLoadingAtom, false)),
+		);
 	});
 
 export const removeSource = (id: string) =>
 	Effect.gen(function* () {
 		yield* Atom.set(sourcesLoadingAtom, true);
-		try {
-			yield* Effect.promise(() => DeleteSource(id));
-			yield* loadSources;
-		} catch (e) {
-			yield* Atom.set(sourcesErrorAtom, String(e));
-		} finally {
-			yield* Atom.set(sourcesLoadingAtom, false);
-		}
+		const app = yield* AppService;
+		return yield* app.deleteSource(id).pipe(
+			Effect.flatMap(() => loadSources),
+			Effect.catchAll((e) => handleError(e)),
+			Effect.andThen(() => Atom.set(sourcesLoadingAtom, false)),
+		);
 	});
 
 export const updateSource = (src: Source) =>
 	Effect.gen(function* () {
 		yield* Atom.set(sourcesLoadingAtom, true);
-		try {
-			yield* Effect.promise(() => UpdateSource(src as never));
-			yield* loadSources;
-		} catch (e) {
-			yield* Atom.set(sourcesErrorAtom, String(e));
-		} finally {
-			yield* Atom.set(sourcesLoadingAtom, false);
-		}
+		const app = yield* AppService;
+		return yield* app.updateSource(src).pipe(
+			Effect.flatMap(() => loadSources),
+			Effect.catchAll((e) => handleError(e)),
+			Effect.andThen(() => Atom.set(sourcesLoadingAtom, false)),
+		);
 	});

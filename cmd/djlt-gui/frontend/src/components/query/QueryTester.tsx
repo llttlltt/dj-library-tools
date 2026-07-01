@@ -1,4 +1,5 @@
 import { useAtom } from "@effect-atom/atom-react";
+import { TreeFormatter } from "effect/ParseResult";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { EndpointEditor } from "@/components/endpoint/EndpointEditor";
@@ -12,12 +13,13 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
-import { runtime } from "@/lib/runtime";
+import { runPromise } from "@/lib/runtime";
+import { AppService } from "@/services";
+import { WailsDecodeError } from "@/services/errors";
 import { loadProviders, providersAtom } from "@/store/providers";
 import { filterWritableResources, findSourceProvider } from "@/store/selection";
 import { loadSources, sourcesAtom } from "@/store/sources";
 import type { QueryResult } from "@/types";
-import { PreviewQuery } from "../../../wailsjs/go/gui/App";
 
 interface QueryTesterProps {
 	open: boolean;
@@ -47,12 +49,12 @@ export function QueryTester({
 	const [resource, setResource] = useState(initialResource ?? "tracks");
 	const [query, setQuery] = useState(initialQuery ?? "");
 	const [result, setResult] = useState<QueryResult | null>(null);
-	const [error, setError] = useState("");
+	const [error, setError] = useState<unknown | null>(null);
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
-		runtime.runPromise(loadSources);
-		runtime.runPromise(loadProviders);
+		runPromise(loadSources);
+		runPromise(loadProviders);
 	}, []);
 
 	// Automatically fix blank or invalid resource selections when source or providers change
@@ -90,12 +92,16 @@ export function QueryTester({
 
 	async function handleTest() {
 		setLoading(true);
-		setError("");
+		setError(null);
 		setResult(null);
 		try {
-			setResult(asQueryResult(await PreviewQuery(sourceID, resource, query)));
+			const app = await runPromise(AppService);
+			const data = await runPromise(
+				app.previewQuery(sourceID, resource, query),
+			);
+			setResult(asQueryResult(data));
 		} catch (e) {
-			setError(String(e));
+			setError(e);
 		}
 		setLoading(false);
 	}
@@ -178,15 +184,21 @@ export function QueryTester({
 
 interface ResultsProps {
 	result: QueryResult | null;
-	error: string;
+	error: unknown | null;
 }
 
 export function QueryTesterResults({ result, error }: ResultsProps) {
 	if (error) {
+		let message = error instanceof Error ? error.message : String(error);
+
+		if (error instanceof WailsDecodeError) {
+			message = `${message}\n${TreeFormatter.formatError(error.parseError)}`;
+		}
+
 		return (
-			<div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 text-sm text-destructive font-mono overflow-auto shrink-0 leading-relaxed">
+			<div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 text-sm text-destructive font-mono overflow-auto shrink-0 leading-relaxed whitespace-pre-wrap">
 				<div className="font-semibold mb-1">Execution Error</div>
-				{error}
+				{message}
 			</div>
 		);
 	}
