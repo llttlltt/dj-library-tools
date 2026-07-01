@@ -1,5 +1,12 @@
-import { Loader2, RefreshCw, ShieldAlert, ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useAtom, useAtomValue } from "@effect-atom/atom-react";
+import {
+	Check,
+	Loader2,
+	RefreshCw,
+	ShieldAlert,
+	ShieldCheck,
+} from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,52 +24,46 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { UpdateOverlay } from "@/components/ui/update-overlay";
+import { runPromise } from "@/lib/runtime";
+import { cn } from "@/lib/utils";
+import { AppService } from "@/services";
 import {
-	CheckForUpdate,
-	FixPermissions,
-	GetPermissionStatus,
-	GetUpdateConfig,
-	GetVersion,
-	InstallUpdate,
-	SetUpdateInterval,
-} from "../../wailsjs/go/gui/App";
-import type { config, update } from "../../wailsjs/go/models";
+	checkForUpdates,
+	fixPermissions,
+	isCheckingUpdatesAtom,
+	lastCheckedAtAtom,
+	permissionStatusAtom,
+	setUpdateInterval,
+	showCheckSuccessAtom,
+	updateConfigAtom,
+	updateInfoAtom,
+	versionAtom,
+} from "@/store/system";
 
 export default function SettingsView() {
-	const [version, setVersion] = useState("v0.0.0");
-	const [updateConfig, setUpdateConfig] = useState<config.UpdateConfig | null>(
-		null,
-	);
-	const [permissionStatus, setPermissionStatus] =
-		useState<string>("Checking...");
-	const [isChecking, setIsChecking] = useState(false);
-	const [updateInfo, setUpdateInfo] = useState<update.UpdateInfo | null>(null);
+	const [version] = useAtom(versionAtom);
+	const [updateConfig] = useAtom(updateConfigAtom);
+	const [permissionStatus] = useAtom(permissionStatusAtom);
+	const [updateInfo] = useAtom(updateInfoAtom);
+	const [isChecking] = useAtom(isCheckingUpdatesAtom);
+	const [showSuccess] = useAtom(showCheckSuccessAtom);
+	const lastCheckedAt = useAtomValue(lastCheckedAtAtom);
+
 	const [updateStatus, setUpdateStatus] = useState<
 		"idle" | "downloading" | "installing" | "complete" | "error"
 	>("idle");
 	const [error, setError] = useState<string>("");
 
-	useEffect(() => {
-		GetVersion().then(setVersion);
-		GetUpdateConfig().then(setUpdateConfig);
-		GetPermissionStatus().then(setPermissionStatus);
-	}, []);
-
 	async function handleCheckUpdate() {
-		setIsChecking(true);
-		try {
-			const info = await CheckForUpdate(true);
-			setUpdateInfo(info);
-		} finally {
-			setIsChecking(false);
-		}
+		await runPromise(checkForUpdates);
 	}
 
 	async function handleInstallUpdate() {
 		if (!updateInfo) return;
 		setUpdateStatus("downloading");
 		try {
-			await InstallUpdate();
+			const app = await runPromise(AppService);
+			await runPromise(app.installUpdate());
 			setUpdateStatus("complete");
 		} catch (e) {
 			setError(e instanceof Error ? e.message : String(e));
@@ -72,21 +73,15 @@ export default function SettingsView() {
 
 	async function handleIntervalChange(value: string) {
 		const hours = parseInt(value, 10);
-		await SetUpdateInterval(hours);
-		setUpdateConfig((prev) =>
-			prev ? { ...prev, check_interval_hour: hours } : null,
-		);
+		await runPromise(setUpdateInterval(hours));
 	}
 
 	async function handleFixPermissions() {
-		try {
-			await FixPermissions();
-			const status = await GetPermissionStatus();
-			setPermissionStatus(status);
-		} catch (e) {
-			console.error("Failed to fix permissions:", e);
-		}
+		await runPromise(fixPermissions);
 	}
+
+	const isDev = version.includes("-dev") || version === "v0.0.0";
+	const isLatest = updateInfo !== null && !updateInfo.available;
 
 	return (
 		<div className="flex flex-col h-full">
@@ -183,13 +178,41 @@ export default function SettingsView() {
 							<div className="flex items-center justify-between">
 								<div className="space-y-1">
 									<p className="text-sm font-medium">Software Version</p>
-									<p className="text-xs text-muted-foreground">
-										Currently on{" "}
-										<span className="font-semibold">{version}</span>.{" "}
-										{updateInfo?.available
-											? `A newer version (${updateInfo.version}) is ready to download.`
-											: "You are running the latest version."}
-									</p>
+									<div className="text-xs text-muted-foreground space-y-0.5">
+										<div className="flex items-center gap-1.5">
+											<span>
+												Currently on{" "}
+												<span className="font-semibold">{version}</span>.
+											</span>
+											{updateInfo?.available && (
+												<span className="text-green-500">
+													Newer version: {updateInfo.version}
+												</span>
+											)}
+											{isLatest && !isDev && (
+												<span className="text-emerald-500 font-medium inline-flex items-center gap-1">
+													<Check className="w-3 h-3" /> You are running the
+													latest version.
+												</span>
+											)}
+											{isLatest && isDev && (
+												<span className="text-muted-foreground italic">
+													(Development version
+													{updateInfo?.version &&
+														updateInfo.version !== "v0.0.0" &&
+														updateInfo.version !== "" &&
+														` — Latest Release: ${updateInfo.version}`}
+													)
+												</span>
+											)}
+										</div>
+										{lastCheckedAt && (
+											<div className="flex items-center gap-1.5 opacity-60">
+												<span>Last checked:</span>
+												<span>{lastCheckedAt}</span>
+											</div>
+										)}
+									</div>
 								</div>
 								<Button
 									onClick={
@@ -197,18 +220,33 @@ export default function SettingsView() {
 											? handleInstallUpdate
 											: handleCheckUpdate
 									}
-									disabled={isChecking}
-									variant={updateInfo?.available ? "default" : "secondary"}
+									disabled={isChecking || showSuccess}
+									variant={
+										updateInfo?.available
+											? "default"
+											: showSuccess
+												? "outline"
+												: "secondary"
+									}
 									size="sm"
+									className={cn(
+										"min-w-[140px]",
+										showSuccess &&
+											"text-emerald-500 border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10",
+									)}
 								>
 									{isChecking ? (
 										<Loader2 className="w-4 h-4 mr-2 animate-spin" />
+									) : showSuccess ? (
+										<Check className="w-4 h-4 mr-2" />
 									) : (
 										<RefreshCw className="w-4 h-4 mr-2" />
 									)}
 									{updateInfo?.available
 										? "Download Update"
-										: "Check for Updates"}
+										: showSuccess
+											? "Latest"
+											: "Check for Updates"}
 								</Button>
 							</div>
 

@@ -1,8 +1,10 @@
 package update
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -26,7 +28,14 @@ type UpdateInfo struct {
 
 // Check queries GitHub for the latest release and compares it with the current version.
 func Check(currentVersion string) (*UpdateInfo, error) {
-	v, err := semver.ParseTolerant(currentVersion)
+	// In development mode, we use a placeholder version that is always
+	// lower than any real release.
+	semverVersion := currentVersion
+	if semverVersion == "v0.0.0-dev" || semverVersion == "v0.0.0" {
+		semverVersion = "0.0.0"
+	}
+
+	v, err := semver.ParseTolerant(semverVersion)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse current version %q: %w", currentVersion, err)
 	}
@@ -36,17 +45,46 @@ func Check(currentVersion string) (*UpdateInfo, error) {
 		return nil, fmt.Errorf("failed to check for updates: %w", err)
 	}
 
-	if !found || latest.Version.LTE(v) {
-		return &UpdateInfo{Available: false, Current: currentVersion}, nil
+	// Fallback: If not found, it might be a platform mismatch (common in dev).
+	// Try to get the latest release version string directly via GitHub API.
+	if !found {
+		resp, err := http.Get(fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", Repo))
+		if err == nil && resp.StatusCode == 200 {
+			defer resp.Body.Close()
+			var githubRel struct {
+				TagName string `json:"tag_name"`
+			}
+			if err := json.NewDecoder(resp.Body).Decode(&githubRel); err == nil && githubRel.TagName != "" {
+				latestVer, err := semver.ParseTolerant(githubRel.TagName)
+				if err == nil {
+					latest = &selfupdate.Release{
+						Version: latestVer,
+					}
+					found = true
+				}
+			}
+		}
 	}
 
-	return &UpdateInfo{
-		Available:    true,
+	if !found || latest == nil {
+		return &UpdateInfo{
+			Available: false,
+			Current:   currentVersion,
+			Version:   "",
+		}, nil
+	}
+
+	isDev := currentVersion == "v0.0.0-dev" || currentVersion == "v0.0.0"
+
+	info := &UpdateInfo{
+		Available:    !isDev && latest.Version.GT(v),
 		Version:      latest.Version.String(),
 		Current:      currentVersion,
 		ReleaseNotes: latest.ReleaseNotes,
 		URL:          latest.AssetURL,
-	}, nil
+	}
+
+	return info, nil
 }
 
 // Apply downloads and applies the latest update.

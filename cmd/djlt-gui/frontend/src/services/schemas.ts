@@ -134,3 +134,22 @@ export const WorkflowResultSchema = Schema.Struct({
 	workflow_id: Schema.String,
 	steps: Schema.Array(StepResultSchema),
 });
+
+/**
+ * Schema for UpdateConfig model.
+ */
+export const UpdateConfigSchema = Schema.Struct({
+	last_check_at: Schema.String,
+	check_interval_hour: Schema.Number,
+});
+
+/**
+ * Schema for UpdateInfo model.
+ */
+export const UpdateInfoSchema = Schema.Struct({
+	available: Schema.Boolean,
+	version: Schema.optional(Schema.NullOr(Schema.String)),
+	current: Schema.optional(Schema.NullOr(Schema.String)),
+	release_notes: Schema.optional(Schema.NullOr(Schema.String)),
+	url: Schema.optional(Schema.NullOr(Schema.String)),
+});

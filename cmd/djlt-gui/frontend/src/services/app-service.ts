@@ -10,6 +10,8 @@ import {
 	QueryResultSchema,
 	SourceSchema,
 	StepDiffSchema,
+	UpdateConfigSchema,
+	UpdateInfoSchema,
 	WorkflowSchema,
 } from "./schemas";
 
@@ -117,10 +119,28 @@ export class AppService extends Effect.Service<AppService>()("AppService", {
 					write(fn)(...(args as unknown as Args));
 
 		return {
+			// System
+			getVersion: read(WailsApp.GetVersion),
+			getUpdateConfig: readDecoded(
+				WailsApp.GetUpdateConfig,
+				UpdateConfigSchema,
+			),
+			setUpdateInterval: write(WailsApp.SetUpdateInterval),
+			checkForUpdate: readDecoded(WailsApp.CheckForUpdate, UpdateInfoSchema),
+			installUpdate: write(WailsApp.InstallUpdate),
+			getPermissionStatus: read(WailsApp.GetPermissionStatus),
+			fixPermissions: write(WailsApp.FixPermissions),
+
+			// Sources
 			listSources: readDecoded(
 				WailsApp.ListSources,
 				Schema.Array(SourceSchema),
 			),
+			createSource: write(WailsApp.CreateSource),
+			deleteSource: write(WailsApp.DeleteSource),
+			updateSource: writeStructural(WailsApp.UpdateSource),
+
+			// Workflows
 			listWorkflows: readDecoded(
 				WailsApp.ListWorkflows,
 				Schema.Array(WorkflowSchema),
@@ -130,18 +150,16 @@ export class AppService extends Effect.Service<AppService>()("AppService", {
 				WailsApp.GetWorkflowDiff,
 				Schema.Array(StepDiffSchema),
 			),
+			saveWorkflow: writeStructural(WailsApp.SaveWorkflow),
+			deleteWorkflow: write(WailsApp.DeleteWorkflow),
+			runWorkflow: write(WailsApp.RunWorkflow),
+
+			// Providers / Library
 			listProviders: readDecoded(
 				WailsApp.ListProviders,
 				Schema.Array(ProviderInfoSchema),
 			),
 			previewQuery: readDecoded(WailsApp.PreviewQuery, QueryResultSchema),
-
-			createSource: write(WailsApp.CreateSource),
-			deleteSource: write(WailsApp.DeleteSource),
-			updateSource: writeStructural(WailsApp.UpdateSource),
-			saveWorkflow: writeStructural(WailsApp.SaveWorkflow),
-			deleteWorkflow: write(WailsApp.DeleteWorkflow),
-			runWorkflow: write(WailsApp.RunWorkflow),
 		};
 	},
 }) {}

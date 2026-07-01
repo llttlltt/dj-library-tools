@@ -1,8 +1,10 @@
 import { FlaskConical, Music2, Settings, Workflow } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { QueryTester } from "@/components/query/QueryTester";
+import { runPromise } from "@/lib/runtime";
 import { cn } from "@/lib/utils";
+import { loadSystemInfo } from "@/store/system";
 import QueryTesterView from "./views/QueryTesterView";
 import SettingsView from "./views/SettingsView";
 import SourcesView from "./views/SourcesView";
@@ -33,6 +35,10 @@ export default function App() {
 	const [resetKey, setResetKey] = useState(0);
 	const [queryTesterOpen, setQueryTesterOpen] = useState(false);
 	const [queryTesterOpts, setQueryTesterOpts] = useState<QueryTesterOpts>({});
+
+	useEffect(() => {
+		runPromise(loadSystemInfo);
+	}, []);
 
 	function handleTabClick(id: Tab) {
 		if (tab === id) {
