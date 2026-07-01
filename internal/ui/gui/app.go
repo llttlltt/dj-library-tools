@@ -5,12 +5,14 @@ package gui
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
 	"github.com/llttlltt/dj-library-tools/internal/providers/plex"
 	"github.com/llttlltt/dj-library-tools/internal/services/orchestrator"
 	"github.com/llttlltt/dj-library-tools/internal/services/workflow"
+	"github.com/llttlltt/dj-library-tools/internal/ui/gui/update"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	// Provider registrations.
@@ -18,6 +20,9 @@ import (
 	_ "github.com/llttlltt/dj-library-tools/internal/providers/plex"
 	_ "github.com/llttlltt/dj-library-tools/internal/providers/rekordbox"
 )
+
+// Version is the current application version, injected at build time via ldflags.
+var Version = "v0.0.0-dev"
 
 // App is the Wails application object. Its exported methods become TypeScript
 // bindings in the frontend. All methods return JSON-serialisable types.
@@ -48,6 +53,82 @@ func NewApp() *App {
 
 // Startup is called by Wails when the application starts.
 func (a *App) Startup(ctx context.Context) { a.ctx = ctx }
+
+// ── System / Settings ────────────────────────────────────────────────────────
+
+// GetVersion returns the current version of the application.
+func (a *App) GetVersion() string {
+	return Version
+}
+
+// GetUpdateConfig returns the current update-related configuration.
+func (a *App) GetUpdateConfig() (config.UpdateConfig, error) {
+	cfg, err := config.LoadAppConfig()
+	if err != nil {
+		return config.UpdateConfig{}, err
+	}
+	if cfg.Updates.CheckIntervalHour == 0 {
+		cfg.Updates.CheckIntervalHour = 168 // Default 1 week
+	}
+	return cfg.Updates, nil
+}
+
+// SetUpdateInterval updates how frequently the app checks for updates.
+func (a *App) SetUpdateInterval(hours int) error {
+	cfg, err := config.LoadAppConfig()
+	if err != nil {
+		return err
+	}
+	cfg.Updates.CheckIntervalHour = hours
+	return config.SaveAppConfig(cfg)
+}
+
+// CheckForUpdate queries GitHub for updates. If manual is false, it respects
+// the check interval.
+func (a *App) CheckForUpdate(manual bool) (*update.UpdateInfo, error) {
+	cfg, err := config.LoadAppConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	if !manual {
+		interval := time.Duration(cfg.Updates.CheckIntervalHour) * time.Hour
+		if interval == 0 {
+			interval = 168 * time.Hour
+		}
+
+		lastCheck, _ := time.Parse(time.RFC3339, cfg.Updates.LastCheckAt)
+		if time.Since(lastCheck) < interval {
+			return &update.UpdateInfo{Available: false, Current: Version}, nil
+		}
+	}
+
+	info, err := update.Check(Version)
+	if err != nil {
+		return nil, err
+	}
+
+	// Persist last check time
+	cfg.Updates.LastCheckAt = time.Now().Format(time.RFC3339)
+	_ = config.SaveAppConfig(cfg)
+
+	return info, nil
+}
+
+// InstallUpdate downloads and applies the update.
+func (a *App) InstallUpdate() error {
+	return update.Apply(Version)
+}
+
+// GetPermissionStatus checks write access to the application bundle.
+func (a *App) GetPermissionStatus() string {
+	return update.GetPermissionStatus()
+}
+
+// FixPermissions triggers platform-specific escalation to fix permissions.
+func (a *App) FixPermissions() error {
+	return update.FixPermissions()
+}
 
 // ── Sources ───────────────────────────────────────────────────────────────────
 

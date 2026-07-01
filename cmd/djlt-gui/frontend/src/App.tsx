@@ -1,13 +1,14 @@
-import { FlaskConical, Music2, Workflow } from "lucide-react";
+import { FlaskConical, Music2, Settings, Workflow } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { QueryTester } from "@/components/query/QueryTester";
 import { cn } from "@/lib/utils";
 import QueryTesterView from "./views/QueryTesterView";
+import SettingsView from "./views/SettingsView";
 import SourcesView from "./views/SourcesView";
 import WorkflowsView from "./views/WorkflowsView";
 
-type Tab = "sources" | "workflows" | "query";
+type Tab = "sources" | "workflows" | "query" | "settings";
 
 const NAV: {
 	id: Tab;
@@ -55,7 +56,7 @@ export default function App() {
 						DJ Library Tools
 					</span>
 				</div>
-				<nav className="flex flex-col gap-0.5 p-2 mt-1">
+				<nav className="flex-1 flex flex-col gap-0.5 p-2 mt-1">
 					{NAV.map(({ id, label, Icon }) => (
 						<button
 							type="button"
@@ -73,6 +74,21 @@ export default function App() {
 						</button>
 					))}
 				</nav>
+				<div className="p-2 border-t border-border">
+					<button
+						type="button"
+						onClick={() => handleTabClick("settings")}
+						className={cn(
+							"w-full flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors text-left",
+							tab === "settings"
+								? "bg-accent text-accent-foreground font-medium"
+								: "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+						)}
+					>
+						<Settings className="h-4 w-4 shrink-0" />
+						Settings
+					</button>
+				</div>
 			</aside>
 
 			{/* ── main ──────────────────────────────────────────────────── */}
@@ -85,6 +101,7 @@ export default function App() {
 					/>
 				)}
 				{tab === "query" && <QueryTesterView />}
+				{tab === "settings" && <SettingsView />}
 			</main>
 
 			{/* ── Query Tester sheet (inline from Step editor) ─────────── */}

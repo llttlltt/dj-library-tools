@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"time"
 
 	"github.com/llttlltt/dj-library-tools/internal/ui/gui"
 	"github.com/wailsapp/wails/v2"
@@ -14,6 +15,17 @@ var assets embed.FS
 
 func main() {
 	app := gui.NewApp()
+
+	// Perform background update check
+	go func() {
+		// Wait a few seconds for app startup to settle
+		time.Sleep(5 * time.Second)
+		info, err := app.CheckForUpdate(false)
+		if err == nil && info != nil && info.Available {
+			// Notify frontend (could show a small toast)
+			// runtime.EventsEmit(app.Context(), "update-available", info)
+		}
+	}()
 
 	err := wails.Run(&options.App{
 		Title:     "DJ Library Tools",

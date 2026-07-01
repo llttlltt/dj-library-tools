@@ -50,24 +50,37 @@ export default function QueryTesterView() {
 	}
 
 	return (
-		<div className="flex flex-col h-full">
-			<div className="h-14 flex items-center px-6 border-b border-border bg-[hsl(240_10%_4%)] shrink-0">
+		<div className="flex flex-col h-full overflow-hidden">
+			{/* Sticky Top Header Nav */}
+			<div className="h-14 flex items-center gap-2 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] shrink-0 z-10">
 				<span className="text-sm font-semibold">Query Tester</span>
+				<div className="flex-1" />
 			</div>
-			<div className="flex-1 overflow-hidden p-6 flex flex-col">
-				<div className="flex flex-col gap-6 h-full">
-					<QueryTesterControls
-						sources={sources}
-						sourceID={sourceID}
-						resource={resource}
-						query={query}
-						loading={loading}
-						onSourceID={setSourceID}
-						onResource={setResource}
-						onQuery={setQuery}
-						onTest={handleTest}
-					/>
-					<QueryTesterResults result={result} error={error} />
+
+			{/* Main Layout Container */}
+			<div className="flex-1 p-6 flex flex-col min-h-0 bg-background">
+				<div className="flex flex-col gap-6 h-full min-h-0">
+					{/* Controls Box - Pins to Top */}
+					<div className="shrink-0">
+						<QueryTesterControls
+							sources={sources}
+							sourceID={sourceID}
+							resource={resource}
+							query={query}
+							loading={loading}
+							onSourceID={setSourceID}
+							onResource={setResource}
+							onQuery={setQuery}
+							onTest={handleTest}
+						/>
+					</div>
+
+					{/* Results / Error Panel - Only mounts if result exists or there is an active error */}
+					{(result !== null || error) && (
+						<div className="flex-1 min-h-0 flex flex-col">
+							<QueryTesterResults result={result} error={error} />
+						</div>
+					)}
 				</div>
 			</div>
 		</div>

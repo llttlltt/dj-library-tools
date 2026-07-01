@@ -74,6 +74,20 @@ export namespace config {
 		    return a;
 		}
 	}
+	export class UpdateConfig {
+	    last_check_at: string;
+	    check_interval_hour: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateConfig(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.last_check_at = source["last_check_at"];
+	        this.check_interval_hour = source["check_interval_hour"];
+	    }
+	}
 	export class Workflow {
 	    id: string;
 	    name: string;
@@ -240,6 +254,31 @@ export namespace gui {
 		    }
 		    return a;
 		}
+	}
+
+}
+
+export namespace update {
+	
+	export class UpdateInfo {
+	    available: boolean;
+	    version: string;
+	    current: string;
+	    release_notes: string;
+	    url: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.available = source["available"];
+	        this.version = source["version"];
+	        this.current = source["current"];
+	        this.release_notes = source["release_notes"];
+	        this.url = source["url"];
+	    }
 	}
 
 }

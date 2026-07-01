@@ -4,7 +4,9 @@ python = "3.12"
 
 [tasks]
 build-cli = "go build -o bin/  ./cmd/djlt"
-build-gui = "go build -o bin/djlt-gui ./cmd/djlt-gui"
+build-gui = { run = "wails build", dir = "cmd/djlt-gui" }
+gui-dev = { run = "wails dev", dir = "cmd/djlt-gui" }
+gui-install = { run = "pnpm install", dir = "cmd/djlt-gui/frontend" }
 test = "go test ./..."
 fmt = "gofmt -w ."
 fmt-check = { run = "test -z \"$(gofmt -l .)\"" }

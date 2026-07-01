@@ -79,55 +79,59 @@ export function PlexAuthModal({ open, onToken, onCancel }: PlexAuthModalProps) {
 				if (!o) handleCancel();
 			}}
 		>
-			<DialogContent>
+			<DialogContent className="sm:max-w-[425px]">
 				<DialogHeader>
 					<DialogTitle>Authenticate with Plex</DialogTitle>
 				</DialogHeader>
 
 				<div className="flex flex-col gap-4 mt-2">
 					{loading && (
-						<div className="flex items-center gap-2 text-sm text-muted-foreground">
+						<div className="flex items-center gap-2.5 py-4 justify-center border border-dashed border-border/80 rounded-xl bg-secondary/5 text-sm text-muted-foreground">
 							<Loader2 className="h-4 w-4 animate-spin" />
 							Requesting PIN…
 						</div>
 					)}
 
-					{error && <p className="text-sm text-destructive">{error}</p>}
+					{error && (
+						<div className="p-3 rounded-lg border border-destructive/20 bg-destructive/5 text-xs text-destructive font-mono leading-relaxed">
+							{error}
+						</div>
+					)}
 
 					{authUrl && (
 						<>
-							<p className="text-sm text-muted-foreground">
+							<p className="text-xs text-muted-foreground leading-normal">
 								Open the link below in your browser to authorise DJ Library
 								Tools with your Plex account. This dialog will close
 								automatically once authenticated.
 							</p>
 
-							<div className="flex items-center gap-2 p-3 rounded-md bg-muted/30 border border-border">
+							<div className="flex items-center gap-2 p-3 rounded-xl bg-secondary/20 border border-border/40 hover:border-border/80 transition-colors">
 								<a
 									href={authUrl}
 									target="_blank"
 									rel="noreferrer"
-									className="text-xs text-blue-400 break-all flex-1 hover:underline"
+									className="text-xs text-blue-400 break-all flex-1 hover:underline font-medium"
 								>
 									{authUrl}
 								</a>
-								<ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+								<ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
 							</div>
 
-							<div className="flex items-center gap-2 text-xs text-muted-foreground">
-								<Loader2 className="h-3 w-3 animate-spin" />
+							<div className="flex items-center gap-2 text-xs text-muted-foreground font-medium pl-0.5">
+								<Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-500" />
 								Waiting for authorisation…
 							</div>
 
-							<div className="flex justify-between gap-2 mt-1">
+							<div className="flex justify-between gap-2 mt-2 pt-4 border-t border-border">
 								<Button
 									type="button"
 									variant="outline"
 									size="sm"
 									onClick={copyUrl}
-									className="gap-1.5"
+									className="gap-1.5 h-9"
 								>
-									<Copy className="h-3.5 w-3.5" />
+									<Copy className="h-3.5 w-3.5 text-muted-foreground" />
 									{copied ? "Copied!" : "Copy link"}
 								</Button>
 								<Button
@@ -135,6 +139,7 @@ export function PlexAuthModal({ open, onToken, onCancel }: PlexAuthModalProps) {
 									variant="ghost"
 									size="sm"
 									onClick={handleCancel}
+									className="h-9"
 								>
 									Cancel
 								</Button>

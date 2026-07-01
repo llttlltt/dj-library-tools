@@ -1,10 +1,20 @@
 # Getting Started
 
-Welcome to **djlt**! This guide will help you get started with managing your DJ library, syncing with Plex, and performing powerful queries across your collection.
+Welcome to **DJ Library Tools**! This guide will help you get started with managing your DJ library, syncing with Plex, and performing powerful queries across your collection.
 
-## Quick Installation
+## Installation
 
-`djlt` is a Go-based tool and can be installed with a single command:
+### GUI (Recommended)
+The easiest way to use DJ Library Tools is with our cross-platform GUI.
+
+1.  **Download**: Head to the [Latest Releases](https://github.com/llttlltt/dj-library-tools/releases) and download the `.zip` (macOS) or `.exe` (Windows) for your platform.
+2.  **Install**:
+    *   **macOS**: Drag `DJ Library Tools.app` to your `/Applications` folder.
+    *   **Windows**: Run the executable and follow the prompts.
+3.  **Permissions (macOS)**: To allow the app to update itself, go to **Settings** in the sidebar and click **Fix Permissions** if the status shows as "Limited."
+
+### CLI
+For power users and automation, `djlt` can be installed via Go:
 
 ```bash
 go install github.com/llttlltt/dj-library-tools/cmd/djlt@latest
@@ -12,6 +22,14 @@ go install github.com/llttlltt/dj-library-tools/cmd/djlt@latest
 
 !!! tip "Requirements"
     You must have [Go](https://go.dev/doc/install) installed on your system. If you plan on transcoding files, you will also need [FFmpeg](https://ffmpeg.org/).
+
+## Updates
+
+### Automatic Updates (GUI)
+The GUI automatically checks for updates once a week. If a new version is available, you will be notified via a toast in the sidebar. You can also manually check for updates and adjust the frequency (Daily/Weekly) in the **Settings** view.
+
+### Manual Updates (CLI)
+To update the CLI, simply re-run the `go install` command above.
 
 ## Basic Configuration
 

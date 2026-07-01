@@ -1,4 +1,4 @@
-import { Trash2 } from "lucide-react";
+import { ChevronRight, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,9 +27,11 @@ export function SourceCard({ source: s, onEdit, onDelete }: SourceCardProps) {
 			className="cursor-pointer hover:border-border/80 transition-colors"
 			onClick={() => onEdit(s)}
 		>
-			<CardHeader className="flex-row items-center justify-between py-3 px-4 gap-0">
-				<div className="flex items-center gap-3 min-w-0">
-					<CardTitle className="text-sm truncate">{s.name}</CardTitle>
+			<CardHeader className="flex-row items-center justify-between py-3 px-4 gap-0 space-y-0">
+				<div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
+					<CardTitle className="text-sm font-medium truncate">
+						{s.name}
+					</CardTitle>
 					<Badge
 						variant={
 							s.provider === "rb"
@@ -38,25 +40,30 @@ export function SourceCard({ source: s, onEdit, onDelete }: SourceCardProps) {
 									? "fix"
 									: "edit"
 						}
+						className="shrink-0"
 					>
 						{PROVIDER_LABELS[s.provider] ?? s.provider}
 					</Badge>
 				</div>
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon"
-					className="shrink-0 ml-2"
-					onClick={(e) => {
-						e.stopPropagation();
-						onDelete(s);
-					}}
-				>
-					<Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-				</Button>
+				<div className="flex items-center gap-1">
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						className="h-8 w-8 shrink-0 hover:bg-secondary"
+						onClick={(e) => {
+							e.stopPropagation();
+							onDelete(s);
+						}}
+					>
+						<Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+					</Button>
+					<div className="h-4 w-px bg-border mx-1" />
+					<ChevronRight className="h-4 w-4 text-muted-foreground/60" />
+				</div>
 			</CardHeader>
 			{subtitle && (
-				<CardContent className="py-0 pb-3 px-4">
+				<CardContent className="py-0 pb-3 px-4 pr-16 -mt-1">
 					<p className="text-xs text-muted-foreground truncate">{subtitle}</p>
 				</CardContent>
 			)}

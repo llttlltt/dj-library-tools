@@ -132,6 +132,7 @@ export function SourceForm({
 								onChange={(e) => setName(e.target.value)}
 								placeholder="Main Library"
 								required
+								className="bg-background/50 h-9"
 							/>
 						</div>
 						<div className="flex flex-col gap-1.5">
@@ -145,7 +146,10 @@ export function SourceForm({
 								value={provider}
 								onValueChange={(v) => setProvider(v as Provider)}
 							>
-								<SelectTrigger id="src-provider">
+								<SelectTrigger
+									id="src-provider"
+									className="bg-background/50 h-9"
+								>
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
@@ -171,7 +175,7 @@ export function SourceForm({
 										onChange={(e) => setFilePath(e.target.value)}
 										placeholder="/path/to/library.xml"
 										required
-										className="flex-1"
+										className="flex-1 bg-background/50 h-9 text-sm"
 									/>
 									<Button
 										type="button"
@@ -179,8 +183,9 @@ export function SourceForm({
 										size="icon"
 										onClick={pickFile}
 										title="Browse for file"
+										className="shrink-0 h-9 w-9 p-0 hover:bg-secondary transition-colors"
 									>
-										<FolderOpen className="h-4 w-4" />
+										<FolderOpen className="h-4 w-4 text-muted-foreground" />
 									</Button>
 								</div>
 							</div>
@@ -200,6 +205,7 @@ export function SourceForm({
 										value={host}
 										onChange={(e) => setHost(e.target.value)}
 										placeholder="localhost"
+										className="bg-background/50 h-9"
 									/>
 								</div>
 								<div className="flex gap-3">
@@ -215,6 +221,7 @@ export function SourceForm({
 											value={port}
 											onChange={(e) => setPort(e.target.value)}
 											placeholder="32400"
+											className="bg-background/50 h-9"
 										/>
 									</div>
 									<div className="flex flex-col gap-1.5 flex-1">
@@ -231,6 +238,7 @@ export function SourceForm({
 													value={token}
 													onChange={(e) => setToken(e.target.value)}
 													placeholder="plex-token"
+													className="bg-background/50 h-9"
 												/>
 											</div>
 										) : (
@@ -239,6 +247,7 @@ export function SourceForm({
 												variant="outline"
 												size="sm"
 												onClick={() => setPlexAuth(true)}
+												className="h-9 hover:bg-secondary transition-colors"
 											>
 												Authenticate with Plex…
 											</Button>
@@ -248,7 +257,7 @@ export function SourceForm({
 								{token && (
 									<button
 										type="button"
-										className="text-xs text-blue-400 hover:text-blue-300 text-left -mt-1"
+										className="text-xs text-blue-400 hover:text-blue-300 transition-colors text-left -mt-1 font-medium"
 										onClick={() => setPlexAuth(true)}
 									>
 										Re-authenticate with Plex
@@ -257,7 +266,11 @@ export function SourceForm({
 							</>
 						)}
 
-						{error && <p className="text-sm text-destructive">{error}</p>}
+						{error && (
+							<div className="p-3 rounded-lg border border-destructive/20 bg-destructive/5 text-xs text-destructive font-mono leading-relaxed mt-1">
+								{error}
+							</div>
+						)}
 						<div className="flex justify-end gap-2 mt-1">
 							<DialogClose asChild>
 								<Button type="button" variant="outline" size="sm">

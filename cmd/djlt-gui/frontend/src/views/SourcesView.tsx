@@ -58,6 +58,7 @@ export default function SourcesView() {
 
 	return (
 		<div className="flex flex-col h-full">
+			{/* Sticky Top Header Nav */}
 			<div className="h-14 flex items-center gap-2 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] sticky top-0 z-10">
 				<span className="text-sm font-semibold">Sources</span>
 				<div className="flex-1" />
@@ -72,12 +73,14 @@ export default function SourcesView() {
 					<Plus className="h-4 w-4 mr-1.5" /> Add Source
 				</Button>
 			</div>
+
+			{/* Scrollable Main Content Box */}
 			<div className="flex-1 overflow-auto p-6">
 				{error && <p className="text-sm text-destructive mb-4">{error}</p>}
 
 				{sources.length === 0 ? (
 					<p className="text-sm text-muted-foreground italic">
-						No sources configured. Add one to get started.
+						No sources configured. Click "Add Source" to get started.
 					</p>
 				) : (
 					<div className="flex flex-col gap-3">

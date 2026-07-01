@@ -1,15 +1,11 @@
-# config list
+# config source
 
-Show all configuration values
-
-```
-djlt config list [flags]
-```
+Manage Sources
 
 ### Options
 
 ```
-  -h, --help   help for list
+  -h, --help   help for source
 ```
 
 ### Inherited Options
@@ -22,4 +18,5 @@ djlt config list [flags]
 
 ## See also
 
-* [djlt config](index.md)	 - Manage application configuration
+* [djlt config](../index.md)	 - Manage application configuration
+* [djlt config source list](list.md)	 - List all configured Sources

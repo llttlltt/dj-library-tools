@@ -165,8 +165,8 @@ func fixLinks(content string, filePath string) string {
 	reLeaf := regexp.MustCompile(`\(([a-z0-9_]+)\.md\)`)
 	content = reLeaf.ReplaceAllStringFunc(content, func(m string) string {
 		match := reLeaf.FindStringSubmatch(m)[1]
-		// Special case for config, plex, rb which are now directories
-		if match == "config" || match == "plex" || match == "rb" {
+		// Special case for config, plex, rb, and source which are now directories
+		if match == "config" || match == "plex" || match == "rb" || match == "source" {
 			return "(" + match + "/index.md)"
 		}
 		return m

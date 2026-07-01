@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - id: release
         uses: googleapis/release-please-action@v4
@@ -69,3 +70,49 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  gui:
+    name: Build & Release GUI
+    needs: release-please
+    if: ${{ always() && (github.event_name == 'workflow_dispatch' || needs.release-please.outputs.release_created == 'true') }}
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Build macOS GUI
+        run: |
+          cd cmd/djlt-gui
+          wails build -platform darwin/universal -ldflags "-X 'github.com/llttlltt/dj-library-tools/internal/ui/gui.Version=${{ needs.release-please.outputs.tag_name || github.ref_name }}'"
+
+      - name: Zip Bundle
+        run: |
+          cd cmd/djlt-gui/build/bin
+          zip -r dj-library-tools_macos_universal.zip "DJ Library Tools.app"
+
+      - name: Upload to Release
+        if: ${{ needs.release-please.outputs.release_created == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: cmd/djlt-gui/build/bin/dj-library-tools_macos_universal.zip
+          tag_name: ${{ needs.release-please.outputs.tag_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,15 +1,15 @@
-# config plex port
+# config source list
 
-Set or get Plex port
+List all configured Sources
 
 ```
-djlt config plex port [value] [flags]
+djlt config source list [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for port
+  -h, --help   help for list
 ```
 
 ### Inherited Options
@@ -22,4 +22,4 @@ djlt config plex port [value] [flags]
 
 ## See also
 
-* [djlt config plex](index.md)	 - Configure Plex settings
+* [djlt config source](index.md)	 - Manage Sources

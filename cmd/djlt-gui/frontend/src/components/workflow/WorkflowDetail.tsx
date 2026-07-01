@@ -1,3 +1,4 @@
+import { CheckCircle, Eye, Loader2, PlayCircle, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -49,32 +50,38 @@ export function WorkflowDetail({
 	const resultById: Record<string, StepResult> = Object.fromEntries(
 		(result?.steps ?? []).map((r) => [r.step_id, r]),
 	);
+
 	return (
-		<div className="flex flex-col h-full">
-			{/* ── toolbar ── */}
-			<div className="flex h-14 items-center gap-2 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] sticky top-0 z-10">
+		<div className="flex flex-col h-full overflow-hidden">
+			{/* Sticky Top Header Nav */}
+			<div className="flex h-14 items-center gap-2 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] sticky top-0 z-10 shrink-0">
 				<span className="text-sm font-semibold">{workflow.name}</span>
 				<div className="flex-1" />
+
 				{error && (
-					<span className="text-xs text-destructive mr-2 max-w-xs truncate">
+					<span className="text-xs text-destructive mr-2 max-w-xs truncate font-mono">
 						{error}
 					</span>
 				)}
 				{busy && (
-					<span className="text-xs text-muted-foreground mr-2">Loading…</span>
+					<div className="flex items-center gap-1.5 text-xs text-muted-foreground mr-2">
+						<Loader2 className="h-3.5 w-3.5 animate-spin" />
+						Loading…
+					</div>
 				)}
-				{/* Delete */}
+
 				<Button
 					type="button"
 					variant="outline"
 					size="sm"
 					onClick={() => setDeleteConfirm(true)}
 					disabled={busy}
-					className="text-destructive border-destructive/40 hover:bg-destructive/10"
+					className="text-[#f43f5e] border-[#f43f5e]/20 hover:border-[#f43f5e]/40 hover:bg-[#f43f5e]/10 transition-colors"
 				>
+					<Trash2 className="h-4 w-4 mr-1.5" />
 					Delete
 				</Button>
-				{/* Preview */}
+
 				<Button
 					type="button"
 					variant="outline"
@@ -82,9 +89,10 @@ export function WorkflowDetail({
 					onClick={onPreview}
 					disabled={busy}
 				>
+					<Eye className="h-4 w-4 mr-1.5" />
 					Preview
 				</Button>
-				{/* Run / Preview Again */}
+
 				{mode === "applying" && result ? (
 					<Button
 						type="button"
@@ -93,6 +101,7 @@ export function WorkflowDetail({
 						onClick={onPreviewAgain}
 						disabled={busy}
 					>
+						<CheckCircle className="h-4 w-4 mr-1.5" />
 						Preview Again
 					</Button>
 				) : (
@@ -102,10 +111,11 @@ export function WorkflowDetail({
 						onClick={() => setRunConfirm(true)}
 						disabled={busy}
 					>
-						▶ Run
+						<PlayCircle className="h-4 w-4 mr-1.5" />
+						Run
 					</Button>
 				)}
-				{/* Edit */}
+
 				<Button
 					type="button"
 					variant="outline"
@@ -117,29 +127,28 @@ export function WorkflowDetail({
 				</Button>
 			</div>
 
-			{/* ── steps ── */}
-			<div className="flex-1 overflow-auto p-6">
-				<div className="flex flex-col gap-4">
+			{/* Scrollable Main Content Box */}
+			<div className="flex-1 overflow-auto p-6 bg-background">
+				<div className="space-y-4">
 					{workflow.steps.length === 0 && (
-						<p className="text-sm text-muted-foreground italic">
-							No steps. Press Edit to add some.
+						<p className="text-sm text-muted-foreground italic pl-1 py-2">
+							No steps configured. Press "Edit" above to add some.
 						</p>
 					)}
 					{workflow.steps.map((step, i) => (
 						<StepCard
 							key={step.id || `step-${i}`}
+							mode={mode} // Propagates "view" or "applying"
 							step={step}
 							index={i}
 							sources={sources}
 							diff={diffById[step.id]}
 							result={resultById[step.id]}
-							showResult={mode === "applying"}
 						/>
 					))}
 				</div>
 			</div>
 
-			{/* ── Run confirmation ── */}
 			<ConfirmDialog
 				open={runConfirm}
 				title="Run this workflow?"
@@ -152,7 +161,6 @@ export function WorkflowDetail({
 				onCancel={() => setRunConfirm(false)}
 			/>
 
-			{/* ── Delete confirmation ── */}
 			<ConfirmDialog
 				open={deleteConfirm}
 				title={`Delete "${workflow.name}"?`}

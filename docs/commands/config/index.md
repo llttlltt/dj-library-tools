@@ -19,6 +19,4 @@ Manage application configuration
 ## See also
 
 * [djlt](../index.md)	 - DJ Library Tools CLI
-* [djlt config list](list.md)	 - Show all configuration values
-* [djlt config plex](plex/index.md)	 - Configure Plex settings
-* [djlt config rb](rb/index.md)	 - Configure Rekordbox settings
+* [djlt config source](source/index.md)	 - Manage Sources

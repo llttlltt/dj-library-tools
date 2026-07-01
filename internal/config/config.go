@@ -9,7 +9,13 @@ import (
 type AppConfig struct {
 	Plex      PlexConfig        `json:"plex"`
 	Rekordbox RekordboxConfig   `json:"rekordbox"`
+	Updates   UpdateConfig      `json:"updates"`
 	PathMaps  map[string]string `json:"path_maps"`
+}
+
+type UpdateConfig struct {
+	LastCheckAt       string `json:"last_check_at"`
+	CheckIntervalHour int    `json:"check_interval_hour"`
 }
 
 type PlexConfig struct {

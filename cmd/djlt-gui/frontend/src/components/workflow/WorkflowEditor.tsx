@@ -1,89 +1,10 @@
-import { FlaskConical, X } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { useState } from "react";
 import type { QueryTesterOpts } from "@/App";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import type { Endpoint, Source, Step, Workflow } from "@/types";
-
-// ── EpEditRow ──────────────────────────────────────────────────────────────
-
-interface EpEditRowProps {
-	ep: Endpoint;
-	sources: Source[];
-	onChange: (p: Partial<Endpoint>) => void;
-	onOpenQueryTester?: (opts?: QueryTesterOpts) => void;
-}
-
-export function EpEditRow({
-	ep,
-	sources,
-	onChange,
-	onOpenQueryTester,
-}: EpEditRowProps) {
-	return (
-		<div className="flex gap-2 items-center">
-			<Select
-				value={ep.source_id}
-				onValueChange={(v) => onChange({ source_id: v })}
-			>
-				<SelectTrigger className="w-36 h-7 text-xs shrink-0">
-					<SelectValue placeholder="Source" />
-				</SelectTrigger>
-				<SelectContent>
-					{[...sources]
-						.sort((a, b) => a.name.localeCompare(b.name))
-						.map((s) => (
-							<SelectItem key={s.id} value={s.id}>
-								{s.name}
-							</SelectItem>
-						))}
-				</SelectContent>
-			</Select>
-			<Input
-				className="h-7 text-xs w-24 shrink-0"
-				value={ep.resource}
-				onChange={(e) => onChange({ resource: e.target.value })}
-				placeholder="resource"
-			/>
-			<Input
-				className="h-7 text-xs flex-1"
-				value={ep.query ?? ""}
-				onChange={(e) => onChange({ query: e.target.value })}
-				placeholder="query (optional)"
-			/>
-			{onOpenQueryTester && (
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon"
-					className="h-8 w-8 shrink-0"
-					title="Test query"
-					onClick={() =>
-						onOpenQueryTester({
-							sourceID: ep.source_id,
-							resource: ep.resource,
-							query: ep.query ?? "",
-							onApply: (q) => onChange({ query: q }),
-						})
-					}
-				>
-					<FlaskConical className="h-3.5 w-3.5 text-muted-foreground" />
-				</Button>
-			)}
-		</div>
-	);
-}
-
-// ── WorkflowEditor ─────────────────────────────────────────────────────────
+import { StepCard } from "@/components/workflow/StepCard";
+import type { Source, Step, Workflow } from "@/types";
 
 interface EditorProps {
 	workflow: Workflow;
@@ -130,53 +51,19 @@ export function WorkflowEditor({
 			return ss;
 		});
 
-	const updSource = (si: number, patch: Partial<Endpoint>) =>
-		mutSteps((ss) => {
-			ss[si] = { ...ss[si], source: { ...ss[si].source, ...patch } };
-			return ss;
-		});
-
-	const updTarget = (si: number, ti: number, patch: Partial<Endpoint>) =>
-		mutSteps((ss) => {
-			const tgts = [...ss[si].targets];
-			tgts[ti] = { ...tgts[ti], ...patch };
-			ss[si] = { ...ss[si], targets: tgts };
-			return ss;
-		});
-
-	const addTarget = (si: number) =>
-		mutSteps((ss) => {
-			ss[si] = {
-				...ss[si],
-				targets: [
-					...ss[si].targets,
-					{ source_id: firstSrcId, resource: "playlists", query: "" },
-				],
-			};
-			return ss;
-		});
-
-	const removeTarget = (si: number, ti: number) =>
-		mutSteps((ss) => {
-			ss[si] = {
-				...ss[si],
-				targets: ss[si].targets.filter((_, j) => j !== ti),
-			};
-			return ss;
-		});
-
 	return (
-		<div className="flex flex-col h-full">
-			<div className="h-14 flex items-center gap-2 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] sticky top-0 z-10">
+		<div className="flex flex-col h-full overflow-hidden">
+			{/* Sticky Top Header Nav */}
+			<div className="h-14 flex items-center gap-3 px-6 py-3 border-b border-border bg-[hsl(240_10%_4%)] sticky top-0 z-10 shrink-0">
 				<input
-					className="bg-transparent border-none text-sm font-semibold focus:outline-none w-full"
+					className="bg-transparent border-none text-sm font-semibold focus:outline-none w-full placeholder:text-muted-foreground/60"
 					value={wf.name}
 					onChange={(e) => setWf((w) => ({ ...w, name: e.target.value }))}
 					placeholder="Workflow name"
 				/>
 				<div className="flex-1" />
 				{error && (
-					<span className="text-xs text-destructive mr-2 max-w-xs truncate">
+					<span className="text-xs text-destructive mr-2 max-w-xs truncate font-mono">
 						{error}
 					</span>
 				)}
@@ -185,7 +72,9 @@ export function WorkflowEditor({
 					size="sm"
 					onClick={() => onSave(wf)}
 					disabled={busy}
+					className="min-w-[70px]"
 				>
+					{busy ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
 					{busy ? "Saving…" : "Save"}
 				</Button>
 				<Button
@@ -198,130 +87,36 @@ export function WorkflowEditor({
 					Cancel
 				</Button>
 			</div>
-			<div className="flex-1 overflow-auto p-6">
-				<div className="flex flex-col gap-3">
-					{wf.steps.length === 0 && (
-						<p className="text-sm text-muted-foreground italic py-2">
-							No steps yet — add one below.
-						</p>
-					)}
-					{wf.steps.map((step, si) => (
-						// biome-ignore lint/suspicious/noArrayIndexKey: step index is stable within editor render
-						<Card key={`editor-step-${si}`} className="border-border/60">
-							<CardHeader className="bg-[hsl(240_10%_6%)] rounded-t-xl border-b border-border py-2.5 px-4">
-								<div className="flex items-center gap-3">
-									<span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground shrink-0">
-										{si + 1}
-									</span>
-									<Select
-										value={step.kind}
-										onValueChange={(k) => updStep(si, { kind: k })}
-									>
-										<SelectTrigger className="w-24 h-7">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="sync">SYNC</SelectItem>
-											<SelectItem value="fix">FIX</SelectItem>
-											<SelectItem value="edit">EDIT</SelectItem>
-										</SelectContent>
-									</Select>
-									<div className="flex-1" />
-									<Button
-										type="button"
-										variant="ghost"
-										size="icon"
-										className="h-7 w-7"
-										onClick={() => setDeleteStepIdx(si)}
-									>
-										<X className="h-3.5 w-3.5 text-muted-foreground" />
-									</Button>
-								</div>
-							</CardHeader>
 
-							<CardContent className="pt-3 pb-4 flex flex-col gap-3">
-								<div>
-									<p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">
-										Source
-									</p>
-									<div className="flex-1 min-w-0">
-										<EpEditRow
-											ep={step.source}
-											sources={sources}
-											onChange={(p) => updSource(si, p)}
-											onOpenQueryTester={onOpenQueryTester}
-										/>
-									</div>
-								</div>
-								<div>
-									<p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">
-										Target{step.targets.length > 1 ? "s" : ""}
-									</p>
-									<div className="flex flex-col gap-2">
-										{step.targets.map((tgt, ti) => (
-											<div
-												key={`${tgt.source_id}-${tgt.resource}`}
-												className="flex items-center gap-2"
-											>
-												<div className="flex-1 min-w-0">
-													<EpEditRow
-														ep={tgt}
-														sources={sources}
-														onChange={(p) => updTarget(si, ti, p)}
-														onOpenQueryTester={onOpenQueryTester}
-													/>
-												</div>
-												{step.targets.length > 1 && (
-													<Button
-														type="button"
-														variant="ghost"
-														size="icon"
-														className="h-7 w-7 shrink-0"
-														onClick={() => removeTarget(si, ti)}
-													>
-														<X className="h-3 w-3 text-muted-foreground" />
-													</Button>
-												)}
-											</div>
-										))}
-										<button
-											type="button"
-											onClick={() => addTarget(si)}
-											className="text-xs text-blue-400 hover:text-blue-300 text-left mt-0.5"
-										>
-											+ Add target
-										</button>
-									</div>
-								</div>
-								{si > 0 && (
-									<div>
-										<p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1.5">
-											Run after (step IDs, comma-separated)
-										</p>
-										<Input
-											className="h-7 text-xs font-mono"
-											value={step.after?.join(", ") ?? ""}
-											placeholder="Leave blank to run in parallel"
-											onChange={(e) =>
-												updStep(si, {
-													after: e.target.value
-														.split(",")
-														.map((s) => s.trim())
-														.filter(Boolean),
-												})
-											}
-										/>
-									</div>
-								)}
-							</CardContent>
-						</Card>
-					))}
+			{/* Scrollable Main Content Box */}
+			<div className="flex-1 overflow-auto p-6 bg-background">
+				<div className="space-y-4">
+					{wf.steps.length === 0 ? (
+						<p className="text-sm text-muted-foreground italic py-4 pl-1">
+							No steps yet — click "+ Add Step" below to get started.
+						</p>
+					) : (
+						<div className="space-y-4">
+							{wf.steps.map((step, si) => (
+								<StepCard
+									key={`editor-step-${step.id || si}`}
+									mode="edit"
+									step={step}
+									index={si}
+									sources={sources}
+									onChange={(patch) => updStep(si, patch)}
+									onDelete={() => setDeleteStepIdx(si)}
+									onOpenQueryTester={onOpenQueryTester}
+								/>
+							))}
+						</div>
+					)}
 					<button
 						type="button"
 						onClick={() => mutSteps((ss) => [...ss, blankStep(firstSrcId)])}
-						className="w-full rounded-xl border border-dashed border-border py-3 text-sm text-muted-foreground hover:border-blue-700 hover:text-blue-400 transition-colors"
+						className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-3.5 text-sm font-medium text-muted-foreground hover:border-blue-700/60 hover:text-blue-400 bg-secondary/5 hover:bg-blue-500/[0.02] transition-all duration-200"
 					>
-						+ Add Step
+						<Plus className="h-4 w-4" /> Add Step
 					</button>
 				</div>
 			</div>

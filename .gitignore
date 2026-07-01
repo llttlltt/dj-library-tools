@@ -32,7 +32,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-build/
 .cache/
 .next/
 .out/
@@ -55,4 +54,7 @@ tests/golden/cli/post/
 # Wails frontend build artifacts
 cmd/djlt-gui/frontend/node_modules/
 cmd/djlt-gui/frontend/dist/
-cmd/djlt-gui/build/
+cmd/djlt-gui/build/*
+!cmd/djlt-gui/build/appicon.png
+cmd/djlt-gui/djlt-gui
+cmd/djlt-gui/dj-library-tools
