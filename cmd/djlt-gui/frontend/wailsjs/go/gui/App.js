@@ -54,6 +54,10 @@ export function InstallUpdate() {
   return window['go']['gui']['App']['InstallUpdate']();
 }
 
+export function ListProviders() {
+  return window['go']['gui']['App']['ListProviders']();
+}
+
 export function ListSources() {
   return window['go']['gui']['App']['ListSources']();
 }

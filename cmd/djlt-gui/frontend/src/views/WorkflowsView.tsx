@@ -6,11 +6,18 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { WorkflowDetail } from "@/components/workflow/WorkflowDetail";
 import { WorkflowEditor } from "@/components/workflow/WorkflowEditor";
-import type { Source, StepDiff, Workflow, WorkflowResult } from "@/types";
+import type {
+	ProviderInfo,
+	Source,
+	StepDiff,
+	Workflow,
+	WorkflowResult,
+} from "@/types";
 import {
 	DeleteWorkflow,
 	GetWorkflow,
 	GetWorkflowDiff,
+	ListProviders,
 	ListSources,
 	ListWorkflows,
 	RunWorkflow,
@@ -21,6 +28,7 @@ type Mode = "list" | "view" | "edit" | "applying";
 
 const asWorkflows = (x: unknown) => (x ?? []) as Workflow[];
 const asSources = (x: unknown) => (x ?? []) as Source[];
+const asProviders = (x: unknown) => (x ?? []) as ProviderInfo[];
 const asWorkflow = (x: unknown) => x as Workflow;
 const asDiffs = (x: unknown) => (x ?? []) as StepDiff[];
 const asResult = (x: unknown) => x as WorkflowResult;
@@ -36,6 +44,7 @@ export default function WorkflowsView({
 	const [wfList, setWfList] = useState<Workflow[]>([]);
 	const [selected, setSelected] = useState<Workflow | null>(null);
 	const [sources, setSources] = useState<Source[]>([]);
+	const [providers, setProviders] = useState<ProviderInfo[]>([]);
 	const [diffs, setDiffs] = useState<StepDiff[]>([]);
 	const [result, setResult] = useState<WorkflowResult | null>(null);
 	const [error, setError] = useState("");
@@ -45,9 +54,14 @@ export default function WorkflowsView({
 
 	const load = useCallback(async () => {
 		try {
-			const [wfs, srcs] = await Promise.all([ListWorkflows(), ListSources()]);
+			const [wfs, srcs, provs] = await Promise.all([
+				ListWorkflows(),
+				ListSources(),
+				ListProviders(),
+			]);
 			setWfList(asWorkflows(wfs));
 			setSources(asSources(srcs));
+			setProviders(asProviders(provs));
 		} catch (e) {
 			setError(String(e));
 		}
@@ -304,6 +318,7 @@ export default function WorkflowsView({
 			<WorkflowEditor
 				workflow={selected}
 				sources={sources}
+				providers={providers}
 				busy={busy}
 				error={error}
 				onSave={handleSave}

@@ -3,6 +3,7 @@
 import {update} from '../models';
 import {config} from '../models';
 import {gui} from '../models';
+import {factory} from '../models';
 import {workflow} from '../models';
 
 export function CheckForUpdate(arg1:boolean):Promise<update.UpdateInfo>;
@@ -30,6 +31,8 @@ export function GetWorkflowDiff(arg1:string):Promise<Array<gui.StepDiff>>;
 export function InitPlexAuth():Promise<gui.PlexAuthChallenge>;
 
 export function InstallUpdate():Promise<void>;
+
+export function ListProviders():Promise<Array<factory.ProviderInfo>>;
 
 export function ListSources():Promise<Array<config.Source>>;
 

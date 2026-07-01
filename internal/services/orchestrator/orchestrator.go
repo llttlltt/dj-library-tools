@@ -3,7 +3,6 @@ package orchestrator
 import (
 	"context"
 	"fmt"
-
 	"strings"
 
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
@@ -206,6 +205,9 @@ func (o *Orchestrator) Sync(ctx context.Context, sourceLoc, targetLoc string, qu
 	}
 
 	if opts.Apply {
+		if !prov.System().Capabilities().CanWrite {
+			return fmt.Errorf("provider %q does not support writing", prov.Name())
+		}
 		return prov.System().Save(ctx, o.buildExecContext(opts), opts.FilePath)
 	}
 	return nil
@@ -300,6 +302,10 @@ func (o *Orchestrator) Edit(ctx context.Context, locStr string, queryOverride st
 	sel, prov, err := resolver.ResolveSelection(ctx, locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return 0, err
+	}
+
+	if opts.Apply && !prov.System().Capabilities().CanUpdateMetadata {
+		return 0, fmt.Errorf("provider %q does not support metadata updates", prov.Name())
 	}
 
 	count, err := prov.Tracks().Update(ctx, o.buildExecContext(opts), sel.Location.Query, changes)

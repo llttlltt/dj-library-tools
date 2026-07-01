@@ -14,10 +14,11 @@ import (
 )
 
 func init() {
-	factory.Register("m3u", func(opts factory.ProviderOptions) (provider.Provider, error) {
+	caps := provider.ProviderCapabilities{CanWrite: true, IsFileBased: true}
+	factory.Register("m3u", caps, func(opts factory.ProviderOptions) (provider.Provider, error) {
 		return NewM3UProvider(opts.FilePath)
 	})
-	factory.Register("m3u8", func(opts factory.ProviderOptions) (provider.Provider, error) {
+	factory.Register("m3u8", caps, func(opts factory.ProviderOptions) (provider.Provider, error) {
 		return factory.NewProvider("m3u", opts)
 	})
 }

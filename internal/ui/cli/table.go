@@ -57,6 +57,11 @@ func renderTrackTable(tracks []models.Track, columns []string, defaultColumns []
 	fmt.Printf("\nMatched %d tracks.\n", len(tracks))
 }
 
+func renderTable(headers []string, rows [][]string) {
+	t := &Table{Headers: headers, Rows: rows}
+	t.Render()
+}
+
 func renderGroupTable(groups []models.ResourceGroup, label string) {
 	t := &Table{
 		Headers: []string{"Items", label},

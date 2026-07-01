@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	factory.Register("plex", func(opts factory.ProviderOptions) (provider.Provider, error) {
+	factory.Register("plex", provider.ProviderCapabilities{}, func(opts factory.ProviderOptions) (provider.Provider, error) {
 		return NewPlexProvider(opts.Token, opts.Host, opts.Port), nil
 	})
 }

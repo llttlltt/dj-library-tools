@@ -20,5 +20,6 @@ A comprehensive CLI tool for managing DJ libraries across multiple providers.
 * [djlt ls](ls.md)	 - List items from a location (e.g. rb/tracks title:Oceans)
 * [djlt mk](mk.md)	 - Create a new playlist or folder
 * [djlt mv](mv.md)	 - Move items between locations
+* [djlt providers](providers.md)	 - List registered providers and their capabilities
 * [djlt rm](rm.md)	 - Permanently delete resources or remove membership
 * [djlt sync](sync.md)	 - Keep a playlist or metadata in sync with a track query

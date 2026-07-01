@@ -125,6 +125,43 @@ export namespace config {
 
 }
 
+export namespace factory {
+	
+	export class ProviderInfo {
+	    name: string;
+	    capabilities: provider.ProviderCapabilities;
+	
+	    static createFrom(source: any = {}) {
+	        return new ProviderInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.capabilities = this.convertValues(source["capabilities"], provider.ProviderCapabilities);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+
 export namespace gui {
 	
 	export class GroupRow {
@@ -254,6 +291,33 @@ export namespace gui {
 		    }
 		    return a;
 		}
+	}
+
+}
+
+export namespace provider {
+	
+	export class ProviderCapabilities {
+	    CanWrite: boolean;
+	    CanManageGroups: boolean;
+	    CanUpdateMetadata: boolean;
+	    SupportsCues: boolean;
+	    SupportsBeatgrids: boolean;
+	    IsFileBased: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ProviderCapabilities(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.CanWrite = source["CanWrite"];
+	        this.CanManageGroups = source["CanManageGroups"];
+	        this.CanUpdateMetadata = source["CanUpdateMetadata"];
+	        this.SupportsCues = source["SupportsCues"];
+	        this.SupportsBeatgrids = source["SupportsBeatgrids"];
+	        this.IsFileBased = source["IsFileBased"];
+	    }
 	}
 
 }

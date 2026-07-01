@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	factory.Register("mock", func(opts factory.ProviderOptions) (provider.Provider, error) {
+	factory.Register("mock", provider.ProviderCapabilities{CanUpdateMetadata: true, CanWrite: true}, func(opts factory.ProviderOptions) (provider.Provider, error) {
 		return &MockProvider{}, nil
 	})
 }
@@ -68,7 +68,7 @@ func (s *mockGroupService) Sort(_ context.Context, _ provider.ExecutionContext, 
 type mockSystemService struct{}
 
 func (s *mockSystemService) Capabilities() provider.ProviderCapabilities {
-	return provider.ProviderCapabilities{CanUpdateMetadata: true}
+	return provider.ProviderCapabilities{CanUpdateMetadata: true, CanWrite: true}
 }
 func (s *mockSystemService) Containment() provider.ContainmentPolicy {
 	return provider.ContainmentPolicy{}

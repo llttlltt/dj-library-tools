@@ -4,11 +4,12 @@ import type { QueryTesterOpts } from "@/App";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { StepCard } from "@/components/workflow/StepCard";
-import type { Source, Step, Workflow } from "@/types";
+import type { ProviderInfo, Source, Step, Workflow } from "@/types";
 
 interface EditorProps {
 	workflow: Workflow;
 	sources: Source[];
+	providers: ProviderInfo[];
 	busy: boolean;
 	error: string;
 	onSave: (wf: Workflow) => void;
@@ -16,12 +17,12 @@ interface EditorProps {
 	onOpenQueryTester?: (opts?: QueryTesterOpts) => void;
 }
 
-function blankStep(srcId: string): Step {
+function blankStep(srcId: string, targetId: string): Step {
 	return {
 		id: "",
 		kind: "sync",
 		source: { source_id: srcId, resource: "tracks", query: "" },
-		targets: [{ source_id: srcId, resource: "playlists", query: "" }],
+		targets: [{ source_id: targetId, resource: "playlists", query: "" }],
 		after: [],
 		options: {},
 	};
@@ -30,6 +31,7 @@ function blankStep(srcId: string): Step {
 export function WorkflowEditor({
 	workflow,
 	sources,
+	providers,
 	busy,
 	error,
 	onSave,
@@ -40,7 +42,18 @@ export function WorkflowEditor({
 		JSON.parse(JSON.stringify(workflow)),
 	);
 	const [deleteStepIdx, setDeleteStepIdx] = useState<number | null>(null);
-	const firstSrcId = sources[0]?.id ?? "";
+
+	const sortedSources = [...sources].sort((a, b) =>
+		a.name.localeCompare(b.name),
+	);
+	const firstSrcId = sortedSources[0]?.id ?? "";
+
+	// For targets, pick the first source that has a provider with CanWrite capability.
+	const firstTargetSrcId =
+		sortedSources.find((s) => {
+			const p = providers.find((prov) => prov.name === s.provider);
+			return p?.capabilities.CanWrite ?? true;
+		})?.id ?? firstSrcId;
 
 	const mutSteps = (fn: (steps: Step[]) => Step[]) =>
 		setWf((w) => ({ ...w, steps: fn([...w.steps]) }));
@@ -104,6 +117,7 @@ export function WorkflowEditor({
 									step={step}
 									index={si}
 									sources={sources}
+									providers={providers}
 									onChange={(patch) => updStep(si, patch)}
 									onDelete={() => setDeleteStepIdx(si)}
 									onOpenQueryTester={onOpenQueryTester}
@@ -113,7 +127,9 @@ export function WorkflowEditor({
 					)}
 					<button
 						type="button"
-						onClick={() => mutSteps((ss) => [...ss, blankStep(firstSrcId)])}
+						onClick={() =>
+							mutSteps((ss) => [...ss, blankStep(firstSrcId, firstTargetSrcId)])
+						}
 						className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-3.5 text-sm font-medium text-muted-foreground hover:border-blue-700/60 hover:text-blue-400 bg-secondary/5 hover:bg-blue-500/[0.02] transition-all duration-200"
 					>
 						<Plus className="h-4 w-4" /> Add Step

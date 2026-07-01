@@ -9,6 +9,7 @@ import (
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
+	"github.com/llttlltt/dj-library-tools/internal/providers/factory"
 	"github.com/llttlltt/dj-library-tools/internal/providers/plex"
 	"github.com/llttlltt/dj-library-tools/internal/services/orchestrator"
 	"github.com/llttlltt/dj-library-tools/internal/services/workflow"
@@ -128,6 +129,11 @@ func (a *App) GetPermissionStatus() string {
 // FixPermissions triggers platform-specific escalation to fix permissions.
 func (a *App) FixPermissions() error {
 	return update.FixPermissions()
+}
+
+// ListProviders returns static metadata for all registered providers.
+func (a *App) ListProviders() []factory.ProviderInfo {
+	return factory.ListProviders()
 }
 
 // ── Sources ───────────────────────────────────────────────────────────────────

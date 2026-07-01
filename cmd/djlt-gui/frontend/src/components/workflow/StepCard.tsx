@@ -22,7 +22,14 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import type { Endpoint, Source, Step, StepDiff, StepResult } from "@/types";
+import type {
+	Endpoint,
+	ProviderInfo,
+	Source,
+	Step,
+	StepDiff,
+	StepResult,
+} from "@/types";
 import { TrackDiffTable } from "./TrackDiffTable";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -56,6 +63,8 @@ export function statusIcon(status: string) {
 interface EpEditRowProps {
 	ep: Endpoint;
 	sources: Source[];
+	providers: ProviderInfo[];
+	isTarget?: boolean;
 	onChange: (p: Partial<Endpoint>) => void;
 	onOpenQueryTester?: (opts?: QueryTesterOpts) => void;
 }
@@ -63,9 +72,18 @@ interface EpEditRowProps {
 export function EpEditRow({
 	ep,
 	sources,
+	providers,
+	isTarget,
 	onChange,
 	onOpenQueryTester,
 }: EpEditRowProps) {
+	// If this is a target, only show sources whose provider can write.
+	const filteredSources = sources.filter((s) => {
+		if (!isTarget) return true;
+		const p = providers.find((prov) => prov.name === s.provider);
+		return p?.capabilities.CanWrite ?? true;
+	});
+
 	return (
 		<div className="flex flex-nowrap gap-2.5 items-center w-full min-w-0">
 			<Select
@@ -76,7 +94,7 @@ export function EpEditRow({
 					<SelectValue placeholder="Source" />
 				</SelectTrigger>
 				<SelectContent>
-					{[...sources]
+					{[...filteredSources]
 						.sort((a, b) => a.name.localeCompare(b.name))
 						.map((s) => (
 							<SelectItem key={s.id} value={s.id}>
@@ -156,6 +174,7 @@ interface StepCardProps {
 	step: Step;
 	index: number;
 	sources: Source[];
+	providers?: ProviderInfo[];
 	// Edit mode props
 	onChange?: (patch: Partial<Step>) => void;
 	onDelete?: () => void;
@@ -170,6 +189,7 @@ export function StepCard({
 	step,
 	index,
 	sources,
+	providers = [],
 	onChange,
 	onDelete,
 	onOpenQueryTester,
@@ -195,13 +215,25 @@ export function StepCard({
 		onChange?.({ targets: tgts });
 	};
 
-	const addTarget = () =>
+	const addTarget = () => {
+		const sortedSources = [...sources].sort((a, b) =>
+			a.name.localeCompare(b.name),
+		);
+		const firstTargetSrcId =
+			sortedSources.find((s) => {
+				const p = providers.find((prov) => prov.name === s.provider);
+				return p?.capabilities.CanWrite ?? true;
+			})?.id ??
+			sortedSources[0]?.id ??
+			"";
+
 		onChange?.({
 			targets: [
 				...step.targets,
-				{ source_id: sources[0]?.id ?? "", resource: "playlists", query: "" },
+				{ source_id: firstTargetSrcId, resource: "playlists", query: "" },
 			],
 		});
+	};
 
 	const removeTarget = (ti: number) =>
 		onChange?.({ targets: step.targets.filter((_, j) => j !== ti) });
@@ -287,6 +319,7 @@ export function StepCard({
 						<EpEditRow
 							ep={step.source}
 							sources={sources}
+							providers={providers}
 							onChange={updSource}
 							onOpenQueryTester={onOpenQueryTester}
 						/>
@@ -311,6 +344,8 @@ export function StepCard({
 										<EpEditRow
 											ep={tgt}
 											sources={sources}
+											providers={providers}
+											isTarget
 											onChange={(p) => updTarget(ti, p)}
 											onOpenQueryTester={onOpenQueryTester}
 										/>

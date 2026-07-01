@@ -13,7 +13,15 @@ import (
 )
 
 func init() {
-	factory.Register("rb", func(opts factory.ProviderOptions) (provider.Provider, error) {
+	caps := provider.ProviderCapabilities{
+		CanWrite:          true,
+		CanManageGroups:   true,
+		CanUpdateMetadata: true,
+		SupportsCues:      true,
+		SupportsBeatgrids: true,
+		IsFileBased:       true,
+	}
+	factory.Register("rb", caps, func(opts factory.ProviderOptions) (provider.Provider, error) {
 		if opts.FilePath == "" {
 			return nil, fmt.Errorf("rekordbox XML library required via --file flag")
 		}
@@ -24,7 +32,7 @@ func init() {
 		eng := library.NewEngine(NewLibrary(rbXML))
 		return NewRekordboxProviderWithXML(eng, rbXML, opts.FilePath), nil
 	})
-	factory.Register("rekordbox", func(opts factory.ProviderOptions) (provider.Provider, error) {
+	factory.Register("rekordbox", caps, func(opts factory.ProviderOptions) (provider.Provider, error) {
 		return factory.NewProvider("rb", opts)
 	})
 }

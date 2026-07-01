@@ -30,6 +30,20 @@ export interface Source {
 	config: Record<string, string>;
 }
 
+export interface ProviderCapabilities {
+	CanWrite: boolean;
+	CanManageGroups: boolean;
+	CanUpdateMetadata: boolean;
+	SupportsCues: boolean;
+	SupportsBeatgrids: boolean;
+	IsFileBased: boolean;
+}
+
+export interface ProviderInfo {
+	name: string;
+	capabilities: ProviderCapabilities;
+}
+
 export interface TrackRow {
 	id: string;
 	title: string;
