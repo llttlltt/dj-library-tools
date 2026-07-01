@@ -13,7 +13,15 @@ type ProviderFactory func(opts ProviderOptions) (provider.Provider, error)
 // ProviderInfo carries static metadata and capabilities for a provider type.
 type ProviderInfo struct {
 	Name         string                        `json:"name"`
+	Resources    []ResourceInfo                `json:"resources"`
 	Capabilities provider.ProviderCapabilities `json:"capabilities"`
+}
+
+// ResourceInfo defines the capabilities of a specific resource type.
+type ResourceInfo struct {
+	Name          string `json:"name"`
+	CanWrite      bool   `json:"can_write"`
+	SupportsQuery bool   `json:"supports_query"`
 }
 
 type registeredProvider struct {
@@ -38,7 +46,7 @@ type ProviderOptions struct {
 }
 
 // Register makes a provider factory available by the provided name.
-func Register(name string, caps provider.ProviderCapabilities, factory ProviderFactory) {
+func Register(name string, resources []ResourceInfo, caps provider.ProviderCapabilities, factory ProviderFactory) {
 	providersMu.Lock()
 	defer providersMu.Unlock()
 	if factory == nil {
@@ -51,9 +59,29 @@ func Register(name string, caps provider.ProviderCapabilities, factory ProviderF
 		factory: factory,
 		info: ProviderInfo{
 			Name:         name,
+			Resources:    resources,
 			Capabilities: caps,
 		},
 	}
+}
+
+// ValidateResource checks if a provider supports a given resource type and optionally if it's writable.
+func ValidateResource(providerName, resource string, mustBeWritable bool) bool {
+	providersMu.RLock()
+	defer providersMu.RUnlock()
+	p, ok := providers[providerName]
+	if !ok {
+		return false
+	}
+	for _, r := range p.info.Resources {
+		if r.Name == resource {
+			if mustBeWritable && !r.CanWrite {
+				return false
+			}
+			return true
+		}
+	}
+	return false
 }
 
 // GetProviderInfo returns static metadata for a provider by name.

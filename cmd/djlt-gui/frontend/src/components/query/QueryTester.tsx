@@ -24,8 +24,19 @@ import {
 	TableHead,
 	TableRow,
 } from "@/components/ui/table";
-import type { GroupRow, QueryResult, Source, TrackRow } from "@/types";
-import { ListSources, PreviewQuery } from "../../../wailsjs/go/gui/App";
+import { cn } from "@/lib/utils";
+import type {
+	GroupRow,
+	ProviderInfo,
+	QueryResult,
+	Source,
+	TrackRow,
+} from "@/types";
+import {
+	ListProviders,
+	ListSources,
+	PreviewQuery,
+} from "../../../wailsjs/go/gui/App";
 
 interface QueryTesterProps {
 	open: boolean;
@@ -33,10 +44,12 @@ interface QueryTesterProps {
 	initialSourceID?: string;
 	initialResource?: string;
 	initialQuery?: string;
+	isTarget?: boolean;
 	onApply?: (query: string) => void;
 }
 
 const asSources = (x: unknown) => (x ?? []) as Source[];
+const asProviders = (x: unknown) => (x ?? []) as ProviderInfo[];
 const asQueryResult = (x: unknown) => x as QueryResult;
 
 export function QueryTester({
@@ -45,9 +58,11 @@ export function QueryTester({
 	initialSourceID,
 	initialResource,
 	initialQuery,
+	isTarget,
 	onApply,
 }: QueryTesterProps) {
 	const [sources, setSources] = useState<Source[]>([]);
+	const [providers, setProviders] = useState<ProviderInfo[]>([]);
 	const [sourceID, setSourceID] = useState(initialSourceID ?? "");
 	const [resource, setResource] = useState(initialResource ?? "tracks");
 	const [query, setQuery] = useState(initialQuery ?? "");
@@ -56,10 +71,34 @@ export function QueryTester({
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
-		ListSources()
-			.then((s) => setSources(asSources(s)))
+		Promise.all([ListSources(), ListProviders()])
+			.then(([s, p]) => {
+				setSources(asSources(s));
+				setProviders(asProviders(p));
+			})
 			.catch(() => {});
 	}, []);
+
+	// Automatically fix blank or invalid resource selections when source or providers change
+	useEffect(() => {
+		if (sourceID && providers.length > 0) {
+			const selectedSource = sources.find((s) => s.id === sourceID);
+			const provider = providers.find(
+				(p) => p.name === selectedSource?.provider,
+			);
+			const availableResources = (provider?.resources ?? []).filter((r) => {
+				if (!isTarget) return true;
+				return r.can_write;
+			});
+
+			if (availableResources.length > 0) {
+				const isValid = availableResources.some((r) => r.name === resource);
+				if (!isValid) {
+					setResource(availableResources[0].name);
+				}
+			}
+		}
+	}, [sourceID, providers, resource, isTarget, sources]);
 
 	useEffect(() => {
 		setSourceID(initialSourceID ?? "");
@@ -104,10 +143,12 @@ export function QueryTester({
 				<div className="flex flex-col gap-6 flex-1 min-h-0">
 					<QueryTesterControls
 						sources={sources}
+						providers={providers}
 						sourceID={sourceID}
 						resource={resource}
 						query={query}
 						loading={loading}
+						isTarget={isTarget}
 						onSourceID={setSourceID}
 						onResource={setResource}
 						onQuery={setQuery}
@@ -132,10 +173,12 @@ export function QueryTester({
 
 interface ControlsProps {
 	sources: Source[];
+	providers: ProviderInfo[];
 	sourceID: string;
 	resource: string;
 	query: string;
 	loading: boolean;
+	isTarget?: boolean;
 	onSourceID: (v: string) => void;
 	onResource: (v: string) => void;
 	onQuery: (v: string) => void;
@@ -145,18 +188,44 @@ interface ControlsProps {
 
 export function QueryTesterControls({
 	sources,
+	providers,
 	sourceID,
 	resource,
 	query,
 	loading,
+	isTarget,
 	onSourceID,
 	onResource,
 	onQuery,
 	onTest,
 	onApply,
 }: ControlsProps) {
+	const handleSourceChange = (v: string) => {
+		const newSrc = sources.find((s) => s.id === v);
+		const provider = providers.find((p) => p.name === newSrc?.provider);
+		const availableResources = (provider?.resources ?? []).filter((r) => {
+			if (!isTarget) return true;
+			return r.can_write;
+		});
+		if (availableResources.length > 0) {
+			const isValid = availableResources.some((r) => r.name === resource);
+			if (!isValid) {
+				onResource(availableResources[0].name);
+			}
+		}
+		onSourceID(v);
+	};
+
 	const selectedSource = sources.find((s) => s.id === sourceID);
-	const supportsFolders = selectedSource?.provider === "rb";
+	const provider = providers.find((p) => p.name === selectedSource?.provider);
+	const availableResources = (provider?.resources ?? []).filter((r) => {
+		if (!isTarget) return true;
+		return r.can_write;
+	});
+
+	// If the current resource isn't writable but we're in target mode, this is an invalid state
+	const currentRes = provider?.resources.find((r) => r.name === resource);
+	const isInvalidTarget = isTarget && currentRes && !currentRes.can_write;
 
 	return (
 		<div className="space-y-4 bg-secondary/20 p-4 rounded-xl border border-border/40 shrink-0">
@@ -166,7 +235,7 @@ export function QueryTesterControls({
 					<span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
 						Source
 					</span>
-					<Select value={sourceID} onValueChange={onSourceID}>
+					<Select value={sourceID} onValueChange={handleSourceChange}>
 						<SelectTrigger className="h-8.5 text-sm bg-background/50">
 							<SelectValue placeholder="Select a source…" />
 						</SelectTrigger>
@@ -187,17 +256,28 @@ export function QueryTesterControls({
 						Resource
 					</span>
 					<Select value={resource} onValueChange={onResource}>
-						<SelectTrigger className="h-8.5 text-sm bg-background/50">
+						<SelectTrigger
+							className={cn(
+								"h-8.5 text-sm bg-background/50 transition-colors",
+								isInvalidTarget &&
+									"border-destructive/60 bg-destructive/5 text-destructive",
+							)}
+						>
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="tracks">tracks</SelectItem>
-							<SelectItem value="playlists">playlists</SelectItem>
-							{supportsFolders && (
-								<SelectItem value="folders">folders</SelectItem>
-							)}
+							{availableResources.map((r) => (
+								<SelectItem key={r.name} value={r.name}>
+									{r.name}
+								</SelectItem>
+							))}
 						</SelectContent>
 					</Select>
+					{isInvalidTarget && (
+						<span className="text-[10px] text-destructive/80 font-medium animate-in fade-in slide-in-from-top-1">
+							This resource is read-only and cannot be used as a target.
+						</span>
+					)}
 				</div>
 			</div>
 
@@ -241,7 +321,7 @@ export function QueryTesterControls({
 						variant="secondary"
 						size="sm"
 						onClick={() => onApply(query)}
-						disabled={!query}
+						disabled={!query || isInvalidTarget}
 					>
 						Use this query
 					</Button>

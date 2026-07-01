@@ -24,6 +24,7 @@ export interface QueryTesterOpts {
 	sourceID?: string;
 	resource?: string;
 	query?: string;
+	isTarget?: boolean;
 	onApply?: (query: string) => void;
 }
 
@@ -111,6 +112,7 @@ export default function App() {
 				initialSourceID={queryTesterOpts.sourceID}
 				initialResource={queryTesterOpts.resource}
 				initialQuery={queryTesterOpts.query}
+				isTarget={queryTesterOpts.isTarget}
 				onApply={queryTesterOpts.onApply}
 			/>
 		</div>

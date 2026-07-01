@@ -11,7 +11,11 @@ import (
 )
 
 func init() {
-	factory.Register("plex", provider.ProviderCapabilities{}, func(opts factory.ProviderOptions) (provider.Provider, error) {
+	resources := []factory.ResourceInfo{
+		{Name: "tracks", CanWrite: false, SupportsQuery: true},
+		{Name: "playlists", CanWrite: false, SupportsQuery: true},
+	}
+	factory.Register("plex", resources, provider.ProviderCapabilities{}, func(opts factory.ProviderOptions) (provider.Provider, error) {
 		return NewPlexProvider(opts.Token, opts.Host, opts.Port), nil
 	})
 }

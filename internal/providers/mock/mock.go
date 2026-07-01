@@ -8,7 +8,10 @@ import (
 )
 
 func init() {
-	factory.Register("mock", provider.ProviderCapabilities{CanUpdateMetadata: true, CanWrite: true}, func(opts factory.ProviderOptions) (provider.Provider, error) {
+	resources := []factory.ResourceInfo{
+		{Name: "tracks", CanWrite: true, SupportsQuery: true},
+	}
+	factory.Register("mock", resources, provider.ProviderCapabilities{CanUpdateMetadata: true, CanWrite: true}, func(opts factory.ProviderOptions) (provider.Provider, error) {
 		return &MockProvider{}, nil
 	})
 }

@@ -39,8 +39,15 @@ export interface ProviderCapabilities {
 	IsFileBased: boolean;
 }
 
+export interface ResourceInfo {
+	name: string;
+	can_write: boolean;
+	supports_query: boolean;
+}
+
 export interface ProviderInfo {
 	name: string;
+	resources: ResourceInfo[];
 	capabilities: ProviderCapabilities;
 }
 

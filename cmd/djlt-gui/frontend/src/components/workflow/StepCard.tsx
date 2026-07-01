@@ -8,7 +8,7 @@ import {
 	XCircle,
 	Zap,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { QueryTesterOpts } from "@/App";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,18 +77,50 @@ export function EpEditRow({
 	onChange,
 	onOpenQueryTester,
 }: EpEditRowProps) {
-	// If this is a target, only show sources whose provider can write.
+	// If this is a target, only show sources whose provider has at least one writable resource.
 	const filteredSources = sources.filter((s) => {
 		if (!isTarget) return true;
 		const p = providers.find((prov) => prov.name === s.provider);
-		return p?.capabilities.CanWrite ?? true;
+		return p?.resources.some((r) => r.can_write) ?? true;
 	});
+
+	const selectedSource = sources.find((s) => s.id === ep.source_id);
+	const provider = providers.find((p) => p.name === selectedSource?.provider);
+
+	// For targets, only show resources that can be written to.
+	const availableResources = (provider?.resources ?? []).filter((r) => {
+		if (!isTarget) return true;
+		return r.can_write;
+	});
+
+	// Automatically fix blank or invalid resource selections
+	useEffect(() => {
+		if (availableResources.length > 0) {
+			const isValid = availableResources.some((r) => r.name === ep.resource);
+			if (!isValid) {
+				onChange({ resource: availableResources[0].name });
+			}
+		}
+	}, [ep.resource, availableResources, onChange]);
+
+	const currentRes = provider?.resources.find((r) => r.name === ep.resource);
+	const supportsQuery = currentRes?.supports_query ?? true;
 
 	return (
 		<div className="flex flex-nowrap gap-2.5 items-center w-full min-w-0">
 			<Select
 				value={ep.source_id}
-				onValueChange={(v) => onChange({ source_id: v })}
+				onValueChange={(v) => {
+					// When source changes, find the first valid resource for that new source
+					const newSrc = sources.find((s) => s.id === v);
+					const newProv = providers.find((p) => p.name === newSrc?.provider);
+					const newResList = (newProv?.resources ?? []).filter((r) => {
+						if (!isTarget) return true;
+						return r.can_write;
+					});
+					const nextRes = newResList[0]?.name ?? ep.resource;
+					onChange({ source_id: v, resource: nextRes });
+				}}
 			>
 				<SelectTrigger className="w-40 h-9 text-sm shrink-0 bg-background/50">
 					<SelectValue placeholder="Source" />
@@ -103,19 +135,36 @@ export function EpEditRow({
 						))}
 				</SelectContent>
 			</Select>
-			<Input
-				className="h-9 text-sm w-24 shrink-0 bg-background/50"
+
+			<Select
 				value={ep.resource}
-				onChange={(e) => onChange({ resource: e.target.value })}
-				placeholder="resource"
-			/>
-			<Input
-				className="h-9 text-sm flex-1 min-w-0 bg-background/50"
-				value={ep.query ?? ""}
-				onChange={(e) => onChange({ query: e.target.value })}
-				placeholder="query (optional)"
-			/>
-			{onOpenQueryTester ? (
+				onValueChange={(v) => onChange({ resource: v })}
+			>
+				<SelectTrigger className="w-24 h-9 text-sm shrink-0 bg-background/50">
+					<SelectValue placeholder="resource" />
+				</SelectTrigger>
+				<SelectContent>
+					{availableResources.map((r) => (
+						<SelectItem key={r.name} value={r.name}>
+							{r.name}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+
+			<div className="flex-1 min-w-0 relative">
+				<Input
+					className={`h-9 text-sm w-full bg-background/50 transition-opacity ${supportsQuery ? "opacity-100" : "opacity-10 pointer-events-none"}`}
+					value={ep.query ?? ""}
+					onChange={(e) => onChange({ query: e.target.value })}
+					placeholder={
+						supportsQuery ? "query (optional)" : "no query supported"
+					}
+					disabled={!supportsQuery}
+				/>
+			</div>
+
+			{onOpenQueryTester && supportsQuery ? (
 				<Button
 					type="button"
 					variant="ghost"
@@ -127,6 +176,7 @@ export function EpEditRow({
 							sourceID: ep.source_id,
 							resource: ep.resource,
 							query: ep.query ?? "",
+							isTarget,
 							onApply: (q) => onChange({ query: q }),
 						})
 					}

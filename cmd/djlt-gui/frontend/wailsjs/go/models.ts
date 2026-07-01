@@ -127,8 +127,25 @@ export namespace config {
 
 export namespace factory {
 	
+	export class ResourceInfo {
+	    name: string;
+	    can_write: boolean;
+	    supports_query: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ResourceInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.can_write = source["can_write"];
+	        this.supports_query = source["supports_query"];
+	    }
+	}
 	export class ProviderInfo {
 	    name: string;
+	    resources: ResourceInfo[];
 	    capabilities: provider.ProviderCapabilities;
 	
 	    static createFrom(source: any = {}) {
@@ -138,6 +155,7 @@ export namespace factory {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
+	        this.resources = this.convertValues(source["resources"], ResourceInfo);
 	        this.capabilities = this.convertValues(source["capabilities"], provider.ProviderCapabilities);
 	    }
 	

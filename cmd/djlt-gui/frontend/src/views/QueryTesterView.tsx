@@ -3,14 +3,20 @@ import {
 	QueryTesterControls,
 	QueryTesterResults,
 } from "@/components/query/QueryTester";
-import type { QueryResult, Source } from "@/types";
-import { ListSources, PreviewQuery } from "../../wailsjs/go/gui/App";
+import type { ProviderInfo, QueryResult, Source } from "@/types";
+import {
+	ListProviders,
+	ListSources,
+	PreviewQuery,
+} from "../../wailsjs/go/gui/App";
 
 const asSources = (x: unknown) => (x ?? []) as Source[];
+const asProviders = (x: unknown) => (x ?? []) as ProviderInfo[];
 const asQueryResult = (x: unknown) => x as QueryResult;
 
 export default function QueryTesterView() {
 	const [sources, setSources] = useState<Source[]>([]);
+	const [providers, setProviders] = useState<ProviderInfo[]>([]);
 	const [sourceID, setSourceID] = useState("");
 	const [resource, setResource] = useState("tracks");
 	const [query, setQuery] = useState("");
@@ -20,12 +26,14 @@ export default function QueryTesterView() {
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: only default on mount
 	useEffect(() => {
-		ListSources()
-			.then((s) => {
-				const loaded = asSources(s);
-				setSources(loaded);
-				if (loaded.length > 0 && !sourceID) {
-					setSourceID(loaded[0].id);
+		Promise.all([ListSources(), ListProviders()])
+			.then(([s, p]) => {
+				const loadedSrcs = asSources(s);
+				const loadedProvs = asProviders(p);
+				setSources(loadedSrcs);
+				setProviders(loadedProvs);
+				if (loadedSrcs.length > 0 && !sourceID) {
+					setSourceID(loadedSrcs[0].id);
 				}
 			})
 			.catch(() => {});
@@ -64,6 +72,7 @@ export default function QueryTesterView() {
 					<div className="shrink-0">
 						<QueryTesterControls
 							sources={sources}
+							providers={providers}
 							sourceID={sourceID}
 							resource={resource}
 							query={query}

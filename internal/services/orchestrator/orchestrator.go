@@ -8,6 +8,7 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/core/models"
 	"github.com/llttlltt/dj-library-tools/internal/core/query"
 	"github.com/llttlltt/dj-library-tools/internal/providers"
+	"github.com/llttlltt/dj-library-tools/internal/providers/factory"
 	"github.com/llttlltt/dj-library-tools/internal/services/resolver"
 )
 
@@ -91,6 +92,9 @@ type ListResult struct {
 }
 
 func (o *Orchestrator) List(ctx context.Context, locStr string, queryOverride string, opts RunOptions, sortBy string) (*ListResult, error) {
+	if err := o.validateLocation(locStr); err != nil {
+		return nil, err
+	}
 	sel, prov, err := resolver.ResolveSelection(ctx, locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return nil, err
@@ -175,6 +179,12 @@ type FixOptions struct {
 }
 
 func (o *Orchestrator) Sync(ctx context.Context, sourceLoc, targetLoc string, queryOverride string, opts RunOptions, syncOpts SyncOptions) error {
+	if err := o.validateLocation(sourceLoc); err != nil {
+		return err
+	}
+	if err := o.validateTargetLocation(targetLoc); err != nil {
+		return err
+	}
 	src, _, err := resolver.ResolveSelection(ctx, sourceLoc, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return err
@@ -223,6 +233,12 @@ type SyncDiff struct {
 }
 
 func (o *Orchestrator) GetSyncDiff(ctx context.Context, sourceLoc, targetLoc string, queryOverride string, opts RunOptions, appendOnly bool) (*SyncDiff, error) {
+	if err := o.validateLocation(sourceLoc); err != nil {
+		return nil, err
+	}
+	if err := o.validateTargetLocation(targetLoc); err != nil {
+		return nil, err
+	}
 	src, _, err := resolver.ResolveSelection(ctx, sourceLoc, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return nil, err
@@ -274,6 +290,9 @@ func (o *Orchestrator) GetSyncDiff(ctx context.Context, sourceLoc, targetLoc str
 }
 
 func (o *Orchestrator) Fix(ctx context.Context, locStr string, queryOverride string, opts RunOptions, fixOpts FixOptions) (int, error) {
+	if err := o.validateLocation(locStr); err != nil {
+		return 0, err
+	}
 	sel, prov, err := resolver.ResolveSelection(ctx, locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return 0, err
@@ -299,6 +318,9 @@ func (o *Orchestrator) Fix(ctx context.Context, locStr string, queryOverride str
 }
 
 func (o *Orchestrator) Edit(ctx context.Context, locStr string, queryOverride string, opts RunOptions, changes map[string]string) (int, error) {
+	if err := o.validateTargetLocation(locStr); err != nil {
+		return 0, err
+	}
 	sel, prov, err := resolver.ResolveSelection(ctx, locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return 0, err
@@ -320,6 +342,9 @@ func (o *Orchestrator) Edit(ctx context.Context, locStr string, queryOverride st
 }
 
 func (o *Orchestrator) Make(ctx context.Context, locStr string, name string, opts RunOptions, groupKind models.GroupKind, position int, fromLoc string) (models.ResourceGroup, error) {
+	if err := o.validateTargetLocation(locStr); err != nil {
+		return models.ResourceGroup{}, err
+	}
 	_, prov, err := resolver.ResolveSelection(ctx, locStr, "", o.buildResolveOptions(opts))
 	if err != nil {
 		return models.ResourceGroup{}, err
@@ -350,6 +375,9 @@ func (o *Orchestrator) Make(ctx context.Context, locStr string, name string, opt
 }
 
 func (o *Orchestrator) Move(ctx context.Context, locStr string, queryOverride string, opts RunOptions, moveTo string, moveFrom string, moveName string) (int, error) {
+	if err := o.validateTargetLocation(locStr); err != nil {
+		return 0, err
+	}
 	src, prov, err := resolver.ResolveSelection(ctx, locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return 0, err
@@ -399,6 +427,9 @@ func (o *Orchestrator) Move(ctx context.Context, locStr string, queryOverride st
 }
 
 func (o *Orchestrator) Delete(ctx context.Context, locStr string, queryOverride string, opts RunOptions, fromLocs []string, recursive bool) (int, error) {
+	if err := o.validateTargetLocation(locStr); err != nil {
+		return 0, err
+	}
 	sel, prov, err := resolver.ResolveSelection(ctx, locStr, queryOverride, o.buildResolveOptions(opts))
 	if err != nil {
 		return 0, err
@@ -438,6 +469,53 @@ func (o *Orchestrator) Delete(ctx context.Context, locStr string, queryOverride 
 		return count, prov.System().Save(ctx, o.buildExecContext(opts), opts.FilePath)
 	}
 	return count, nil
+}
+
+func (o *Orchestrator) validateLocation(locStr string) error {
+	return o.doValidateLocation(locStr, false)
+}
+
+func (o *Orchestrator) validateTargetLocation(locStr string) error {
+	return o.doValidateLocation(locStr, true)
+}
+
+func (o *Orchestrator) doValidateLocation(locStr string, mustBeWritable bool) error {
+	if locStr == "" {
+		return nil
+	}
+	parts := strings.SplitN(locStr, "/", 2)
+	if len(parts) < 2 {
+		return nil // location string might just be a query or malformed, let resolver handle it
+	}
+	prov := parts[0]
+	resPart := parts[1]
+	res := strings.SplitN(resPart, " ", 2)[0]
+
+	// If prov is a UUID, we can't easily validate without config lookup.
+	// For now we only validate short names like "rb", "plex".
+	if len(prov) == 36 && strings.Contains(prov, "-") {
+		return nil
+	}
+
+	if !factory.ValidateResource(prov, res, mustBeWritable) {
+		// Only error if the provider is actually known. If it's unknown,
+		// let the factory.NewProvider return the error later.
+		if info, err := factory.GetProviderInfo(prov); err == nil {
+			if mustBeWritable {
+				return fmt.Errorf("provider %q does not support writing to resource %q", prov, res)
+			}
+			return fmt.Errorf("provider %q does not support resource %q; supported: %v", prov, res, resourceNames(info.Resources))
+		}
+	}
+	return nil
+}
+
+func resourceNames(rs []factory.ResourceInfo) []string {
+	var names []string
+	for _, r := range rs {
+		names = append(names, r.Name)
+	}
+	return names
 }
 
 func calculateSyncDiff(current, target []string) (added, removed []string) {

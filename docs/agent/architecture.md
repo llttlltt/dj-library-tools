@@ -37,7 +37,8 @@ The system follows a nested, resource-oriented service structure:
 - **Implementation Authority**: Implementation packages (`rekordbox`, `plex`, `m3u`) are the sole authorities on their data formats. They handle their own mapping to neutral models.
 - **Hierarchical Path Resolution**: Complex metadata (Cues, Markers, Playlists) must be queried via a standardized Path Resolver.
 - **Strict Agnosticism**: Core packages must NEVER import specific implementation packages or anything under `internal/ui`.
-- **Provider Registry**: All providers must self-register via `init()` in their respective packages under `internal/providers/`.
+- **Provider Registry**: All providers must self-register via `init()` in their respective packages under `internal/providers/`. Registration must include static `ProviderCapabilities` and granular `ResourceInfo` (defining `CanWrite` and `SupportsQuery` per resource).
+- **Static Discovery**: Provider capabilities (read/write status, supported resources) must be discoverable via the factory registry without requiring provider instantiation or valid configuration. This allows UIs to validate user input and adapt selectors proactively.
 - **Persistence Responsibility**: The **UIs** (CLI/GUI) are the sole authorities on persistence. Provider methods perform modifications in-memory; the caller must explicitly call `Save()` to commit changes, typically orchestrated via the `orchestrator` service.
 - **Safe-by-Default**: All mutating operations must be non-destructive by default. The `--apply` flag (CLI) or "Apply" button (GUI) is the universal gatekeeper for the `Save()` operation.
 - **UI Decoupling**: Core, infra, providers, and services must not import UI libraries or write directly to Stdout/Stderr. All user feedback must be channeled through the `Feedback` interface.
