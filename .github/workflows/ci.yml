@@ -24,12 +24,15 @@ jobs:
           node-version: '20'
 
       - name: Install pnpm
-        run: npm install -g pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
 
       - name: Build Frontend
         run: |
           cd cmd/djlt-gui/frontend
           pnpm install
+          pnpm run check
           pnpm run build
 
       - name: Run Tests
