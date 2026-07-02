@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.3.0](https://github.com/llttlltt/dj-library-tools/compare/v1.2.1...v1.3.0) (2026-07-02)
+
+
+### Features
+
+* **gui:** harden workflow editor and support new step kinds ([8c57d4e](https://github.com/llttlltt/dj-library-tools/commit/8c57d4e683d2267afa6bb109460591fe09989077))
+* **workflow:** expand engine with add, remove, m3u_export and ad-hoc URIs ([1cea8c4](https://github.com/llttlltt/dj-library-tools/commit/1cea8c45c47119f7e53ddc02a1dae58cde526f11))
+* **workflow:** polish export, preview, and editor UX ([1826b0d](https://github.com/llttlltt/dj-library-tools/commit/1826b0def7ad9b9c7d573d61f102e74416c11942))
+
+
+### Bug Fixes
+
+* **workflow:** harden M3U export URI logic and expand preview support ([46a824f](https://github.com/llttlltt/dj-library-tools/commit/46a824f47f16184efc8a45f1c254daaa9a0ada70))
+* **workflow:** polish detail UX and correct M3U/M3U8 formatting ([b547612](https://github.com/llttlltt/dj-library-tools/commit/b5476125e41600e5dc337076d50418afada21d9a))
+
 ## [1.2.1](https://github.com/llttlltt/dj-library-tools/compare/v1.2.0...v1.2.1) (2026-07-01)
 
 
