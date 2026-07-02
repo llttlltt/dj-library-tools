@@ -110,24 +110,15 @@ export default function WorkflowsView({
 		setBusy(false);
 	}
 
-	async function handleNew() {
-		setBusy(true);
-		try {
-			const wf = {
-				id: "",
-				name: "New Workflow",
-				steps: [],
-			} as Workflow;
+	function handleNew() {
+		const wf = {
+			id: "",
+			name: "New Workflow",
+			steps: [],
+		} as Workflow;
 
-			await runtime.runPromise(saveWorkflow(wf));
-			// The store update will trigger a re-render, but we need to find the new ID.
-			// Actually, saveWorkflow already calls loadWorkflows.
-			// For simplicity in this first pass, we'll just go back to list or stay in new state.
-			setMode("list");
-		} catch (e) {
-			console.error(e);
-		}
-		setBusy(false);
+		setSelected(wf);
+		setMode("edit");
 	}
 
 	async function handleDelete(id: string) {

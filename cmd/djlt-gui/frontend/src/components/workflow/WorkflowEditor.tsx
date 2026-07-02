@@ -42,6 +42,17 @@ export function WorkflowEditor({
 		JSON.parse(JSON.stringify(workflow)),
 	);
 	const [deleteStepIdx, setDeleteStepIdx] = useState<number | null>(null);
+	const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+	const isDirty = JSON.stringify(wf) !== JSON.stringify(workflow);
+
+	const handleCancel = () => {
+		if (isDirty) {
+			setShowCancelConfirm(true);
+		} else {
+			onCancel();
+		}
+	};
 
 	const sortedConnections = [...connections].sort((a, b) =>
 		a.name.localeCompare(b.name),
@@ -94,7 +105,7 @@ export function WorkflowEditor({
 					type="button"
 					variant="outline"
 					size="sm"
-					onClick={onCancel}
+					onClick={handleCancel}
 					disabled={busy}
 				>
 					Cancel
@@ -139,6 +150,19 @@ export function WorkflowEditor({
 					</button>
 				</div>
 			</div>
+
+			<ConfirmDialog
+				open={showCancelConfirm}
+				title="Discard unsaved changes?"
+				description="You have unsaved changes in this workflow. If you cancel, these changes will be lost."
+				confirmLabel="Discard"
+				destructive
+				onConfirm={() => {
+					setShowCancelConfirm(false);
+					onCancel();
+				}}
+				onCancel={() => setShowCancelConfirm(false)}
+			/>
 
 			<ConfirmDialog
 				open={deleteStepIdx !== null}

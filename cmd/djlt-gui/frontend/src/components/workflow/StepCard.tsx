@@ -1,8 +1,12 @@
 import {
 	CheckCircle,
 	Clock,
+	FileText,
 	FlaskConical,
+	FolderOpen,
 	Pencil,
+	Plus,
+	Trash2,
 	Wrench,
 	X,
 	XCircle,
@@ -31,6 +35,7 @@ import type {
 	StepDiff,
 	StepResult,
 } from "@/types";
+import { OpenFileDialog } from "../../../wailsjs/go/gui/App";
 import { TrackDiffTable } from "./TrackDiffTable";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -41,14 +46,25 @@ export function kindIcon(kind: string) {
 			return <Zap className="h-3.5 w-3.5" />;
 		case "fix":
 			return <Wrench className="h-3.5 w-3.5" />;
+		case "add":
+			return <Plus className="h-3.5 w-3.5" />;
+		case "remove":
+			return <Trash2 className="h-3.5 w-3.5" />;
+		case "m3u_export":
+			return <FileText className="h-3.5 w-3.5" />;
 		default:
 			return <Pencil className="h-3.5 w-3.5" />;
 	}
 }
 
-export function kindVariant(kind: string): "sync" | "fix" | "edit" {
+export function kindVariant(
+	kind: string,
+): "sync" | "fix" | "edit" | "add" | "remove" | "m3u_export" {
 	if (kind === "sync") return "sync";
 	if (kind === "fix") return "fix";
+	if (kind === "add") return "add";
+	if (kind === "remove") return "remove";
+	if (kind === "m3u_export") return "m3u_export";
 	return "edit";
 }
 
@@ -85,10 +101,21 @@ export function EpEditRow({
 		return p?.resources.some((r) => r.can_write) ?? true;
 	});
 
-	const selectedConnection = connections.find((c) => c.id === ep.connection_id);
+	const adHoc: Connection[] = [
+		{ id: "m3u", name: "AD-HOC M3U", provider: "m3u", config: {} },
+		{ id: "m3u8", name: "AD-HOC M3U8", provider: "m3u8", config: {} },
+	];
+
+	const displayConnections = [...filteredConnections, ...adHoc];
+
+	const selectedConnection = displayConnections.find(
+		(c) => c.id === ep.connection_id,
+	);
 	const provider = providers.find(
 		(p) => p.name === selectedConnection?.provider,
 	);
+
+	const isAdHoc = ep.connection_id === "m3u" || ep.connection_id === "m3u8";
 
 	// For targets, only show resources that can be written to.
 	const availableResources = (provider?.resources ?? []).filter((r) => {
@@ -98,16 +125,16 @@ export function EpEditRow({
 
 	// Automatically fix blank or invalid resource selections
 	useEffect(() => {
-		if (availableResources.length > 0) {
+		if (!isAdHoc && availableResources.length > 0) {
 			const isValid = availableResources.some((r) => r.name === ep.resource);
 			if (!isValid) {
 				onChange({ resource: availableResources[0].name });
 			}
 		}
-	}, [ep.resource, availableResources, onChange]);
+	}, [ep.resource, availableResources, onChange, isAdHoc]);
 
 	const currentRes = provider?.resources.find((r) => r.name === ep.resource);
-	const supportsQuery = currentRes?.supports_query ?? true;
+	const supportsQuery = isAdHoc || (currentRes?.supports_query ?? true);
 
 	return (
 		<div className="flex flex-nowrap gap-2.5 items-center w-full min-w-0">
@@ -115,7 +142,8 @@ export function EpEditRow({
 				value={ep.connection_id}
 				onValueChange={(v) => {
 					// When connection changes, find the first valid resource for that new connection
-					const newConnection = connections.find((c) => c.id === v);
+					const newConnection = displayConnections.find((c) => c.id === v);
+					const newIsAdHoc = v === "m3u" || v === "m3u8";
 					const newProv = providers.find(
 						(p) => p.name === newConnection?.provider,
 					);
@@ -123,7 +151,9 @@ export function EpEditRow({
 						if (!isTarget) return true;
 						return r.can_write;
 					});
-					const nextRes = newResList[0]?.name ?? ep.resource;
+					const nextRes = newIsAdHoc
+						? ep.resource
+						: (newResList[0]?.name ?? ep.resource);
 					onChange({ connection_id: v, resource: nextRes });
 				}}
 			>
@@ -131,7 +161,7 @@ export function EpEditRow({
 					<SelectValue placeholder="Connection" />
 				</SelectTrigger>
 				<SelectContent>
-					{[...filteredConnections]
+					{[...displayConnections]
 						.sort((a, b) => a.name.localeCompare(b.name))
 						.map((c) => (
 							<SelectItem key={c.id} value={c.id}>
@@ -141,21 +171,32 @@ export function EpEditRow({
 				</SelectContent>
 			</Select>
 
-			<Select
-				value={ep.resource}
-				onValueChange={(v) => onChange({ resource: v })}
-			>
-				<SelectTrigger className="w-24 h-9 text-sm shrink-0 bg-background/50">
-					<SelectValue placeholder="resource" />
-				</SelectTrigger>
-				<SelectContent>
-					{availableResources.map((r) => (
-						<SelectItem key={r.name} value={r.name}>
-							{r.name}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
+			{isAdHoc ? (
+				<div className="flex-[0.6] min-w-0 relative">
+					<Input
+						className="h-9 text-xs w-full bg-background/50 font-mono"
+						value={ep.resource}
+						onChange={(e) => onChange({ resource: e.target.value })}
+						placeholder="/path/to/file.m3u"
+					/>
+				</div>
+			) : (
+				<Select
+					value={ep.resource}
+					onValueChange={(v) => onChange({ resource: v })}
+				>
+					<SelectTrigger className="w-24 h-9 text-sm shrink-0 bg-background/50">
+						<SelectValue placeholder="resource" />
+					</SelectTrigger>
+					<SelectContent>
+						{availableResources.map((r) => (
+							<SelectItem key={r.name} value={r.name}>
+								{r.name}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			)}
 
 			<div className="flex-1 min-w-0 relative">
 				<Input
@@ -224,6 +265,199 @@ function EndpointReadRow({
 			</div>
 			{/* Reserved layout space matching the action action trigger width */}
 			<div className="w-8.5 shrink-0" />
+		</div>
+	);
+}
+
+// ── TargetsSection ──────────────────────────────────────────────────────────
+
+function TargetsSection({
+	step,
+	isEdit,
+	connections,
+	providers,
+	updTarget,
+	removeTarget,
+	addTarget,
+	onOpenQueryTester,
+}: {
+	step: Step;
+	isEdit: boolean;
+	connections: Connection[];
+	providers: ProviderInfo[];
+	updTarget: (ti: number, patch: Partial<Endpoint>) => void;
+	removeTarget: (ti: number) => void;
+	addTarget: () => void;
+	onOpenQueryTester?: (opts?: QueryTesterOpts) => void;
+}) {
+	return (
+		<div className="space-y-1.5">
+			<p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground pl-0.5">
+				{step.kind === "add"
+					? "Target Group Name (Query)"
+					: step.kind === "remove"
+						? "Target Group(s)"
+						: `Target${step.targets.length !== 1 ? "s" : ""}`}
+			</p>
+			<div className="flex flex-col gap-2.5">
+				{step.targets.map((tgt, ti) => (
+					<div
+						key={tgt.connection_id}
+						className="flex flex-nowrap items-center gap-2.5 w-full min-w-0"
+					>
+						<div className="flex-1 min-w-0">
+							{isEdit ? (
+								<EndpointEditor
+									endpoint={tgt}
+									connections={connections}
+									providers={providers}
+									isTarget
+									onChange={(p) => updTarget(ti, p)}
+									onOpenQueryTester={onOpenQueryTester}
+									layout="row"
+								/>
+							) : (
+								<EndpointReadRow ep={tgt} connections={connections} />
+							)}
+						</div>
+						{isEdit && step.targets.length > 1 && (
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon"
+								className="h-8.5 w-8.5 shrink-0 hover:bg-secondary rounded-lg"
+								onClick={() => removeTarget(ti)}
+							>
+								<X className="h-4 w-4 text-muted-foreground" />
+							</Button>
+						)}
+					</div>
+				))}
+				{isEdit && (
+					<button
+						type="button"
+						onClick={addTarget}
+						className="text-xs text-blue-400 hover:text-blue-300 transition-colors text-left font-medium mt-1 pl-0.5"
+					>
+						+ Add target
+					</button>
+				)}
+			</div>
+		</div>
+	);
+}
+
+// ── M3uExportSection ────────────────────────────────────────────────────────
+
+function M3uExportSection({
+	step,
+	index,
+	isEdit,
+	onChange,
+}: {
+	step: Step;
+	index: number;
+	isEdit: boolean;
+	onChange?: (patch: Partial<Step>) => void;
+}) {
+	return (
+		<div className="space-y-1.5 pt-1">
+			<p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground pl-0.5">
+				Export Path
+			</p>
+			<div className="flex gap-2">
+				<Input
+					className="h-9 text-sm bg-background/50 font-mono"
+					value={(step.options?.path as string) ?? ""}
+					onChange={(e) =>
+						onChange?.({
+							options: { ...step.options, path: e.target.value },
+						})
+					}
+					placeholder="/path/to/playlist.m3u"
+					disabled={!isEdit}
+				/>
+				{isEdit && (
+					<Button
+						variant="outline"
+						size="icon"
+						className="h-9 w-9 shrink-0 bg-background/50"
+						onClick={async () => {
+							const path = await OpenFileDialog("");
+							if (path) {
+								onChange?.({ options: { ...step.options, path } });
+							}
+						}}
+					>
+						<FolderOpen className="h-4 w-4 text-muted-foreground" />
+					</Button>
+				)}
+			</div>
+			<div className="flex items-center gap-2 mt-2 px-0.5">
+				<input
+					type="checkbox"
+					id={`append-${index}`}
+					className="rounded border-border bg-background/50"
+					checked={!!step.options?.append}
+					disabled={!isEdit}
+					onChange={(e) =>
+						onChange?.({
+							options: { ...step.options, append: e.target.checked },
+						})
+					}
+				/>
+				<label
+					htmlFor={`append-${index}`}
+					className="text-[11px] font-medium text-muted-foreground cursor-pointer select-none"
+				>
+					Append to existing file
+				</label>
+			</div>
+		</div>
+	);
+}
+
+// ── DiffSection ─────────────────────────────────────────────────────────────
+
+function DiffSection({
+	diffs,
+	showUnchanged,
+	onToggleUnchanged,
+}: {
+	diffs: StepDiff[];
+	showUnchanged: boolean;
+	onToggleUnchanged: () => void;
+}) {
+	return (
+		<div className="space-y-4">
+			<Separator className="opacity-40 my-1" />
+			{diffs.map((diff) => {
+				const removedSet = new Set(diff.removed.map((t) => t.id));
+				const unchanged = diff.current.filter((t) => !removedSet.has(t.id));
+
+				return (
+					<div
+						key={`${diff.step_id}-${diff.target_name}`}
+						className="space-y-3"
+					>
+						{diff.added.length === 0 && diff.removed.length === 0 ? (
+							<div className="flex items-center gap-2 text-xs font-medium text-emerald-400 bg-emerald-950/20 border border-emerald-500/20 rounded-xl px-3.5 py-2.5">
+								<CheckCircle className="h-4 w-4 shrink-0 text-emerald-500" />{" "}
+								{diff.target_name}: Already up to date
+							</div>
+						) : (
+							<TrackDiffTable
+								target={diff.target_name}
+								added={diff.added}
+								removed={diff.removed}
+								unchanged={unchanged}
+								showUnchanged={showUnchanged}
+								onToggleUnchanged={onToggleUnchanged}
+							/>
+						)}
+					</div>
+				);
+			})}
 		</div>
 	);
 }
@@ -334,6 +568,9 @@ export function StepCard({
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="sync">SYNC</SelectItem>
+								<SelectItem value="add">ADD</SelectItem>
+								<SelectItem value="remove">REMOVE</SelectItem>
+								<SelectItem value="m3u_export">M3U EXPORT</SelectItem>
 								<SelectItem value="fix">FIX</SelectItem>
 								<SelectItem value="edit">EDIT</SelectItem>
 							</SelectContent>
@@ -376,7 +613,11 @@ export function StepCard({
 				{/* Connection Section */}
 				<div className="space-y-1.5">
 					<p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground pl-0.5">
-						Connection
+						{step.kind === "add"
+							? "Source Selection"
+							: step.kind === "remove"
+								? "Tracks to Remove"
+								: "Source Connection"}
 					</p>
 					{isEdit ? (
 						<EndpointEditor
@@ -392,56 +633,29 @@ export function StepCard({
 					)}
 				</div>
 
+				{/* M3U Export Path Section */}
+				{step.kind === "m3u_export" && (
+					<M3uExportSection
+						step={step}
+						index={index}
+						isEdit={isEdit}
+						onChange={onChange}
+					/>
+				)}
+
 				{/* Targets Section */}
-				<div className="space-y-1.5">
-					<p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground pl-0.5">
-						Target{step.targets.length !== 1 ? "s" : ""}
-					</p>
-					<div className="flex flex-col gap-2.5">
-						{step.targets.map((tgt, ti) => (
-							<div
-								key={tgt.connection_id}
-								className="flex flex-nowrap items-center gap-2.5 w-full min-w-0"
-							>
-								<div className="flex-1 min-w-0">
-									{isEdit ? (
-										<EndpointEditor
-											endpoint={tgt}
-											connections={connections}
-											providers={providers}
-											isTarget
-											onChange={(p) => updTarget(ti, p)}
-											onOpenQueryTester={onOpenQueryTester}
-											layout="row"
-										/>
-									) : (
-										<EndpointReadRow ep={tgt} connections={connections} />
-									)}
-								</div>
-								{isEdit && step.targets.length > 1 && (
-									<Button
-										type="button"
-										variant="ghost"
-										size="icon"
-										className="h-8.5 w-8.5 shrink-0 hover:bg-secondary rounded-lg"
-										onClick={() => removeTarget(ti)}
-									>
-										<X className="h-4 w-4 text-muted-foreground" />
-									</Button>
-								)}
-							</div>
-						))}
-						{isEdit && (
-							<button
-								type="button"
-								onClick={addTarget}
-								className="text-xs text-blue-400 hover:text-blue-300 transition-colors text-left font-medium mt-1 pl-0.5"
-							>
-								+ Add target
-							</button>
-						)}
-					</div>
-				</div>
+				{step.kind !== "m3u_export" && (
+					<TargetsSection
+						step={step}
+						isEdit={isEdit}
+						connections={connections}
+						providers={providers}
+						updTarget={updTarget}
+						removeTarget={removeTarget}
+						addTarget={addTarget}
+						onOpenQueryTester={onOpenQueryTester}
+					/>
+				)}
 
 				{/* Run After Section (Edit Mode only) */}
 				{isEdit && index > 0 && (
@@ -467,38 +681,11 @@ export function StepCard({
 
 				{/* Diff & Results Section (View/Applying Mode) */}
 				{!isEdit && hasDiffs && (
-					<div className="space-y-4">
-						<Separator className="opacity-40 my-1" />
-						{diffs.map((diff) => {
-							const removedSet = new Set(diff.removed.map((t) => t.id));
-							const unchanged = diff.current.filter(
-								(t) => !removedSet.has(t.id),
-							);
-
-							return (
-								<div
-									key={`${diff.step_id}-${diff.target_name}`}
-									className="space-y-3"
-								>
-									{diff.added.length === 0 && diff.removed.length === 0 ? (
-										<div className="flex items-center gap-2 text-xs font-medium text-emerald-400 bg-emerald-950/20 border border-emerald-500/20 rounded-xl px-3.5 py-2.5">
-											<CheckCircle className="h-4 w-4 shrink-0 text-emerald-500" />{" "}
-											{diff.target_name}: Already up to date
-										</div>
-									) : (
-										<TrackDiffTable
-											target={diff.target_name}
-											added={diff.added}
-											removed={diff.removed}
-											unchanged={unchanged}
-											showUnchanged={showUnchanged}
-											onToggleUnchanged={() => setShowUnchanged((v) => !v)}
-										/>
-									)}
-								</div>
-							);
-						})}
-					</div>
+					<DiffSection
+						diffs={diffs}
+						showUnchanged={showUnchanged}
+						onToggleUnchanged={() => setShowUnchanged((v) => !v)}
+					/>
 				)}
 
 				{result?.error && (

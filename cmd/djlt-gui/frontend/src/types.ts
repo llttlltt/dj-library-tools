@@ -10,7 +10,7 @@ export interface Endpoint {
 
 export interface Step {
 	id: string;
-	kind: string;
+	kind: "sync" | "fix" | "edit" | "add" | "remove" | "m3u_export";
 	source: Endpoint;
 	targets: Endpoint[];
 	after?: string[];

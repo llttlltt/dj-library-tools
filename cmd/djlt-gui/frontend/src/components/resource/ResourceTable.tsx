@@ -69,11 +69,9 @@ export function ResourceTable({ result, connectionID }: ResourceTableProps) {
 								</TableHead>
 							</>
 						) : isM3U ? (
-							<>
-								<TableHead className="sticky top-0 bg-secondary/40 shadow-[0_1px_0_0_hsl(var(--border))] font-semibold text-xs py-2.5">
-									location
-								</TableHead>
-							</>
+							<TableHead className="sticky top-0 bg-secondary/40 shadow-[0_1px_0_0_hsl(var(--border))] font-semibold text-xs py-2.5">
+								location
+							</TableHead>
 						) : (
 							<>
 								<TableHead className="sticky top-0 bg-secondary/40 shadow-[0_1px_0_0_hsl(var(--border))] font-semibold text-xs py-2.5">
@@ -120,13 +118,11 @@ export function ResourceTable({ result, connectionID }: ResourceTableProps) {
 					const t = row as TrackRow;
 					if (isM3U) {
 						return (
-							<>
-								<TableCell className="text-sm font-mono py-2 whitespace-nowrap pr-8">
-									{t.location || (
-										<span className="text-muted-foreground italic">—</span>
-									)}
-								</TableCell>
-							</>
+							<TableCell className="text-sm font-mono py-2 whitespace-nowrap pr-8">
+								{t.location || (
+									<span className="text-muted-foreground italic">—</span>
+								)}
+							</TableCell>
 						);
 					}
 					const parsedBpm =
