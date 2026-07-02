@@ -12,7 +12,7 @@ func init() {
 		{Name: "tracks", CanWrite: true, SupportsQuery: true},
 		{Name: "playlists", CanWrite: true, SupportsQuery: true},
 	}
-	factory.Register("mock", resources, provider.ProviderCapabilities{CanUpdateMetadata: true, CanWrite: true}, func(opts factory.ProviderOptions) (provider.Provider, error) {
+	factory.Register("mock", resources, provider.ProviderCapabilities{CanUpdateMetadata: true, CanWrite: true, CanManageGroups: true}, func(opts factory.ProviderOptions) (provider.Provider, error) {
 		return &MockProvider{}, nil
 	})
 }
@@ -78,7 +78,7 @@ func (s *mockGroupService) Sort(_ context.Context, _ provider.ExecutionContext, 
 type mockSystemService struct{}
 
 func (s *mockSystemService) Capabilities() provider.ProviderCapabilities {
-	return provider.ProviderCapabilities{CanUpdateMetadata: true, CanWrite: true}
+	return provider.ProviderCapabilities{CanUpdateMetadata: true, CanWrite: true, CanManageGroups: true}
 }
 func (s *mockSystemService) Containment() provider.ContainmentPolicy {
 	return provider.ContainmentPolicy{}

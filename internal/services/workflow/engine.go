@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
+	"github.com/llttlltt/dj-library-tools/internal/core/models"
 	provider "github.com/llttlltt/dj-library-tools/internal/providers"
 	"github.com/llttlltt/dj-library-tools/internal/services/orchestrator"
 )
@@ -241,6 +242,50 @@ func executeStep(ctx context.Context, orch *orchestrator.Orchestrator, step conf
 		}
 		return nil
 
+	case "m3u_export":
+		path, ok := step.Options["path"].(string)
+		if !ok {
+			return fmt.Errorf("m3u_export requires a 'path' option")
+		}
+
+		appendOnly := false
+		if a, ok := step.Options["append"].(bool); ok {
+			appendOnly = a
+		}
+
+		targetLoc := "m3u://" + path
+
+		// Mirror the sync pattern
+		srcWithQuery := src
+		if step.Source.Query != "" {
+			srcWithQuery += " " + step.Source.Query
+		}
+
+		syncOpts := orchestrator.SyncOptions{
+			AppendOnly: appendOnly,
+		}
+
+		diffs, err := orch.GetSyncDiff(ctx, srcWithQuery, targetLoc, "", runOpts, syncOpts.AppendOnly)
+		if err != nil {
+			return err
+		}
+		for _, diff := range diffs {
+			sr.Previews = append(sr.Previews, fmt.Sprintf(
+				"%s — add: %d, remove: %d, final: %d",
+				diff.TargetName,
+				len(diff.AddedIDs),
+				len(diff.RemovedIDs),
+				len(diff.SourceIDs),
+			))
+		}
+
+		if runOpts.Apply {
+			if err := orch.Sync(ctx, srcWithQuery, targetLoc, "", runOpts, syncOpts); err != nil {
+				return err
+			}
+		}
+		return nil
+
 	case "fix":
 		actions := make(map[provider.FixType][]string)
 		if opts, ok := step.Options["actions"]; ok {
@@ -253,6 +298,76 @@ func executeStep(ctx context.Context, orch *orchestrator.Orchestrator, step conf
 			}
 		}
 		_, err := orch.Fix(ctx, src, step.Source.Query, runOpts, orchestrator.FixOptions{Actions: actions})
+		return err
+
+	case "add":
+		for _, tgt := range step.Targets {
+			tgtLoc, err := sourceLocation(tgt)
+			if err != nil {
+				return err
+			}
+			// If tgt.Query is present, it's used as the name of the new resource.
+			// The base location (tgtLoc) is where the resource will be created.
+			name := tgt.Query
+			if name == "" {
+				return fmt.Errorf("add step requires a name in target query")
+			}
+
+			kind := models.GroupKindPlaylist
+			if k, ok := step.Options["kind"].(string); ok {
+				kind = models.GroupKind(k)
+			}
+
+			position := -1 // Default to append
+			if p, ok := step.Options["at"].(float64); ok {
+				position = int(p)
+			} else if p, ok := step.Options["at"].(string); ok {
+				switch p {
+				case "start":
+					position = 0
+				case "end":
+					position = -1
+				}
+			}
+
+			// Add source query to src for population.
+			srcWithQuery := src
+			if step.Source.Query != "" {
+				srcWithQuery += " " + step.Source.Query
+			}
+
+			parentLoc := tgtLoc
+			if in, ok := step.Options["in"].(string); ok && in != "" {
+				parentLoc += " " + in
+			}
+
+			_, err = orch.Make(ctx, parentLoc, name, runOpts, kind, position, srcWithQuery)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+
+	case "remove":
+		var tgtLocs []string
+		for _, tgt := range step.Targets {
+			tgtLoc, err := sourceLocation(tgt)
+			if err != nil {
+				return err
+			}
+			if tgt.Query != "" {
+				tgtLoc += " " + tgt.Query
+			}
+			tgtLocs = append(tgtLocs, tgtLoc)
+		}
+
+		recursive := false
+		if r, ok := step.Options["recursive"].(bool); ok {
+			recursive = r
+		}
+
+		// Source defines tracks to remove, Targets define where to remove them from.
+		_, err = orch.Delete(ctx, src, step.Source.Query, runOpts, tgtLocs, recursive)
 		return err
 
 	case "edit":
@@ -299,6 +414,9 @@ func toStringSlice(v interface{}) ([]string, bool) {
 func sourceLocation(ep config.Endpoint) (string, error) {
 	if ep.ConnectionID == "" {
 		return "", fmt.Errorf("connection id missing in endpoint")
+	}
+	if ep.ConnectionID == "m3u" || ep.ConnectionID == "m3u8" {
+		return ep.ConnectionID + "://" + ep.Resource, nil
 	}
 	return ep.ConnectionID + "/" + ep.Resource, nil
 }

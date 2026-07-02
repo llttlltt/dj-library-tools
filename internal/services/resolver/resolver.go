@@ -33,34 +33,66 @@ func ResolveSelection(ctx context.Context, locStr string, queryOverride string, 
 	if locStr == "" {
 		return &Selection{}, nil, nil
 	}
-	loc := location.ParseLocation(locStr, queryOverride)
-	if loc.Resource == "" {
-		return nil, nil, fmt.Errorf("resource must be specified in location %q", locStr)
-	}
 
 	filePath := opts.FilePath
 	host := opts.Host
 	port := opts.Port
 	token := opts.Token
 
-	// If provider is a UUID, load the Connection and use its config
-	if len(loc.Provider) == 36 && strings.Contains(loc.Provider, "-") {
-		conn, err := config.FindConnectionByID(loc.Provider)
-		if err == nil {
-			loc.Provider = conn.Provider // replace UUID with "rb", "plex" etc.
+	var loc location.Location
+	if strings.HasPrefix(locStr, "m3u://") || strings.HasPrefix(locStr, "m3u8://") {
+		scheme := "m3u"
+		if strings.HasPrefix(locStr, "m3u8://") {
+			scheme = "m3u8"
+		}
 
-			// Override options with Connection config
-			if fp, ok := conn.Config["file_path"]; ok {
-				filePath = fp
-			}
-			if h, ok := conn.Config["host"]; ok {
-				host = h
-			}
-			if p, ok := conn.Config["port"]; ok {
-				fmt.Sscanf(p, "%d", &port)
-			}
-			if t, ok := conn.Config["token"]; ok {
-				token = t
+		// Split query if present in locStr and not overridden
+		parts := strings.SplitN(locStr, " ", 2)
+		uri := parts[0]
+		if len(parts) > 1 && queryOverride == "" {
+			queryOverride = parts[1]
+		}
+
+		prefix := scheme + "://"
+		pathAndResource := strings.TrimPrefix(uri, prefix)
+
+		loc.Provider = scheme
+		loc.Query = queryOverride
+		loc.Resource = "tracks"
+		filePath = pathAndResource
+
+		if strings.HasSuffix(pathAndResource, "/tracks") {
+			loc.Resource = "tracks"
+			filePath = strings.TrimSuffix(pathAndResource, "/tracks")
+		} else if strings.HasSuffix(pathAndResource, "/playlists") {
+			loc.Resource = "playlists"
+			filePath = strings.TrimSuffix(pathAndResource, "/playlists")
+		}
+	} else {
+		loc = location.ParseLocation(locStr, queryOverride)
+		if loc.Resource == "" {
+			return nil, nil, fmt.Errorf("resource must be specified in location %q", locStr)
+		}
+
+		// If provider is a UUID, load the Connection and use its config
+		if len(loc.Provider) == 36 && strings.Contains(loc.Provider, "-") {
+			conn, err := config.FindConnectionByID(loc.Provider)
+			if err == nil {
+				loc.Provider = conn.Provider // replace UUID with "rb", "plex" etc.
+
+				// Override options with Connection config
+				if fp, ok := conn.Config["file_path"]; ok {
+					filePath = fp
+				}
+				if h, ok := conn.Config["host"]; ok {
+					host = h
+				}
+				if p, ok := conn.Config["port"]; ok {
+					fmt.Sscanf(p, "%d", &port)
+				}
+				if t, ok := conn.Config["token"]; ok {
+					token = t
+				}
 			}
 		}
 	}

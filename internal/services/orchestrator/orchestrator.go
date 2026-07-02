@@ -364,12 +364,17 @@ func (o *Orchestrator) Make(ctx context.Context, locStr string, name string, opt
 	if err := o.validateTargetLocation(locStr); err != nil {
 		return models.ResourceGroup{}, err
 	}
-	_, prov, err := resolver.ResolveSelection(ctx, locStr, "", o.buildResolveOptions(opts))
+	sel, prov, err := resolver.ResolveSelection(ctx, locStr, "", o.buildResolveOptions(opts))
 	if err != nil {
 		return models.ResourceGroup{}, err
 	}
 
-	newNode, err := prov.Groups().Create(ctx, o.buildExecContext(opts), models.ResourceGroup{}, name, groupKind, position)
+	var parent models.ResourceGroup
+	if sel.Location.Query != "" && len(sel.Groups) > 0 {
+		parent = sel.Groups[0]
+	}
+
+	newNode, err := prov.Groups().Create(ctx, o.buildExecContext(opts), parent, name, groupKind, position)
 	if err != nil {
 		return models.ResourceGroup{}, err
 	}
@@ -500,6 +505,9 @@ func (o *Orchestrator) validateTargetLocation(locStr string) error {
 
 func (o *Orchestrator) doValidateLocation(locStr string, mustBeWritable bool) error {
 	if locStr == "" {
+		return nil
+	}
+	if strings.HasPrefix(locStr, "m3u://") || strings.HasPrefix(locStr, "m3u8://") {
 		return nil
 	}
 	parts := strings.SplitN(locStr, "/", 2)

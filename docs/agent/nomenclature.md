@@ -8,7 +8,7 @@
 - **ResourceGroup**: A logical container for items.
   - **Playlist**: A group that contains tracks.
   - **Folder**: A container for other groups (hierarchical).
-- **Location**: A composite identifier (`provider/resource` or `connection_uuid/resource`). The CLI uses provider prefixes by convention; the GUI uses explicit Connection UUIDs.
+- **Location**: A composite identifier (`provider/resource` or `connection_uuid/resource`). The CLI uses provider prefixes by convention; the GUI uses explicit Connection UUIDs. Supports ad-hoc URIs for file-based providers (e.g., `m3u:///path/to/file.m3u`).
 - **Connection**: A user-named, configured instance of a provider (e.g., "Main Library" → Rekordbox, "Plex Home"). Each Connection has a unique UUID and connection details (file path, host, token).
 - **Workflow**: A named, user-defined collection of Steps. Workflows are the primary unit of library automation in the GUI.
 - **Step**: An atomic operation within a Workflow (e.g., sync, fix, edit). Supports parallel execution and sequential dependencies via the `after` field. One Step has one source Endpoint and can fan out to multiple target Endpoints.

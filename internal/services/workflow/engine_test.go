@@ -13,7 +13,8 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/config"
 	"github.com/llttlltt/dj-library-tools/internal/services/orchestrator"
 
-	// Register the mock provider so orchestrator calls succeed.
+	// Register providers so orchestrator calls succeed.
+	_ "github.com/llttlltt/dj-library-tools/internal/providers/m3u"
 	_ "github.com/llttlltt/dj-library-tools/internal/providers/mock"
 )
 
@@ -243,6 +244,96 @@ func TestEngine_Cycle_ReturnsError(t *testing.T) {
 	_, err := engine.Execute(context.Background(), wf, false)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "cycle")
+}
+
+func TestEngine_AddAndRemove_Success(t *testing.T) {
+	connID := setupConnections(t)
+	engine := newTestEngine()
+
+	wf := config.Workflow{
+		ID:   config.NewWorkflowID(),
+		Name: "AddRemove",
+		Steps: []config.Step{
+			{
+				ID:   "add-step",
+				Kind: "add",
+				Source: config.Endpoint{
+					ConnectionID: connID, Resource: "tracks",
+				},
+				Targets: []config.Endpoint{
+					{ConnectionID: connID, Resource: "playlists", Query: "New Playlist"},
+				},
+			},
+			{
+				ID:    "remove-step",
+				Kind:  "remove",
+				After: []string{"add-step"},
+				Source: config.Endpoint{
+					ConnectionID: connID, Resource: "tracks",
+				},
+				Targets: []config.Endpoint{
+					{ConnectionID: connID, Resource: "playlists", Query: "New Playlist"},
+				},
+			},
+		},
+	}
+
+	res, err := engine.Execute(context.Background(), wf, false)
+	require.NoError(t, err)
+	require.Len(t, res.Steps, 2)
+	assert.Equal(t, StatusSuccess, res.Steps[0].Status)
+	assert.Equal(t, StatusSuccess, res.Steps[1].Status)
+}
+
+func TestEngine_M3UExportAndReuse(t *testing.T) {
+	connID := setupConnections(t)
+	engine := newTestEngine()
+
+	tmpFile := filepath.Join(t.TempDir(), "export.m3u")
+
+	wf := config.Workflow{
+		ID:   config.NewWorkflowID(),
+		Name: "M3UExport",
+		Steps: []config.Step{
+			{
+				ID:   "export",
+				Kind: "m3u_export",
+				Source: config.Endpoint{
+					ConnectionID: connID, Resource: "tracks",
+				},
+				Options: map[string]interface{}{
+					"path": tmpFile,
+				},
+			},
+			{
+				ID:    "use-exported",
+				Kind:  "sync",
+				After: []string{"export"},
+				Source: config.Endpoint{
+					ConnectionID: "m3u", Resource: tmpFile,
+				},
+				Targets: []config.Endpoint{
+					{ConnectionID: connID, Resource: "playlists", Query: "From M3U"},
+				},
+			},
+		},
+	}
+
+	// Must use Apply=true to actually write the file
+	res, err := engine.Execute(context.Background(), wf, true)
+	require.NoError(t, err)
+	for _, sr := range res.Steps {
+		if sr.Status == StatusFailed {
+			t.Errorf("Step %s failed: %s", sr.StepID, sr.Error)
+		}
+	}
+	require.Len(t, res.Steps, 2)
+	assert.Equal(t, StatusSuccess, res.Steps[0].Status)
+	assert.Equal(t, StatusSuccess, res.Steps[1].Status)
+
+	// Verify file exists
+	_, err = os.Stat(tmpFile)
+	assert.NoError(t, err)
 }
 
 // ── graph: unknown After reference returns error ───────────────────────────

@@ -19,4 +19,4 @@ Manage application configuration
 ## See also
 
 * [djlt](../index.md)	 - DJ Library Tools CLI
-* [djlt config connection](connection/index.md)	 - Manage Connection
+* [djlt config connection](connection.md)	 - Manage Connection
