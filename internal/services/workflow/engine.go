@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -253,7 +254,12 @@ func executeStep(ctx context.Context, orch *orchestrator.Orchestrator, step conf
 			appendOnly = a
 		}
 
-		targetLoc := "m3u://" + path
+		targetLoc := "m3u://" + path + "/playlists"
+		// For ad-hoc M3U, the Sync target needs a query (name) to ensure the 
+		// provider knows which group to update (even though M3U only has one).
+		// We use the filename as the target query.
+		targetName := filepath.Base(path)
+		targetName = strings.TrimSuffix(targetName, filepath.Ext(targetName))
 
 		// Mirror the sync pattern
 		srcWithQuery := src
@@ -280,7 +286,8 @@ func executeStep(ctx context.Context, orch *orchestrator.Orchestrator, step conf
 		}
 
 		if runOpts.Apply {
-			if err := orch.Sync(ctx, srcWithQuery, targetLoc, "", runOpts, syncOpts); err != nil {
+			// Pass targetName as the query override for the target location
+			if err := orch.Sync(ctx, srcWithQuery, targetLoc+" name:\""+targetName+"\"", "", runOpts, syncOpts); err != nil {
 				return err
 			}
 		}

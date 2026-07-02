@@ -11,10 +11,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import {
-	filterWritableResources,
-	findConnectionProvider,
-} from "@/store/selection";
+import { filterWritableResources } from "@/store/selection";
 import type { Connection, Endpoint, ProviderInfo } from "@/types";
 
 interface EndpointEditorProps {
@@ -27,105 +24,58 @@ interface EndpointEditorProps {
 	layout?: "row" | "grid";
 }
 
-export function EndpointEditor({
-	endpoint,
-	connections,
-	providers,
-	isTarget = false,
+// ── Sub-components ─────────────────────────────────────────────────────────
+
+function AdHocResourceControl({
+	resource,
 	onChange,
-	onOpenQueryTester,
-	layout = "row",
-}: EndpointEditorProps) {
-	const provider = findConnectionProvider(
-		endpoint.connection_id,
-		connections,
-		providers,
-	);
-
-	// If this is a target, only show connections whose provider has at least one writable resource.
-	const filteredConnections = connections.filter((c) => {
-		if (!isTarget) return true;
-		const p = providers.find((prov) => prov.name === c.provider);
-		return p?.resources.some((r) => r.can_write) ?? true;
-	});
-
-	// For targets, only show resources that can be written to.
-	const availableResources = filterWritableResources(provider, isTarget);
-
-	// Automatically fix blank or invalid resource selections
-	useEffect(() => {
-		if (availableResources.length > 0) {
-			const isValid = availableResources.some(
-				(r) => r.name === endpoint.resource,
-			);
-			if (!isValid) {
-				onChange({ resource: availableResources[0].name });
-			}
-		}
-	}, [endpoint.resource, availableResources, onChange]);
-
-	const currentRes = provider?.resources.find(
-		(r) => r.name === endpoint.resource,
-	);
-	const supportsQuery = currentRes?.supports_query ?? true;
-	const isInvalidTarget = isTarget && currentRes && !currentRes.can_write;
-
-	const connectionSelect = (
-		<div
-			className={cn(
-				"flex flex-col gap-1.5 min-w-0",
-				layout === "row" ? "shrink-0" : "flex-1",
-			)}
-		>
+	layout,
+}: {
+	resource: string;
+	onChange: (v: string) => void;
+	layout: "row" | "grid";
+}) {
+	return (
+		<div className="flex flex-col gap-1.5 min-w-0 flex-[0.6]">
 			{layout === "grid" && (
 				<span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-					Connection
+					File Path
 				</span>
 			)}
-			<Select
-				value={endpoint.connection_id}
-				onValueChange={(v) => {
-					const newConnection = connections.find((c) => c.id === v);
-					const newProv = providers.find(
-						(p) => p.name === newConnection?.provider,
-					);
-					const newResList = filterWritableResources(newProv, isTarget);
-					const nextRes = newResList[0]?.name ?? endpoint.resource;
-					onChange({ connection_id: v, resource: nextRes });
-				}}
-			>
-				<SelectTrigger
-					className={cn(
-						"text-sm bg-background/50",
-						layout === "row" ? "w-40 h-9 shrink-0" : "h-8.5",
-					)}
-				>
-					<SelectValue placeholder="Select a connection…" />
-				</SelectTrigger>
-				<SelectContent>
-					{[...filteredConnections]
-						.sort((a, b) => a.name.localeCompare(b.name))
-						.map((c) => (
-							<SelectItem key={c.id} value={c.id}>
-								{c.name}
-							</SelectItem>
-						))}
-				</SelectContent>
-			</Select>
+			<Input
+				className={cn(
+					"text-xs bg-background/50 font-mono",
+					layout === "row" ? "h-9 w-40 shrink-0" : "h-8.5",
+				)}
+				value={resource}
+				onChange={(e) => onChange(e.target.value)}
+				placeholder="/path/to/file.m3u"
+			/>
 		</div>
 	);
+}
 
-	const resourceSelect = (
+function StandardResourceControl({
+	resource,
+	availableResources,
+	isInvalidTarget,
+	onChange,
+	layout,
+}: {
+	resource: string;
+	availableResources: { name: string }[];
+	isInvalidTarget: boolean | undefined;
+	onChange: (v: string) => void;
+	layout: "row" | "grid";
+}) {
+	return (
 		<div className="flex flex-col gap-1.5 shrink-0">
 			{layout === "grid" && (
 				<span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
 					Resource
 				</span>
 			)}
-			<Select
-				value={endpoint.resource}
-				onValueChange={(v) => onChange({ resource: v })}
-			>
+			<Select value={resource} onValueChange={onChange}>
 				<SelectTrigger
 					className={cn(
 						"text-sm bg-background/50 transition-colors",
@@ -150,6 +100,127 @@ export function EndpointEditor({
 				</span>
 			)}
 		</div>
+	);
+}
+
+// ── Main Component ──────────────────────────────────────────────────────────
+
+export function EndpointEditor({
+	endpoint,
+	connections,
+	providers,
+	isTarget = false,
+	onChange,
+	onOpenQueryTester,
+	layout = "row",
+}: EndpointEditorProps) {
+	// If this is a target, only show connections whose provider has at least one writable resource.
+	const filteredConnections = connections.filter((c) => {
+		if (!isTarget) return true;
+		const p = providers.find((prov) => prov.name === c.provider);
+		return p?.resources.some((r) => r.can_write) ?? true;
+	});
+
+	const adHoc: Connection[] = [
+		{ id: "m3u", name: "AD-HOC M3U", provider: "m3u", config: {} },
+		{ id: "m3u8", name: "AD-HOC M3U8", provider: "m3u8", config: {} },
+	];
+
+	const displayConnections = [...filteredConnections, ...adHoc];
+
+	const selectedConnection = displayConnections.find(
+		(c) => c.id === endpoint.connection_id,
+	);
+	const provider = providers.find(
+		(p) => p.name === selectedConnection?.provider,
+	);
+
+	const isAdHoc =
+		endpoint.connection_id === "m3u" || endpoint.connection_id === "m3u8";
+
+	// For targets, only show resources that can be written to.
+	const availableResources = filterWritableResources(provider, isTarget);
+
+	// Automatically fix blank or invalid resource selections
+	useEffect(() => {
+		if (!isAdHoc && availableResources.length > 0) {
+			const isValid = availableResources.some(
+				(r) => r.name === endpoint.resource,
+			);
+			if (!isValid) {
+				onChange({ resource: availableResources[0].name });
+			}
+		}
+	}, [endpoint.resource, availableResources, onChange, isAdHoc]);
+
+	const currentRes = provider?.resources.find(
+		(r) => r.name === endpoint.resource,
+	);
+	const supportsQuery = isAdHoc || (currentRes?.supports_query ?? true);
+	const isInvalidTarget = isTarget && currentRes && !currentRes.can_write;
+
+	const connectionSelect = (
+		<div
+			className={cn(
+				"flex flex-col gap-1.5 min-w-0",
+				layout === "row" ? "shrink-0" : "flex-1",
+			)}
+		>
+			{layout === "grid" && (
+				<span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+					Connection
+				</span>
+			)}
+			<Select
+				value={endpoint.connection_id}
+				onValueChange={(v) => {
+					const newConnection = displayConnections.find((c) => c.id === v);
+					const newIsAdHoc = v === "m3u" || v === "m3u8";
+					const newProv = providers.find(
+						(p) => p.name === newConnection?.provider,
+					);
+					const newResList = filterWritableResources(newProv, isTarget);
+					const nextRes = newIsAdHoc
+						? endpoint.resource
+						: (newResList[0]?.name ?? endpoint.resource);
+					onChange({ connection_id: v, resource: nextRes });
+				}}
+			>
+				<SelectTrigger
+					className={cn(
+						"text-sm bg-background/50",
+						layout === "row" ? "w-40 h-9 shrink-0" : "h-8.5",
+					)}
+				>
+					<SelectValue placeholder="Select a connection…" />
+				</SelectTrigger>
+				<SelectContent>
+					{[...displayConnections]
+						.sort((a, b) => a.name.localeCompare(b.name))
+						.map((c) => (
+							<SelectItem key={c.id} value={c.id}>
+								{c.name}
+							</SelectItem>
+						))}
+				</SelectContent>
+			</Select>
+		</div>
+	);
+
+	const resourceControl = isAdHoc ? (
+		<AdHocResourceControl
+			resource={endpoint.resource}
+			onChange={(v) => onChange({ resource: v })}
+			layout={layout}
+		/>
+	) : (
+		<StandardResourceControl
+			resource={endpoint.resource}
+			availableResources={availableResources}
+			isInvalidTarget={isInvalidTarget}
+			onChange={(v) => onChange({ resource: v })}
+			layout={layout}
+		/>
 	);
 
 	const queryInput = (
@@ -186,7 +257,7 @@ export function EndpointEditor({
 			<div className="space-y-4">
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 					{connectionSelect}
-					{resourceSelect}
+					{resourceControl}
 				</div>
 				{queryInput}
 			</div>
@@ -196,7 +267,7 @@ export function EndpointEditor({
 	return (
 		<div className="flex flex-nowrap gap-2.5 items-center w-full min-w-0">
 			{connectionSelect}
-			{resourceSelect}
+			{resourceControl}
 			{queryInput}
 
 			{onOpenQueryTester && supportsQuery ? (

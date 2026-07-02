@@ -130,9 +130,9 @@ export default function WorkflowsView({
 	async function handleSave(wf: Workflow) {
 		setBusy(true);
 		try {
-			await runtime.runPromise(saveWorkflow(wf));
-			// Update the selected workflow to reflect the saved state
-			setSelected(JSON.parse(JSON.stringify(wf)));
+			const saved = await runtime.runPromise(saveWorkflow(wf));
+			// Update the selected workflow to reflect the saved state (with ID)
+			setSelected(saved);
 			setMode("view");
 			// Clear stale diffs/results
 			setDiffs([]);

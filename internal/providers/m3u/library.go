@@ -20,8 +20,12 @@ func (l *Library) GetResources(kind string) []models.Resource {
 			results = append(results, t)
 		}
 	case "group":
-		// M3U is usually a single playlist, so we represent it as one group
-		// We'll handle the group discovery in the provider for now since M3U is file-specific
+		// M3U is usually a single playlist, so we represent it as one group.
+		results = append(results, models.ResourceGroup{
+			ID:   "playlist",
+			Name: "Playlist",
+			Kind: models.GroupKindPlaylist,
+		})
 	}
 	return results
 }
@@ -31,7 +35,7 @@ func (l *Library) GetMembershipMap() map[string][]models.PlaylistMembership {
 }
 
 func (l *Library) CreateGroup(parentID, name string, groupType models.GroupKind, position int) (models.ResourceGroup, error) {
-	return models.ResourceGroup{}, nil
+	return models.ResourceGroup{ID: name, Name: name, Kind: models.GroupKindPlaylist}, nil
 }
 
 func (l *Library) DeleteGroup(groupID string, groupType models.GroupKind) error {
@@ -39,8 +43,6 @@ func (l *Library) DeleteGroup(groupID string, groupType models.GroupKind) error 
 }
 
 func (l *Library) AddTracks(groupID string, trackIDs []string) (int, error) {
-	// For M3U, we don't use trackIDs (strings) as easily because the "ID" is often the path.
-	// We'll keep the track-based Add in the provider for now or expand this interface.
 	return 0, nil
 }
 

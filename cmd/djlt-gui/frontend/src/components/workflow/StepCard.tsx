@@ -2,7 +2,6 @@ import {
 	CheckCircle,
 	Clock,
 	FileText,
-	FlaskConical,
 	FolderOpen,
 	Pencil,
 	Plus,
@@ -12,7 +11,7 @@ import {
 	XCircle,
 	Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { QueryTesterOpts } from "@/App";
 import { EndpointEditor } from "@/components/endpoint/EndpointEditor";
 import { Badge } from "@/components/ui/badge";
@@ -75,168 +74,6 @@ export function statusIcon(status: string) {
 	return <Clock className="h-4 w-4 text-purple-400" />;
 }
 
-// ── EpEditRow ──────────────────────────────────────────────────────────────
-
-interface EpEditRowProps {
-	ep: Endpoint;
-	connections: Connection[];
-	providers: ProviderInfo[];
-	isTarget?: boolean;
-	onChange: (p: Partial<Endpoint>) => void;
-	onOpenQueryTester?: (opts?: QueryTesterOpts) => void;
-}
-
-export function EpEditRow({
-	ep,
-	connections,
-	providers,
-	isTarget,
-	onChange,
-	onOpenQueryTester,
-}: EpEditRowProps) {
-	// If this is a target, only show connections whose provider has at least one writable resource.
-	const filteredConnections = connections.filter((c) => {
-		if (!isTarget) return true;
-		const p = providers.find((prov) => prov.name === c.provider);
-		return p?.resources.some((r) => r.can_write) ?? true;
-	});
-
-	const adHoc: Connection[] = [
-		{ id: "m3u", name: "AD-HOC M3U", provider: "m3u", config: {} },
-		{ id: "m3u8", name: "AD-HOC M3U8", provider: "m3u8", config: {} },
-	];
-
-	const displayConnections = [...filteredConnections, ...adHoc];
-
-	const selectedConnection = displayConnections.find(
-		(c) => c.id === ep.connection_id,
-	);
-	const provider = providers.find(
-		(p) => p.name === selectedConnection?.provider,
-	);
-
-	const isAdHoc = ep.connection_id === "m3u" || ep.connection_id === "m3u8";
-
-	// For targets, only show resources that can be written to.
-	const availableResources = (provider?.resources ?? []).filter((r) => {
-		if (!isTarget) return true;
-		return r.can_write;
-	});
-
-	// Automatically fix blank or invalid resource selections
-	useEffect(() => {
-		if (!isAdHoc && availableResources.length > 0) {
-			const isValid = availableResources.some((r) => r.name === ep.resource);
-			if (!isValid) {
-				onChange({ resource: availableResources[0].name });
-			}
-		}
-	}, [ep.resource, availableResources, onChange, isAdHoc]);
-
-	const currentRes = provider?.resources.find((r) => r.name === ep.resource);
-	const supportsQuery = isAdHoc || (currentRes?.supports_query ?? true);
-
-	return (
-		<div className="flex flex-nowrap gap-2.5 items-center w-full min-w-0">
-			<Select
-				value={ep.connection_id}
-				onValueChange={(v) => {
-					// When connection changes, find the first valid resource for that new connection
-					const newConnection = displayConnections.find((c) => c.id === v);
-					const newIsAdHoc = v === "m3u" || v === "m3u8";
-					const newProv = providers.find(
-						(p) => p.name === newConnection?.provider,
-					);
-					const newResList = (newProv?.resources ?? []).filter((r) => {
-						if (!isTarget) return true;
-						return r.can_write;
-					});
-					const nextRes = newIsAdHoc
-						? ep.resource
-						: (newResList[0]?.name ?? ep.resource);
-					onChange({ connection_id: v, resource: nextRes });
-				}}
-			>
-				<SelectTrigger className="w-40 h-9 text-sm shrink-0 bg-background/50">
-					<SelectValue placeholder="Connection" />
-				</SelectTrigger>
-				<SelectContent>
-					{[...displayConnections]
-						.sort((a, b) => a.name.localeCompare(b.name))
-						.map((c) => (
-							<SelectItem key={c.id} value={c.id}>
-								{c.name}
-							</SelectItem>
-						))}
-				</SelectContent>
-			</Select>
-
-			{isAdHoc ? (
-				<div className="flex-[0.6] min-w-0 relative">
-					<Input
-						className="h-9 text-xs w-full bg-background/50 font-mono"
-						value={ep.resource}
-						onChange={(e) => onChange({ resource: e.target.value })}
-						placeholder="/path/to/file.m3u"
-					/>
-				</div>
-			) : (
-				<Select
-					value={ep.resource}
-					onValueChange={(v) => onChange({ resource: v })}
-				>
-					<SelectTrigger className="w-24 h-9 text-sm shrink-0 bg-background/50">
-						<SelectValue placeholder="resource" />
-					</SelectTrigger>
-					<SelectContent>
-						{availableResources.map((r) => (
-							<SelectItem key={r.name} value={r.name}>
-								{r.name}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-			)}
-
-			<div className="flex-1 min-w-0 relative">
-				<Input
-					className={`h-9 text-sm w-full bg-background/50 transition-opacity ${supportsQuery ? "opacity-100" : "opacity-10 pointer-events-none"}`}
-					value={ep.query ?? ""}
-					onChange={(e) => onChange({ query: e.target.value })}
-					placeholder={
-						supportsQuery ? "query (optional)" : "no query supported"
-					}
-					disabled={!supportsQuery}
-				/>
-			</div>
-
-			{onOpenQueryTester && supportsQuery ? (
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon"
-					className="h-8.5 w-8.5 shrink-0 hover:bg-secondary"
-					title="Test query"
-					onClick={() =>
-						onOpenQueryTester({
-							connectionID: ep.connection_id,
-							resource: ep.resource,
-							query: ep.query ?? "",
-							isTarget,
-							onApply: (q) => onChange({ query: q }),
-						})
-					}
-				>
-					<FlaskConical className="h-4 w-4 text-muted-foreground" />
-				</Button>
-			) : (
-				// Matches the visual and layout spacing of the tester button
-				<div className="w-8.5 shrink-0" />
-			)}
-		</div>
-	);
-}
-
 // ── EndpointReadRow ────────────────────────────────────────────────────────
 
 function EndpointReadRow({
@@ -246,16 +83,21 @@ function EndpointReadRow({
 	ep: Endpoint;
 	connections: Connection[];
 }) {
-	const connectionName =
-		connections.find((c) => c.id === ep.connection_id)?.name ??
-		ep.connection_id.slice(0, 8);
+	let connectionName = ep.connection_id;
+	if (ep.connection_id === "m3u") connectionName = "AD-HOC M3U";
+	else if (ep.connection_id === "m3u8") connectionName = "AD-HOC M3U8";
+	else {
+		connectionName =
+			connections.find((c) => c.id === ep.connection_id)?.name ??
+			ep.connection_id.slice(0, 8);
+	}
 
 	return (
 		<div className="flex flex-nowrap gap-2.5 items-center w-full min-w-0">
 			<div className="h-9 w-40 shrink-0 flex items-center px-3 rounded-lg border border-border/60 bg-muted/30 text-sm font-medium text-foreground truncate">
 				{connectionName}
 			</div>
-			<div className="h-9 w-24 shrink-0 flex items-center justify-center px-2 rounded-lg border border-border/60 bg-muted/30 text-xs font-mono font-medium text-muted-foreground">
+			<div className="h-9 w-40 shrink-0 flex items-center justify-center px-2 rounded-lg border border-border/60 bg-muted/30 text-xs font-mono font-medium text-muted-foreground truncate">
 				{ep.resource}
 			</div>
 			<div className="h-9 flex-1 min-w-0 flex items-center px-3 rounded-lg border border-border/60 bg-muted/20 text-sm font-mono text-muted-foreground truncate">
@@ -496,7 +338,12 @@ export function StepCard({
 	const showResult = mode === "applying";
 
 	// Logic for Diffs
-	const hasDiffs = diffs.length > 0 && step.kind === "sync";
+	const hasDiffs =
+		diffs.length > 0 &&
+		(step.kind === "sync" ||
+			step.kind === "add" ||
+			step.kind === "remove" ||
+			step.kind === "m3u_export");
 
 	// Edit Handlers
 	const updateConnection = (patch: Partial<Endpoint>) =>

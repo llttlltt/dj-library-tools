@@ -5,6 +5,7 @@ package gui
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/llttlltt/dj-library-tools/internal/config"
@@ -270,7 +271,8 @@ func (a *App) GetWorkflowDiff(id string) ([]StepDiff, error) {
 	var out []StepDiff
 
 	for _, step := range wf.Steps {
-		if step.Kind != "sync" {
+		kind := strings.ToLower(step.Kind)
+		if kind != "sync" && kind != "add" && kind != "remove" && kind != "m3u_export" {
 			continue
 		}
 
@@ -279,16 +281,57 @@ func (a *App) GetWorkflowDiff(id string) ([]StepDiff, error) {
 			return nil, fmt.Errorf("step %s source: %w", step.ID, err)
 		}
 
-		for _, tgt := range step.Targets {
-			tgtLoc, err := connectionProviderLoc(tgt)
-			if err != nil {
-				return nil, fmt.Errorf("step %s target: %w", step.ID, err)
-			}
-			if tgt.Query != "" {
-				tgtLoc = tgtLoc + " " + tgt.Query
-			}
+		targetLocs := []string{}
+		appendOnly := false
 
-			diffs, err := a.orch.GetSyncDiff(a.ctx, srcLoc, tgtLoc, step.Source.Query, runOpts, false)
+		switch kind {
+		case "sync":
+			for _, tgt := range step.Targets {
+				tgtLoc, err := connectionProviderLoc(tgt)
+				if err != nil {
+					return nil, fmt.Errorf("step %s target: %w", step.ID, err)
+				}
+				if tgt.Query != "" {
+					tgtLoc = tgtLoc + " " + tgt.Query
+				}
+				targetLocs = append(targetLocs, tgtLoc)
+			}
+		case "add":
+			for _, tgt := range step.Targets {
+				tgtLoc, err := connectionProviderLoc(tgt)
+				if err != nil {
+					return nil, fmt.Errorf("step %s target: %w", step.ID, err)
+				}
+				// For add, the query is the name of the new resource
+				if tgt.Query != "" {
+					tgtLoc = tgtLoc + " " + tgt.Query
+				}
+				targetLocs = append(targetLocs, tgtLoc)
+			}
+			appendOnly = true
+		case "remove":
+			for _, tgt := range step.Targets {
+				tgtLoc, err := connectionProviderLoc(tgt)
+				if err != nil {
+					return nil, fmt.Errorf("step %s target: %w", step.ID, err)
+				}
+				if tgt.Query != "" {
+					tgtLoc = tgtLoc + " " + tgt.Query
+				}
+				targetLocs = append(targetLocs, tgtLoc)
+			}
+		case "m3u_export":
+			path, _ := step.Options["path"].(string)
+			if path != "" {
+				targetLocs = append(targetLocs, "m3u://"+path+"/playlists")
+			}
+			if a, ok := step.Options["append"].(bool); ok {
+				appendOnly = a
+			}
+		}
+
+		for _, tgtLoc := range targetLocs {
+			diffs, err := a.orch.GetSyncDiff(a.ctx, srcLoc, tgtLoc, step.Source.Query, runOpts, appendOnly)
 			if err != nil {
 				return nil, fmt.Errorf("step %s diff: %w", step.ID, err)
 			}
@@ -307,6 +350,15 @@ func (a *App) GetWorkflowDiff(id string) ([]StepDiff, error) {
 					Added:      toTrackRows(diff.AddedIDs, diff.TrackLookup),
 					Removed:    toTrackRows(diff.RemovedIDs, diff.TrackLookup),
 				}
+
+				if kind == "remove" {
+					// For remove step, we only care about removals.
+					sd.Added = []TrackRow{}
+				} else if kind == "add" {
+					// For add step, we only care about additions.
+					sd.Removed = []TrackRow{}
+				}
+
 				// Unchanged = current members that are NOT being removed.
 				var unchangedIDs []string
 				for _, cid := range diff.CurrentIDs {
@@ -324,6 +376,9 @@ func (a *App) GetWorkflowDiff(id string) ([]StepDiff, error) {
 
 // connectionProviderLoc resolves an Endpoint to "<provider>/<resource>".
 func connectionProviderLoc(ep config.Endpoint) (string, error) {
+	if ep.ConnectionID == "m3u" || ep.ConnectionID == "m3u8" {
+		return ep.ConnectionID + "://" + ep.Resource, nil
+	}
 	conn, err := config.FindConnectionByID(ep.ConnectionID)
 	if err != nil {
 		return "", err
@@ -416,6 +471,21 @@ func (a *App) OpenFileDialog(defaultDir string) (string, error) {
 		Filters: []runtime.FileFilter{
 			{DisplayName: "Rekordbox XML", Pattern: "*.xml"},
 			{DisplayName: "M3U Playlist", Pattern: "*.m3u;*.m3u8"},
+			{DisplayName: "All Files", Pattern: "*.*"},
+		},
+	})
+}
+
+// SaveFileDialog opens a native save-file-dialog and returns the selected path,
+// or an empty string if the user cancelled.
+func (a *App) SaveFileDialog(defaultDir, defaultFile string) (string, error) {
+	return runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:            "Save Playlist",
+		DefaultDirectory: defaultDir,
+		DefaultFilename:  defaultFile,
+		Filters: []runtime.FileFilter{
+			{DisplayName: "M3U Playlist", Pattern: "*.m3u"},
+			{DisplayName: "M3U8 Playlist", Pattern: "*.m3u8"},
 			{DisplayName: "All Files", Pattern: "*.*"},
 		},
 	})

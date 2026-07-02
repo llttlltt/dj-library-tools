@@ -7,7 +7,6 @@ import (
 	"github.com/llttlltt/dj-library-tools/internal/providers"
 	"github.com/llttlltt/dj-library-tools/internal/providers/factory"
 	"github.com/llttlltt/dj-library-tools/internal/services/library"
-	"github.com/llttlltt/dj-library-tools/internal/services/sync"
 	"os"
 	"path/filepath"
 	"strings"
@@ -238,13 +237,25 @@ func (s *m3uSystemService) Fix(ctx context.Context, ectx provider.ExecutionConte
 }
 
 func (s *m3uSystemService) Sync(ctx context.Context, ectx provider.ExecutionContext, tracks []models.Track, targetQuery string, opts provider.SyncOptions) error {
-	return sync.SyncToLibrary(ctx, NewLibrary(s.tracks), tracks, targetQuery, sync.SyncOptions{
-		ExportDest:     opts.ExportDest,
-		ExportFormat:   opts.ExportFormat,
-		PathMaps:       opts.PathMaps,
-		MetadataFields: opts.MetadataFields,
-		MatchFields:    opts.MatchFields,
-	}, ectx.Apply, ectx.Verbose, opts.AppendOnly)
+	if !ectx.Apply {
+		return nil
+	}
+	if opts.AppendOnly {
+		// Add unique tracks
+		existing := make(map[string]bool)
+		for _, t := range s.tracks {
+			existing[t.Location] = true
+		}
+		for _, t := range tracks {
+			if !existing[t.Location] {
+				s.tracks = append(s.tracks, t)
+				existing[t.Location] = true
+			}
+		}
+	} else {
+		s.tracks = tracks
+	}
+	return nil
 }
 
 func (s *m3uSystemService) Identify(name string, gt models.GroupKind) string { return s.path }

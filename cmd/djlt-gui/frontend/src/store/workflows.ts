@@ -34,11 +34,9 @@ export const saveWorkflow = (wf: Workflow) =>
 	Effect.gen(function* () {
 		yield* Atom.set(workflowsLoadingAtom, true);
 		const app = yield* AppService;
-		return yield* app.saveWorkflow(wf).pipe(
-			Effect.flatMap(() => loadWorkflows),
-			Effect.catchAll((e) => handleError(e)),
-			Effect.andThen(() => Atom.set(workflowsLoadingAtom, false)),
-		);
+		const saved = yield* app.saveWorkflow(wf);
+		yield* loadWorkflows;
+		return saved as Workflow;
 	});
 
 export const removeWorkflow = (id: string) =>
