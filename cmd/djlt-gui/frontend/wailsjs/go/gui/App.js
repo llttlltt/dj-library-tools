@@ -82,6 +82,10 @@ export function RunWorkflow(arg1) {
   return window['go']['gui']['App']['RunWorkflow'](arg1);
 }
 
+export function SaveFileDialog(arg1, arg2) {
+  return window['go']['gui']['App']['SaveFileDialog'](arg1, arg2);
+}
+
 export function SaveWorkflow(arg1) {
   return window['go']['gui']['App']['SaveWorkflow'](arg1);
 }

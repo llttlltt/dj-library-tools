@@ -94,3 +94,9 @@ func WriteM3U8EntryRaw(w io.Writer, display string, path string, duration float6
 	}
 	return nil
 }
+
+// WriteM3UEntryBasic writes only the file path (no #EXTINF).
+func WriteM3UEntryBasic(w io.Writer, path string) error {
+	_, err := io.WriteString(w, path+"\n")
+	return err
+}

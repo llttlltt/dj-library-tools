@@ -46,6 +46,8 @@ export function PreviewWorkflow(arg1:string):Promise<workflow.WorkflowResult>;
 
 export function RunWorkflow(arg1:string):Promise<workflow.WorkflowResult>;
 
+export function SaveFileDialog(arg1:string,arg2:string):Promise<string>;
+
 export function SaveWorkflow(arg1:config.Workflow):Promise<config.Workflow>;
 
 export function SetUpdateInterval(arg1:number):Promise<void>;

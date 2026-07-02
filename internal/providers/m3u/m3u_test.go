@@ -70,3 +70,35 @@ func TestM3UProvider_AddRemoveSave(t *testing.T) {
 	assert.Equal(t, 1, removed)
 	assert.Len(t, p2.tracks, 0)
 }
+
+func TestM3UProvider_FormatCorrectness(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "m3u-format-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	tracks := []models.Track{
+		{Display: "Track One", Location: "/path/to/one.mp3", Duration: 120},
+	}
+
+	// 1. Test .m3u8 (Extended)
+	m3u8Path := filepath.Join(tmpDir, "test.m3u8")
+	p8, _ := NewM3UProvider(m3u8Path)
+	p8.tracks = tracks
+	err = p8.System().Save(context.Background(), provider.ExecutionContext{Apply: true}, m3u8Path)
+	require.NoError(t, err)
+
+	content8, _ := os.ReadFile(m3u8Path)
+	expected8 := "#EXTM3U\n#EXTINF:120,Track One\n/path/to/one.mp3\n"
+	assert.Equal(t, expected8, string(content8))
+
+	// 2. Test .m3u (Basic)
+	m3uPath := filepath.Join(tmpDir, "test.m3u")
+	p, _ := NewM3UProvider(m3uPath)
+	p.tracks = tracks
+	err = p.System().Save(context.Background(), provider.ExecutionContext{Apply: true}, m3uPath)
+	require.NoError(t, err)
+
+	content, _ := os.ReadFile(m3uPath)
+	expected := "#EXTM3U\n/path/to/one.mp3\n"
+	assert.Equal(t, expected, string(content))
+}

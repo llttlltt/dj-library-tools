@@ -203,12 +203,19 @@ func (s *m3uSystemService) Save(ctx context.Context, ectx provider.ExecutionCont
 	defer f.Close()
 
 	WriteM3U8Header(f)
+
+	isM3U8 := strings.ToLower(filepath.Ext(path)) == ".m3u8"
+
 	for _, t := range s.tracks {
-		disp := t.Display
-		if disp == "" {
-			disp = filepath.Base(t.Location)
+		if isM3U8 {
+			disp := t.Display
+			if disp == "" {
+				disp = filepath.Base(t.Location)
+			}
+			WriteM3U8EntryRaw(f, disp, t.Location, float64(t.Duration))
+		} else {
+			WriteM3UEntryBasic(f, t.Location)
 		}
-		WriteM3U8EntryRaw(f, disp, t.Location, float64(t.Duration))
 	}
 	return nil
 }

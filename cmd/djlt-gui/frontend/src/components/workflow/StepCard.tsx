@@ -1,3 +1,17 @@
+import {
+	CheckCircle,
+	Clock,
+	FileText,
+	FolderOpen,
+	Pencil,
+	Plus,
+	Trash2,
+	Wrench,
+	X,
+	XCircle,
+	Zap,
+} from "lucide-react";
+import { useState } from "react";
 import type { QueryTesterOpts } from "@/App";
 import { EndpointEditor } from "@/components/endpoint/EndpointEditor";
 import { Badge } from "@/components/ui/badge";
@@ -20,20 +34,6 @@ import type {
 	StepDiff,
 	StepResult,
 } from "@/types";
-import {
-	CheckCircle,
-	Clock,
-	FileText,
-	FolderOpen,
-	Pencil,
-	Plus,
-	Trash2,
-	Wrench,
-	X,
-	XCircle,
-	Zap,
-} from "lucide-react";
-import { useState } from "react";
 import { OpenFileDialog } from "../../../wailsjs/go/gui/App";
 import { TrackDiffTable } from "./TrackDiffTable";
 

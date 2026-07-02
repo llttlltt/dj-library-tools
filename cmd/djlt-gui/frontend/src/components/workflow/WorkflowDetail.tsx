@@ -88,35 +88,26 @@ export function WorkflowDetail({
 					type="button"
 					variant="outline"
 					size="sm"
-					onClick={onPreview}
+					onClick={diffs.length > 0 ? onPreviewAgain : onPreview}
 					disabled={busy}
 				>
-					<Eye className="h-4 w-4 mr-1.5" />
-					Preview
+					{diffs.length > 0 ? (
+						<CheckCircle className="h-4 w-4 mr-1.5" />
+					) : (
+						<Eye className="h-4 w-4 mr-1.5" />
+					)}
+					{diffs.length > 0 ? "Preview Again" : "Preview"}
 				</Button>
 
-				{mode === "applying" && result ? (
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						onClick={onPreviewAgain}
-						disabled={busy}
-					>
-						<CheckCircle className="h-4 w-4 mr-1.5" />
-						Preview Again
-					</Button>
-				) : (
-					<Button
-						type="button"
-						size="sm"
-						onClick={() => setRunConfirm(true)}
-						disabled={busy}
-					>
-						<PlayCircle className="h-4 w-4 mr-1.5" />
-						Run
-					</Button>
-				)}
+				<Button
+					type="button"
+					size="sm"
+					onClick={() => setRunConfirm(true)}
+					disabled={busy}
+				>
+					<PlayCircle className="h-4 w-4 mr-1.5" />
+					Run
+				</Button>
 
 				<Button
 					type="button"
