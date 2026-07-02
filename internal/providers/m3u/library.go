@@ -6,10 +6,11 @@ import (
 
 type Library struct {
 	tracks []models.Track
+	name   string
 }
 
-func NewLibrary(tracks []models.Track) *Library {
-	return &Library{tracks: tracks}
+func NewLibrary(tracks []models.Track, name string) *Library {
+	return &Library{tracks: tracks, name: name}
 }
 
 func (l *Library) GetResources(kind string) []models.Resource {
@@ -21,9 +22,10 @@ func (l *Library) GetResources(kind string) []models.Resource {
 		}
 	case "group":
 		// M3U is usually a single playlist, so we represent it as one group.
+		// Use the provided name (usually derived from filename).
 		results = append(results, models.ResourceGroup{
 			ID:   "playlist",
-			Name: "Playlist",
+			Name: l.name,
 			Kind: models.GroupKindPlaylist,
 		})
 	}

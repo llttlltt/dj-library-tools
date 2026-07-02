@@ -323,7 +323,7 @@ func (a *App) GetWorkflowDiff(id string) ([]StepDiff, error) {
 		case "m3u_export":
 			path, _ := step.Options["path"].(string)
 			if path != "" {
-				targetLocs = append(targetLocs, "m3u://"+path+"/playlists")
+				targetLocs = append(targetLocs, "m3u://"+path)
 			}
 			if a, ok := step.Options["append"].(bool); ok {
 				appendOnly = a

@@ -254,8 +254,8 @@ func executeStep(ctx context.Context, orch *orchestrator.Orchestrator, step conf
 			appendOnly = a
 		}
 
-		targetLoc := "m3u://" + path + "/playlists"
-		// For ad-hoc M3U, the Sync target needs a query (name) to ensure the 
+		targetLoc := "m3u://" + filepath.Clean(path)
+		// For ad-hoc M3U, the Sync target needs a query (name) to ensure the
 		// provider knows which group to update (even though M3U only has one).
 		// We use the filename as the target query.
 		targetName := filepath.Base(path)

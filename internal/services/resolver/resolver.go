@@ -58,7 +58,7 @@ func ResolveSelection(ctx context.Context, locStr string, queryOverride string, 
 
 		loc.Provider = scheme
 		loc.Query = queryOverride
-		loc.Resource = "tracks"
+		loc.Resource = "playlists" // Default to playlists so name: query works for ad-hoc
 		filePath = pathAndResource
 
 		if strings.HasSuffix(pathAndResource, "/tracks") {

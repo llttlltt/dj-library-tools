@@ -15,6 +15,7 @@ import (
 func init() {
 	resources := []factory.ResourceInfo{
 		{Name: "tracks", CanWrite: true, SupportsQuery: true},
+		{Name: "playlists", CanWrite: true, SupportsQuery: true},
 	}
 	caps := provider.ProviderCapabilities{CanWrite: true, IsFileBased: true}
 	factory.Register("m3u", resources, caps, func(opts factory.ProviderOptions) (provider.Provider, error) {
@@ -78,7 +79,7 @@ func (s *m3uTrackService) List(ctx context.Context, ectx provider.ExecutionConte
 		tracks = append(tracks, ToNeutralTrack(t))
 	}
 	// Use Engine for agnostic querying
-	eng := library.NewEngine(NewLibrary(tracks))
+	eng := library.NewEngine(NewLibrary(tracks, filepath.Base(s.path)))
 	return eng.Ls(query, nil)
 }
 
@@ -141,7 +142,7 @@ type m3uGroupService struct{ *M3UProvider }
 
 func (s *m3uGroupService) List(ctx context.Context, ectx provider.ExecutionContext, query string) ([]models.ResourceGroup, error) {
 	// Use Engine for agnostic group querying
-	eng := library.NewEngine(NewLibrary(s.tracks))
+	eng := library.NewEngine(NewLibrary(s.tracks, filepath.Base(s.path)))
 	return eng.LsGroups(query)
 }
 

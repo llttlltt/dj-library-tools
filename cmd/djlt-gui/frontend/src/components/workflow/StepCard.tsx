@@ -1,17 +1,3 @@
-import {
-	CheckCircle,
-	Clock,
-	FileText,
-	FolderOpen,
-	Pencil,
-	Plus,
-	Trash2,
-	Wrench,
-	X,
-	XCircle,
-	Zap,
-} from "lucide-react";
-import { useState } from "react";
 import type { QueryTesterOpts } from "@/App";
 import { EndpointEditor } from "@/components/endpoint/EndpointEditor";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +20,20 @@ import type {
 	StepDiff,
 	StepResult,
 } from "@/types";
+import {
+	CheckCircle,
+	Clock,
+	FileText,
+	FolderOpen,
+	Pencil,
+	Plus,
+	Trash2,
+	Wrench,
+	X,
+	XCircle,
+	Zap,
+} from "lucide-react";
+import { useState } from "react";
 import { OpenFileDialog } from "../../../wailsjs/go/gui/App";
 import { TrackDiffTable } from "./TrackDiffTable";
 
@@ -410,7 +410,7 @@ export function StepCard({
 							value={step.kind}
 							onValueChange={(k) => onChange?.({ kind: k as Step["kind"] })}
 						>
-							<SelectTrigger className="w-28 h-8 text-xs font-semibold bg-background/50">
+							<SelectTrigger className="w-42 h-8 text-xs font-semibold bg-background/50">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
